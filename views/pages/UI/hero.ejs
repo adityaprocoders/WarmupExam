@@ -1,0 +1,62 @@
+<div class="bg-gradient-to-b from-blue-50 to-white px-4 pt-12 pb-20 overflow-hidden">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+        <!-- Text Content -->
+        <div class="space-y-6 fade-right">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight">
+                 India's <span class="text-indigo-700">Smartest</span> Mock Test Platform
+            </h1>
+            <p class="text-lg text-slate-600">
+                Unlock your full potential with WarmUpExam. Practice with realistic mock test, AI-powered performance analysis, and personalized insights designed to improve your speed, accuracy, and confidence for every exam.
+            </p>
+            <a href="/login" class="inline-block bg-blue-600 text-white font-semibold px-8 py-3 rounded-lg hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 active:scale-95 transition-all duration-300">
+                Get Started
+            </a>
+        </div>
+
+        <!-- Hero Graphic -->
+       
+<div class="relative flex justify-center fade-left">
+
+    <div class="w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-[420px] lg:h-[420px] bg-indigo-100 rounded-full relative pulse-ring">
+
+        <img
+            src="/images/hero.png"
+            alt="Hero"
+            class="absolute -bottom-4 inset-x-0 mx-auto w-[90%] max-w-full h-auto object-contain float-anim">
+
+    </div>
+
+</div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="max-w-7xl mx-auto mt-8 bg-white p-8 rounded-2xl shadow-lg border border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-8 fade-up">
+
+        <% const stats = [
+            { icon: 'fas fa-brain', color: 'text-purple-500', title: 'AI Analysis', desc: 'Detailed performance report' },
+            { icon: 'fas fa-file-alt', color: 'text-blue-500', title: '50,000+', desc: 'Focused Practice Questions' },
+            { icon: 'fas fa-clock', color: 'text-emerald-500', title: '24 × 7', desc: 'Instant Ranking & Review' },
+            { icon: 'fas fa-trophy', color: 'text-yellow-500', title: 'All India', desc: 'Warm Up Mock Tests' }
+        ] %>
+
+        <% stats.forEach((stat, i) => { %>
+            <div class="text-center group stat-item" style="transition-delay: <%= i * 120 %>ms">
+
+                <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-slate-200 group-hover:-translate-y-1 transition-all duration-300">
+                    <i class="<%= stat.icon %> <%= stat.color %> text-4xl transition-transform duration-300 group-hover:scale-110"></i>
+                </div>
+
+                <h4 class="font-bold text-lg text-slate-900">
+                    <%= stat.title %>
+                </h4>
+
+                <p class="text-sm text-slate-500 mt-2">
+                    <%= stat.desc %>
+                </p>
+
+            </div>
+        <% }) %>
+
+    </div>
+</div>

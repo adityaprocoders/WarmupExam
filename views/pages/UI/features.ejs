@@ -1,0 +1,394 @@
+  
+
+<!-- ============ HERO ============ -->
+<section class="relative pt-16 pb-20 sm:pt-20 sm:pb-28 overflow-hidden">
+
+  <!-- ambient backdrop -->
+  <div class="absolute inset-0 -z-10">
+    <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-gradient-to-b from-brandSoft to-transparent opacity-70 blur-3xl"></div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-5 sm:px-8">
+    <div class="grid lg:grid-cols-[1.05fr_0.95fr] gap-14 lg:gap-10 items-center">
+
+      <!-- Copy -->
+      <div class="reveal">
+        <div class="inline-flex items-center gap-2 bg-white border border-ink/8 rounded-full pl-1.5 pr-4 py-1.5 shadow-sm mb-7">
+          <span class="bg-good/15 text-good font-mono-tab text-[11px] font-semibold px-2 py-1 rounded-full">LIVE</span>
+          <span class="text-xs font-semibold text-slate2">3K+ aspirants tested this week</span>
+        </div>
+
+        <h1 class="font-display font-800 text-[2.6rem] leading-[1.05] sm:text-6xl sm:leading-[1.03] tracking-tight text-ink">
+          Practice on the exact
+          <span class="relative inline-block">
+            <span class="relative z-10">screen you'll sit for.</span>
+            <svg class="absolute -bottom-1.5 left-0 w-full h-3 text-brand/30 -z-0" viewBox="0 0 300 12" preserveAspectRatio="none"><path d="M0,8 Q75,0 150,6 T300,4" stroke="currentColor" stroke-width="8" fill="none" stroke-linecap="round"/></svg>
+          </span>
+        </h1>
+
+        <p class="mt-6 text-lg text-slate2 max-w-xl leading-relaxed">
+          Same OMR-style palette, same negative marking, same clock pressure. WarmupExam builds sectional mock tests that mirror your actual exam interface — so exam day feels like practice day.
+        </p>
+
+        <div class="mt-9 flex flex-col sm:flex-row gap-3">
+          <a href="/alltests" class="inline-flex items-center justify-center gap-2 bg-ink hover:bg-black text-white font-bold px-7 py-4 rounded-2xl transition-all active:scale-95 focus-ring">
+            Start your free mock
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
+          <a href="#journey" class="inline-flex items-center justify-center gap-2 bg-white border border-ink/10 hover:border-ink/25 font-bold px-7 py-4 rounded-2xl transition-all active:scale-95 focus-ring">
+            <i data-lucide="play-circle" class="w-4 h-4"></i>
+            See how it works
+          </a>
+        </div>
+
+        <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-slate2">
+          <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-good"></i> No card for the free mock</span>
+          <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-good"></i> Cancel anytime</span>
+          <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-good"></i> 7-day refund on paid series</span>
+        </div>
+      </div>
+
+      <!-- Signature element: live OMR palette mock window -->
+      <div class="reveal" style="transition-delay:.12s">
+        <div class="relative mx-auto max-w-md">
+          <div class="absolute -inset-4 bg-gradient-to-br from-brand/15 to-transparent rounded-[2rem] blur-2xl"></div>
+
+          <div class="relative bg-ink rounded-[1.75rem] p-2.5 shadow-2xl">
+            <div class="bg-ink2 rounded-[1.4rem] overflow-hidden">
+
+              <!-- window chrome -->
+              <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-bad/70"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-white/20"></span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-good/70"></span>
+                </div>
+                <span class="font-mono-tab text-[11px] text-white/40">NIMCET · Mock 07</span>
+              </div>
+
+              <div class="p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <p class="text-[10px] font-bold tracking-widest text-white/40 uppercase">Time left</p>
+                    <p id="omrTimer" class="font-mono-tab text-2xl font-bold text-white">42:18</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-[10px] font-bold tracking-widest text-white/40 uppercase">Section</p>
+                    <p class="text-sm font-bold text-white">Mathematics</p>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-5 font-mono-tab text-[11px]">
+                  <div class="bg-white/5 rounded-lg px-3 py-2 flex items-center justify-between">
+                    <span class="text-good">● Answered</span><span id="cntA" class="text-white font-bold">0</span>
+                  </div>
+                  <div class="bg-white/5 rounded-lg px-3 py-2 flex items-center justify-between">
+                    <span class="text-bad">● Pending</span><span id="cntP" class="text-white font-bold">0</span>
+                  </div>
+                </div>
+
+                <p class="text-[10px] font-bold tracking-widest text-white/40 uppercase mb-2">Question palette</p>
+                <div id="omrGrid" class="grid grid-cols-6 gap-1.5"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="absolute -right-5 -bottom-5 bg-white rounded-2xl shadow-xl p-3.5 flex items-center gap-2.5 border border-ink/5">
+            <div class="w-9 h-9 rounded-xl bg-good/15 flex items-center justify-center shrink-0">
+              <i data-lucide="trending-up" class="w-4.5 h-4.5 text-good"></i>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-slate2 uppercase tracking-wide">Predicted AIR</p>
+              <p class="font-mono-tab text-sm font-bold text-ink">#482 <span class="text-good text-xs">↓ 61</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRUST STRIP + STATS ============ -->
+<section class="border-y border-ink/8 bg-white py-8">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8">
+    <div class="overflow-hidden">
+      <p class="text-center text-[11px] font-bold tracking-[0.2em] text-slate2/70 uppercase mb-5">Built for every exam that runs on the clock</p>
+      <div class="flex overflow-hidden">
+        <div class="flex marquee-track shrink-0 gap-14 pr-14 items-center">
+    <!-- Existing & Added Exams -->
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">NIMCET</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">JEE MAIN</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">JEE ADVANCED</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">CUET</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">SSC CGL</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">SSC CHSL</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">SSC GD</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">SSC MTS</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">SSC JE</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">GATE</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">BITSAT</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">IBPS PO</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">IBPS CLERK</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">RRB NTPC</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">RRB GROUP D</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">RAILWAY ALP</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">UPSC</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">CAT</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">CLAT</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">UGC NET</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">CSIR NET</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">CTET</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">REET</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">CA FOUNDATION</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">CS EXECUTIVE</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">STATE PSC</span>
+    <span class="font-display font-700 text-xl text-ink/25 whitespace-nowrap">NEET</span>
+</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-14 bg-paper">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="reveal bg-white rounded-2xl border border-ink/6 p-6 text-center shadow-card">
+        <p class="font-mono-tab font-bold text-3xl sm:text-4xl text-ink num-tick" data-count="48200">0</p>
+        <p class="text-xs font-semibold text-slate2 mt-1.5">Mocks attempted</p>
+      </div>
+      <div class="reveal bg-white rounded-2xl border border-ink/6 p-6 text-center shadow-card" style="transition-delay:.06s">
+        <p class="font-mono-tab font-bold text-3xl sm:text-4xl text-ink"><span class="num-tick" data-count="92">0</span>%</p>
+        <p class="text-xs font-semibold text-slate2 mt-1.5">Say it felt like the real exam</p>
+      </div>
+      <div class="reveal bg-white rounded-2xl border border-ink/6 p-6 text-center shadow-card" style="transition-delay:.12s">
+        <p class="font-mono-tab font-bold text-3xl sm:text-4xl text-ink">+<span class="num-tick" data-count="18">0</span>%</p>
+        <p class="text-xs font-semibold text-slate2 mt-1.5">Avg accuracy gain in 4 weeks</p>
+      </div>
+      <div class="reveal bg-white rounded-2xl border border-ink/6 p-6 text-center shadow-card" style="transition-delay:.18s">
+        <p class="font-mono-tab font-bold text-3xl sm:text-4xl text-ink"><span class="num-tick" data-count="1200">0</span>+</p>
+        <p class="text-xs font-semibold text-slate2 mt-1.5">Sectional mocks in the bank</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ JOURNEY: Prepare / Attempt / Analyze ============ -->
+<section id="journey" class="py-24 sm:py-32">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8">
+
+    <div class="max-w-2xl mb-16 reveal">
+      <p class="text-xs font-bold tracking-[0.2em] text-brand uppercase mb-3">The three passes</p>
+      <h2 class="font-display font-800 text-4xl sm:text-5xl tracking-tight text-ink">One flow, from first mock to exam day.</h2>
+      <p class="mt-4 text-slate2 text-lg leading-relaxed">Every serious aspirant goes through the same three passes, over and over. We built one continuous flow around it — not three disconnected tools.</p>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+
+      <!-- Prepare -->
+      <div class="reveal group bg-white rounded-3xl border border-ink/6 p-8 shadow-card hover:shadow-cardHover transition-shadow duration-300">
+        <div class="flex items-center justify-between mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-brandSoft flex items-center justify-center">
+            <i data-lucide="layout-grid" class="w-5.5 h-5.5 text-brand"></i>
+          </div>
+          <span class="font-mono-tab text-xs font-bold text-ink/25">01 / PREPARE</span>
+        </div>
+        <h3 class="font-display font-700 text-xl mb-3">Structure it your way</h3>
+        <p class="text-slate2 text-sm leading-relaxed mb-6">Organise every series into sections, folders and files — PYQs in one place, subject-wise sheets in another. Build the shelf before you fill it.</p>
+        <ul class="space-y-2.5 text-sm">
+          <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-good mt-0.5 shrink-0"></i><span class="text-ink/80">Nested folders &amp; files, unlimited depth</span></li>
+          <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-good mt-0.5 shrink-0"></i><span class="text-ink/80">Copy any section into a new batch in one click</span></li>
+          <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-good mt-0.5 shrink-0"></i><span class="text-ink/80">Reusable question bank across every test</span></li>
+        </ul>
+      </div>
+
+      <!-- Attempt -->
+      <div class="reveal group bg-ink rounded-3xl p-8 shadow-card hover:shadow-cardHover transition-shadow duration-300" style="transition-delay:.08s">
+        <div class="flex items-center justify-between mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
+            <i data-lucide="timer" class="w-5.5 h-5.5 text-good"></i>
+          </div>
+          <span class="font-mono-tab text-xs font-bold text-white/25">02 / ATTEMPT</span>
+        </div>
+        <h3 class="font-display font-700 text-xl mb-3 text-white">Sit it exactly as it'll run</h3>
+        <p class="text-white/60 text-sm leading-relaxed mb-6">Total-time or subject-wise sectional timers, per-subject positive/negative marking, mark-for-review, auto-submit at zero — configured per test, not hardcoded.</p>
+        <ul class="space-y-2.5 text-sm">
+          <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-good mt-0.5 shrink-0"></i><span class="text-white/85">OMR-style palette: answered, pending, marked, unseen</span></li>
+          <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-good mt-0.5 shrink-0"></i><span class="text-white/85">Section locks the moment its timer runs out</span></li>
+          <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-good mt-0.5 shrink-0"></i><span class="text-white/85">Fullscreen distraction-free exam window</span></li>
+        </ul>
+      </div>
+
+      <!-- Analyze -->
+      <div class="reveal group bg-white rounded-3xl border border-ink/6 p-8 shadow-card hover:shadow-cardHover transition-shadow duration-300" style="transition-delay:.16s">
+        <div class="flex items-center justify-between mb-6">
+          <div class="w-12 h-12 rounded-2xl bg-brandSoft flex items-center justify-center">
+            <i data-lucide="target" class="w-5.5 h-5.5 text-brand"></i>
+          </div>
+          <span class="font-mono-tab text-xs font-bold text-ink/25">03 / ANALYZE</span>
+        </div>
+        <h3 class="font-display font-700 text-xl mb-3">Know exactly what to fix</h3>
+        <p class="text-slate2 text-sm leading-relaxed mb-6">Every submitted test breaks down by subject, topic and difficulty — so "practice more" becomes "redo Projectile Motion, Hard, Tuesday."</p>
+        <ul class="space-y-2.5 text-sm">
+          <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-good mt-0.5 shrink-0"></i><span class="text-ink/80">Topic-wise accuracy &amp; time-per-question</span></li>
+          <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-good mt-0.5 shrink-0"></i><span class="text-ink/80">Rank prediction from your last 5 mocks</span></li>
+          <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-good mt-0.5 shrink-0"></i><span class="text-ink/80">Auto-built mistake notebook for revision</span></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURE GRID ============ -->
+<section id="features" class="py-24 sm:py-32 bg-white border-y border-ink/8">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8">
+
+    <div class="max-w-2xl mb-16 reveal">
+      <p class="text-xs font-bold tracking-[0.2em] text-brand uppercase mb-3">Under the hood</p>
+      <h2 class="font-display font-800 text-4xl sm:text-5xl tracking-tight text-ink">Everything a real test series needs.</h2>
+    </div>
+
+    <div class="grid md:grid-cols-6 gap-5">
+
+      <div class="reveal md:col-span-4 bg-paper rounded-3xl p-8 sm:p-10 border border-ink/6 relative overflow-hidden">
+        <i data-lucide="sliders-horizontal" class="w-9 h-9 text-brand mb-6"></i>
+        <h3 class="font-display font-700 text-2xl mb-2.5">Dynamic test builder</h3>
+        <p class="text-slate2 max-w-md leading-relaxed">Build manually question-by-question, or paste a JSON payload for bulk import. Set subject, topic, difficulty and marking per question — marks recalculate live as you type.</p>
+      </div>
+
+      <div class="reveal md:col-span-2 bg-brand rounded-3xl p-8 sm:p-10 text-white flex flex-col justify-between" style="transition-delay:.06s">
+        <i data-lucide="scale" class="w-9 h-9 mb-6 text-white"></i>
+        <div>
+          <h3 class="font-display font-700 text-xl mb-2">True negative marking</h3>
+          <p class="text-white/75 text-sm leading-relaxed">Per-subject +/− marks configured once at series level, applied everywhere automatically.</p>
+        </div>
+      </div>
+
+      <div class="reveal md:col-span-2 bg-paper rounded-3xl p-8 border border-ink/6" style="transition-delay:.12s">
+        <i data-lucide="clock-4" class="w-9 h-9 text-brand mb-6"></i>
+        <h3 class="font-display font-700 text-lg mb-2">Subject-wise timers</h3>
+        <p class="text-slate2 text-sm leading-relaxed">Combine subjects into one shared clock, or isolate each — your call, per test.</p>
+      </div>
+
+      <div class="reveal md:col-span-2 bg-paper rounded-3xl p-8 border border-ink/6" style="transition-delay:.18s">
+        <i data-lucide="search" class="w-9 h-9 text-brand mb-6"></i>
+        <h3 class="font-display font-700 text-lg mb-2">Weak-area finder</h3>
+        <p class="text-slate2 text-sm leading-relaxed">Every wrong answer is tagged by topic and sub-topic, so patterns surface fast.</p>
+      </div>
+
+      <div class="reveal md:col-span-2 bg-paper rounded-3xl p-8 border border-ink/6" style="transition-delay:.24s">
+        <i data-lucide="calendar-clock" class="w-9 h-9 text-brand mb-6"></i>
+        <h3 class="font-display font-700 text-lg mb-2">Scheduled releases</h3>
+        <p class="text-slate2 text-sm leading-relaxed">Publish a mock instantly, keep it private, or schedule it to unlock at a set time.</p>
+      </div>
+
+      <div class="reveal md:col-span-3 bg-paper rounded-3xl p-8 sm:p-10 border border-ink/6" style="transition-delay:.3s">
+        <i data-lucide="copy" class="w-9 h-9 text-brand mb-6"></i>
+        <h3 class="font-display font-700 text-xl mb-2.5">Copy across batches</h3>
+        <p class="text-slate2 leading-relaxed">Reuse a whole section, folder or single test in a different series without rebuilding it — questions stay linked to one source of truth.</p>
+      </div>
+
+      <div class="reveal md:col-span-3 bg-ink rounded-3xl p-8 sm:p-10 text-white" style="transition-delay:.36s">
+        <i data-lucide="book-open" class="w-9 h-9 mb-6 text-good"></i>
+        <h3 class="font-display font-700 text-xl mb-2.5">Auto mistake notebook</h3>
+        <p class="text-white/70 leading-relaxed">Every incorrect and skipped question is collected automatically into a single revision list — no manual copy-paste.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHY US COMPARISON ============ -->
+<section class="py-24 sm:py-32">
+  <div class="max-w-5xl mx-auto px-5 sm:px-8">
+    <div class="text-center max-w-xl mx-auto mb-14 reveal">
+      <p class="text-xs font-bold tracking-[0.2em] text-brand uppercase mb-3">Before you decide</p>
+      <h2 class="font-display font-800 text-4xl sm:text-5xl tracking-tight text-ink">A PDF test series can't do this.</h2>
+    </div>
+
+    <div class="reveal bg-white rounded-3xl border border-ink/6 shadow-card overflow-hidden">
+      <div class="grid grid-cols-3 text-sm">
+        <div class="p-5 sm:p-6 font-display font-700 text-ink/40">&nbsp;</div>
+        <div class="p-5 sm:p-6 text-center font-display font-700 text-slate2 border-l border-ink/6">PDF / paper series</div>
+        <div class="p-5 sm:p-6 text-center font-display font-700 text-brand bg-brandSoft border-l border-ink/6">WarmupExam</div>
+
+        <!-- rows -->
+        <div class="p-5 sm:p-6 font-semibold text-ink border-t border-ink/6">Real exam timer &amp; palette</div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6"><i data-lucide="x" class="w-4 h-4 text-bad/60 inline-block"></i></div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6 bg-brandSoft/60"><i data-lucide="check" class="w-4 h-4 text-good inline-block"></i></div>
+
+        <div class="p-5 sm:p-6 font-semibold text-ink border-t border-ink/6">Auto negative marking</div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6"><i data-lucide="x" class="w-4 h-4 text-bad/60 inline-block"></i></div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6 bg-brandSoft/60"><i data-lucide="check" class="w-4 h-4 text-good inline-block"></i></div>
+
+        <div class="p-5 sm:p-6 font-semibold text-ink border-t border-ink/6">Topic-wise weak area report</div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6"><i data-lucide="x" class="w-4 h-4 text-bad/60 inline-block"></i></div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6 bg-brandSoft/60"><i data-lucide="check" class="w-4 h-4 text-good inline-block"></i></div>
+
+        <div class="p-5 sm:p-6 font-semibold text-ink border-t border-ink/6">AIR rank prediction</div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6"><i data-lucide="x" class="w-4 h-4 text-bad/60 inline-block"></i></div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6 bg-brandSoft/60"><i data-lucide="check" class="w-4 h-4 text-good inline-block"></i></div>
+
+        <div class="p-5 sm:p-6 font-semibold text-ink border-t border-ink/6">AI Analysis</div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6"><i data-lucide="x" class="w-4 h-4 text-bad/60 inline-block"></i></div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6 bg-brandSoft/60"><i data-lucide="check" class="w-4 h-4 text-good inline-block"></i></div>
+
+        <div class="p-5 sm:p-6 font-semibold text-ink border-t border-ink/6">Attempt on phone, tablet or laptop</div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6"><i data-lucide="minus" class="w-4 h-4 text-slate2/50 inline-block"></i></div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6 bg-brandSoft/60"><i data-lucide="check" class="w-4 h-4 text-good inline-block"></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq" class="py-24 sm:py-32">
+  <div class="max-w-3xl mx-auto px-5 sm:px-8">
+    <div class="text-center mb-14 reveal">
+      <p class="text-xs font-bold tracking-[0.2em] text-brand uppercase mb-3">Before you ask</p>
+      <h2 class="font-display font-800 text-4xl sm:text-5xl tracking-tight text-ink">Questions aspirants actually send us.</h2>
+    </div>
+
+    <div class="space-y-3" id="faqList">
+      <!-- items injected structurally, one accordion pattern -->
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="pb-24 sm:pb-32">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8">
+    <div class="reveal relative bg-ink rounded-[2.5rem] px-8 py-16 sm:px-16 sm:py-20 text-center overflow-hidden">
+      <div class="absolute -top-24 -left-24 w-72 h-72 bg-brand/25 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-good/15 rounded-full blur-3xl"></div>
+
+      <div class="relative">
+        <p class="font-mono-tab text-good text-xs font-bold tracking-widest mb-5 flex items-center justify-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-good ticker-blink"></span> ENROLLMENT OPEN FOR THIS BATCH
+        </p>
+        <h2 class="font-display font-800 text-4xl sm:text-6xl text-white tracking-tight leading-tight max-w-2xl mx-auto">
+          Your next mock could be the one that changes your rank.
+        </h2>
+        <p class="mt-5 text-white/60 max-w-lg mx-auto">Start with a free mock — no card, no commitment. See the interface, then decide.</p>
+        <div class="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
+          <a href="/alltests" class="inline-flex items-center justify-center gap-2 bg-white text-ink font-bold px-8 py-4 rounded-2xl transition-all active:scale-95 hover:shadow-2xl focus-ring">
+            Start free mock now
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Sticky mobile CTA bar -->
+<div id="stickyCta" class="fixed bottom-0 inset-x-0 z-50 md:hidden translate-y-full transition-transform duration-300 bg-white border-t border-ink/10 px-4 py-3 shadow-2xl">
+  <a href="/alltests" class="flex items-center justify-center gap-2 bg-brand text-white font-bold py-3.5 rounded-xl active:scale-95 transition focus-ring">
+    Start free mock <i data-lucide="arrow-right" class="w-4 h-4"></i>
+  </a>
+</div>
+
+
+
+ 

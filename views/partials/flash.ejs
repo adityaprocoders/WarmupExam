@@ -1,0 +1,74 @@
+<div id="flashContainer" class="fixed top-5 right-5 z-[99999] flex flex-col gap-3 pointer-events-none">
+
+  <% if (typeof success !== 'undefined' && success && success.length > 0) { %>
+    <div class="flash-toast pointer-events-auto flex items-start gap-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden translate-x-[120%] opacity-0 transition-all duration-500 ease-out">
+      <div class="flex items-start gap-3 p-4 w-full relative">
+        <div class="shrink-0 w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center">
+          <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500"></i>
+        </div>
+        <div class="flex-1 pt-0.5">
+          <p class="text-sm font-semibold text-slate-800">Success</p>
+          <p class="text-sm text-slate-500 mt-0.5"><%= success %></p>
+        </div>
+        <button onclick="dismissToast(this)" class="shrink-0 text-slate-300 hover:text-slate-500 transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="h-1 bg-emerald-400 toast-progress"></div>
+    </div>
+  <% } %>
+
+  <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+    <div class="flash-toast pointer-events-auto flex items-start gap-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden translate-x-[120%] opacity-0 transition-all duration-500 ease-out">
+      <div class="flex items-start gap-3 p-4 w-full relative">
+        <div class="shrink-0 w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+          <i data-lucide="alert-circle" class="w-5 h-5 text-red-500"></i>
+        </div>
+        <div class="flex-1 pt-0.5">
+          <p class="text-sm font-semibold text-slate-800">Error</p>
+          <p class="text-sm text-slate-500 mt-0.5"><%= error %></p>
+        </div>
+        <button onclick="dismissToast(this)" class="shrink-0 text-slate-300 hover:text-slate-500 transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="h-1 bg-red-400 toast-progress"></div>
+    </div>
+  <% } %>
+
+</div>
+
+<style>
+  .toast-progress {
+    animation: toastShrink 3.5s linear forwards;
+    transform-origin: left;
+  }
+  @keyframes toastShrink {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.flash-toast').forEach((el, i) => {
+    setTimeout(() => {
+      el.classList.remove('translate-x-[120%]', 'opacity-0');
+    }, 80 + i * 120);
+  });
+
+  function removeToast(el) {
+    if (!el) return;
+    el.classList.add('translate-x-[120%]', 'opacity-0');
+    setTimeout(() => el.remove(), 500);
+  }
+
+  function dismissToast(btn) {
+    removeToast(btn.closest('.flash-toast'));
+  }
+
+  document.querySelectorAll('.flash-toast').forEach(el => {
+    setTimeout(() => removeToast(el), 3500);
+  });
+
+  if (window.lucide) lucide.createIcons();
+</script>

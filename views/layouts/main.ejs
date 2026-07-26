@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.2.0/css/all.min.css">
+    <link rel="icon" href="/images/logo.png" type="image/WarmUpExam">
+
+    <!-- layout ke <head> mein -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/output.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+
+
+    <!-- CSS -->
+     <link rel="stylesheet" href="/css/hero.css">
+     <link rel="stylesheet" href="/css/whyChoose.css">
+     <link rel="stylesheet" href="/css/studentJourney.css">
+     <link rel="stylesheet" href="/css/features.css">
+     <link rel="stylesheet" href="/css/aboutUs.css">
+ 
+     
+    <title>WarmUpExam</title>
+</head>
+<body> 
+   <!-- Global Loading Overlay -->
+<!-- Global Loading Overlay -->
+<div id="global-loader" class="global-loader fixed inset-0 z-[99999] hidden items-center justify-center bg-white/30 backdrop-blur-lg">
+    <div class="flex flex-row gap-2">
+        <div class="w-4 h-4 rounded-full bg-indigo-600 animate-bounce [animation-delay:.1s]"></div>
+        <div class="w-4 h-4 rounded-full bg-indigo-600 animate-bounce [animation-delay:.3s]"></div>
+        <div class="w-4 h-4 rounded-full bg-indigo-600 animate-bounce [animation-delay:.5s]"></div>
+    </div>
+</div>
+
+
+
+    <%- include("../includes/navbar") %>
+     
+    <%- include("../partials/flash") %>
+     <main>
+        <%- body %>
+    </main>
+ 
+    <%- include('../includes/footer') %>
+
+    
+     
+    <%- include('../partials/authModal') %>
+ 
+
+ 
+    <!-- js -->
+
+ <script src="/js/loader.js"></script>
+ <script src="/js/common.js"></script>
+<script src="/js/nav.js"></script>
+<script src="/js/hero.js"></script>
+<script src="/js/whyChoose.js"></script>
+<script src="/js/studentJourney.js"></script>
+<script src="/js/aboutUs.js"></script>   
+
+    <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('showLogin') === 'true') {
+        openAuthModal('login');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+</script>
+ <script>
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+    </script>
+
+
+
+
+</body>
+</html>

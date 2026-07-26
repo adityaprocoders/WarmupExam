@@ -1,0 +1,981 @@
+ 
+<form id="testBuilderForm">
+<div class="max-w-4xl mx-auto p-6 bg-white border border-gray-100 rounded-2xl shadow-sm font-sans">
+  <h2 class="text-xl font-bold mb-6">Manage Dynamic Test Paper</h2>
+
+  <!-- TABS -->
+  <div class="flex gap-8 border-b border-gray-200 mb-6">
+    <button type="button" onclick="renderView('manual')" id="manualTab" class="pb-2 font-bold text-indigo-600 border-b-2 border-indigo-600">Manual Builder</button>
+<button type="button" onclick="renderView('json')" id="jsonTab" class="pb-2 font-bold text-gray-400">JSON Editor</button>
+  </div>
+
+  <!-- COMMON HEADER FIELDS -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Test Title</label>
+      <input type="text"  id="testTitleInput" placeholder="e.g. Mock Test #1" class="w-full p-3 border rounded-xl">
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Full Marks</label>
+      <input type="number" id="testFullMarksInput" readonly class="w-full p-3 border rounded-xl bg-gray-100 font-bold text-indigo-600">
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Time Strategy</label>
+      <select id="timeStrategy" onchange="handleTimeUI()" class="w-full p-3 border rounded-xl bg-gray-50 font-bold">
+        <option value="total">Total Time</option>
+        <option value="subject">Subject Wise</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- DYNAMIC CONTAINER -->
+  <div id="mainContainer"></div>
+   <div class="mt-6 flex flex-wrap justify-between items-center gap-4">
+    <div class="flex items-center gap-3">
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Visibility</label>
+        <select id="visibilitySelect" onchange="handleVisibilityUI()" class="p-3 border rounded-xl bg-gray-50 font-bold">
+          <option value="private" selected>Private</option>
+          <option value="public">Public</option>
+          <option value="scheduled">Schedule</option>
+        </select>
+      </div>
+      <div id="scheduleFieldContainer"></div>
+    </div>
+
+    <button
+        type="submit"
+        class="bg-indigo-600 text-white px-8 py-3 rounded-xl">
+        Save Test
+    </button>
+  </div>
+</div>
+ 
+</form>
+ 
+<!-- Scroll to Top/Bottom Button -->
+<button
+    id="scrollTopBtn"
+    onclick="handleScrollBtnClick()"
+    class="hidden fixed bottom-8 right-8 z-[999] w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl hover:shadow-2xl flex items-center justify-center transition-all pointer-events-auto">
+    <i id="scrollBtnIcon" data-lucide="arrow-up" class="w-6 h-6 pointer-events-none"></i>
+</button>
+ 
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+const contextData = {
+    listingId: urlParams.get('listingId') || '',
+    sectionId: urlParams.get('sectionId') || '',
+    parentType: urlParams.get('parentType') || 'section',
+    parentId: urlParams.get('parentId') || '',
+    returnUrl: urlParams.get('returnUrl') || '/',
+    editId: urlParams.get('editId') || '' 
+};
+
+let selectedSubjects = new Set();
+let subjectTimeList = []; 
+let editingSubjectTimeIndex = null;
+let questionCount = 0;
+let isEditMode = !!contextData.editId;
+let currentViewMode = 'manual';   
+let testQuestionsState = [];      
+let subjectsList = [];
+let testDurationState = 0; 
+
+ 
+const imageDataStore = {};  
+
+function ensureImageStore(qId) {
+  if (!imageDataStore[qId]) {
+    imageDataStore[qId] = { question: null, options: [null, null, null, null], solution: null };
+  }
+  return imageDataStore[qId];
+}
+
+async function uploadAndStore(inputEl, kind, qId, optionIdx) {
+  const file = inputEl.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const store = ensureImageStore(qId);
+
+  try {
+    const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+    const result = await res.json();
+
+    if (!result.success) {
+      alert("Image upload fail: " + (result.message || "Unknown error"));
+      return;
+    }
+
+    if (kind === 'question') {
+      store.question = result.url;
+      showPreview(`qImagePreview_${qId}`, result.url);
+    } else if (kind === 'option') {
+      store.options[optionIdx] = result.url;
+      showPreview(`qOptImagePreview_${qId}_${optionIdx}`, result.url);
+    } else if (kind === 'solution') {
+      store.solution = result.url;
+      showPreview(`qSolImagePreview_${qId}`, result.url);
+    }
+  } catch (err) {
+    console.error("Image upload error:", err);
+    alert("Image upload me error aaya");
+  }
+}
+
+ let previewLoadQueue = [];
+let previewLoadTimer = null;
+
+function showPreview(imgId, url) {
+  previewLoadQueue.push({ imgId, url });
+  scheduleNextPreviewLoad();
+}
+
+function scheduleNextPreviewLoad() {
+  if (previewLoadTimer) return;
+
+  previewLoadTimer = setInterval(() => {
+    const next = previewLoadQueue.shift();
+    if (!next) {
+      clearInterval(previewLoadTimer);
+      previewLoadTimer = null;
+      return;
+    }
+    const img = document.getElementById(next.imgId);
+    if (img) {
+      img.src = next.url;
+      img.classList.remove('hidden');
+    }
+  }, 150);
+}
+
+/* ---------------------------------------------------------
+   LOAD SUBJECTS FROM LISTING (marks config)
+--------------------------------------------------------- */
+async function loadSubjects() {
+    try {
+        const res = await fetch(`/api/listing/${contextData.listingId}/subjects`);
+        const result = await res.json();
+
+        if (result.success) {
+            subjectsList = result.data;
+            console.log("Subjects loaded from Listing:", subjectsList);
+        } else {
+            console.error("Subjects load failed:", result.message);
+            subjectsList = [];
+        }
+    } catch (err) {
+        console.error("Subjects fetch error:", err);
+        subjectsList = [];
+    }
+}
+function getSubjectOptionsHtml(selectedValue) {
+    if (subjectsList.length === 0) {
+        return `<option value="">No subjects found</option>`;
+    }
+    return subjectsList.map(s => {
+        const isSelected = (s.subject === selectedValue) ? "selected" : "";
+        return `<option value="${s.subject}" ${isSelected}>${s.subject} (+${s.positiveMarks} / ${s.negativeMarks})</option>`;
+    }).join('');
+}
+
+function getMarksForSubject(subjectName) {
+    let found = subjectsList.find(s => s.subject === subjectName);
+
+    if (!found && subjectsList.length > 0) {
+        found = subjectsList[0];
+    }
+
+    return found
+        ? { positiveMarks: found.positiveMarks, negativeMarks: found.negativeMarks }
+        : { positiveMarks: 0, negativeMarks: 0 };
+}
+
+ 
+/* ---------------------------------------------------------
+   TAB SWITCH
+--------------------------------------------------------- */
+
+function renderView(mode) {
+     // Tab switch se pehle current Total Time value state me save karo
+    const totalInputBeforeSwitch = document.getElementById('totalTimeInput');
+    if (totalInputBeforeSwitch) {
+        testDurationState = Number(totalInputBeforeSwitch.value) || 0;
+    }
+
+    // Tab switch se pehle current view ka data state me save karo
+    if (currentViewMode === 'manual' && document.getElementById('questionsListContainer')) {
+        testQuestionsState = collectManualQuestions();
+    } else if (currentViewMode === 'json') {
+        const jsonEditor = document.getElementById('jsonEditor');
+        if (jsonEditor && jsonEditor.value.trim()) {
+            try {
+                const parsed = JSON.parse(jsonEditor.value);
+                testQuestionsState = Array.isArray(parsed) ? parsed : (parsed.questions || testQuestionsState);
+            } catch (err) {
+                // invalid JSON hai to purana state hi rakho, silently ignore
+            }
+        }
+    }
+
+    currentViewMode = mode;
+    const container = document.getElementById("mainContainer");
+    const manualTab = document.getElementById("manualTab");
+    const jsonTab = document.getElementById("jsonTab");
+
+    manualTab.className =
+        mode === "manual"
+            ? "pb-2 font-bold text-indigo-600 border-b-2 border-indigo-600"
+            : "pb-2 font-bold text-gray-400";
+
+    jsonTab.className =
+        mode === "json"
+            ? "pb-2 font-bold text-indigo-600 border-b-2 border-indigo-600"
+            : "pb-2 font-bold text-gray-400";
+
+    if (mode === "manual") {
+        container.innerHTML = `
+            <div id="timeDynamicContainer" class="p-6 border rounded-xl bg-gray-50 mb-6"></div>
+            <div id="questionsListContainer" class="space-y-6"></div>
+            <button type="button" onclick="addQuestion()" class="w-full mt-6 py-4 border-2 border-dashed border-indigo-200 text-indigo-600 font-bold rounded-xl hover:bg-indigo-50">
+                + Add New Question
+            </button>
+        `;
+        handleTimeUI();
+        renderManualQuestions(testQuestionsState);   // 🔧 blank addQuestion() ki jagah stored data render
+    } else {
+        container.innerHTML = `
+            <div id="timeDynamicContainer" class="p-6 border rounded-xl bg-gray-50 mb-6"></div>
+            <div>
+                <label class="block text-sm font-bold mb-2">JSON Configuration</label>
+                <textarea id="jsonEditor" oninput="calculateTotalMarksFromJson()" class="w-full h-72 p-4 border rounded-xl font-mono text-sm" placeholder='Paste JSON configuration here...'></textarea>
+            </div>
+        `;
+        handleTimeUI();
+
+        const jsonEditor = document.getElementById('jsonEditor');
+        if (jsonEditor) {
+            jsonEditor.value = JSON.stringify(testQuestionsState, null, 2);   // 🔧 stored data JSON me dikhao
+        }
+        calculateTotalMarksFromJson();
+    }
+}
+
+
+/* ---------------------------------------------------------
+   TIME STRATEGY UI
+--------------------------------------------------------- */
+
+function handleTimeUI() {
+  const container = document.getElementById('timeDynamicContainer');
+  if (!container) return;
+
+  const strategy = document.getElementById('timeStrategy').value;
+
+  if (strategy === 'total') {
+    container.innerHTML = `<div id="totalTimeField"><label class="block text-sm font-bold mb-2">Total Time (in minutes)</label><input type="number" id="totalTimeInput" placeholder="e.g. 120" class="w-full p-3 border rounded-lg" value="${testDurationState || ''}"></div>`;
+    selectedSubjects.clear();
+  } else {
+    editingSubjectTimeIndex = null; 
+    container.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-bold mb-2">Section</label>
+          <div id="tagContainer" class="min-h-[50px] p-2 border bg-white rounded-xl flex flex-wrap gap-2 mb-2"></div>
+          <select id="subjectDropdown" onchange="addTag()" class="w-full p-3 border rounded-xl">
+            <option value="" disabled selected>Choose a subject</option>
+            ${getSubjectOptionsHtml(null)}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-2">Time (in minutes)</label>
+          <input type="number" id="subTime" class="w-full p-3 border rounded-lg" placeholder="Enter minutes">
+          <button type="button" onclick="addSubjectTime()" class="mt-4 w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700">Add Subject Time</button>
+        </div>
+      </div>
+      <div id="addedList" class="mt-6 pt-4 border-t border-gray-200"><h3 class="text-sm font-bold mb-2">Allocated Times:</h3></div>`;
+
+    renderSubjectTimeList();   
+  }
+}
+
+function renderSubjectTimeList() {
+  const addedList = document.getElementById('addedList');
+  if (!addedList) return;
+
+  addedList.innerHTML = '<h3 class="text-sm font-bold mb-2">Allocated Times:</h3>';
+
+  subjectTimeList.forEach((st, index) => {
+    addedList.innerHTML += `
+      <div class="flex justify-between items-center p-3 mb-2 bg-white border border-indigo-100 rounded-lg">
+        <span class="text-sm font-medium">${st.subject}</span>
+        <div class="flex items-center gap-3">
+          <span class="font-bold text-indigo-600">${st.duration} mins</span>
+          <button type="button" onclick="editSubjectTime(${index})" class="text-gray-400 hover:text-indigo-600">
+            <i data-lucide="pencil" class="w-4 h-4 pointer-events-none"></i>
+          </button>
+          <button type="button" onclick="removeSubjectTime(${index})" class="text-gray-400 hover:text-red-500">
+            <i data-lucide="trash-2" class="w-4 h-4 pointer-events-none"></i>
+          </button>
+        </div>
+      </div>`;
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function removeSubjectTime(index) {
+  subjectTimeList.splice(index, 1);
+
+  // 🔧 agar wahi entry edit ho rahi thi jo delete hui, edit mode cancel karo
+  if (editingSubjectTimeIndex === index) {
+    editingSubjectTimeIndex = null;
+    resetAddSubjectTimeButton();
+    selectedSubjects.clear();
+    renderTags();
+    document.getElementById('subTime').value = "";
+  } else if (editingSubjectTimeIndex !== null && index < editingSubjectTimeIndex) {
+    // upar wali entry delete hui to index shift ho gaya, adjust karo
+    editingSubjectTimeIndex--;
+  }
+
+  renderSubjectTimeList();
+}
+
+ 
+function editSubjectTime(index) {
+  const entry = subjectTimeList[index];
+  if (!entry) return;
+
+  // 🔧 Entry ko list se hatate nahi — sirf edit mode me rakhte hain
+  editingSubjectTimeIndex = index;
+
+  // Subject(s) ko tags me wapas bhar do (agar "A + B" tha to dono tags bane)
+  selectedSubjects.clear();
+  entry.subject.split(' + ').forEach(s => selectedSubjects.add(s.trim()));
+  renderTags();
+
+  // Duration input me purani value daal do
+  document.getElementById('subTime').value = entry.duration;
+
+  // Button ka text "Update" kar do taaki user ko pata chale edit mode chal raha hai
+  const btn = document.querySelector('#addedList')?.previousElementSibling?.querySelector('button[onclick="addSubjectTime()"]')
+      || document.querySelector('button[onclick="addSubjectTime()"]');
+  if (btn) btn.innerText = "Update Subject Time";
+}
+
+function resetAddSubjectTimeButton() {
+  const btn = document.querySelector('button[onclick="addSubjectTime()"]');
+  if (btn) btn.innerText = "Add Subject Time";
+}
+
+function addTag() { const d = document.getElementById('subjectDropdown'); if (d.value && !selectedSubjects.has(d.value)) { selectedSubjects.add(d.value); renderTags(); } d.value = ""; }
+function renderTags() { const c = document.getElementById('tagContainer'); c.innerHTML = ''; selectedSubjects.forEach(s => { c.innerHTML += `<span class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2">${s} <button type="button" onclick="removeTag('${s}')" class="hover:text-red-200 font-bold">✕</button></span>`; }); }
+function removeTag(s) { selectedSubjects.delete(s); renderTags(); }
+
+function addSubjectTime() {
+  const t = document.getElementById('subTime').value;
+  if (selectedSubjects.size > 0 && t) {
+    const subjectLabel = Array.from(selectedSubjects).join(' + ');
+    const newEntry = { subject: subjectLabel, duration: Number(t) };
+
+    if (editingSubjectTimeIndex !== null) {
+      // 🔧 Edit mode: usi position pe update karo, end me push mat karo
+      subjectTimeList[editingSubjectTimeIndex] = newEntry;
+      editingSubjectTimeIndex = null;
+      resetAddSubjectTimeButton();
+    } else {
+      // Naya entry: end me add karo
+      subjectTimeList.push(newEntry);
+    }
+
+    renderSubjectTimeList();
+    selectedSubjects.clear();
+    renderTags();
+    document.getElementById('subTime').value = "";
+  }
+} 
+
+/* ---------------------------------------------------------
+   QUESTION BUILDER
+--------------------------------------------------------- */
+function addQuestion() {
+  questionCount++;
+  const qId = questionCount;
+  const list = document.getElementById('questionsListContainer');
+
+  const block = document.createElement('div');
+  block.id = `question_${qId}`;
+  block.className = "border border-gray-100 rounded-2xl p-4 bg-white";
+  block.innerHTML = `
+    <div class="flex flex-wrap items-center gap-3 mb-6 bg-gray-50 p-3 rounded-xl">
+      <div class="bg-indigo-600 text-white px-3 py-1 rounded-lg font-bold qBadge">Q${qId}</div>
+
+      <select id="qSubject_${qId}" onchange="calculateTotalMarks()" class="bg-white border rounded-lg px-3 py-1 outline-none text-sm font-medium">
+        ${getSubjectOptionsHtml(null)}
+      </select>
+
+      <select id="qType_${qId}" onchange="updateUI(${qId})" class="bg-white border rounded-lg px-3 py-1 outline-none text-sm font-medium">
+        <option value="mcq">MCQ</option>
+        <option value="multiple">Multiple MCQ</option>
+        <option value="integer">Integer/Numeric</option>
+      </select>
+
+      <input type="text" id="qTopic_${qId}" placeholder="Topic" class="bg-white border rounded-lg px-3 py-1 text-sm flex-1">
+      <input type="text" id="qSubTopic_${qId}" placeholder="Sub Topic" class="bg-white border rounded-lg px-3 py-1 text-sm flex-1">
+
+      <select id="qDifficulty_${qId}" class="bg-white border rounded-lg px-3 py-1 outline-none text-sm font-medium">
+        <option>Easy</option>
+        <option selected>Medium</option>
+        <option>Hard</option>
+      </select>
+      <button type="button" onclick="removeQuestion(${qId})" class="text-red-400 hover:text-red-600">🗑️</button>
+    </div>
+
+    <textarea id="qText_${qId}" placeholder="Enter Question..." class="w-full p-4 border rounded-xl mb-4 h-32 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+
+    <div class="border-2 border-dashed rounded-xl p-4 text-center mb-6 text-gray-400 text-sm">
+      <p class="mb-1">QUESTION PHOTO (OPTIONAL)</p>
+      <input type="file" id="qImageFile_${qId}" accept="image/*" onchange="uploadAndStore(this, 'question', ${qId})" class="text-sm">
+      <img id="qImagePreview_${qId}" class="hidden mt-2 h-20 mx-auto rounded" />
+    </div>
+
+    <div id="dynamicFields_${qId}" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
+
+     <div class="mb-2">
+      <p class="text-xs font-bold text-indigo-700 mb-2">QUESTION SOLUTION</p>
+      <textarea id="qSolution_${qId}" class="w-full p-4 border rounded-xl h-24 mb-2 outline-none" placeholder="Enter solution details..."></textarea>
+      <div class="border-2 border-dashed rounded-xl p-3 text-center bg-gray-50">
+        <label class="text-xs text-gray-500 block mb-1">UPLOAD SOLUTION PHOTO</label>
+        <input type="file" id="qSolImageFile_${qId}" accept="image/*" onchange="uploadAndStore(this, 'solution', ${qId})" class="text-sm">
+        <img id="qSolImagePreview_${qId}" class="hidden mt-2 h-20 mx-auto rounded" />
+      </div>
+    </div>
+  `;
+
+  list.appendChild(block);
+  updateUI(qId);
+  renumberQuestions();
+  calculateTotalMarks();
+}
+
+function removeQuestion(qId) {
+  const block = document.getElementById(`question_${qId}`);
+  if (block) block.remove();
+  renumberQuestions();
+  calculateTotalMarks();
+}
+
+function renumberQuestions() {
+  const badges = document.querySelectorAll('#questionsListContainer .qBadge');
+  badges.forEach((badge, index) => { badge.textContent = `Q${index + 1}`; });
+}
+
+function updateUI(qId) {
+  const type = document.getElementById(`qType_${qId}`).value;
+  const container = document.getElementById(`dynamicFields_${qId}`);
+
+  if (type === 'integer') {
+    container.innerHTML = `
+      <div class="p-6 border rounded-xl bg-gray-50 col-span-2">
+        <label class="block text-sm font-bold mb-2">Enter Numeric Answer:</label>
+        <input type="number" step="any" id="qNumeric_${qId}" class="w-full p-3 border rounded-lg" placeholder="Enter integer or decimal value">
+      </div>`;
+  } else {
+    const inputType = (type === 'multiple') ? 'checkbox' : 'radio';
+    let options = ['A', 'B', 'C', 'D'];
+    let html = '';
+
+    options.forEach((opt, idx) => {
+      html += `
+        <div class="p-4 border rounded-xl bg-gray-50">
+          <div class="flex items-center gap-2 mb-2">
+            <input type="${inputType}" name="qOption_${qId}" value="${idx}" class="qCorrect_${qId} w-4 h-4">
+            <label class="text-xs font-bold uppercase">Option ${opt}</label>
+          </div>
+          <input type="text" id="qOptText_${qId}_${idx}" class="w-full p-2 border rounded" placeholder="Text...">
+          <input type="file" id="qOptImageFile_${qId}_${idx}" accept="image/*" onchange="uploadAndStore(this, 'option', ${qId}, ${idx})" class="mt-2 text-xs">
+          <img id="qOptImagePreview_${qId}_${idx}" class="hidden mt-2 h-16 rounded" />
+        </div>`;
+    });
+    
+    container.innerHTML = html;
+  }
+  calculateTotalMarks();
+}
+
+/* ---------------------------------------------------------
+   LIVE TOTAL MARKS CALCULATION (subject ke +marks se)
+--------------------------------------------------------- */
+function calculateTotalMarks() {
+  const questionBlocks = document.querySelectorAll('[id^="question_"]');
+  let total = 0;
+  const breakdown = [];
+
+  questionBlocks.forEach((block, index) => {
+    const qId = block.id.split('_')[1];
+    const subjectSelect = document.getElementById(`qSubject_${qId}`);
+    if (!subjectSelect) return;
+
+    const subjectName = subjectSelect.value;
+    const marks = getMarksForSubject(subjectName);
+
+    total += marks.positiveMarks;
+
+    breakdown.push({
+      question: `Q${index + 1}`,
+      subject: subjectName,
+      positiveMarks: marks.positiveMarks,
+      negativeMarks: marks.negativeMarks
+    });
+  });
+
+  const fullMarksInput = document.getElementById('testFullMarksInput');
+  if (fullMarksInput) {
+    fullMarksInput.value = total;
+  }
+
+  console.log("---- Total Marks Calculation ----");
+  console.table(breakdown);
+  console.log("Total Marks:", total);
+
+  return total;
+}
+
+/* ---------------------------------------------------------
+   PAYLOAD BUILDER (Schema ke jaisa shape)
+--------------------------------------------------------- */
+
+function buildPayload() {
+  const timeStrategy = document.getElementById('timeStrategy').value;
+  const visibility = document.getElementById('visibilitySelect').value;
+
+  const payload = {
+    title: document.getElementById('testTitleInput').value,
+    totalMarks: calculateTotalMarks(),
+    timeStrategy: timeStrategy
+  };
+
+  if (timeStrategy === 'total') {
+    const totalInput = document.getElementById('totalTimeInput');
+    payload.duration = totalInput ? Number(totalInput.value) || 0 : 0;
+    payload.subjectTime = [];
+  } else {
+    // Subject-wise time hone par saare subject ki durations ka total duration calculate karo
+    payload.duration = subjectTimeList.reduce((sum, st) => sum + Number(st.duration || 0), 0);
+    payload.subjectTime = subjectTimeList;
+  }
+
+  const questions = collectManualQuestions();
+
+  payload.totalQuestions = questions.length;
+  payload.questions = questions;
+  payload.listingId = contextData.listingId;
+  payload.sectionId = contextData.sectionId;
+  payload.parentType = contextData.parentType;
+  payload.parentId = contextData.parentId;
+  payload.visibility = visibility;
+  payload.publishAt = visibility === 'scheduled'
+      ? document.getElementById('publishAtInput')?.value || null
+      : null;
+
+  return payload;
+}
+
+function normalizeImportedQuestion(q, idx) {
+  return {
+    order: q.order || q.id || (idx + 1),
+    subject: q.subject || q.sub || '',
+    type: q.type || 'mcq',
+    topic: q.topic || '',
+    subTopic: q.subTopic || '',
+    difficulty: q.difficulty || 'Medium',
+    question: q.question || q.text || '',
+    questionImage: q.questionImage || q.qImg || null,
+    options: (q.options || []).map((opt, i) => {
+      if (typeof opt === 'string') {
+        return { text: opt, image: (q.optImgs && q.optImgs[i]) || null };
+      }
+      return {
+        text: opt.text || '',
+        image: opt.image || (q.optImgs && q.optImgs[i]) || null
+      };
+    }),
+    correctAnswers: Array.isArray(q.correctAnswers)
+      ? q.correctAnswers
+      : (typeof q.correct === 'number' ? [q.correct] : []),
+    numericAnswer: q.numericAnswer ?? null,
+    solution: q.solution || { text: q.sol || '', image: q.solImg || null }
+  };
+}
+
+function collectManualQuestions() {
+  const questionBlocks = document.querySelectorAll('[id^="question_"]');
+  const questions = [];
+
+  questionBlocks.forEach((block, index) => {
+    const qId = block.id.split('_')[1];
+    const typeEl = document.getElementById(`qType_${qId}`);
+    if (!typeEl) return;
+
+    const type = typeEl.value;
+    const subjectName = document.getElementById(`qSubject_${qId}`).value;
+    const marks = getMarksForSubject(subjectName);
+    const imgStore = imageDataStore[qId] || { question: null, options: [null, null, null, null], solution: null };
+
+    const q = {
+      order: index + 1,
+      subject: subjectName,
+      positiveMarks: marks.positiveMarks,
+      negativeMarks: marks.negativeMarks,
+      type: type,
+      topic: document.getElementById(`qTopic_${qId}`).value,
+      subTopic: document.getElementById(`qSubTopic_${qId}`).value,
+      difficulty: document.getElementById(`qDifficulty_${qId}`).value,
+      question: document.getElementById(`qText_${qId}`).value,
+      questionImage: imgStore.question,
+      options: [],
+      correctAnswers: [],
+      numericAnswer: null,
+      solution: {
+        text: document.getElementById(`qSolution_${qId}`).value,
+        image: imgStore.solution
+      }
+    };
+
+    if (type === 'integer') {
+      const numInput = document.getElementById(`qNumeric_${qId}`);
+      q.numericAnswer = numInput ? Number(numInput.value) : null;
+    } else {
+      [0, 1, 2, 3].forEach(idx => {
+        const optInput = document.getElementById(`qOptText_${qId}_${idx}`);
+        q.options.push({
+          text: optInput ? optInput.value : "",
+          image: imgStore.options[idx] || null
+        });
+      });
+
+      const checked = document.querySelectorAll(`.qCorrect_${qId}:checked`);
+      checked.forEach(el => q.correctAnswers.push(Number(el.value)));
+    }
+
+    questions.push(q);
+  });
+
+  return questions;
+}
+
+
+function renderManualQuestions(questionsArray) {
+  document.getElementById('questionsListContainer').innerHTML = '';
+  questionCount = 0;
+
+  if (!Array.isArray(questionsArray) || questionsArray.length === 0) {
+    addQuestion(); // kam se kam ek khaali block dikhao
+    return;
+  }
+
+  questionsArray.forEach(q => {
+    addQuestion();
+    const qId = questionCount;
+
+    document.getElementById(`qSubject_${qId}`).value = q.subject || '';
+    document.getElementById(`qType_${qId}`).value = q.type || 'mcq';
+    document.getElementById(`qTopic_${qId}`).value = q.topic || '';
+    document.getElementById(`qSubTopic_${qId}`).value = q.subTopic || '';
+    document.getElementById(`qDifficulty_${qId}`).value = q.difficulty || 'Medium';
+    document.getElementById(`qText_${qId}`).value = q.question || '';
+    document.getElementById(`qSolution_${qId}`).value = q.solution?.text || '';
+
+    // 👇 Existing images ko store aur preview me daalo
+    const store = ensureImageStore(qId);
+    store.question = q.questionImage || null;
+    store.solution = q.solution?.image || null;
+    if (store.question) showPreview(`qImagePreview_${qId}`, store.question);
+    if (store.solution) showPreview(`qSolImagePreview_${qId}`, store.solution);
+
+    updateUI(qId);
+
+    if (q.type === 'integer') {
+      const numInput = document.getElementById(`qNumeric_${qId}`);
+      if (numInput) numInput.value = q.numericAnswer ?? '';
+    } else {
+      (q.options || []).forEach((opt, idx) => {
+        const optInput = document.getElementById(`qOptText_${qId}_${idx}`);
+        if (optInput) optInput.value = opt.text || '';
+
+        // 👇 Option image bhi store aur preview me daalo
+        store.options[idx] = opt.image || null;
+        if (opt.image) showPreview(`qOptImagePreview_${qId}_${idx}`, opt.image);
+      });
+
+      (q.correctAnswers || []).forEach(ansIdx => {
+        const el = document.querySelector(`.qCorrect_${qId}[value="${ansIdx}"]`);
+        if (el) el.checked = true;
+      });
+    }
+  });
+
+  renumberQuestions();
+  calculateTotalMarks();
+}
+/* ---------------------------------------------------------
+   FORM SUBMIT -> API CALL (sirf console.log ke liye, DB save nahi)
+--------------------------------------------------------- */
+
+document.getElementById('testBuilderForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  const visibility = document.getElementById('visibilitySelect').value;
+  if (visibility === 'scheduled') {
+    const publishAtVal = document.getElementById('publishAtInput')?.value;
+    if (!publishAtVal) {
+      alert("Schedule ke liye Publish Date & Time zaroor daalo");
+      return;
+    }
+  }
+
+  let payload;
+
+
+
+
+
+  if (currentViewMode === 'json') {
+
+    // JSON Editor mode - textarea se sirf QUESTIONS ka array aata hai
+    const jsonText = document.getElementById('jsonEditor').value;
+    let questionsArray;
+
+    try {
+      const parsed = JSON.parse(jsonText);
+      questionsArray = Array.isArray(parsed) ? parsed : parsed.questions;
+
+      if (!Array.isArray(questionsArray)) {
+        alert("JSON ek questions array hona chahiye, jaise: [ {...}, {...} ]");
+        return;
+      }
+    } catch (err) {
+      alert("Invalid JSON: " + err.message);
+      console.error("JSON parse error:", err);
+      return;
+    }
+
+    // order field add karo agar questions me nahi diya
+    questionsArray = questionsArray.map((q, idx) => normalizeImportedQuestion(q, idx));
+
+    const timeStrategy = document.getElementById('timeStrategy').value;
+
+    payload = {
+      title: document.getElementById('testTitleInput').value,
+      timeStrategy: timeStrategy,
+      duration: timeStrategy === 'total'
+        ? Number(document.getElementById('totalTimeInput')?.value) || 0
+        : 0,
+      subjectTime: timeStrategy === 'subject' ? subjectTimeList : [],
+      questions: questionsArray,
+      totalQuestions: questionsArray.length,
+      totalMarks: questionsArray.reduce((sum, q) => sum + getMarksForSubject(q.subject).positiveMarks, 0)
+    };
+
+    // har question me subject ke hisaab se marks bhi bhar do (backend ko chahiye)
+    payload.questions = payload.questions.map(q => {
+      const marks = getMarksForSubject(q.subject);
+      return { ...q, positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks };
+    });
+
+  } else {
+    // Manual Builder mode - DOM se collect karo
+    payload = buildPayload();
+  }
+
+  // Context + visibility hamesha yahi se aayega
+  payload.listingId = contextData.listingId;
+  payload.sectionId = contextData.sectionId;
+  payload.parentType = contextData.parentType;
+  payload.parentId = contextData.parentId;
+  payload.visibility = visibility;
+  payload.publishAt = visibility === 'scheduled'
+      ? document.getElementById('publishAtInput')?.value || null
+      : null;
+
+   console.log("Frontend se ja raha payload:", payload);
+
+try {
+  const url = isEditMode
+    ? `/api/test-builder/${contextData.editId}`
+    : '/api/test-builder';
+
+  const method = isEditMode ? 'PUT' : 'POST';
+
+  const res = await fetch(url, {
+    method: method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  const result = await res.json();
+  console.log("Server response:", result);
+
+  if (!result.success) {
+      alert("Issue: " + (result.message || "Unknown error"));
+  } else {
+       window.location.href = contextData.returnUrl;
+  }
+} catch (err) {
+  console.error("Fetch error:", err);
+}
+});
+
+
+
+function calculateTotalMarksFromJson() {
+    const jsonText = document.getElementById('jsonEditor').value;
+    let total = 0;
+
+    try {
+        const parsed = JSON.parse(jsonText);
+        const questionsArray = Array.isArray(parsed) ? parsed : parsed.questions;
+
+        if (Array.isArray(questionsArray)) {
+            questionsArray.forEach(q => {
+                const marks = getMarksForSubject(q.subject);
+                total += marks.positiveMarks;
+            });
+        }
+    } catch (err) {
+        // typing ke dauraan JSON invalid ho sakta hai, isliye silently ignore
+    }
+
+    const fullMarksInput = document.getElementById('testFullMarksInput');
+    if (fullMarksInput) {
+        fullMarksInput.value = total;
+    }
+}
+/* ---------------------------------------------------------
+   VISIBILITY UI
+--------------------------------------------------------- */
+function handleVisibilityUI() {
+  const visibility = document.getElementById('visibilitySelect').value;
+  const container = document.getElementById('scheduleFieldContainer');
+
+  if (visibility === 'scheduled') {
+    container.innerHTML = `
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Publish Date & Time</label>
+        <input type="datetime-local" id="publishAtInput" class="p-3 border rounded-xl" required>
+      </div>`;
+  } else {
+    container.innerHTML = '';
+  }
+}
+
+async function loadExistingTest() {
+    try {
+        const res = await fetch(`/api/test-builder/${contextData.editId}`);
+        const result = await res.json();
+
+        if (!result.success) {
+            alert("Test load nahi ho paya: " + (result.message || "Unknown error"));
+            return;
+        }
+
+        const { test, questions } = result.data;
+
+        // Header fields fill karo
+        document.getElementById('testTitleInput').value = test.title || '';
+        document.getElementById('timeStrategy').value = test.timeStrategy || 'total';
+        document.getElementById('visibilitySelect').value = test.visibility || 'private';
+
+        handleTimeUI();
+        handleVisibilityUI();
+
+         if (test.timeStrategy === 'total') {
+            testDurationState = test.duration || 0;   // 🔧 state me bhi save karo
+            const totalInput = document.getElementById('totalTimeInput');
+            if (totalInput) totalInput.value = test.duration || '';
+        } else {
+             subjectTimeList = test.subjectTime || [];
+            renderSubjectTimeList();   
+          }
+
+        if (test.visibility === 'scheduled' && test.publishAt) {
+            const publishInput = document.getElementById('publishAtInput');
+            if (publishInput) {
+                // datetime-local input ko ISO se local format me convert karo
+                const d = new Date(test.publishAt);
+                const localISO = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                publishInput.value = localISO;
+            }
+        }
+
+         // Global state me store karo taaki tab switch pe data na ude
+        testQuestionsState = questions;
+        renderManualQuestions(testQuestionsState);
+
+        // Save button ka text badal do
+        document.querySelector('#testBuilderForm button[type="submit"]').innerText = "Update Test";
+
+    } catch (err) {
+        console.error("Load existing test error:", err);
+        alert("Test load karte waqt error aaya");
+    }
+}
+
+/* ---------------------------------------------------------
+   INIT - subjects load karke phir view render karo
+--------------------------------------------------------- */
+window.addEventListener('scroll', function () {
+    const btn = document.getElementById('scrollTopBtn');
+    const icon = document.getElementById('scrollBtnIcon');
+    if (!btn || !icon) return;
+
+    const scrolled = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+    if (scrolled > 300) {
+        btn.classList.remove('hidden');
+    } else {
+        btn.classList.add('hidden');
+    }
+
+    // Agar page ke bottom ke paas hain, to icon "down" se "up" kar do, warna "down"
+    if (scrolled + window.innerHeight >= maxScroll - 50) {
+        icon.setAttribute('data-lucide', 'arrow-up');
+    } else {
+        icon.setAttribute('data-lucide', 'arrow-down');
+    }
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+});
+
+function handleScrollBtnClick() {
+    const scrolled = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+    if (scrolled + window.innerHeight >= maxScroll - 50) {
+       
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        
+        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+    }
+}
+
+async function init() {
+  await loadSubjects();
+  renderView('manual');
+
+  if (isEditMode) {
+    await loadExistingTest();
+  }
+}
+init();
+
+
+</script>

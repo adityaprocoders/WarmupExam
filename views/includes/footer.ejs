@@ -1,0 +1,159 @@
+<footer class="bg-[#111827] text-slate-300 border-t border-slate-700" id="dynamic-footer">
+
+    <!-- Top -->
+    <div class="max-w-7xl mx-auto px-6 py-12">
+        <div class="grid lg:grid-cols-2 gap-12">
+            <!-- Left -->
+            <div>
+                <div class="flex items-center gap-3 mb-5">
+                     <div class="w-10 h-10 bg-white rounded-lg shadow-sm flex items-center justify-center p-1">
+                        <img src="/images/logo.png" alt="WarmupExam Logo" class="w-full h-full object-contain">
+                    </div>
+                    <h2 class="text-3xl font-bold text-white">
+                        WarmupExam
+                    </h2>
+                </div>
+                <p class="text-slate-400 leading-8 max-w-lg">
+                    WarmUpExam empowers students to excel in Entrance,
+                    Competitive, Government Recruitment, University Admission,
+                    Professional Certification and Academic Examinations through
+                    AI-powered mock tests, real exam simulations,
+                    personalized practice, rank prediction and
+                    in-depth performance analytics.
+                </p>
+                <div class="flex gap-4 mt-8">
+                    <a href="https://www.instagram.com/adityaprocoders/" class="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-indigo-600 duration-300">
+                        <i class="fa-brands fa-instagram"></i>
+                    </a>
+                    <a href="https://www.youtube.com/@adityaprocoders" class="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-600 duration-300">
+                        <i class="fa-brands fa-youtube"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Company -->
+            <div class="lg:ml-auto">
+                <h3 class="text-white text-xl font-semibold mb-5">
+                    Company
+                </h3>
+                <ul class="space-y-4">
+                    <li>
+                        <a href="/aboutUs" class="hover:text-white transition">
+                            About Us
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/contactUs" class="hover:text-white transition">
+                            Contact Us
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exams -->
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="grid lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-2">
+                <h3 class="text-white font-bold mb-5">
+                    Exams
+                </h3>
+                <!-- Left side top exams list -->
+                <ul class="space-y-3" id="footer-exams-list">
+                    <!-- Dynamically populated -->
+                </ul>
+            </div>
+
+            <div class="lg:col-span-10">
+                <!-- Main grid matching original styling -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm text-slate-400" id="footer-exams-grid">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Series -->
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="grid lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-2">
+                <h3 class="text-white font-bold mb-5">
+                    Test Series
+                </h3>
+                <!-- Left side top test series list -->
+                <ul class="space-y-3" id="footer-series-list">
+                    <!-- Dynamically populated -->
+                </ul>
+            </div>
+
+            <div class="lg:col-span-10">
+                <!-- Main grid matching original styling -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm text-slate-400" id="footer-series-grid">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom -->
+    <div class="border-t border-slate-700">
+        <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between text-sm text-slate-500">
+            <p>
+                © 2026 WarmupExam. All rights reserved.
+            </p>
+            <div class="flex gap-8 mt-4 md:mt-0">
+                <a href="/Terms-&-Conditions" class="hover:text-white">
+                    Terms & Conditions
+                </a>
+                <a href="/privacy-Policy" class="hover:text-white">
+                    Privacy Policy
+                </a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const response = await fetch('/api/footer-data');
+        const data = await response.json();
+        
+        if (data.success) {
+            const examsGrid = document.getElementById('footer-exams-grid');
+            const examsList = document.getElementById('footer-exams-list');
+            const seriesGrid = document.getElementById('footer-series-grid');
+            const seriesList = document.getElementById('footer-series-list');
+
+            // 1. Populate Exams
+            if (data.exams && data.exams.length > 0) {
+                // Left column list (first 4 items)
+                examsList.innerHTML = data.exams.slice(0, 4).map(exam => `
+                    <li><a href="/alltests?exam=${encodeURIComponent(exam)}" class="hover:text-white">${exam}</a></li>
+                `).join('');
+
+                // Main grid (all items)
+                examsGrid.innerHTML = data.exams.map(exam => `
+                    <a href="/alltests?exam=${encodeURIComponent(exam)}" class="hover:text-white">${exam}</a>
+                `).join('');
+            }
+
+            // 2. Populate Test Series (Listings)
+            if (data.testSeries && data.testSeries.length > 0) {
+                // Left column list (first 4 items)
+                seriesList.innerHTML = data.testSeries.slice(0, 4).map(test => `
+                    <li><a href="/test/${test._id}" class="hover:text-white">${test.title} Mock</a></li>
+                `).join('');
+
+                // Main grid (all items)
+                seriesGrid.innerHTML = data.testSeries.map(test => `
+                    <a href="/test/${test._id}" class="hover:text-white">${test.title} Mock</a>
+                `).join('');
+            }
+        }
+    } catch (err) {
+        console.error("Failed to load footer data", err);
+    }
+});
+</script>

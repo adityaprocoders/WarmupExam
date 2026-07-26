@@ -1,0 +1,110 @@
+<section class="wue-section py-24 bg-slate-50">
+ 
+    <div class="wue-dots"></div>
+    <div class="wue-glow-a"></div>
+    <div class="wue-glow-b"></div>
+
+    <div class="max-w-7xl mx-auto px-5 relative">
+
+        <!-- Heading -->
+        <div class="text-center max-w-2xl mx-auto wue-reveal">
+
+            <span class="wue-eyebrow">
+                <i class="fa-solid fa-sparkles"></i> Why Students Choose WarmUpExam
+            </span>
+
+            <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mt-6">
+                Everything You Need To Crack Your Dream Exam
+            </h2>
+
+            <p class="text-slate-500 mt-5 text-lg leading-relaxed">
+                Practice smarter with AI-powered mock tests, detailed analysis,
+                and personalized learning designed to maximize your score.
+            </p>
+
+        </div>
+
+        <!-- Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7 mt-16">
+
+            <% const features = [
+
+            {
+                icon:'fa-brain',
+                bg:'#EEE9FF',
+                fg:'#4318FF',
+                title:'AI Analysis',
+                desc:'Detailed AI-powered performance analysis with personalized insights.'
+            },
+
+            {
+                icon:'fa-chart-line',
+                bg:'#E4FBF3',
+                fg:'#05CD99',
+                title:'Deep Performance Analysis',
+                desc:'Detailed reports with accuracy, speed, mistakes and improvement suggestions.'
+            },
+
+            {
+                icon:'fa-bullseye',
+                bg:'#FDECEA',
+                fg:'#EE5D50',
+                title:'Weak Topic Finder',
+                desc:'Automatically identify weak subjects and topics after every mock.'
+            },
+
+            {
+                icon:'fa-ranking-star',
+                bg:'#FFF4DE',
+                fg:'#D08700',
+                title:'Rank Predictor',
+                desc:'Know your expected rank before the real examination.'
+            },
+
+            {
+                icon:'fa-stopwatch',
+                bg:'#E5F6FF',
+                fg:'#0E85C9',
+                title:'Real Exam Simulation',
+                desc:'Experience actual exam environment with timer and difficulty balance.'
+            },
+
+            {
+                icon:'fa-book-open',
+                bg:'#F3E8FF',
+                fg:'#8A2BE2',
+                title:'50,000+ Questions',
+                desc:'Large question bank covering PYQs, topic-wise practice and mock tests.'
+            }
+
+            ]; %>
+
+            <% features.forEach((feature, idx) => { %>
+
+            <div class="wue-card wue-reveal" style="transition-delay: <%= idx * 90 %>ms" onmousemove="wueSpotlight(event, this)">
+
+                
+
+                <div class="wue-icon-wrap" style="background: <%= feature.bg %>; color: <%= feature.fg %>;">
+                    <i class="fa-solid <%= feature.icon %>"></i>
+                </div>
+
+                <h3 class="wue-title">
+                    <%= feature.title %>
+                </h3>
+
+                <p class="text-slate-500 mt-4 leading-7 text-[15px]">
+                    <%= feature.desc %>
+                </p>
+
+                
+            </div>
+
+            <% }) %>
+
+        </div>
+
+    </div>
+
+</section>
+ 

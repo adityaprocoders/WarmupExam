@@ -1,0 +1,446 @@
+<main class="p-4 sm:p-6">
+
+    <% if (!currentSection && !folder && !file) { %>
+  <!-- Dashboard Stats Section -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+      <div class="p-3 bg-green-100 rounded-full text-green-500 mr-4"><i class="fa-solid fa-file-lines"></i></div>
+      <div>
+        <p class="text-sm text-gray-400">Tests Attempted</p>
+        <h3 class="text-2xl font-bold"><%= dashboardStats ? dashboardStats.testsAttempted : 0 %></h3>
+      </div>
+    </div>
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+      <div class="p-3 bg-orange-100 rounded-full text-orange-500 mr-4"><i class="fa-solid fa-chart-column"></i></div>
+      <div>
+        <p class="text-sm text-gray-400">Avg Score</p>
+        <h3 class="text-2xl font-bold"><%= dashboardStats ? dashboardStats.avgScore : 0 %></h3>
+      </div>
+    </div>
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+      <div class="p-3 bg-red-100 rounded-full text-red-500 mr-4"><i class="fa-solid fa-bullseye"></i></div>
+      <div>
+        <p class="text-sm text-gray-400">Average Accuracy</p>
+        <h3 class="text-2xl font-bold"><%= dashboardStats ? dashboardStats.avgAccuracy : 0 %>%</h3>
+      </div>
+    </div>
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+      <div class="p-3 bg-blue-100 rounded-full text-blue-500 mr-4"><i class="fa-solid fa-trophy"></i></div>
+      <div>
+        <p class="text-sm text-gray-400">Current AIR Rank</p>
+        <h3 class="text-2xl font-bold"><%= dashboardStats ? dashboardStats.currentRank : '--' %></h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Performance and Activity -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <h2 class="text-xl font-bold mb-6">Performance Growth</h2>
+      <% if (performanceGrowth && performanceGrowth.length > 0) { %>
+        <div class="h-64 relative">
+          <canvas id="performanceGrowthChart"></canvas>
+        </div>
+      <% } else { %>
+        <div class="h-64 bg-gray-50 rounded-xl flex items-center justify-center border border-dashed border-gray-200">
+          <p class="text-gray-400">Koi test attempt nahi mila abhi tak</p>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold">Recent Activity</h2>
+        <button
+            id="exportAllPdfBtn"
+            onclick="exportAllAttemptsPdf()"
+            class="bg-green-100 text-green-600 px-3 py-1 rounded text-xs font-bold hover:bg-green-200 transition disabled:opacity-50">
+            EXPORT ALL PDF
+        </button>
+      </div>
+
+      <div class="max-h-80 overflow-y-auto pr-3 custom-scrollbar divide-y divide-gray-100">
+  <% if (recentActivity && recentActivity.length > 0) { %>
+    <% recentActivity.forEach(item => { %>
+      <div class="flex justify-between items-center py-4 first:pt-0">
+        <div>
+          <p class="font-semibold"><%= item.testTitle %></p>
+          <p class="text-xs text-gray-400">
+            <%= new Date(item.date).toLocaleDateString('en-GB') %>
+          </p>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="<%= item.score >= 0 ? 'text-green-500' : 'text-red-500' %> font-bold">
+            <%= item.score %> <span class="text-gray-300">/<%= item.totalMarks %></span>
+          </span>
+          <button
+            onclick="window.location.href='/attempt/<%= item.attemptId %>/analysis'"
+            class="bg-blue-50 text-blue-600 px-4 py-1 rounded-full text-sm">
+            Analysis
+          </button>
+        </div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p class="text-sm text-gray-400 text-center py-10">Abhi tak koi test attempt nahi kiya.</p>
+  <% } %>
+</div>
+    </div>
+  </div>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      
+
+    <% if (showRankPredictor) { %>
+      <!-- Marks vs Predicted Rank -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div class="flex justify-between items-center mb-6">
+              <div class="flex items-center gap-2">
+                  <h2 class="text-xl font-bold text-slate-800">Marks vs Predicted Rank</h2>
+                  <i data-lucide="info" class="w-4 h-4 text-gray-400"></i>
+              </div>
+              <span class="border border-gray-200 rounded-lg px-3 py-1 text-xs font-semibold text-slate-700 bg-gray-50"><%= listing.title %></span>
+          </div>
+          
+          <% if (dashboardStats && dashboardStats.rankPredictorData && dashboardStats.rankPredictorData.length > 0) { %>
+              <div class="h-64 relative">
+                  <canvas id="predictedRankChart"></canvas>
+              </div>
+          <% } else { %>
+              <div class="h-64 bg-gray-50 rounded-xl flex items-center justify-center border border-dashed border-gray-200">
+                  <p class="text-gray-400 text-sm">Rank predictor data abhi set nahi hai</p>
+              </div>
+          <% } %>
+          
+          <div class="mt-4 p-3 bg-indigo-50/50 rounded-xl text-center">
+              <p class="text-xs text-indigo-600 font-medium">This graph shows expected rank based on marks scored by all students.</p>
+          </div>
+      </div>
+      <% } %>
+
+      <!-- Score Distribution -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 <%= !showRankPredictor ? 'lg:col-span-2' : '' %>">
+          <div class="flex justify-between items-center mb-6">
+              <div class="flex items-center gap-2">
+                  <h2 class="text-xl font-bold text-slate-800">Score Distribution</h2>
+                  <i data-lucide="info" class="w-4 h-4 text-gray-400"></i>
+              </div>
+              <span class="border border-gray-200 rounded-lg px-3 py-1 text-xs font-semibold text-slate-700 bg-gray-50"><%= listing.title %></span>
+          </div>
+
+          <% if (dashboardStats && dashboardStats.scoreDistribution && dashboardStats.scoreDistribution.length > 0) { %>
+              <div class="h-64 relative">
+                  <canvas id="scoreDistributionChart"></canvas>
+              </div>
+          <% } else { %>
+              <div class="h-64 bg-gray-50 rounded-xl flex items-center justify-center border border-dashed border-gray-200">
+                  <p class="text-gray-400 text-sm">Abhi itne students ne attempt nahi kiya ki distribution dikhaya ja sake</p>
+              </div>
+          <% } %>
+
+          <div class="mt-4 p-3 bg-indigo-50/50 rounded-xl text-center">
+              <p class="text-xs text-indigo-600 font-medium">You scored more than <%= dashboardStats ? dashboardStats.percentileData.userPercentile : 0 %>% of the test takers.</p>
+          </div>
+      </div>
+  </div>
+
+  <!-- Rank Range, Rank Progress & Comparison Row -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+      <% if (showRankPredictor) { %>
+      <!-- Rank Range (Expected) -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 md:col-span-1">
+          <div class="flex items-center gap-2 mb-4">
+              <h3 class="font-bold text-slate-800">Rank Range (Expected)</h3>
+              <i data-lucide="info" class="w-4 h-4 text-gray-400"></i>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
+                  <p class="text-[10px] font-bold text-emerald-600 uppercase">Best Case</p>
+                  <h4 class="text-lg font-extrabold text-slate-800 my-1"><%= dashboardStats ? dashboardStats.rankRange.best : '--' %></h4>
+                  <p class="text-[9px] text-gray-400 leading-tight">If everything goes perfect</p>
+              </div>
+              <div class="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100">
+                  <p class="text-[10px] font-bold text-indigo-600 uppercase">Most Likely</p>
+                  <h4 class="text-lg font-extrabold text-slate-800 my-1"><%= dashboardStats ? dashboardStats.currentRank : '--' %></h4>
+                  <p class="text-[9px] text-gray-400 leading-tight">Your predicted rank</p>
+              </div>
+              <div class="bg-rose-50/60 p-3 rounded-xl border border-rose-100">
+                  <p class="text-[10px] font-bold text-rose-600 uppercase">Worst Case</p>
+                  <h4 class="text-lg font-extrabold text-slate-800 my-1"><%= dashboardStats ? dashboardStats.rankRange.worst : '--' %></h4>
+                  <p class="text-[9px] text-gray-400 leading-tight">If the exam is very tough</p>
+              </div>
+          </div>
+      </div>
+
+      <!-- Rank Progress -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-slate-800">Rank Progress</h3>
+                  <i data-lucide="info" class="w-4 h-4 text-gray-400"></i>
+              </div>
+              <span class="text-xs bg-gray-100 px-2.5 py-1 rounded-lg font-medium text-slate-600">All Tests</span>
+          </div>
+          <% if (performanceGrowth && performanceGrowth.length > 0) { %>
+              <div class="h-32 relative">
+                  <canvas id="rankProgressChart"></canvas>
+              </div>
+          <% } else { %>
+              <div class="h-32 bg-gray-50 rounded-xl flex items-center justify-center border border-dashed border-gray-200">
+                  <p class="text-gray-400 text-xs">Koi rank data nahi</p>
+              </div>
+          <% } %>
+      </div>
+      <% } %>
+
+      <!-- Comparison -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 <%= !showRankPredictor ? 'md:col-span-3' : '' %>">
+          <div class="flex items-center gap-2 mb-4">
+              <h3 class="font-bold text-slate-800">Comparison</h3>
+              <i data-lucide="info" class="w-4 h-4 text-gray-400"></i>
+          </div>
+          <div class="space-y-4 pt-2">
+              <div>
+                  <div class="flex justify-between text-xs font-semibold mb-1">
+                      <span class="text-slate-600">Your Percentile</span>
+                      <span class="text-indigo-600"><%= dashboardStats ? dashboardStats.percentileData.userPercentile : 0 %>%</span>
+                  </div>
+                  <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                      <div class="bg-indigo-600 h-full rounded-full" style="width: <%= dashboardStats ? dashboardStats.percentileData.userPercentile : 0 %>%"></div>
+                  </div>
+              </div>
+              <div>
+                  <div class="flex justify-between text-xs font-semibold mb-1">
+                      <span class="text-slate-600">Average Percentile</span>
+                      <span class="text-slate-500"><%= dashboardStats ? dashboardStats.percentileData.avgPercentile : 0 %>%</span>
+                  </div>
+                  <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                      <div class="bg-gray-400 h-full rounded-full" style="width: <%= dashboardStats ? dashboardStats.percentileData.avgPercentile : 0 %>%"></div>
+                  </div>
+              </div>
+              <div>
+                  <div class="flex justify-between text-xs font-semibold mb-1">
+                      <span class="text-slate-600">Top 10% Percentile</span>
+                      <span class="text-slate-500"><%= dashboardStats ? dashboardStats.percentileData.topPercentile : 90 %>%</span>
+                  </div>
+                  <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                      <div class="bg-indigo-400 h-full rounded-full" style="width: <%= dashboardStats ? dashboardStats.percentileData.topPercentile : 90 %>%"></div>
+                  </div>
+              </div>
+              <% if (dashboardStats && dashboardStats.totalStudentsCompared) { %>
+                  <p class="text-[10px] text-gray-400 text-center pt-1">Based on <%= dashboardStats.totalStudentsCompared %> students who attempted tests in this series</p>
+              <% } %>
+          </div>
+      </div>
+
+  </div>
+    
+  
+
+<% } %>
+
+ 
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8 items-start">
+    
+    <% folders.forEach(item => { %>
+        <div class="group relative bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-4">
+             <div class="w-12 h-12 shrink-0 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100">
+    <i class="<%= item.icon || 'fa-solid fa-folder' %> text-indigo-600 text-xl"></i>
+</div>
+            <a href="/folder/<%= item._id %>" class="flex-1 min-w-0">
+                <h4 class="font-bold text-slate-800 truncate text-sm sm:text-base"><%= item.title %></h4>
+            </a>
+
+           <% if (currentUser.role === 'owner') { %>
+<div class="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+    <button
+        onclick="openCopyModal('folder','<%= item._id %>')"
+        class="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-600">
+        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+    </button>
+
+    <button
+        onclick="editItem('folder','<%= item._id %>')"
+        class="p-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg">
+        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+    </button>
+
+    <button onclick="deleteItem('folder','<%= item._id %>')" class="p-1.5 bg-red-50 hover:bg-red-100 rounded-lg text-red-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+</div>
+<% } %>
+            
+        </div>
+    <% }) %>
+
+    <% files.forEach(item => { %>
+
+<div class="group relative bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 flex items-center h-[76px]">
+
+    <!-- Edit/Delete -->
+     <% if (currentUser.role === 'owner') { %>
+<div class="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+     <button
+        onclick="openCopyModal('file','<%= item._id %>')"
+        class="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-600">
+        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+    </button>
+        <button
+    onclick="editItem('file','<%= item._id %>')"
+    class="p-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg">
+
+    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+
+</button>
+
+        <button
+            onclick="deleteItem('file','<%= item._id %>')"
+            class="p-1.5 bg-red-50 hover:bg-red-100 rounded-lg text-red-500">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+
+    </div>
+<% } %>
+
+    <a href="/file/<%= item._id %>" class="flex-1 min-w-0 pl-2">
+        <h4 class="font-bold text-slate-800 truncate text-sm sm:text-base group-hover:text-indigo-600 transition-colors">
+            <%= item.title %>
+        </h4>
+
+        <p class="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
+            <%= (typeof item.testCount !== 'undefined') ? item.testCount + ' Tests' : 'No Tests' %>
+        </p>
+    </a>
+
+</div>
+
+<% }) %>
+
+    <% tests.forEach(item => { %>
+   <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-3.5 hover:shadow-lg transition-shadow">
+    <!-- Title -->
+     <div class="flex justify-between items-center mb-3">
+
+    <h2 class="text-base font-bold text-slate-800 truncate">
+        <%= item.title %>
+    </h2>
+
+    <% if (currentUser.role === 'owner') { %>
+    <div class="flex gap-1.5">
+        <button
+            onclick="openCopyModal('test','<%= item._id %>')"
+            class="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-600">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+        </button>
+
+        <button
+            onclick="editItem('test','<%= item._id %>')"
+            class="p-1 bg-gray-50 hover:bg-gray-100 rounded-lg">
+
+            <i data-lucide="pencil" class="w-3 h-3"></i>
+
+        </button>
+        <button
+            onclick="deleteItem('test','<%= item._id %>')"
+            class="p-1 rounded-lg bg-red-100 text-red-600">
+
+            <i data-lucide="trash-2" class="w-3 h-3"></i>
+
+        </button>
+
+    </div>
+    <% } %>
+
+</div>
+
+    <!-- Stats Section -->
+    <div class="grid grid-cols-3 divide-x divide-gray-100 text-center mb-3">
+        <!-- Questions -->
+        <div class="px-1">
+            <div class="flex justify-center items-center gap-1 text-gray-400 mb-0.5">
+                <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                <span class="font-bold text-sm text-slate-700"><%= item.totalQuestions || 0 %></span>
+            </div>
+            <p class="text-[9px] font-bold text-gray-400 tracking-wider uppercase">Questions</p>
+        </div>
+
+        <!-- Marks -->
+        <div class="px-1">
+            <div class="flex justify-center items-center gap-1 text-indigo-500 mb-0.5">
+                <i data-lucide="medal" class="w-3.5 h-3.5"></i>
+                <span class="font-bold text-sm text-slate-700"><%= item.totalMarks || 0 %></span>
+            </div>
+            <p class="text-[9px] font-bold text-gray-400 tracking-wider uppercase">Marks</p>
+        </div>
+
+        <!-- Minutes -->
+        <div class="px-1">
+            <div class="flex justify-center items-center gap-1 text-orange-400 mb-0.5">
+                <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                <span class="font-bold text-sm text-slate-700"><%= item.duration || 0 %></span>
+            </div>
+            <p class="text-[9px] font-bold text-gray-400 tracking-wider uppercase">Minutes</p>
+        </div>
+    </div>
+
+    <!-- Start Button -->
+    <!-- Start Button -->
+<% if (item.latestAttempt) { %>
+
+    <div class="grid grid-cols-2 gap-2">
+
+        <button type="button"
+            onclick="window.location.href='/attempt/<%= item.latestAttempt._id %>/analysis'"
+            class="py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-indigo-600 font-bold text-sm tracking-wide transition-all">
+            Analysis
+        </button>
+
+        <button type="button"
+            onclick="openInstructionsModal('<%= item._id %>')"
+            class="py-2 rounded-xl bg-amber-500 hover:bg-indigo-700 text-white font-bold text-sm tracking-wide shadow-md shadow-indigo-200 transition-all">
+            Reattempt
+        </button>
+
+    </div>
+
+<% } else if (item.testStatus && item.testStatus.status === "upcoming") { %>
+
+    <button type="button"
+        data-publish-at="<%= item.testStatus.publishAt.toISOString() %>"
+        onclick="handleUpcomingClick(this)"
+        class="block w-full text-center py-2 rounded-xl bg-indigo-300 text-white font-bold text-sm tracking-wide cursor-not-allowed transition-all">
+        START NOW
+    </button>
+
+<% } else if (item.testStatus && item.testStatus.status === "expired") { %>
+
+    <button type="button" disabled
+        class="block w-full text-center py-2 rounded-xl bg-gray-300 text-white font-bold text-sm tracking-wide cursor-not-allowed">
+        EXPIRED
+    </button>
+
+<% } else { %>
+
+    <button type="button"
+        onclick="openInstructionsModal('<%= item._id %>')"
+        class="block w-full text-center py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm tracking-wide shadow-md shadow-indigo-200 transition-all">
+        START NOW
+    </button>
+
+<% } %>
+
+</div>
+    <% }) %>
+
+    <% if(folders.length === 0 && files.length === 0 && tests.length === 0){ %>
+    <% if (!(!currentSection && !folder && !file)) { %>  
+        <div class="col-span-full text-center py-24 text-gray-400">
+            <i data-lucide="folder-open" class="w-16 h-16 mx-auto mb-4"></i>
+            <p>No data available</p>
+        </div>
+    <% } %>
+<% } %>
+</div>
+
+</main>

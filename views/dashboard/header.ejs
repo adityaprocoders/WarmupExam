@@ -1,0 +1,264 @@
+<header class="sticky top-16 z-30 flex items-center justify-between px-4 sm:px-6 py-5 bg-white border-b">
+
+    <!-- Left -->
+ 
+<div class="flex items-center gap-4">
+
+    <% if(folder || file){ %>
+
+        <!-- Back Button -->
+        <a href="javascript:history.back()"
+           class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 transition">
+
+            <i data-lucide="arrow-left" 
+               class="w-7 h-7 text-slate-700"></i>
+
+        </a>
+
+    <% } %>
+
+
+    <div>
+
+        <p class="text-xs text-gray-400">
+
+            <% if(folder || file){ %>
+
+                Dashboard /
+                <%= currentSection.title %> /
+                <%= folder ? folder.title : file.title %>
+
+            <% } else if(currentSection){ %>
+
+                Dashboard /
+                <%= currentSection.title %>
+
+            <% } else { %>
+
+                Dashboard
+
+            <% } %>
+
+        </p>
+
+
+        <h1 class="text-2xl font-bold text-slate-800">
+
+            <% if(folder){ %>
+
+                <%= folder.title %>
+
+            <% } else if(file){ %>
+
+                <%= file.title %>
+
+            <% } else if(currentSection){ %>
+
+                <%= currentSection.title %>
+
+            <% } else { %>
+
+                <%= listing.title %>
+
+            <% } %>
+
+        </h1>
+
+    </div>
+
+</div>
+  
+
+<!-- Right -->
+<!-- Right -->
+<div class="flex items-center gap-3">
+
+    <% if (!currentSection && !folder && !file) { %>
+
+        <!-- Owner-only: Add Sections button (dropdown ke left) -->
+        <% if (currentUser.role === 'owner') { %>
+            <button
+                type="button"
+                onclick="openStatsFilterModal()"
+                class="flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white shadow-sm hover:bg-slate-50 transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Add Sections
+            </button>
+        <% } %>
+
+       <div class="relative" id="statsSectionDropdownWrap">
+
+    <!-- Trigger button -->
+    <button
+        type="button"
+        onclick="toggleStatsDropdown(event)"
+        id="statsSectionTrigger"
+        class="flex items-center justify-between gap-2 min-w-[130px] border border-indigo-100 rounded-xl pl-4 pr-3 py-2.5 text-sm font-semibold text-indigo-700 bg-gradient-to-b from-white to-indigo-50/60 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_10px_rgba(79,70,229,0.08)] hover:border-indigo-300 hover:shadow-[0_2px_4px_rgba(0,0,0,0.05),0_8px_20px_rgba(79,70,229,0.15)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
+
+        <span id="statsSectionTriggerLabel">
+            <%= (selectedStatsSection && selectedStatsSection !== 'all')
+                ? (statsFilterSections.find(s => s._id.toString() === selectedStatsSection)?.title || 'All Tests')
+                : 'All Tests' %>
+        </span>
+
+        <div class="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-indigo-600"></i>
+        </div>
+    </button>
+
+    <!-- Custom options panel -->
+    <div
+        id="statsSectionPanel"
+        class="hidden absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl border border-slate-100 shadow-xl z-50 p-2 max-h-72 overflow-y-auto custom-scrollbar">
+
+        <button
+            type="button"
+            onclick="selectStatsSection('all', 'All Tests')"
+            class="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-left hover:bg-indigo-50 transition
+                   <%= (!selectedStatsSection || selectedStatsSection === 'all') ? 'bg-indigo-600 text-white hover:bg-indigo-600' : 'text-slate-700' %>">
+            <span>All Tests</span>
+            <% if (!selectedStatsSection || selectedStatsSection === 'all') { %>
+                <i data-lucide="check" class="w-4 h-4"></i>
+            <% } %>
+        </button>
+
+        <% statsFilterSections.forEach(sec => { %>
+            <button
+                type="button"
+                onclick="selectStatsSection('<%= sec._id %>', '<%= sec.title %>')"
+                class="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-left hover:bg-indigo-50 transition
+                       <%= (selectedStatsSection == sec._id.toString()) ? 'bg-indigo-600 text-white hover:bg-indigo-600' : 'text-slate-700' %>">
+                <span class="truncate"><%= sec.title %></span>
+                <% if (selectedStatsSection == sec._id.toString()) { %>
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                <% } %>
+            </button>
+        <% }) %>
+
+    </div>
+</div>
+
+
+
+    <% } %>
+
+    <% if (currentUser.role === 'owner') { %>
+<div class="relative">
+
+    <button
+        type="button"
+        onclick="toggleCreateMenu(event)"
+        id="createBtn"
+        class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-md transition">
+
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        Create
+
+        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+
+    </button>
+
+    <!-- Dropdown -->
+    <div
+        id="createMenu"
+        class="hidden absolute right-0 top-full mt-3 w-60 bg-white rounded-2xl border shadow-xl z-50 p-2">
+
+        <!-- Folder -->
+        <button
+            type="button"
+            onclick="openCreateModal('folder')"
+            class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-indigo-50">
+
+            <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                <i data-lucide="folder-plus" class="w-5 h-5 text-indigo-600"></i>
+            </div>
+
+            <div class="text-left">
+                <p class="font-medium">Create Folder</p>
+                <p class="text-xs text-gray-500">New Section</p>
+            </div>
+
+        </button>
+
+        <!-- File -->
+        <button
+            type="button"
+            onclick="openCreateModal('file')"
+            class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-indigo-50">
+
+            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                <i data-lucide="file-plus" class="w-5 h-5 text-green-600"></i>
+            </div>
+
+            <div class="text-left">
+                <p class="font-medium">Create File</p>
+                <p class="text-xs text-gray-500">New File</p>
+            </div>
+
+        </button>
+
+        <!-- Test -->
+        <button
+            type="button"
+            onclick="goToTestBuilder(event)"
+            class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-indigo-50">
+
+            <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                <i data-lucide="clipboard-list" class="w-5 h-5 text-orange-600"></i>
+            </div>
+
+            <div class="text-left">
+                <p class="font-medium">Create Test</p>
+                <p class="text-xs text-gray-500">Mock Test</p>
+            </div>
+
+        </button>
+
+    </div>
+
+</div>
+<% } %>
+
+</div>
+  
+ 
+
+
+<!-- Add Sections Modal — sirf owner ke liye -->
+<% if (currentUser.role === 'owner' && !currentSection && !folder && !file) { %>
+<div id="statsFilterModalOverlay" class="hidden fixed inset-0 z-[60] bg-black/40 flex items-center justify-center px-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+
+        <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+            <h2 class="text-lg font-bold text-slate-900">Dropdown me kaun se sections dikhein?</h2>
+            <button onclick="closeStatsFilterModal()" class="text-slate-400 hover:text-slate-700">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="px-6 py-5 space-y-3 max-h-80 overflow-y-auto">
+            <% sections.forEach(sec => { %>
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        class="statsFilterCheckbox w-4 h-4 text-indigo-600 rounded"
+                        value="<%= sec._id %>"
+                        <%= sec.showInStatsFilter ? 'checked' : '' %>>
+                    <span class="text-sm font-medium text-slate-700"><%= sec.title %></span>
+                </label>
+            <% }) %>
+        </div>
+
+        <div class="p-4 border-t border-slate-100">
+            <button
+                onclick="saveStatsFilter('<%= listing.slug %>')"
+                class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">
+                Save
+            </button>
+        </div>
+
+    </div>
+</div>
+<% } %>
+
+</header>

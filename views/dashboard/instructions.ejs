@@ -1,0 +1,141 @@
+<div id="modal-instructions" class="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm">
+
+    <div class="bg-white rounded-2xl sm:rounded-3xl w-full max-w-4xl h-[95vh] sm:h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+
+        <!-- Header -->
+        <!-- Header -->
+<div class="p-5 sm:p-6 border-b bg-gray-50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 shrink-0">
+    <div>
+        <h3 class="text-xl sm:text-2xl font-extrabold text-[#2B3674] truncate"><%= test.title %></h3>
+        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mt-1">Test Instructions</p>
+    </div>
+    <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2 shrink-0">
+        <span class="text-sm font-bold text-[#4318FF]">
+            <%= test.duration %> Minutes Duration
+        </span>
+    </div>
+</div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-5 sm:p-8 text-sm text-gray-600 leading-7">
+
+            <div class="bg-red-50 border-l-4 border-red-500 rounded-r-xl p-4 mb-8">
+                <p class="text-red-600 text-xs font-bold uppercase mb-2">Attention</p>
+                <p>Please read all the instructions carefully before clicking on <b>"Proceed"</b>.</p>
+            </div>
+
+            <div class="space-y-8">
+
+                <div>
+                    <h4 class="font-bold text-[#2B3674] border-b pb-2 inline-block">1. Paper Pattern & Sections</h4>
+
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+                        <% subjectBreakdown.forEach(s => { %>
+                            <div class="border rounded-xl bg-gray-50 text-center p-4">
+                                <p class="text-[11px] text-gray-400 font-bold uppercase truncate"><%= s.subject %></p>
+                                <p class="text-lg font-bold text-[#2B3674] mt-1"><%= s.count %> Questions</p>
+                            </div>
+                        <% }) %>
+                    </div>
+
+                    <% if (test.timeStrategy === 'subject' && test.subjectTime.length > 0) { %>
+                        <div class="mt-5 space-y-2">
+                            <p class="text-xs font-bold text-gray-500 uppercase">Time Allocation:</p>
+                            <% test.subjectTime.forEach(st => { %>
+                                <div class="flex justify-between items-center p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
+                                    <span class="text-sm font-medium"><%= st.subject %></span>
+                                    <span class="font-bold text-indigo-600 text-sm"><%= st.duration %> mins</span>
+                                </div>
+                            <% }) %>
+                        </div>
+                    <% } %>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-[#2B3674] border-b pb-2 inline-block">2. Question Palette Guide</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                        <div class="flex items-center gap-3">
+                            <span class="w-9 h-9 flex items-center justify-center rounded border bg-gray-100 font-bold">1</span>
+                            <span class="text-xs">You have not visited the question yet.</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="w-9 h-9 flex items-center justify-center rounded-t-lg bg-[#EE5D50] text-white font-bold">2</span>
+                            <span class="text-xs">You have NOT answered the question.</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="w-9 h-9 flex items-center justify-center rounded-b-lg bg-[#05CD99] text-white font-bold">3</span>
+                            <span class="text-xs">You have answered the question.</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="w-9 h-9 flex items-center justify-center rounded-full bg-[#4318FF] text-white font-bold">4</span>
+                            <span class="text-xs">You have marked the question for review.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-[#2B3674] border-b pb-2 inline-block">3. Important Instructions</h4>
+                    <ul class="list-disc pl-5 mt-4 space-y-3 text-sm leading-6">
+                        <li>Total Questions: <b><%= test.totalQuestions %></b></li>
+                        <li>Total Marks: <b><%= test.totalMarks %></b></li>
+                        <li>The marking scheme, question pattern and difficulty level are configured according to the selected test.</li>
+                        <li>You may navigate between questions at any time unless navigation restrictions are enabled for this test.</li>
+                        <li>Only saved responses and answered questions marked for review will be considered for evaluation.</li>
+                        <li>Questions left unanswered will not be considered for scoring.</li>
+                        <li>Your progress is automatically saved whenever you click <b>Save & Next</b> or <b>Mark for Review & Next</b>.</li>
+                        <li>The examination will be submitted automatically when the allotted time expires.</li>
+                        <li>Do not refresh, close, or navigate away from the browser window during the test.</li>
+                        <li>Ensure that your internet connection and device remain stable throughout the examination.</li>
+                    </ul>
+                </div>
+
+                 <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+    <b>Note:</b> This mock test follows the <%= listing.exam || listing.title %> examination interface. Please ensure your internet connection and device remain stable throughout the examination.
+</div>
+
+            </div>
+
+        </div>
+
+        <!-- Agreement -->
+        <div class="border-t bg-white px-5 sm:px-8 py-4 shrink-0">
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex items-start gap-4">
+                <input id="agree" type="checkbox" onchange="toggleProceedBtn()" class="w-5 h-5 mt-1 accent-[#4318FF] shrink-0">
+                <label for="agree" class="text-sm text-gray-700 leading-6 font-medium cursor-pointer">
+                    I have read and understood all the instructions. I declare that I am using a proper working device and agree to start the examination according to the rules.
+                </label>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="border-t bg-gray-50 p-5 flex flex-col-reverse sm:flex-row justify-end gap-3 shrink-0">
+            <button type="button" onclick="closeInstructionsModal()"
+               class="w-full sm:w-auto px-8 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition">
+                Cancel
+            </button>
+
+            <button id="proceedBtn" disabled onclick="startTest('<%= test._id %>')"
+                class="w-full sm:w-auto px-10 py-3 rounded-xl bg-[#4318FF] text-white font-bold hover:bg-indigo-700 transition shadow-lg opacity-50 cursor-not-allowed disabled:opacity-50">
+                Proceed
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    
+function startTest(testId) {
+    const el = document.documentElement;
+    const requestFS = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+    if (requestFS) {
+        requestFS.call(el).finally(() => {
+            window.location.href = `/attempt/${testId}`;
+        });
+    } else {
+        window.location.href = `/attempt/${testId}`;
+    }
+}
+ 
+</script>

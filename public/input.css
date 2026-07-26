@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@source "./views/**/*.ejs";
+@source "./public/js/**/*.js";
+
+@theme {
+  --color-ink: #0B0F1F;
+  --color-ink2: #12172E;
+  --color-paper: #F6F7FB;
+  --color-paper2: #EDEFF7;
+  --color-brand: #4318FF;
+  --color-brandDeep: #2A0FC4;
+  --color-brandSoft: #EEE9FF;
+  --color-good: #05CD99;
+  --color-bad: #EE5D50;
+  --color-slate2: #475467;
+
+  --font-display: 'Sora', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono-tab: 'IBM Plex Mono', monospace;
+  
+  --shadow-card: 0 1px 2px rgba(11,15,31,0.04), 0 12px 32px -12px rgba(11,15,31,0.12);
+  --shadow-cardHover: 0 1px 2px rgba(11,15,31,0.06), 0 24px 48px -16px rgba(67,24,255,0.22);
+
+  --breakpoint-xs: 420px;
+}
+
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
