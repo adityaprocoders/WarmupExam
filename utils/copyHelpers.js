@@ -1,4 +1,4 @@
-import Section from "../models/section.js";
+import Section from "../models/Section.js";
 import Folder from "../models/Folder.js";
 import File from "../models/File.js";
 import Test from "../models/Test.js";
