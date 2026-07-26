@@ -34,7 +34,7 @@ export const home = async (req, res) => {
 };
 
 export const aboutUs = (req, res) => res.render("pages/UI/AboutUs");
-export const contactUs = (req, res) => res.render("pages/UI/ContactUs");
+export const contactUs = (req, res) => res.render("pages/UI/contactUs");
 export const termsOfUse = (req, res) => res.render("pages/UI/termsOfUse");
 export const privacyPolicy = (req, res) => res.render("pages/UI/privacyPolicy");
 export const features = (req, res) => res.render("pages/UI/features");
