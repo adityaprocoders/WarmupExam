@@ -6,12 +6,17 @@ import * as authController from "../controllers/authController.js";
 import { forgotPassword, resetPassword } from "../controllers/authController.js";
 import { validateBody } from "../middleware/validate.js";
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../utils/schemas.js";
+import { getLoginHistoryApi, deleteLoginHistoryEntry } from "../controllers/authController.js";
+
 
 const router = express.Router();
 
 router.get("/owner-login", authController.renderOwnerLogin);
 router.post("/owner-login", validateBody(loginSchema), authController.ownerLogin);
 router.get("/owner-dashboard", isOwner, authController.ownerDashboard);
+router.get("/api/owner/login-history", isOwner, getLoginHistoryApi);
+router.delete("/api/owner/login-history/:id", isOwner, deleteLoginHistoryEntry); 
+ 
 
 router.get("/register", isLoggedOut, authController.renderRegister);
 router.post("/register", validateBody(registerSchema), wrapAsync(authController.register));

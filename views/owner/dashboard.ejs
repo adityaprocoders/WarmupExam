@@ -58,6 +58,9 @@
       <a href="#" data-target="settings" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
         <i class="fa-solid fa-gear w-4 text-gray-400"></i> Settings
       </a>
+      <a href="#" data-target="loginhistory" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+  <i class="fa-solid fa-clock-rotate-left w-4 text-gray-400"></i> Login History
+</a>
     </nav>
 
     <div class="p-3 border-t border-gray-100 shrink-0">
@@ -312,7 +315,31 @@
       <section id="content-reports" class="content-section hidden"><div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-gray-500 text-sm">Reports & Analytics abhi is dashboard ke Charts section me hi available hain (Dashboard tab dekho). Dedicated report-builder yahan aage add hoga.</div></section>
       <section id="content-notifications" class="content-section hidden"><div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-gray-500 text-sm">Notifications system abhi backend me nahi bana hai — model/route ready hote hi yahan wire karenge.</div></section>
       <section id="content-settings" class="content-section hidden"><div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-gray-500 text-sm">Settings abhi backend me nahi bane — jaise hi finalize hon, yahan wire kar denge.</div></section>
-
+         
+      <section id="content-loginhistory" class="content-section hidden space-y-4">
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-gray-900">Login History</h3>
+      <span class="text-xs font-bold px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-600" id="loginHistoryBadge">— entries</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+          <tr>
+            <th class="text-left px-4 py-3 font-semibold">Date/Time</th>
+            <th class="text-left px-4 py-3 font-semibold">IP Address</th>
+            <th class="text-left px-4 py-3 font-semibold">Location</th>
+            <th class="text-left px-4 py-3 font-semibold">Device</th>
+            <th class="text-right px-4 py-3 font-semibold">Action</th>
+          </tr>
+        </thead>
+        <tbody id="loginHistoryTableBody">
+          <tr><td colspan="5" class="text-center text-gray-400 py-8">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
     </main>
   </div>
 </div>
@@ -342,7 +369,8 @@
     testseries: loadTestSeries,
     coupons: loadCoupons,
     users: () => loadUsers(userSearchInput ? userSearchInput.value.trim() : ''),
-    payments: loadPayments
+    payments: loadPayments,
+    loginhistory: loadLoginHistory
   };
 
   sideLinks.forEach(link => {
@@ -829,6 +857,67 @@
       paymentsTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">Load karne mein error aayi.</td></tr>`;
     }
   }
+
+
+  const loginHistoryTableBody = document.getElementById('loginHistoryTableBody');
+const loginHistoryBadge = document.getElementById('loginHistoryBadge');
+
+async function loadLoginHistory() {
+  loginHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">Loading...</td></tr>`;
+  try {
+    const res = await fetch('/api/owner/login-history');
+    const data = await res.json();
+
+    if (!data.success) {
+      loginHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">Load nahi ho paya.</td></tr>`;
+      return;
+    }
+
+    loginHistoryBadge.textContent = `${data.history.length} entries`;
+
+    if (!data.history.length) {
+      loginHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">Koi login history nahi hai.</td></tr>`;
+      return;
+    }
+
+    loginHistoryTableBody.innerHTML = data.history.map(h => `
+      <tr class="border-t border-gray-50">
+        <td class="px-4 py-3 text-gray-700">${new Date(h.createdAt).toLocaleString('en-IN')}</td>
+        <td class="px-4 py-3 text-gray-700">${escapeHtml(h.ipAddress)}</td>
+        <td class="px-4 py-3 text-gray-700">${escapeHtml(h.location)}</td>
+        <td class="px-4 py-3 text-gray-700">${escapeHtml(h.device)}</td>
+        <td class="px-4 py-3 text-right">
+          <button data-id="${h._id}" class="deleteLoginHistoryBtn w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center ml-auto">
+            <i class="fa-solid fa-trash text-xs"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    attachLoginHistoryEvents();
+  } catch (err) {
+    loginHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">Load karne mein error aayi.</td></tr>`;
+  }
+}
+
+function attachLoginHistoryEvents() {
+  document.querySelectorAll('.deleteLoginHistoryBtn').forEach(btn => {
+    btn.addEventListener('click', async function () {
+      if (!confirm('Is login entry ko delete karna hai?')) return;
+      const id = this.dataset.id;
+      this.disabled = true;
+      try {
+        const res = await fetch(`/api/owner/login-history/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) loadLoginHistory();
+        else { alert(data.message || 'Delete nahi ho paya'); this.disabled = false; }
+      } catch (err) {
+        alert('Something went wrong');
+        this.disabled = false;
+      }
+    });
+  });
+}
 
   // ---------------- INITIAL LOAD ----------------
   loadDashboard();

@@ -4,6 +4,7 @@ import passport from "../config/passport.js";
 import ExpressError from "../utils/ExpressError.js";
 import User from "../models/usersShema.js";
 import { getDashboardRedirectUrl } from "../utils/authHelpers.js";
+import { logOwnerLogin } from "../utils/loginLogger.js";
 
 export const renderOwnerLogin = (req, res) => res.render("auth/owner-login");
 
@@ -14,12 +15,35 @@ export const ownerLogin = (req, res, next) => {
             req.flash("error", "Invalid owner credentials");
             return req.session.save(() => res.redirect("/owner-login"));
         }
-        req.login(owner, (err) => {
+        req.login(owner, async(err) => {
             if (err) return next(err);
+            await logOwnerLogin(req, owner);
             req.flash("success", "Welcome Owner!");
             req.session.save(() => res.redirect("/owner-dashboard"));
         });
     })(req, res, next);
+};
+
+
+export const getLoginHistoryApi = async (req, res) => {
+  try {
+    const history = await LoginHistory.find({ ownerEmail: req.user.email })
+      .sort({ createdAt: -1 })
+      .limit(100);
+    res.json({ success: true, history });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to load history" });
+  }
+};
+
+export const deleteLoginHistoryEntry = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await LoginHistory.findOneAndDelete({ _id: id, ownerEmail: req.user.email });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Delete failed" });
+  }
 };
 
 export const ownerDashboard = (req, res) => res.render("owner/dashboard", { user: req.user });
