@@ -1,5 +1,5 @@
 import Listing from "../models/listing.js";
-import Section from "../models/section.js";
+import Section from "../models/Section.js";
 import Test from "../models/Test.js";
 import Question from "../models/Question.js";
 import TestQuestion from "../models/TestQuestion.js";

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import Listing from "../models/listing.js";
-import Section from "../models/section.js";
+import Section from "../models/Section.js";
 import Test from "../models/Test.js";
 import TestQuestion from "../models/TestQuestion.js";
 import Attempt from "../models/TestAttempt.js";

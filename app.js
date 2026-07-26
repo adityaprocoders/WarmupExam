@@ -17,7 +17,7 @@ import flash from "connect-flash";
 import MongoStore from "connect-mongo";
 
 
-import connectDB from "./config/db.js";
+import connectDB from "./config/Db.js";
 import passport from "./config/passport.js";
 import ExpressError from "./utils/ExpressError.js";
 import errorHandler from "./middleware/errorHandler.js";

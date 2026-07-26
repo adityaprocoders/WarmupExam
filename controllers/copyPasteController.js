@@ -1,5 +1,5 @@
 import Listing from "../models/listing.js";
-import Section from "../models/section.js";
+import Section from "../models/Section.js";
 import Folder from "../models/Folder.js";
 import File from "../models/File.js";
 import ExpressError from "../utils/ExpressError.js";
