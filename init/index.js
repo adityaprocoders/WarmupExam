@@ -1,4 +1,4 @@
-import connectDB from "../config/db.js";
+import connectDB from "../config/Db.js";
 import Data  from "./data.js";
 import slugify from "slugify";
 import dotenv from "dotenv";
