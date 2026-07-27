@@ -1,6 +1,7 @@
 {
     "name": "WarmupExam",
     "short_name": "WarmupExam",
+    "start_url": "/",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",

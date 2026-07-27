@@ -73,6 +73,18 @@
             }
         });
     </script>
+     
+
+      <!-- ✅ PWA Service Worker -->
+    <script>
+        if ("serviceWorker" in navigator && window.location.protocol === "https:") {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("/sw.js")
+                    .then(() => console.log("Service Worker registered"))
+                    .catch((err) => console.log("SW registration failed:", err));
+            });
+        }
+    </script>
 
 </body>
 </html>
