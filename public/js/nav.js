@@ -25,7 +25,12 @@
     }
 
     menuBtn.addEventListener('click', openMenu);
-    closeBtn.addEventListener('click', closeMenu);
+
+    // closeBtn optional hai, safety check add kiya
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeMenu);
+    }
+
     overlay.addEventListener('click', closeMenu);
 
     const currentPath = window.location.pathname;
