@@ -6,7 +6,10 @@ import User from "../models/usersShema.js";
 import { getDashboardRedirectUrl } from "../utils/authHelpers.js";
 import { logOwnerLogin } from "../utils/loginLogger.js";
 
-export const renderOwnerLogin = (req, res) => res.render("auth/owner-login");
+export const renderOwnerLogin = (req, res) => res.render("auth/owner-login", {
+    title: "Login | WarmupExam",
+    robots: "noindex, nofollow"
+});
 
 export const ownerLogin = (req, res, next) => {
     passport.authenticate("owner-local", (err, owner, info) => {

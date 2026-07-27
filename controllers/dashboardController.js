@@ -324,7 +324,11 @@ export const showSeries = async (req, res) => {
         dashboardStats, recentActivity, performanceGrowth,
         selectedStatsSection: statsSection || "all" ,
          statsFilterSections,
-         showRankPredictor 
+         showRankPredictor,
+         
+          title: `${currentSection ? currentSection.title : listing.title} | WarmupExam Dashboard`,
+         description: `Track your performance, view detailed analytics and attempt mock tests for ${listing.title} on WarmupExam.`,
+          robots: "noindex, nofollow"
     });
 };
 
@@ -431,7 +435,11 @@ export const showFolder = async (req, res) => {
             { title: currentSection.title, url: `/series/${listing.slug}?section=${currentSection._id}` },
             { title: folder.title, url: "#" }
         ],
-        dashboardStats: null, recentActivity: [], performanceGrowth: []
+        dashboardStats: null, recentActivity: [], performanceGrowth: [],
+
+
+        title: `${folder.title} | WarmupExam Dashboard`,
+    robots: "noindex, nofollow"
     });
 };
 
@@ -478,7 +486,10 @@ export const showFile = async (req, res) => {
             { title: currentSection.title, url: `/series/${listing.slug}?section=${currentSection._id}` },
             { title: file.title, url: "#" }
         ],
-        dashboardStats: null, recentActivity: [], performanceGrowth: []
+        dashboardStats: null, recentActivity: [], performanceGrowth: [],
+
+        title: `${file.title} | WarmupExam Dashboard`,
+    robots: "noindex, nofollow"
     });
 };
 

@@ -36,7 +36,7 @@ export const home = async (req, res) => {
     enrolledIds,
     enrolledExpiryMap,
     isOwner,
-    title: "WarmupExam - AI-Powered Mock Tests for NIMCET, UPSC, JEE, SSC & More",
+    title: "WarmupExam - WarmupExam – AI-Powered Mock Tests for UPSC, SSC, Defence, JEE, NEET & 15+ Exams",
     description:
         "India's smartest mock test platform. Practice real exam simulations for NIMCET, UPSC, JEE, SSC, GATE, CAT, NEET and 25+ exams with true negative marking, AI-powered weak-area analysis and rank prediction. Free mock, no card required.",
     keywords:

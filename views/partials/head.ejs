@@ -1,28 +1,67 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title><%= title || "WarmupExam - Prepare Smarter for Your Exams" %></title>
+<title><%= typeof title !== 'undefined' ? title : "WarmupExam - Prepare Smarter for Your Exams" %></title>
 
-<meta name="description" content="<%= description || 'WarmupExam helps students prepare for exams with mock tests, PYQs and AI-powered practice.' %>">
-
-<meta name="keywords" content="<%= keywords || 'WarmupExam, Mock Test, NIMCET, UPSC, SSC' %>">
+<meta name="description" content="<%= typeof description !== 'undefined' ? description : 'WarmupExam helps students prepare for exams with mock tests, PYQs and AI-powered practice.' %>">
 
 <meta name="author" content="WarmupExam">
 
-<meta name="robots" content="index, follow">
+<meta name="robots" content="<%= typeof robots !== 'undefined' ? robots : 'index, follow' %>">
 
-<link rel="canonical" href="<%= canonicalUrl || ('https://warmupexam.com' + (originalUrlPath || '')) %>">
+<link rel="canonical" href="<%= typeof canonicalUrl !== 'undefined' ? canonicalUrl : ('https://warmupexam.com' + (typeof originalUrlPath !== 'undefined' ? originalUrlPath : '')) %>">
 
-<meta property="og:title" content="<%= title || 'WarmupExam' %>">
-<meta property="og:description" content="<%= description || 'Prepare smarter with WarmupExam.' %>">
-<meta property="og:image" content="<%= ogImage || 'https://warmupexam.com/images/og-banner.jpg' %>">
-<meta property="og:url" content="<%= canonicalUrl || ('https://warmupexam.com' + (originalUrlPath || '')) %>">
+<!-- Favicons -->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<!-- Open Graph -->
+<meta property="og:title" content="<%= typeof title !== 'undefined' ? title : 'WarmupExam' %>">
+<meta property="og:description" content="<%= typeof description !== 'undefined' ? description : 'Realistic mock tests, AI performance analysis & AIR rank prediction for every competitive exam.' %>">
+<meta property="og:image" content="<%= typeof ogImage !== 'undefined' ? ogImage : 'https://warmupexam.com/images/og-banner.jpg' %>">
+<meta property="og:url" content="<%= typeof canonicalUrl !== 'undefined' ? canonicalUrl : ('https://warmupexam.com' + (typeof originalUrlPath !== 'undefined' ? originalUrlPath : '')) %>">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WarmupExam">
+<meta property="og:locale" content="en_IN">
 
+<!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="<%= title || 'WarmupExam' %>">
-<meta name="twitter:description" content="<%= description || 'Prepare smarter with WarmupExam.' %>">
-<meta name="twitter:image" content="<%= ogImage || 'https://warmupexam.com/images/og-banner.jpg' %>">
+<meta name="twitter:title" content="<%= typeof title !== 'undefined' ? title : 'WarmupExam' %>">
+<meta name="twitter:description" content="<%= typeof description !== 'undefined' ? description : 'Prepare smarter with WarmupExam.' %>">
+<meta name="twitter:image" content="<%= typeof ogImage !== 'undefined' ? ogImage : 'https://warmupexam.com/images/og-banner.jpg' %>">
 
 <meta name="theme-color" content="#4F46E5">
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "WarmupExam",
+  "url": "https://warmupexam.com",
+  "logo": "https://warmupexam.com/images/logo.png",
+  "sameAs": [
+    "https://facebook.com/warmupexam",
+    "https://instagram.com/warmupexam",
+  ]
+}
+</script>
+
+
+
+
+
+

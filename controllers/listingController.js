@@ -63,7 +63,15 @@ if (req.user && req.user.enrolledListings) {
         search: search || "",
         selectedExam: exam || "",
         enrolledIds,
-        enrolledExpiryMap
+        enrolledExpiryMap,
+
+
+         title: exam
+        ? `${exam} Mock Test Series | WarmupExam`
+        : "All Test Series – UPSC, SSC, JEE, NEET, GATE & More | WarmupExam",
+    description: exam
+        ? `Explore ${exam} mock tests, PYQs and AI-powered practice series on WarmupExam.`
+        : "Browse mock test series for UPSC, SSC, Defence, JEE, NEET, GATE, CAT, CUET & 15+ competitive exams."
     });
 };
 
@@ -101,7 +109,13 @@ export const showTest = async (req, res) => {
     // ✅ Total tests count nikalo is listing ke
     const totalTestCount = await Test.countDocuments({ listing: data._id });
 
-    res.render("test/show", { listing: data, enrolledIds, isOwner, totalTestCount });
+    res.render("test/show", { listing: data, enrolledIds, isOwner, totalTestCount,
+
+          title: `${data.title} Mock Test Series | WarmupExam`,
+    description: data.description
+        ? data.description.slice(0, 155)   
+        : `Practice ${data.title} with realistic mock tests, true negative marking, AI-powered analysis and AIR rank prediction on WarmupExam.`
+     });
 };
 
 export const renderNewTest = (req, res) => res.render("test/new");

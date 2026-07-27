@@ -1,38 +1,44 @@
-(function () {
-    const menuBtn = document.getElementById('menuBtn');
-    const closeBtn = document.getElementById('closeBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
+// ---- Mobile Sidebar Toggle ----
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
-    const stickyCta = document.getElementById('stickyCta');
+    const menuBtn = document.getElementById('menuBtn');
 
-    if (!menuBtn || !mobileMenu || !overlay) {
-        console.error('Menu elements missing:', { menuBtn, mobileMenu, overlay });
+    if (!sidebar || !overlay) {
+        console.error('Sidebar elements missing:', { sidebar, overlay });
         return;
     }
 
-    function openMenu() {
-        mobileMenu.classList.remove('translate-x-full');
-        overlay.classList.remove('hidden');
-        if (stickyCta) stickyCta.classList.add('hidden');
-        document.body.style.overflow = 'hidden';
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+
+    const isOpen = !sidebar.classList.contains('-translate-x-full');
+
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+
+    // Top hamburger icon hide/show
+    if (menuBtn) {
+        menuBtn.classList.toggle('hidden', isOpen);
     }
+}
 
-    function closeMenu() {
-        mobileMenu.classList.add('translate-x-full');
-        overlay.classList.add('hidden');
-        if (stickyCta) stickyCta.classList.remove('hidden');
-        document.body.style.overflow = '';
+// ---- Profile Dropdown Toggle ----
+function toggleProfileDropdown() {
+    const menu = document.getElementById('profileDropdownMenu');
+    if (menu) menu.classList.toggle('hidden');
+}
+
+// Click outside profile dropdown => close it
+document.addEventListener('click', function (e) {
+    const wrapper = document.getElementById('profileDropdownWrapper');
+    const menu = document.getElementById('profileDropdownMenu');
+    if (wrapper && menu && !wrapper.contains(e.target)) {
+        menu.classList.add('hidden');
     }
+});
 
-    menuBtn.addEventListener('click', openMenu);
-
-    // closeBtn optional hai, safety check add kiya
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeMenu);
-    }
-
-    overlay.addEventListener('click', closeMenu);
-
+// ---- Active Nav Link Highlight ----
+document.addEventListener('DOMContentLoaded', () => {
     const currentPath = window.location.pathname;
     document.querySelectorAll(".nav-link").forEach(link => {
         const href = link.getAttribute("href");
@@ -40,4 +46,4 @@
             link.classList.add("text-indigo-700", "font-semibold");
         }
     });
-})();
+});

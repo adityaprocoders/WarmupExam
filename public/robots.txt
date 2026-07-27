@@ -4,5 +4,6 @@ Disallow: /dashboard
 Disallow: /admin
 Disallow: /api
 Disallow: /owner*
+Disallow: /owner-login
 
 Sitemap: https://warmupexam.com/sitemap.xml
