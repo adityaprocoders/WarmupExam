@@ -16,7 +16,7 @@ import session from "express-session";
 import flash from "connect-flash";
 import MongoStore from "connect-mongo";
 import compression from "compression";   
-import helmet from "helmet";  
+
 
 
 import connectDB from "./config/Db.js";
@@ -45,9 +45,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 // ---------------- SECURITY + PERFORMANCE ----------------
-app.use(helmet({
-    contentSecurityPolicy: false,  
-}));
+ 
 app.use(compression());
  
 
