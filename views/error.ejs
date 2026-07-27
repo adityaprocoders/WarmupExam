@@ -1,0 +1,238 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  .err500-wrap{
+    --ink:#1e1b4b;
+    --indigo:#4f46e5;
+    --indigo-deep:#3730a3;
+    --red:#e11d48;
+    --paper:#faf9f7;
+    --line:#e4e1f5;
+
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(225,29,72,0.06), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(79,70,229,0.07), transparent 45%),
+      var(--paper);
+    font-family:'Inter', sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    overflow:hidden;
+    position:relative;
+    box-sizing:border-box;
+  }
+
+  .err500-wrap *{box-sizing:border-box;}
+
+  .err500-wrap .trail{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    opacity:0.5;
+  }
+
+  .err500-wrap .card{
+    position:relative;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:28px;
+    padding:56px 44px 44px;
+    max-width:460px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 1px 2px rgba(30,27,75,0.04), 0 20px 60px -20px rgba(225,29,72,0.15);
+    animation:err500-riseIn 0.7s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  @keyframes err500-riseIn{
+    from{opacity:0; transform:translateY(24px) scale(0.98);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+
+  .err500-wrap .icon-wrap{
+    width:96px;
+    height:96px;
+    margin:0 auto 28px;
+    position:relative;
+  }
+
+  .err500-wrap .icon-ring{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    background:linear-gradient(145deg, #fff1f2, #ffffff);
+    border:1.5px solid #fecdd3;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: inset 0 2px 6px rgba(225,29,72,0.08), 0 8px 24px -8px rgba(225,29,72,0.25);
+    position:relative;
+  }
+
+  .err500-wrap .icon-ring::before{
+    content:'';
+    position:absolute;
+    inset:8px;
+    border-radius:50%;
+    border:1px dashed #fda4af;
+  }
+
+  .err500-wrap .bolt{
+    width:40px;
+    height:40px;
+    color:var(--red);
+    animation: err500-pulse 2.2s ease-in-out infinite;
+  }
+
+  @keyframes err500-pulse{
+    0%, 100% { transform:scale(1); opacity:1; }
+    50% { transform:scale(1.12); opacity:0.75; }
+  }
+
+  .err500-wrap h1.title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:26px;
+    font-weight:700;
+    color:var(--ink);
+    margin:6px 0 14px;
+    letter-spacing:-0.3px;
+  }
+
+  .err500-wrap .divider{
+    width:36px;
+    height:3px;
+    background:var(--red);
+    border-radius:2px;
+    margin:0 auto 18px;
+  }
+
+  .err500-wrap p.msg{
+    font-size:13.5px;
+    line-height:1.65;
+    color:#64748b;
+    margin:0 0 8px;
+    padding:0 6px;
+  }
+
+  .err500-wrap p.msg.hi{
+    color:#94a3b8;
+    margin-bottom:32px;
+  }
+
+  .err500-wrap .actions{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .err500-wrap .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    font-family:'Inter', sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    padding:13px 20px;
+    border-radius:14px;
+    text-decoration:none;
+    cursor:pointer;
+    transition:transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    border:none;
+  }
+
+  .err500-wrap .btn:active{ transform:scale(0.97); }
+
+  .err500-wrap .btn-primary{
+    background:var(--ink);
+    color:#fff;
+    box-shadow:0 6px 16px -4px rgba(30,27,75,0.35);
+  }
+  .err500-wrap .btn-primary:hover{
+    background:var(--indigo-deep);
+    box-shadow:0 8px 20px -4px rgba(55,48,163,0.4);
+  }
+
+  .err500-wrap .btn-ghost{
+    background:#fff;
+    color:var(--ink);
+    border:1px solid var(--line);
+  }
+  .err500-wrap .btn-ghost:hover{
+    background:#f5f4ff;
+    border-color:#c7d2fe;
+  }
+
+  .err500-wrap .btn i{ width:16px; height:16px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .err500-wrap .bolt, .err500-wrap .card{ animation:none !important; }
+  }
+
+  @media (max-width:480px){
+    .err500-wrap .card{ padding:44px 26px 34px; border-radius:22px; }
+    .err500-wrap h1.title{ font-size:22px; }
+  }
+</style>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Something Went Wrong | WarmupExam</title>
+    <link rel="stylesheet" href="/css/output.css">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+<div class="err500-wrap">
+
+  <svg class="trail" viewBox="0 0 800 600" preserveAspectRatio="none">
+    <path d="M -20 480 C 150 380, 220 500, 380 380 C 520 280, 600 340, 830 180"
+          fill="none" stroke="#fecdd3" stroke-width="2" stroke-dasharray="1 14" stroke-linecap="round"/>
+  </svg>
+
+  <div class="card">
+
+    <div class="icon-wrap">
+      <div class="icon-ring">
+        <i data-lucide="zap-off" class="bolt"></i>
+      </div>
+    </div>
+
+    <h1 class="title">Something went wrong</h1>
+    <div class="divider"></div>
+
+    <p class="msg">
+        <%= typeof message !== 'undefined' && message ? message : "We're facing a temporary issue on our end." %>
+    </p>
+    <p class="msg hi">Please try again in a moment. If this keeps happening, reach out to our support team.</p>
+
+    <div class="actions">
+      <a href="javascript:location.reload()" class="btn btn-primary">
+        <i data-lucide="refresh-cw"></i>
+        Try again
+      </a>
+      <a href="/" class="btn btn-ghost">
+        <i data-lucide="home"></i>
+        Back to home
+      </a>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  if (window.lucide) { lucide.createIcons(); }
+</script>
+
+</body>
+</html>

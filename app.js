@@ -15,6 +15,8 @@ import methodOverride from "method-override";
 import session from "express-session";
 import flash from "connect-flash";
 import MongoStore from "connect-mongo";
+import compression from "compression";   
+import helmet from "helmet";  
 
 
 import connectDB from "./config/Db.js";
@@ -42,6 +44,11 @@ import contactRoutes from "./routes/contactRoutes.js";
 const app = express();
 app.set('trust proxy', 1);
 
+// ---------------- SECURITY + PERFORMANCE ----------------
+app.use(helmet({
+    contentSecurityPolicy: false,  
+}));
+app.use(compression());
  
 
 app.use(sanitizeMiddleware);
@@ -53,6 +60,26 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride('_method'));
 app.use(cookieParser());
+
+
+// ---------------- GLOBAL SEO ----------------
+app.use((req, res, next) => {
+    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+    res.locals.title = "WarmupExam";
+    res.locals.description =
+        "Practice mock tests, PYQs and AI-powered exam preparation with WarmupExam.";
+
+    res.locals.keywords =
+        "WarmupExam, Mock Test, BOARD EXAM, NIMCET, UPSC, SSC, Banking, Railway, JEE, NEET";
+
+    res.locals.ogImage = `${baseUrl}/images/og-banner.jpg`;
+
+    res.locals.canonicalUrl = `${baseUrl}${req.originalUrl}`;
+
+    next();
+});
+
 
 // ---------------- SESSION + PASSPORT ----------------
 app.use(session({
@@ -118,7 +145,10 @@ app.use(async (req, res, next) => {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), {
+    maxAge: process.env.NODE_ENV === "production" ? "7d" : 0,
+}));
+
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -144,6 +174,16 @@ app.use(copyPasteRoutes);
 app.use(profileRoutes);
 app.use("/", contactRoutes);
 
+
+// Error
+
+if (process.env.NODE_ENV !== "production") {
+    app.get('/test-error', (req, res) => {
+        res.render('pages/error', { message: 'This is a test error message.', layout: false });
+    });
+}
+
+
 // ---------------- 404 ----------------
 app.use((req, res, next) => {
     if (req.originalUrl === '/.well-known/appspecific/com.chrome.devtools.json') {
@@ -153,8 +193,11 @@ app.use((req, res, next) => {
     next(new ExpressError(404, "Page Not Found"));
 });
 
+
+
 app.use(errorHandler);
 
+
 app.listen(PORT, () => {
-    console.log(`Server Running http://localhost:${PORT}`);
+    console.log(`Server Running on port ${PORT} [${process.env.NODE_ENV || "development"}]`);
 });

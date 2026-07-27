@@ -1,0 +1,751 @@
+ 
+<!-- ================= HELP CENTER PAGE — PREMIUM UI ================= -->
+
+<!-- 1. Hero -->
+<section class="relative py-16 sm:py-24 bg-gradient-to-b from-indigo-50 via-white to-white">
+
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-16 -left-16 sm:-top-24 sm:-left-24 w-64 h-64 sm:w-96 sm:h-96 bg-indigo-200/40 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-16 -right-16 sm:-bottom-24 sm:-right-24 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200/40 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="relative max-w-4xl mx-auto px-5 sm:px-6 text-center">
+        <span class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full mb-6">
+            <span class="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-pulse"></span>
+            Help Center
+        </span>
+
+        <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 leading-[1.15] tracking-tight">
+            How can we <span class="text-indigo-600">help</span> you?
+        </h1>
+
+        <p class="mt-5 text-base sm:text-lg text-slate-600 max-w-xl mx-auto leading-relaxed">
+            Find quick answers about payments, mock tests, your account, and AI reports.
+        </p>
+
+        <!-- Search bar -->
+        <div class="mt-8 max-w-lg mx-auto relative text-left" id="searchWrap">
+            <div id="searchBox"
+                class="flex items-center gap-3 bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3.5 transition-all focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+                <i data-lucide="search" class="w-5 h-5 text-slate-400 shrink-0"></i>
+                <input type="text" id="helpSearchInput" placeholder="Search for answers..." autocomplete="off"
+                    role="combobox" aria-expanded="false" aria-controls="searchSuggestions" aria-autocomplete="list"
+                    class="flex-1 min-w-0 outline-none border-0 p-0 bg-transparent placeholder:text-slate-400 text-slate-800">
+                <button id="clearSearchBtn" type="button" aria-label="Clear search"
+                    class="hidden shrink-0 text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- live suggestions dropdown -->
+            <div id="searchSuggestions" role="listbox"
+                class="hidden absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden z-30 text-left max-h-80 overflow-y-auto">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 2. Category Tabs -->
+<section class="pb-6 bg-white">
+    <div class="max-w-5xl mx-auto px-5 sm:px-6">
+        <div class="flex flex-wrap justify-center gap-3" id="categoryTabs">
+
+            <button data-category="all" class="category-tab active-tab flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold border transition-all shrink-0">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i> All
+            </button>
+
+            <button data-category="payments" class="category-tab flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold border transition-all shrink-0">
+                <i data-lucide="credit-card" class="w-4 h-4"></i> Payments
+            </button>
+
+            <button data-category="tests" class="category-tab flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold border transition-all shrink-0">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Tests
+            </button>
+
+            <button data-category="account" class="category-tab flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold border transition-all shrink-0">
+                <i data-lucide="user" class="w-4 h-4"></i> Account
+            </button>
+
+            <button data-category="reports" class="category-tab flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold border transition-all shrink-0">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i> AI Reports
+            </button>
+
+        </div>
+    </div>
+</section>
+
+<!-- 3. FAQ Accordion -->
+<section class="py-10 sm:py-14 bg-gradient-to-b from-white to-slate-50">
+    <div class="max-w-3xl mx-auto px-5 sm:px-6 space-y-4" id="faqList">
+
+        <!-- Payments -->
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="payments">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Which payment methods do you accept?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">We accept UPI, debit cards, and net banking/bank transfer through our secure payment gateway. All transactions are encrypted and processed instantly.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="payments">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">I was charged but my plan isn't active. What do I do?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Contact our support team and share a screenshot of your payment confirmation. We'll verify the transaction and activate your plan promptly.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="payments">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Can I get a refund? What's the refund policy?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes. You can apply for a refund within 7 days of purchasing a batch or test series. Reach out to support to start the process.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="payments">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Do you offer any discounts or coupon codes?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, prices and offers change periodically on a weekly/monthly and daily basis. New coupon codes are shared on our official Instagram account, @WarmUpExam.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="payments">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Is my payment information secure?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, all your payment information is fully secure and processed through an encrypted payment gateway.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="payments">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">How do I check my payment/transaction history?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Go to your Profile — your purchased test series and payment history are listed there.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="payments">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">My payment failed but money got deducted from my account. What now?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Please wait 24 hours — if the payment went through successfully, your plan will activate automatically. If it doesn't, contact support and we'll resolve it based on your account details.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="payments">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Do you offer any free trial before purchasing?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">There's no separate free trial, but we offer both free and paid test series, so you can try the free ones before deciding to purchase.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="payments">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Do prices differ for different exams (JEE, NEET, SSC, etc.)?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, pricing varies depending on the exam and test series you choose.</p>
+            </div>
+        </div>
+
+        <!-- Tests -->
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="tests">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Do mock tests have real negative marking?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, our mock tests follow the actual exam's negative marking pattern.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="tests">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Can I retake a test I've already attempted?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, you can attempt the same test multiple times.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="tests">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Are the mock tests based on the latest exam pattern?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, every test is designed according to the latest, real exam pattern.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="tests">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Can I switch between subjects/sections during a timed test?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, you can freely move between subjects and sections while the timer is running.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="tests">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Is there a practice mode without a timer?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">No — every test on the platform runs within a fixed time period, similar to a real exam.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="tests">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">How many mock tests are included in each exam category?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Free plans include around 10–30 tests, while paid plans include 100–300+ tests across topic-wise, subject-wise, section-wise, full-length, Daily Warm-Up, PYQ, and AI Rank tests.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="tests">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Can I take a test on mobile as well as desktop?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, you can take tests on both mobile and desktop.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="tests">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Are solutions/explanations provided after the test?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, detailed solutions and explanations are provided for both free and paid tests.</p>
+            </div>
+        </div>
+
+        <!-- Account -->
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="account">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">How do I reset my password?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Go to the Login page and use the "Forgot Password" option to reset it.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="account">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Can I use one account on multiple devices?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, your account works across multiple devices.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="account">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">How do I update my profile details (name, email, phone)?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Go to your Profile and use the Edit option to update your details.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="account">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">How do I delete my account permanently?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Go to your Profile, open Settings, and select "Delete Account." Confirm via the popup notification to permanently delete your account.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="account">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">I'm not receiving OTP/verification emails. What do I do?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Please wait 5–10 minutes and try again. If you still don't receive it, check your spam folder or contact support.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="account">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Can I change my registered email address?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, you can update your registered email from your Profile.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="account">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Is there a mobile app, or is it website-only?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">WarmUpExam currently works as a website, optimized for both mobile and desktop browsers.</p>
+            </div>
+        </div>
+
+        <!-- AI Reports -->
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="reports">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">How accurate is the Rank Predictor?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">The Rank Predictor works only for full-length, PYQ, and AI Rank tests, and its estimate depends on the number of students who have attempted that test.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="reports">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Where can I download my Smart Performance Report?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Go to your Dashboard and use the "Export" option to download your report.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="reports">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">What does the Weak Area Finder actually show?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Using AI, it analyzes all your attempted tests in depth and highlights exactly which topics and areas are weak, so you know what to focus on.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="reports">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">How is my percentile/rank calculated?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Your rank and percentile are calculated based on the real exam pattern and how you performed relative to other students who attempted the same test.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="reports">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">How often is my performance report updated?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Your report updates automatically right after every test you complete, and is available anytime from your Dashboard.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="reports">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Does the AI analysis track my improvement over time?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, the AI tracks your performance over time so you can see how you're improving test after test.</p>
+            </div>
+        </div>
+
+        <!-- General -->
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="payments">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Is WarmUpExam free to use?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">It's not entirely free — we offer both free and paid test series, so you can start for free and upgrade whenever you're ready.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="account">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Which exams does WarmUpExam currently support?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">We support all major exam types, including defence, government, entrance, medical, engineering, and banking exams.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="tests">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">What is "Daily Warm-Up"?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Daily Warm-Up is a short daily revision set of 20–30 questions, designed for quick practice — perfect for your morning routine.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" data-category="account">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">How can I contact support if my issue isn't listed here?</span>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Write your issue under the relevant subject/topic in the Contact section, and our support team will get back to you.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- No results state -->
+    <div id="noResultsMsg" class="hidden max-w-3xl mx-auto px-5 sm:px-6 text-center py-10">
+        <i data-lucide="search-x" class="w-10 h-10 text-slate-300 mx-auto mb-3"></i>
+        <p class="text-slate-500 text-sm">No matching questions found. Try a different search term.</p>
+    </div>
+</section>
+
+
+<style>
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.category-tab {
+    background: white;
+    border-color: rgb(226 232 240);
+    color: rgb(71 85 105);
+}
+.category-tab:hover {
+    border-color: rgb(199 210 254);
+    box-shadow: 0 2px 8px rgba(99,102,241,0.1);
+}
+.category-tab.active-tab {
+    background: rgb(79 70 229);
+    border-color: rgb(79 70 229);
+    color: white;
+}
+.faq-question:hover .faq-icon {
+    color: rgb(67 56 202);
+}
+.faq-item.open .faq-icon {
+    transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+    .faq-answer { transition: none !important; }
+}
+
+/* suggestions dropdown */
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.7rem 1rem;
+    font-size: 0.875rem;
+    color: rgb(30 41 59);
+    background: white;
+    border: none;
+    cursor: pointer;
+}
+.suggestion-item:hover,
+.suggestion-item.active-suggestion {
+    background: rgb(238 242 255);
+}
+.suggestion-item .cat-tag {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: rgb(79 70 229);
+    background: rgb(238 242 255);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.lucide) lucide.createIcons();
+
+    const ALL_LIMIT = 10;
+    const CATEGORY_LABELS = { payments: 'Payments', tests: 'Tests', account: 'Account', reports: 'AI Reports' };
+
+    const categoryTabs = document.querySelectorAll('.category-tab');
+    const faqItems = Array.from(document.querySelectorAll('.faq-item'));
+    const searchInput = document.getElementById('helpSearchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const noResultsMsg = document.getElementById('noResultsMsg');
+    const limitNote = document.getElementById('limitNote');
+    const limitShownEl = document.getElementById('limitShown');
+    const limitTotalEl = document.getElementById('limitTotal');
+    const suggestionsBox = document.getElementById('searchSuggestions');
+
+    // cache original text so highlighting never corrupts the source we search against
+    faqItems.forEach((item, idx) => {
+        const q = item.querySelector('.faq-question span');
+        const a = item.querySelector('.faq-answer p');
+        item._originalQ = q.textContent;
+        item._originalA = a.textContent;
+        item.id = item.id || `faq-item-${idx}`;
+    });
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function highlight(text, term) {
+        // highlighting disabled per request — return plain, escaped text
+        return escapeHtml(text);
+    }
+
+    function getActiveCategory() {
+        const activeTab = document.querySelector('.category-tab.active-tab');
+        return activeTab ? activeTab.dataset.category : 'all';
+    }
+
+    function openItem(item) {
+        document.querySelectorAll('.faq-item.open').forEach(openEl => {
+            if (openEl !== item) {
+                openEl.classList.remove('open');
+                openEl.querySelector('.faq-answer').style.maxHeight = '0px';
+            }
+        });
+        const answer = item.querySelector('.faq-answer');
+        item.classList.add('open');
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+    }
+
+    function closeItem(item) {
+        item.classList.remove('open');
+        item.querySelector('.faq-answer').style.maxHeight = '0px';
+    }
+
+    function applyFilters() {
+        const activeCategory = getActiveCategory();
+        const rawTerm = searchInput.value.trim();
+        const searchTerm = rawTerm.toLowerCase();
+
+        clearSearchBtn.classList.toggle('hidden', rawTerm === '');
+
+        const matched = [];
+        faqItems.forEach(item => {
+            const matchesCategory = activeCategory === 'all' || item.dataset.category === activeCategory;
+            const questionText = item._originalQ.toLowerCase();
+            const answerText = item._originalA.toLowerCase();
+            const matchesSearch = searchTerm === '' ||
+                questionText.includes(searchTerm) ||
+                answerText.includes(searchTerm);
+
+            const isMatch = matchesCategory && matchesSearch;
+            item.dataset.match = isMatch ? '1' : '0';
+            if (isMatch) matched.push(item);
+
+            // refresh highlighted text
+            item.querySelector('.faq-question span').innerHTML = highlight(item._originalQ, rawTerm);
+            item.querySelector('.faq-answer p').innerHTML = highlight(item._originalA, rawTerm);
+        });
+
+        // cap "All" tab to ALL_LIMIT items when there's no active search
+        const capActive = activeCategory === 'all' && searchTerm === '' && matched.length > ALL_LIMIT;
+        const limit = capActive ? ALL_LIMIT : Infinity;
+
+        let shown = 0;
+        matched.forEach(item => {
+            if (shown < limit) {
+                item.style.display = '';
+                shown++;
+            } else {
+                item.style.display = 'none';
+                if (item.classList.contains('open')) closeItem(item);
+            }
+        });
+        faqItems.forEach(item => {
+            if (item.dataset.match !== '1') {
+                item.style.display = 'none';
+                if (item.classList.contains('open')) closeItem(item);
+            }
+        });
+
+        // resync height of any still-open, still-visible item (content/width may have changed)
+        const openVisible = document.querySelector('.faq-item.open');
+        if (openVisible && openVisible.style.display !== 'none') {
+            const answer = openVisible.querySelector('.faq-answer');
+            answer.style.maxHeight = 'none';
+            answer.style.maxHeight = answer.scrollHeight + 'px';
+        }
+
+        noResultsMsg.classList.toggle('hidden', matched.length !== 0);
+        limitNote.classList.toggle('hidden', !capActive);
+        if (capActive) {
+            limitShownEl.textContent = ALL_LIMIT;
+            limitTotalEl.textContent = matched.length;
+        }
+    }
+
+    // ---- live suggestions dropdown ----
+    let activeSuggestionIndex = -1;
+
+    function closeSuggestions() {
+        suggestionsBox.classList.add('hidden');
+        suggestionsBox.innerHTML = '';
+        searchInput.setAttribute('aria-expanded', 'false');
+        activeSuggestionIndex = -1;
+    }
+
+    function renderSuggestions(rawTerm) {
+        const term = rawTerm.toLowerCase();
+        if (!term) { closeSuggestions(); return; }
+
+        const matches = faqItems.filter(item =>
+            item._originalQ.toLowerCase().includes(term) || item._originalA.toLowerCase().includes(term)
+        ).slice(0, 8);
+
+        if (matches.length === 0) { closeSuggestions(); return; }
+
+        suggestionsBox.innerHTML = matches.map((item, i) => `
+            <button type="button" class="suggestion-item" role="option" data-target="${item.id}" data-idx="${i}">
+                <span class="truncate">${highlight(item._originalQ, rawTerm)}</span>
+                <span class="cat-tag">${CATEGORY_LABELS[item.dataset.category] || ''}</span>
+            </button>
+        `).join('');
+
+        suggestionsBox.classList.remove('hidden');
+        searchInput.setAttribute('aria-expanded', 'true');
+        activeSuggestionIndex = -1;
+    }
+
+    function goToItem(item) {
+        const activeCategory = item.dataset.category;
+        categoryTabs.forEach(t => t.classList.toggle('active-tab', t.dataset.category === activeCategory));
+        searchInput.value = '';
+        closeSuggestions();
+        applyFilters();
+        requestAnimationFrame(() => {
+            item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            openItem(item);
+        });
+    }
+
+    suggestionsBox.addEventListener('click', (e) => {
+        const btn = e.target.closest('.suggestion-item');
+        if (!btn) return;
+        const item = document.getElementById(btn.dataset.target);
+        if (item) goToItem(item);
+    });
+
+    // debounce so fast typing doesn't thrash the DOM
+    let debounceTimer;
+    function debouncedUpdate() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            applyFilters();
+            renderSuggestions(searchInput.value.trim());
+        }, 120);
+    }
+
+    categoryTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            categoryTabs.forEach(t => t.classList.remove('active-tab'));
+            tab.classList.add('active-tab');
+            closeSuggestions();
+            applyFilters();
+            tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        });
+    });
+
+    searchInput.addEventListener('input', debouncedUpdate);
+    searchInput.addEventListener('focus', () => renderSuggestions(searchInput.value.trim()));
+
+    searchInput.addEventListener('keydown', (e) => {
+        const options = suggestionsBox.querySelectorAll('.suggestion-item');
+        if (suggestionsBox.classList.contains('hidden') || options.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeSuggestionIndex = (activeSuggestionIndex + 1) % options.length;
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeSuggestionIndex = (activeSuggestionIndex - 1 + options.length) % options.length;
+        } else if (e.key === 'Enter') {
+            if (activeSuggestionIndex >= 0) {
+                e.preventDefault();
+                options[activeSuggestionIndex].click();
+                return;
+            }
+            closeSuggestions();
+            return;
+        } else if (e.key === 'Escape') {
+            closeSuggestions();
+            return;
+        } else {
+            return;
+        }
+
+        options.forEach((opt, i) => opt.classList.toggle('active-suggestion', i === activeSuggestionIndex));
+        options[activeSuggestionIndex]?.scrollIntoView({ block: 'nearest' });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#searchWrap')) closeSuggestions();
+    });
+
+    clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchInput.focus();
+        closeSuggestions();
+        applyFilters();
+    });
+
+    // Accordion toggle
+    document.querySelectorAll('.faq-question').forEach(question => {
+        question.addEventListener('click', () => {
+            const item = question.closest('.faq-item');
+            if (item.classList.contains('open')) closeItem(item);
+            else openItem(item);
+        });
+    });
+
+    // recalc open item's height on window resize so text reflow doesn't get clipped
+    window.addEventListener('resize', () => {
+        const openEl = document.querySelector('.faq-item.open');
+        if (openEl) {
+            const answer = openEl.querySelector('.faq-answer');
+            answer.style.maxHeight = 'none';
+            answer.style.maxHeight = answer.scrollHeight + 'px';
+        }
+    });
+
+    applyFilters();
+});
+</script>
+ 
