@@ -1,5 +1,9 @@
 const errorHandler = (err, req, res, next) => {
-  console.error(err.stack);
+   if (err.code === "EBADCSRFTOKEN" || err.message === "invalid csrf token") {
+        req.flash("error", "Form session expire ho gaya, dobara try karein.");
+        return res.redirect(req.get("Referer") || "/");
+    }
+
 
   const statusCode = err.statusCode || 500;
   const message = err.message || "Something went wrong";

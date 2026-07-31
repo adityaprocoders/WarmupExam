@@ -6,6 +6,8 @@
      
     <meta name="robots" content="noindex, nofollow">
 
+    <meta name="csrf-token" content="<%= csrfToken %>">
+
     <link rel="stylesheet" href="/css/output.css">
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet"
@@ -38,7 +40,7 @@ lucide.createIcons();
  
 
  <!-- ✅ PWA Service Worker -->
-    <script>
+    <!-- <script>
         if ("serviceWorker" in navigator && window.location.protocol === "https:") {
             window.addEventListener("load", () => {
                 navigator.serviceWorker.register("/sw.js")
@@ -46,7 +48,9 @@ lucide.createIcons();
                     .catch((err) => console.log("SW registration failed:", err));
             });
         }
-    </script>
+    </script> -->
+
+    <script src="/js/common.js"></script>
 
 </body>
 </html>

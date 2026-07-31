@@ -24,6 +24,7 @@ import passport from "./config/passport.js";
 import ExpressError from "./utils/ExpressError.js";
 import errorHandler from "./middleware/errorHandler.js";
 import ownerRoutes from "./routes/ownerRoutes.js";
+import { doubleCsrfProtection, generateCsrfToken } from "./config/csrf.js";
 
 import pageRoutes from "./routes/pageRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -40,8 +41,13 @@ import profileRoutes from "./routes/profileRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import couponRoutes from "./routes/couponRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+
+
+
 
 const app = express();
+const isProd = process.env.NODE_ENV === "production";
 app.set('trust proxy', 1);
 
 // ---------------- SECURITY + PERFORMANCE ----------------
@@ -53,6 +59,19 @@ app.use(sanitizeMiddleware);
 const PORT = process.env.PORT || 8080;
 
 connectDB();
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+
+
+
+app.use(express.static(path.join(__dirname, "public"), {
+    maxAge: process.env.NODE_ENV === "production" ? "7d" : 0,
+}));
+
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -93,25 +112,53 @@ app.use(session({
     }
 }));
 
+
+app.use((req, res, next) => {
+    if (!req.session) return next();
+    if (!req.session.initialized) {
+        req.session.initialized = true;  
+    }
+    next();
+});
+
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
  
 
-const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
-    getSecret: () => process.env.SESSION_SECRET,
-    cookieName: "csrf-token",
-    cookieOptions: {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-    },
-    size: 64,
-    getSessionIdentifier: (req) => req.sessionID,
-});
+ 
+app.use((req, res, next) => {
+    const skipCsrfPrefixes = [
+        "/owner",
+        "/api/owner",
+        "/owner-dashboard",
+        "/owner-login", 
+        "/admin",
+        "/tests",
+        "/test",
+        "/alltests", 
+        "/profile",
+        "/api/upload-image",
+    ];
+
+    const shouldSkip = skipCsrfPrefixes.some(prefix => req.path.startsWith(prefix));
+
+    if (shouldSkip) {
+        return next();
+    }
+
+    try {
+        return doubleCsrfProtection(req, res, next);
+    } catch (err) {
+        return next(err);
+    }
+})
+
 
 app.use((req, res, next) => {
-    res.locals.csrfToken = generateCsrfToken(req, res);
+    const hasExistingCsrfCookie = Boolean(req.cookies?.["csrf-token"]);
+    res.locals.csrfToken = generateCsrfToken(req, res, !hasExistingCsrfCookie);
+
     next();
 });
 
@@ -120,6 +167,8 @@ app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     next();
 });
+
+
 
 app.use(async (req, res, next) => {
     try {
@@ -140,13 +189,8 @@ app.use(async (req, res, next) => {
     }
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-app.use(express.static(path.join(__dirname, "public"), {
-    maxAge: process.env.NODE_ENV === "production" ? "7d" : 0,
-}));
-
+  
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -171,7 +215,7 @@ app.use(attemptRoutes);
 app.use(copyPasteRoutes);
 app.use(profileRoutes);
 app.use("/", contactRoutes);
-
+app.use(orderRoutes);
 
 // Error
 

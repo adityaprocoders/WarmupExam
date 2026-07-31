@@ -5,6 +5,8 @@
 
     <%- include("../partials/head") %>
 
+    <meta name="csrf-token" content="<%= csrfToken %>">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.2.0/css/all.min.css">
     
      <link rel="icon" href="/favicon.ico" sizes="any">
@@ -73,18 +75,7 @@
             }
         });
     </script>
-     
-
-      <!-- ✅ PWA Service Worker -->
-    <script>
-        if ("serviceWorker" in navigator && window.location.protocol === "https:") {
-            window.addEventListener("load", () => {
-                navigator.serviceWorker.register("/sw.js")
-                    .then(() => console.log("Service Worker registered"))
-                    .catch((err) => console.log("SW registration failed:", err));
-            });
-        }
-    </script>
+      
 
 </body>
 </html>

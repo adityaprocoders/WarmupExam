@@ -5,6 +5,7 @@ import * as listingController from "../controllers/listingController.js";
 import { upload } from "../middleware/upload.js";
 import { validateBody } from "../middleware/validate.js";
 import { createListingSchema } from "../utils/schemas.js";
+import { doubleCsrfProtection } from "../config/csrf.js";
 
 const router = express.Router();
 
@@ -20,11 +21,12 @@ router.post(
     "/alltests",
     isOwner,
     upload.single("image"),
+     doubleCsrfProtection, 
     validateBody(createListingSchema, "listing"),
     wrapAsync(listingController.createTest)
 );
 
-router.delete("/test/:id", isOwner, wrapAsync(listingController.deleteTest));
+router.delete("/test/:id", isOwner,  doubleCsrfProtection,  wrapAsync(listingController.deleteTest));
 router.get("/tests/new", isOwner, wrapAsync(listingController.renderNewTest));
 router.get("/tests/:id/edit", isOwner, wrapAsync(listingController.renderEditTest));
 
@@ -32,6 +34,7 @@ router.put(
     "/tests/:id",
     isOwner,
     upload.single("image"),
+     doubleCsrfProtection, 
     validateBody(createListingSchema, "listing"),
     wrapAsync(listingController.updateTest)
 );
