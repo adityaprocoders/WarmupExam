@@ -65,6 +65,7 @@
 
     <div class="p-3 border-t border-gray-100 shrink-0">
       <form method="POST" action="/logout">
+         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition">
           <i class="fa-solid fa-right-from-bracket w-4"></i> Logout
         </button>
@@ -923,3 +924,7 @@ function attachLoginHistoryEvents() {
   loadDashboard();
 })();
 </script>
+
+
+
+

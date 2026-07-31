@@ -242,14 +242,14 @@
 
 <script>
   // ---- weakAreaController se aaya real data ----
-  const subjects = <%- JSON.stringify(weakAreaData ? weakAreaData.subjects : []) %>;
+  const subjects = <%- safeJsonStringify(weakAreaData ? weakAreaData.subjects : []) %>;
   const weakAreaData_focusSubject = "<%= weakAreaData ? weakAreaData.focusSubject : '' %>";
   const weakAreaData_focusTopic = "<%= weakAreaData ? weakAreaData.focusTopic : '' %>";
-  const weakAreas = <%- JSON.stringify(weakAreaData ? weakAreaData.weakAreas : []) %>;
-  const heatmapRows = <%- JSON.stringify(weakAreaData ? weakAreaData.heatmapRows : []) %>;
-  const topicsBySubject = <%- JSON.stringify(weakAreaData ? weakAreaData.topicsBySubject : {}) %>;
-  const subtopicsByTopic = <%- JSON.stringify(weakAreaData ? weakAreaData.subtopicsByTopic : {}) %>;
-  const weakAreasAll = <%- JSON.stringify(weakAreaData ? weakAreaData.weakAreasAll : []) %>;
+  const weakAreas = <%- safeJsonStringify(weakAreaData ? weakAreaData.weakAreas : []) %>;
+  const heatmapRows = <%- safeJsonStringify(weakAreaData ? weakAreaData.heatmapRows : []) %>;
+  const topicsBySubject = <%- safeJsonStringify(weakAreaData ? weakAreaData.topicsBySubject : {}) %>;
+  const subtopicsByTopic = <%- safeJsonStringify(weakAreaData ? weakAreaData.subtopicsByTopic : {}) %>;
+  const weakAreasAll = <%- safeJsonStringify(weakAreaData ? weakAreaData.weakAreasAll : []) %>;
 
   let currentSubject = weakAreaData_focusSubject;
   let currentTopic = weakAreaData_focusTopic;
@@ -530,3 +530,6 @@
 
   if (window.lucide) lucide.createIcons();
 </script>
+
+
+

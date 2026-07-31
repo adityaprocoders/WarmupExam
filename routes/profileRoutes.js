@@ -8,6 +8,7 @@ import * as profileController from "../controllers/profileController.js";
 import cloudinary from "../config/cloudinary.js";
 import { validateBody } from "../middleware/validate.js";
 import { updateProfileSchema, changePasswordSchema } from "../utils/schemas.js";
+import { doubleCsrfProtection } from "../config/csrf.js";
 
 const router = express.Router();
 
@@ -85,6 +86,7 @@ router.patch(
     "/profile",
     isLoggedIn,
     uploadAvatar.single("avatar"),
+     doubleCsrfProtection,
     validateBody(updateProfileSchema),
     wrapAsync(async (req, res, next) => {
         try {
@@ -139,14 +141,15 @@ router.patch(
 router.patch(
     "/profile/change-password",
     isLoggedIn,
+    doubleCsrfProtection,
     validateBody(changePasswordSchema),
     wrapAsync(profileController.changePassword)
 );
 
 // ---------------- DELETE ACCOUNT ----------------
-router.delete("/profile/delete-account", isLoggedIn, wrapAsync(profileController.deleteAccount));
+router.delete("/profile/delete-account", isLoggedIn, doubleCsrfProtection, wrapAsync(profileController.deleteAccount));
 
 // ---------------- UPDATE AVATAR ----------------
-router.patch("/profile/update-avatar", isLoggedIn, uploadAvatar.single("avatar"), wrapAsync(profileController.updateAvatar));
+router.patch("/profile/update-avatar", isLoggedIn, uploadAvatar.single("avatar"),  doubleCsrfProtection, wrapAsync(profileController.updateAvatar));
 
 export default router;

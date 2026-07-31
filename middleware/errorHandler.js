@@ -1,16 +1,18 @@
 const errorHandler = (err, req, res, next) => {
-   if (err.code === "EBADCSRFTOKEN" || err.message === "invalid csrf token") {
-        req.flash("error", "Form session expire ho gaya, dobara try karein.");
-        return res.redirect(req.get("Referer") || "/");
-    }
-
+  if (err.code === "EBADCSRFTOKEN" || err.message === "invalid csrf token") {
+    req.flash("error", "Form session expire ho gaya, dobara try karein.");
+    return res.redirect(req.get("Referer") || "/");
+  }
 
   const statusCode = err.statusCode || 500;
   const message = err.message || "Something went wrong";
+ 
+  
+  if (statusCode >= 500) {
+    console.error("🔴 SERVER ERROR:", err);
+  }
 
-  // Production me generic message do (security ke liye), dev me asli message
-  const isProd = process.env.NODE_ENV === "production";
-  const safeMessage = (statusCode === 500 && isProd)
+  const safeMessage = statusCode >= 500
     ? "Something went wrong on our end. Please try again."
     : message;
 

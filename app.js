@@ -25,6 +25,9 @@ import ExpressError from "./utils/ExpressError.js";
 import errorHandler from "./middleware/errorHandler.js";
 import ownerRoutes from "./routes/ownerRoutes.js";
 import { doubleCsrfProtection, generateCsrfToken } from "./config/csrf.js";
+import { safeJsonStringify } from "./utils/safeJson.js";
+
+
 
 import pageRoutes from "./routes/pageRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -93,6 +96,8 @@ app.use((req, res, next) => {
     res.locals.ogImage = `${baseUrl}/images/og-banner.jpg`;
 
     res.locals.canonicalUrl = `${baseUrl}${req.originalUrl}`;
+     
+     res.locals.safeJsonStringify = safeJsonStringify;
 
     next();
 });
@@ -129,16 +134,13 @@ app.use(flash());
  
 app.use((req, res, next) => {
     const skipCsrfPrefixes = [
-        "/owner",
-        "/api/owner",
-        "/owner-dashboard",
-        "/owner-login", 
-        "/admin",
+        "/api/upload-image",
+        "/alltests",
         "/tests",
         "/test",
-        "/alltests", 
         "/profile",
-        "/api/upload-image",
+        "/attempt",    
+        "/api/attempt",
     ];
 
     const shouldSkip = skipCsrfPrefixes.some(prefix => req.path.startsWith(prefix));

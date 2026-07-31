@@ -119,10 +119,17 @@ overflow-y-auto">
     <!-- Practice Zones -->
 
     <div class="mt-8">
-
-    <h3 class="text-xs uppercase tracking-widest text-slate-400 font-bold mb-4">
+    <div class="flex items-center justify-between mb-4">
+    <h3 class="text-xs uppercase tracking-widest text-slate-400 font-bold">
         Practice Zones
     </h3>
+    <% if (currentUser.role === 'owner') { %>
+    <button type="button" id="selectModeBtn" onclick="toggleSelectMode()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+        Select
+    </button>
+    <% } %>
+</div>
+
 
    <ul class="space-y-2">
 
@@ -136,6 +143,15 @@ overflow-y-auto">
         id="section-item-<%= section._id %>"
         class="group flex items-center justify-between rounded-xl p-3 transition border border-transparent 
         <%= isActive ? 'bg-indigo-600' : 'hover:bg-indigo-50 hover:border-indigo-200' %>">
+            
+
+        <% if (currentUser.role === 'owner') { %>
+    <input
+        type="checkbox"
+        class="section-select-checkbox hidden mr-2 w-4 h-4 rounded text-indigo-600"
+        data-section-id="<%= section._id %>"
+        onclick="event.stopPropagation(); updateSelectedCount();">
+    <% } %>
 
         <!-- Clickable Section -->
         <a href="/series/<%= listing.slug %>?section=<%= section._id %>" class="flex items-center gap-3 flex-1">
@@ -153,6 +169,7 @@ overflow-y-auto">
             action="/section/<%= section._id %>?_method=PUT"
             method="POST"
             class="hidden flex-1 mx-3">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input
                 type="text"
                 name="title"
@@ -190,6 +207,7 @@ overflow-y-auto">
 
     <!-- Delete -->
     <form action="/section/<%= section._id %>?_method=DELETE" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button
             type="submit"
             class="<%= isActive ? 'text-indigo-100 hover:text-red-300' : 'text-slate-400 hover:text-red-600' %>">
@@ -219,8 +237,9 @@ overflow-y-auto">
     id="addSectionBox"
     action="/series/<%= listing.slug %>/section"
     method="POST"
-    class="hidden mt-4 space-y-3"
->
+    class="hidden mt-4 space-y-3">
+   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    
     <input
         name="title"
         type="text"
@@ -372,4 +391,32 @@ overflow-y-auto">
 
 </div> 
 
+<!-- Bulk Actions Bar -->
+<div id="bulkActionBar" class="hidden fixed bottom-4 left-4 md:left-[19rem] z-50 bg-slate-900 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3">
+    <span id="selectedCountText" class="text-sm font-semibold">0 selected</span>
+
+    <div class="relative">
+        <button type="button" onclick="toggleBulkCopyDropdown()" class="bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+            Copy <i class="fa-solid fa-chevron-down text-xs"></i>
+        </button>
+        <div id="bulkCopyDropdown" class="hidden absolute bottom-full mb-2 left-0 w-56 bg-white text-slate-800 rounded-xl shadow-lg py-1.5 border border-slate-100">
+            <button type="button" onclick="openBulkCopyModal('single')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">
+                Copy to one series
+            </button>
+            <button type="button" onclick="openBulkCopyModal('multiple')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">
+                Copy to multiple series
+            </button>
+        </div>
+    </div>
+
+    <button type="button" onclick="toggleSelectMode()" class="text-sm text-slate-300 hover:text-white">
+        Cancel
+    </button>
+</div>
+
+<%- include("./bulkCopyModal.ejs") %>
+
 <script src="/js/sideBar.js"></script>
+
+
+

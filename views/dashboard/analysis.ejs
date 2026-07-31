@@ -123,7 +123,7 @@
 
     <!-- Real attempt data server se aata hai -->
     <script>
-        window.ANALYSIS_DATA = <%- JSON.stringify(analysisData) %>;
+        window.ANALYSIS_DATA = <%- safeJsonStringify(analysisData) %>;
     </script>
 
     <script>
@@ -473,3 +473,7 @@ function buildSolutionCard(sol) {
     </script>
 </body>
 </html>
+
+
+
+

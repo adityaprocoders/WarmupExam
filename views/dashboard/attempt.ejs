@@ -269,15 +269,15 @@ const testData = {
     sessionId: "<%= sessionId %>",
     timeStrategy: "<%= test.timeStrategy %>",
     duration: <%= test.duration || 0 %>,
-    subjectTime: <%- JSON.stringify(test.subjectTime || []) %>
+    subjectTime: <%- safeJsonStringify(test.subjectTime || []) %>
 };
 
 const returnUrl = (document.referrer && document.referrer.trim() !== '') ? document.referrer : '/';
  
-const HAS_SUBJECT_TABS = <%- JSON.stringify(hasSubjectTiming) %>;
+const HAS_SUBJECT_TABS = <%- safeJsonStringify(hasSubjectTiming) %>;
 
-const subjectsOrder = <%- JSON.stringify(subjectsOrder) %>; 
-const grouped = <%- JSON.stringify(grouped) %>;
+const subjectsOrder = <%- safeJsonStringify(subjectsOrder) %>; 
+const grouped = <%- safeJsonStringify(grouped) %>;
 
 // Flat ordered list of questions with subject index (subjectIndex refers to subjectsOrder,
 // i.e. the raw individual subject — NOT the combined section, which is resolved below).
@@ -960,3 +960,7 @@ init();
 
 </body>
 </html>
+
+
+
+

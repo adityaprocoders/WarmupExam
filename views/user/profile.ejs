@@ -5,7 +5,7 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6">
 
         <form id="profileForm" action="/profile?_method=PATCH" method="POST" enctype="multipart/form-data">
-
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
            <div class="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6 mb-6">
 
                 <div class="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 mx-auto sm:mx-0">
@@ -478,9 +478,12 @@
 
                     try {
                         const res = await fetch("/profile/update-avatar?_method=PATCH", {
-                            method: "POST",
-                            body: formData
-                        });
+    method: "POST",
+    headers: {
+        "x-csrf-token": document.querySelector('meta[name="csrf-token"]').content
+    },
+    body: formData
+});
                         const data = await res.json();
 
                         if (data.success) {
@@ -771,11 +774,14 @@
                 updatePasswordBtn.textContent = "Updating...";
 
                 try {
-                    const res = await fetch("/profile/change-password?_method=PATCH", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ currentPassword, newPassword })
-                    });
+                     const res = await fetch("/profile/change-password?_method=PATCH", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "x-csrf-token": document.querySelector('meta[name="csrf-token"]').content
+    },
+    body: JSON.stringify({ currentPassword, newPassword })
+});
                     const data = await res.json();
 
                     if (data.success) {
@@ -857,9 +863,12 @@
             deleteConfirmBtn.textContent = "Deleting...";
             try {
                 const res = await fetch("/profile/delete-account?_method=DELETE", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" }
-                });
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "x-csrf-token": document.querySelector('meta[name="csrf-token"]').content
+    }
+});
                 const data = await res.json();
 
                 if (data.success) {
@@ -887,3 +896,6 @@
  
 
 </script>
+
+
+

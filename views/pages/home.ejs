@@ -30,6 +30,7 @@
                       action="/test/<%= test._id %>?_method=DELETE"
                       onsubmit="return confirm('Are you sure you want to delete this?');"
                       class="m-0">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit"
                             class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition duration-200 shadow-sm">
                         <i class="fa-solid fa-trash text-xs"></i>
@@ -226,3 +227,6 @@
  
 <script src="/js/features.js"></script>
 <script src="/js/enrollment.js"></script>
+
+
+

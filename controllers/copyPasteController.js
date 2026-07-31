@@ -7,7 +7,11 @@ import { copyNode } from "../utils/copyHelpers.js";
 
 export const searchSeries = async (req, res) => {
     const keyword = req.query.keyword?.trim();
-    if (!keyword) return res.json([]);
+
+    if (!keyword) {
+        const recent = await Listing.find().select("title exam slug").sort({ createdAt: -1 }).limit(20);
+        return res.json(recent);
+    }
 
     const series = await Listing.find({
         $or: [
@@ -53,4 +57,32 @@ export const pasteItem = async (req, res) => {
     );
 
     res.json({ success: true, data: newItem });
+};
+
+export const bulkCopySections = async (req, res) => {
+    const { sectionIds, destListingIds } = req.body;
+
+    if (!Array.isArray(sectionIds) || sectionIds.length === 0) {
+        return res.status(400).json({ success: false, message: "Koi section select nahi kiya" });
+    }
+    if (!Array.isArray(destListingIds) || destListingIds.length === 0) {
+        return res.status(400).json({ success: false, message: "Koi destination series select nahi ki" });
+    }
+
+    let copied = 0;
+    let failed = 0;
+
+    for (const sectionId of sectionIds) {
+        for (const listingId of destListingIds) {
+            try {
+                await copyNode("section", sectionId, listingId, null, "section", null);
+                copied++;
+            } catch (err) {
+                console.error("Bulk copy error:", err);
+                failed++;
+            }
+        }
+    }
+
+    res.json({ success: true, copied, failed });
 };

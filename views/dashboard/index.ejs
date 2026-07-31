@@ -645,8 +645,8 @@ function handleCopySearch(keyword) {
 
 
 // --- Dashboard analytics charts: 100% driven by dashboardStats / performanceGrowth (no hardcoded numbers) ---
-const perfData = <%- JSON.stringify(performanceGrowth || []) %>;
-const dashStats = <%- JSON.stringify(dashboardStats || {}) %>;
+const perfData = <%- safeJsonStringify(performanceGrowth || []) %>;
+const dashStats = <%- safeJsonStringify(dashboardStats || {}) %>;
 
 if (perfData.length > 0) {
     // Marker = user ka AVERAGE marks/rank (sab mock tests ka average)
@@ -845,7 +845,7 @@ if (perfData.length > 0) {
     }
 }
  
- const performanceData = <%- JSON.stringify(performanceGrowth || []) %>;
+ const performanceData = <%- safeJsonStringify(performanceGrowth || []) %>;
 
     if (performanceData.length > 0 && document.getElementById('performanceGrowthChart')) {
         const ctx = document.getElementById('performanceGrowthChart').getContext('2d');
@@ -877,7 +877,7 @@ if (perfData.length > 0) {
 
 
 
-    const userNameForPdf = <%- JSON.stringify(currentUser.name || "") %>;
+    const userNameForPdf = <%- safeJsonStringify(currentUser.name || "") %>;
 
 // Category-wise distinct pastel colors (cycle karega agar sections zyada ho)
 const CATEGORY_COLORS = [
@@ -1072,3 +1072,6 @@ document.addEventListener('click', function () {
 if (window.lucide) lucide.createIcons();
 
 </script>
+
+
+

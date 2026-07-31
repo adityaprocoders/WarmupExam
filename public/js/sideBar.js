@@ -69,3 +69,34 @@ function continueBatchSelection() {
     const slug = selected.value;
     window.location.href = `/series/${slug}`;
 }
+
+
+let selectModeOn = false;
+
+function toggleSelectMode() {
+    selectModeOn = !selectModeOn;
+    document.querySelectorAll('.section-select-checkbox').forEach(cb => {
+        cb.classList.toggle('hidden', !selectModeOn);
+        if (!selectModeOn) cb.checked = false;
+    });
+    const btn = document.getElementById('selectModeBtn');
+    if (btn) btn.textContent = selectModeOn ? 'Cancel' : 'Select';
+    updateSelectedCount();
+}
+
+function getSelectedSectionIds() {
+    return Array.from(document.querySelectorAll('.section-select-checkbox:checked'))
+        .map(cb => cb.dataset.sectionId);
+}
+
+function updateSelectedCount() {
+    const count = getSelectedSectionIds().length;
+    const bar = document.getElementById('bulkActionBar');
+    const text = document.getElementById('selectedCountText');
+    if (text) text.textContent = `${count} selected`;
+    if (bar) bar.classList.toggle('hidden', !selectModeOn || count === 0);
+}
+
+function toggleBulkCopyDropdown() {
+    document.getElementById('bulkCopyDropdown').classList.toggle('hidden');
+}

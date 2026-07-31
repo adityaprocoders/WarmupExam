@@ -3,7 +3,8 @@
     
      
    <form method="POST" action="/tests/<%= listing._id %>?_method=PUT" enctype="multipart/form-data" class="space-y-5">
-
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
             <label class="block text-sm font-semibold text-gray-700">Title</label>
@@ -171,3 +172,6 @@
     window.initialRankIndex = <%= (listing.rankPredictorData && listing.rankPredictorData.length > 0) ? listing.rankPredictorData.length : 1 %>;
 </script>
 <script src="/js/testNew.js"></script>
+
+
+

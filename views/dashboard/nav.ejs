@@ -78,6 +78,7 @@
                             <i class="fa-solid fa-user w-4 text-slate-400"></i> My Profile
                         </a>
                         <form action="/logout" method="POST">
+                             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition text-left">
                                 <i class="fa-solid fa-right-from-bracket w-4"></i> Logout
                             </button>
@@ -94,3 +95,6 @@
 </nav>
 
  <script src="/js/nav.js"></script>
+
+
+

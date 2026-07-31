@@ -12,6 +12,16 @@ export const getProfile = async (req, res) => {
             })
             .lean();
 
+            if (!user) {
+             
+            return req.logout(function (err) {
+                if (err) console.error("Logout error (stale session user):", err);
+                req.flash("error", "Your session is invalid. Please log in again.");
+                res.redirect("/login");
+            });
+        }
+
+
         const myPurchases = (user.enrolledListings || [])
             .filter(item => item.listing && item.listing.type === "Paid") // 👈 sirf PAID batch
             .map(item => {
