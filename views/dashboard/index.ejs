@@ -908,16 +908,18 @@ async function exportAllAttemptsPdf() {
     btn.disabled = true;
 
     try {
-        const res = await fetch(window.location.pathname.split('/series/')[1]
-            ? `/series/${window.location.pathname.split('/series/')[1].split('/')[0]}/export-attempts`
-            : window.location.pathname + "/export-attempts");
+         const currentParams = new URLSearchParams(window.location.search);
+const statsSectionParam = currentParams.get('statsSection') || 'all';
 
+const res = await fetch(window.location.pathname.split('/series/')[1]
+    ? `/series/${window.location.pathname.split('/series/')[1].split('/')[0]}/export-attempts?statsSection=${statsSectionParam}`
+    : window.location.pathname + `/export-attempts?statsSection=${statsSectionParam}`);
         const result = await res.json();
 
         if (!result.success || !result.data || result.data.length === 0) {
-            alert("Koi attempt data nahi mila");
-            return;
-        }
+    showFlashMessage("No attempt data found.");
+    return;
+}
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: "landscape" });
@@ -1017,8 +1019,7 @@ async function exportAllAttemptsPdf() {
         doc.save(fileName);
 
     } catch (err) {
-        console.error("PDF export error:", err);
-        alert("PDF banane mein dikkat aayi, dobara try karo");
+         showFlashMessage("Unable to generate PDF. Please try again.");
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;

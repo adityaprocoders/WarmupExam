@@ -339,12 +339,12 @@ overflow-y-auto">
    );
 %>
 
-            <% activeBatches.forEach((enrollment, idx) => { %>
-                <%
-                    const isCurrent = currentUser.lastAccessedBatch && 
-                        currentUser.lastAccessedBatch.slug === enrollment.listing.slug;
-                    const isPremiumBatch = enrollment.listing.isPremium;
-                %>
+           <% activeBatches.forEach((enrollment, idx) => { %>
+    <%
+        const isCurrent = currentUser.lastAccessedBatch && 
+            currentUser.lastAccessedBatch.slug === enrollment.listing.slug;
+        const isPremiumBatch = enrollment.listing.type === "Paid";
+    %>
 
                 <label
                     data-batch-name="<%= enrollment.listing.title.toLowerCase() %>"

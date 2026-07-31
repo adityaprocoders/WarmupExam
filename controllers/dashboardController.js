@@ -86,6 +86,7 @@ export const showSeries = async (req, res) => {
 
     if (!isOwnerUser(req)) {
         await req.user.updateOne({ lastAccessedBatch: listing._id });
+        req.user.lastAccessedBatch = listing;
     }
 
     const sections = await Section.find({ listing: listing._id }).sort({ createdAt: 1 });;
@@ -288,7 +289,7 @@ export const showSeries = async (req, res) => {
         };
 
         // Recent Activity — latest 5 attempts (UNCHANGED)
-        recentActivity = allAttempts.slice(0, 5).map(a => ({
+        recentActivity = allAttempts.map(a => ({
             attemptId: a._id,
             testTitle: testMap[String(a.test)]?.title || "Untitled Test",
             date: a.createdAt,
@@ -498,13 +499,19 @@ export const showFile = async (req, res) => {
 
 export const exportAllAttempts = async (req, res) => {
     const { slug } = req.params;
+    const { statsSection } = req.query;
 
     const listing = await Listing.findOne({ slug });
     if (!listing) {
         return res.status(404).json({ success: false, message: "Listing not found" });
     }
 
-    const allTests = await Test.find({ listing: listing._id }).select("_id title section totalMarks");
+    const testQuery = { listing: listing._id };
+    if (statsSection && statsSection !== "all") {
+        testQuery.section = statsSection;
+    }
+
+    const allTests = await Test.find(testQuery).select("_id title section totalMarks");
     const allTestIds = allTests.map(t => t._id);
 
     const attempts = await Attempt.find({ test: { $in: allTestIds }, user: req.user._id })
@@ -539,7 +546,7 @@ export const exportAllAttempts = async (req, res) => {
             score,
             rank: rank ?? "--",
             accuracy,
-            time: a.duration ?? a.timeTaken ?? "--" // ⚠️ confirm karo exact field name
+            time: a.duration ?? a.timeTaken ?? "--"
         };
     });
 

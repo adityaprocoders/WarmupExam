@@ -70,7 +70,7 @@ applyCouponBtn?.addEventListener("click", async function () {
         const res = await fetch("/apply-coupon", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code, listingId })
+           body: JSON.stringify({ code, listingId, cartAmount: BASE_PRICE + selectedDonation })
         });
         const data = await res.json();
 
