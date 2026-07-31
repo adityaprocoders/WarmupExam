@@ -549,6 +549,11 @@
 
         if (usernameInput) {
             usernameInput.addEventListener("input", () => {
+                const cursorPos = usernameInput.selectionStart;
+        usernameInput.value = usernameInput.value.toLowerCase();
+        usernameInput.setSelectionRange(cursorPos, cursorPos);
+
+
                 const value = usernameInput.value.trim().toLowerCase();
                 headerUsernameText.textContent = value || originalUsername;
                 clearTimeout(usernameDebounce);
@@ -591,6 +596,12 @@
 
         if (emailInput) {
             emailInput.addEventListener("input", () => {
+        const cursorPos = emailInput.selectionStart;
+        emailInput.value = emailInput.value.toLowerCase();
+        emailInput.setSelectionRange(cursorPos, cursorPos);
+
+
+    
                 const value = emailInput.value.trim().toLowerCase();
                 headerEmailText.textContent = value || originalEmail;
                 clearTimeout(emailDebounce);

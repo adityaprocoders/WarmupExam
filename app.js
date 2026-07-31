@@ -16,7 +16,7 @@ import session from "express-session";
 import flash from "connect-flash";
 import MongoStore from "connect-mongo";
 import compression from "compression";   
-
+import helmet from "helmet";
 
 
 import connectDB from "./config/Db.js";
@@ -57,6 +57,12 @@ app.set('trust proxy', 1);
  
 app.use(compression());
  
+
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false,
+}));
 
 app.use(sanitizeMiddleware);
 const PORT = process.env.PORT || 8080;
@@ -185,6 +191,13 @@ app.use(async (req, res, next) => {
         res.locals.isOwner = isOwnerUser(req);
         res.locals.success = req.flash('success');
         res.locals.error = req.flash('error');
+
+        const now = new Date();
+        const hasActivePaidEnrollment = req.user?.enrolledListings?.some(
+            (e) => e.amountPaid > 0 && (!e.expiresAt || e.expiresAt > now)
+        );
+        res.locals.showAds = res.locals.isOwner ? false : !hasActivePaidEnrollment;
+
         next();
     } catch (err) {
         next(err);

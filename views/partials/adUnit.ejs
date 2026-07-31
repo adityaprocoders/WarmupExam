@@ -1,0 +1,11 @@
+<% if (typeof showAds !== 'undefined' && showAds) { %>
+    <div class="ad-container my-4">
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-XXXXXXXXXXXXXXX"
+             data-ad-slot="<%= typeof adSlot !== 'undefined' ? adSlot : 'YYYYYYYYYY' %>"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+<% } %>
