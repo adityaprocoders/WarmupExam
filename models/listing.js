@@ -73,6 +73,10 @@ const listingSchema = new mongoose.Schema({
                 type: Number,
                 required: true,
                 default: 0
+            },
+             qualifyingOnly: {
+                type: Boolean,
+                default: false
             }
         }
     ],

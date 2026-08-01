@@ -83,16 +83,25 @@
         </div>
 
         <div id="subjectsContainer">
-            <% listing.marks.forEach(function(mark, i) { %>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 subject-row">
-                <input type="text" name="listing[marks][<%= i %>][subject]" value="<%= mark.subject %>" placeholder="Subject" class="border rounded-lg p-2" required>
-                <input type="number" step="0.01" name="listing[marks][<%= i %>][positiveMarks]" value="<%= mark.positiveMarks %>" placeholder="Positive Marks" class="border rounded-lg p-2" required>
-                <input type="number" step="0.01" name="listing[marks][<%= i %>][negativeMarks]" value="<%= mark.negativeMarks %>" placeholder="Negative Marks" class="border rounded-lg p-2" required>
-                <button type="button" onclick="removeSubject(this)" class="bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
-                    Remove
-                </button>
-            </div>
-            <% }); %>
+             <% listing.marks.forEach(function(mark, i) { %>
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 subject-row">
+    <input type="text" name="listing[marks][<%= i %>][subject]" value="<%= mark.subject %>" placeholder="Subject" class="border rounded-lg p-2" required>
+    <input type="number" step="0.01" name="listing[marks][<%= i %>][positiveMarks]" value="<%= mark.positiveMarks %>" placeholder="Positive Marks" class="border rounded-lg p-2" required>
+    <input type="number" step="0.01" name="listing[marks][<%= i %>][negativeMarks]" value="<%= mark.negativeMarks %>" placeholder="Negative Marks" class="border rounded-lg p-2" required>
+    <label class="flex items-center gap-2 text-sm text-gray-700 border rounded-lg p-2">
+        <input
+            type="checkbox"
+            name="listing[marks][<%= i %>][qualifyingOnly]"
+            value="true"
+            <%= mark.qualifyingOnly ? 'checked' : '' %>
+            class="text-blue-600 focus:ring-blue-500">
+        Qualifying Only
+    </label>
+    <button type="button" onclick="removeSubject(this)" class="bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
+        Remove
+    </button>
+</div>
+<% }); %>
         </div>
 
     </div>

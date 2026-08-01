@@ -1,12 +1,9 @@
 let index = typeof window.initialSubjectIndex === "number" ? window.initialSubjectIndex : 1;
 
 function addSubject() {
-
     const container = document.getElementById("subjectsContainer");
-
     const div = document.createElement("div");
-
-    div.className = "grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 subject-row";
+    div.className = "grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 subject-row";
 
     div.innerHTML = `
         <input
@@ -32,6 +29,15 @@ function addSubject() {
             class="border rounded-lg p-2"
             required>
 
+        <label class="flex items-center gap-2 text-sm text-gray-700 border rounded-lg p-2">
+            <input
+                type="checkbox"
+                name="listing[marks][${index}][qualifyingOnly]"
+                value="true"
+                class="text-blue-600 focus:ring-blue-500">
+            Qualifying Only
+        </label>
+
         <button
             type="button"
             onclick="removeSubject(this)"
@@ -41,9 +47,8 @@ function addSubject() {
     `;
 
     container.appendChild(div);
-
     index++;
-};
+}
 
 function removeSubject(button) {
 

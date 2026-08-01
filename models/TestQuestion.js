@@ -17,7 +17,9 @@ const testQuestionSchema = new mongoose.Schema({
     order: { type: Number, required: true },
 
     positiveMarks: { type: Number, default: 0 },
-    negativeMarks: { type: Number, default: 0 }
+    negativeMarks: { type: Number, default: 0 },
+
+     qualifyingOnly: { type: Boolean, default: false }
 
 }, { timestamps: true });
 

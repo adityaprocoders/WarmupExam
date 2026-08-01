@@ -370,7 +370,7 @@ function toggleProceedBtn() {
 }
 
 function startTest(testId) {
-    window.location.href = `/attempt/${testId}`;
+    window.location.href = `/attempt/${testId}?from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
 }
 
     if (window.lucide) {

@@ -183,20 +183,15 @@ export const createListingSchema = Joi.object({
                 "string.empty": "Subject name is required"
             }),
             positiveMarks: Joi.number().default(0),
-            negativeMarks: Joi.number().default(0)
+            negativeMarks: Joi.number().default(0),
+            qualifyingOnly: Joi.boolean().truthy("true").falsy("false", "").default(false)
         })
     ).default([]),
 
     rankPredictorData: Joi.array().items(
         Joi.object({
-            marks: Joi.number().required().messages({
-                "number.base": "Rank predictor marks must be a number",
-                "any.required": "Rank predictor marks is required"
-            }),
-            rank: Joi.number().required().messages({
-                "number.base": "Rank predictor rank must be a number",
-                "any.required": "Rank predictor rank is required"
-            })
+            marks: Joi.alternatives().try(Joi.number(), Joi.string().allow("")).optional(),
+            rank: Joi.alternatives().try(Joi.number(), Joi.string().allow("")).optional()
         })
     ).default([]),
 

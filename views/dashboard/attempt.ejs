@@ -160,9 +160,17 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
     <aside id="sidebar" class="hidden lg:flex flex-col w-72 border-l bg-white shrink-0">
 
         <div class="p-4 border-b flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">U</div>
-            <span class="font-bold text-sm text-slate-700">Candidate</span>
+    <% if (currentUser && currentUser.avatar) { %>
+        <img src="<%= currentUser.avatar %>" alt="Candidate" class="w-8 h-8 rounded-full object-cover">
+    <% } else { %>
+        <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+            <%= (currentUser && currentUser.name) ? currentUser.name.charAt(0).toUpperCase() : 'U' %>
         </div>
+    <% } %>
+    <span class="font-bold text-sm text-slate-700 truncate">
+        <%= (currentUser && currentUser.name) ? currentUser.name : 'Candidate' %>
+    </span>
+</div>
 
         <div class="p-4 border-b space-y-2 text-xs">
             <div class="flex items-center gap-2"><span class="w-5 h-5 rounded bg-green-500 text-white flex items-center justify-center text-[10px] font-bold" id="cntAnswered">0</span> Answered
@@ -272,7 +280,7 @@ const testData = {
     subjectTime: <%- safeJsonStringify(test.subjectTime || []) %>
 };
 
-const returnUrl = (document.referrer && document.referrer.trim() !== '') ? document.referrer : '/';
+const returnUrl = <%- safeJsonStringify(returnUrl) %>;
  
 const HAS_SUBJECT_TABS = <%- safeJsonStringify(hasSubjectTiming) %>;
 
@@ -867,6 +875,10 @@ function confirmSubmit() {
     document.getElementById('submitModal').classList.remove('hidden');
 }
  
+function closeSubmitModal() {
+    document.getElementById('submitModal').classList.add('hidden');
+}
+
 async function doSubmitTest(submitType = "manual") {
     if (testSubmitted) return;
     testSubmitted = true;

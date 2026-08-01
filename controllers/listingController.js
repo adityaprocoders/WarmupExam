@@ -136,13 +136,34 @@ export const createTest = async (req, res) => {
     data.price = Math.round(data.originalPrice - (data.originalPrice * data.discountPercentage / 100));
     data.validityDays = Number(data.validityDays) || 365;
     data.rankPredictorData = cleanRankPredictorData(data.rankPredictorData);
-       if (req.file) {
+    data.qualify = data.qualify || false;
+
+    if (req.file) {
         data.image = req.file.path;
     }
+
     const test = new Listing(data);
-    test.slug = slugify(test.title, { lower: true, strict: true });
-    await test.save();
-    res.redirect("/alltests");
+
+    // generate a base slug, then ensure uniqueness
+    let baseSlug = slugify(test.title, { lower: true, strict: true });
+    let slug = baseSlug;
+    let counter = 1;
+    while (await Listing.exists({ slug })) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+    test.slug = slug;
+
+    try {
+        await test.save();
+        res.redirect("/alltests");
+    } catch (err) {
+        if (err.code === 11000) {
+            req.flash?.("error", "A test with this title already exists. Please use a different title.");
+            return res.redirect("/test/new"); // or wherever your create form lives
+        }
+        throw err; // let your global error handler / catchAsync deal with anything else
+    }
 };
 
 export const renderEditTest = async (req, res) => {

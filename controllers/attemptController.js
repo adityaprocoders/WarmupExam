@@ -81,14 +81,15 @@ export const showAttempt = async (req, res) => {
         grouped[q.subject].push(q);
     });
 
-    // ✅ Har fresh render par (naya attempt ya reattempt, dono allowed) ek naya
-    // one-time submit-token banao. "Unlimited reattempt" feature affect nahi hota —
-    // sirf isi ek session ka double-submit blocked hoga.
     const session = await AttemptSession.create({ test: id, user: req.user._id });
+
+    const returnUrl = req.query.from || req.headers.referer || "/dashboard";
 
     res.render("dashboard/attempt", {
         layout: false, test, subjectsOrder, grouped,
-        sessionId: session._id.toString()
+        sessionId: session._id.toString(),
+        returnUrl,
+        currentUser: req.user   // ✅ candidate info ke liye
     });
 };
 
@@ -130,6 +131,14 @@ export const submitAttempt = async (req, res) => {
         });
     }
 
+    // ✅ Listing ke marks config se qualifying-only subjects nikal lo
+    const listingForMarks = await Listing.findById(test.listing).select("marks");
+    const qualifyingSubjects = new Set(
+        (listingForMarks?.marks || [])
+            .filter(m => m.qualifyingOnly)
+            .map(m => m.subject)
+    );
+
     const mappings = await TestQuestion.find({ test: testId }).populate("question");
 
     let score = 0, correctCount = 0, wrongCount = 0, skippedCount = 0;
@@ -155,9 +164,17 @@ export const submitAttempt = async (req, res) => {
             }
         }
 
+        // ✅ Qualifying-only subject hai to sirf marks add na karo, baki sab (correct/wrong count) normal chalega
+        const isQualifyingOnly = qualifyingSubjects.has(q.subject);
+
         if (!attempted) skippedCount++;
-        else if (isCorrect) { correctCount++; score += m.positiveMarks; }
-        else { wrongCount++; score -= m.negativeMarks; }
+        else if (isCorrect) {
+            correctCount++;
+            if (!isQualifyingOnly) score += m.positiveMarks;
+        } else {
+            wrongCount++;
+            if (!isQualifyingOnly) score -= m.negativeMarks;
+        }
 
         savedAnswers.push({
             question: q._id,
@@ -187,6 +204,13 @@ export const showAnalysis = async (req, res) => {
 
     const test = await Test.findById(attempt.test);
     const listing = await Listing.findById(attempt.listing);
+
+    // ✅ Listing ke marks config se qualifying-only subjects nikal lo
+    const qualifyingSubjects = new Set(
+        (listing?.marks || [])
+            .filter(m => m.qualifyingOnly)
+            .map(m => m.subject)
+    );
 
     const mappings = await TestQuestion.find({ test: attempt.test });
     const marksMap = {};
@@ -224,33 +248,38 @@ export const showAnalysis = async (req, res) => {
         let status = "skipped";
         if (attempted) status = isCorrect ? "correct" : "wrong";
 
-        if (status === "correct") positiveTotal += marks.positiveMarks;
-        if (status === "wrong") negativeTotal += marks.negativeMarks;
-
         const subject = q.subject || "General";
+        const isQualifyingOnly = qualifyingSubjects.has(subject);
+
+        // ✅ Sirf marks add karna skip karo, baaki (topicBreakdown counts) normal rahenge
+        if (!isQualifyingOnly) {
+            if (status === "correct") positiveTotal += marks.positiveMarks;
+            if (status === "wrong") negativeTotal += marks.negativeMarks;
+        }
+
         if (!subjectMap[subject]) subjectMap[subject] = { subject, total: 0, correct: 0, wrong: 0 };
         subjectMap[subject].total += 1;
         if (status === "correct") subjectMap[subject].correct += 1;
         if (status === "wrong") subjectMap[subject].wrong += 1;
 
         solutions.push({
-    order: idx + 1,
-    subject: q.subject || "",
-    type: q.type || "",
-    topic: q.topic || "",
-    subtopic: q.subtopic || "",
-    difficulty: q.difficulty || "",
-    status,
-    questionText: q.question || "",
-    questionImage: q.questionImage || null,
-    options: q.options || [],
-    correctAnswers: q.correctAnswers || [],
-    numericAnswer: q.numericAnswer ?? null,
-    selectedOptions: a.selectedOptions || [],
-    userNumericAnswer: a.numericAnswer ?? null,
-    solutionText: q.solution?.text || "",
-    solutionImage: q.solution?.image || null
-});
+            order: idx + 1,
+            subject: q.subject || "",
+            type: q.type || "",
+            topic: q.topic || "",
+            subtopic: q.subtopic || "",
+            difficulty: q.difficulty || "",
+            status,
+            questionText: q.question || "",
+            questionImage: q.questionImage || null,
+            options: q.options || [],
+            correctAnswers: q.correctAnswers || [],
+            numericAnswer: q.numericAnswer ?? null,
+            selectedOptions: a.selectedOptions || [],
+            userNumericAnswer: a.numericAnswer ?? null,
+            solutionText: q.solution?.text || "",
+            solutionImage: q.solution?.image || null
+        });
     });
 
     const topicBreakdown = Object.values(subjectMap).map(s => {

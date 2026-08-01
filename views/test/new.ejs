@@ -120,39 +120,48 @@
 
     <div id="subjectsContainer">
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 subject-row">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 subject-row">
 
-            <input
-                type="text"
-                name="listing[marks][0][subject]"
-                placeholder="Subject"
-                class="border rounded-lg p-2"
-                required>
+    <input
+        type="text"
+        name="listing[marks][0][subject]"
+        placeholder="Subject"
+        class="border rounded-lg p-2"
+        required>
 
-            <input
-                type="number"
-                step="0.01"
-                name="listing[marks][0][positiveMarks]"
-                placeholder="Positive Marks"
-                class="border rounded-lg p-2"
-                required>
+    <input
+        type="number"
+        step="0.01"
+        name="listing[marks][0][positiveMarks]"
+        placeholder="Positive Marks"
+        class="border rounded-lg p-2"
+        required>
 
-            <input
-                type="number"
-                step="0.01"
-                name="listing[marks][0][negativeMarks]"
-                placeholder="Negative Marks"
-                class="border rounded-lg p-2"
-                required>
+    <input
+        type="number"
+        step="0.01"
+        name="listing[marks][0][negativeMarks]"
+        placeholder="Negative Marks"
+        class="border rounded-lg p-2"
+        required>
 
-            <button
-                type="button"
-                onclick="removeSubject(this)"
-                class="bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
-                Remove
-            </button>
+    <label class="flex items-center gap-2 text-sm text-gray-700 border rounded-lg p-2">
+        <input
+            type="checkbox"
+            name="listing[marks][0][qualifyingOnly]"
+            value="true"
+            class="text-blue-600 focus:ring-blue-500">
+        Qualifying Only
+    </label>
 
-        </div>
+    <button
+        type="button"
+        onclick="removeSubject(this)"
+        class="bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
+        Remove
+    </button>
+
+</div>
 
     </div>
 
