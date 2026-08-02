@@ -79,7 +79,6 @@ app.use(compression());
 //     crossOriginResourcePolicy: { policy: "cross-origin" },
 // }));
 
-
 app.use(helmet({
     contentSecurityPolicy: isProd ? {
         directives: {
