@@ -356,3 +356,25 @@ export const verifyPaymentSchema = Joi.object({
         "string.pattern.base": "Invalid coupon ID"
     })
 });
+
+
+
+// content blocks
+
+
+export const createContentBlockSchema = Joi.object({
+    name: Joi.string().trim().min(2).max(100).required().messages({
+        "string.empty": "Block name is required"
+    }),
+    html: Joi.string().trim().min(1).required().messages({
+        "string.empty": "Content cannot be empty"
+    })
+}).unknown(true);    
+
+export const attachContentBlocksSchema = Joi.object({
+    contentBlocks: Joi.alternatives().try(
+        Joi.array().items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/)),
+        Joi.string().pattern(/^[0-9a-fA-F]{24}$/),
+        Joi.allow(null, "")
+    ).default([])
+});

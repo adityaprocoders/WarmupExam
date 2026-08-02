@@ -1,0 +1,246 @@
+<!-- views/owner/_contentBlocks.ejs -->
+
+<style>
+    #contentBlocksContainer table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        font-size: 0.95rem;
+    }
+    #contentBlocksContainer table th,
+    #contentBlocksContainer table td {
+        border: 1px solid #cbd5e1;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        vertical-align: middle;
+    }
+    #contentBlocksContainer table thead th,
+    #contentBlocksContainer table tr:first-child th {
+        background-color: #e0f2fe;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    #contentBlocksContainer table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    /* Mobile: table ko horizontally scrollable banao taaki layout na toote */
+    @media (max-width: 640px) {
+        #contentBlocksContainer table {
+            font-size: 0.85rem;
+        }
+        #contentBlocksContainer table th,
+        #contentBlocksContainer table td {
+            padding: 0.5rem 0.6rem;
+        }
+        #contentBlocksContainer .table-scroll-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+</style>
+
+<div id="contentBlocksContainer" class="space-y-4">
+    <% listing.contentBlocks.forEach(block => { %>
+        <div class="relative border p-4 sm:p-6 rounded-xl bg-gray-50" data-block-id="<%= block._id %>">
+
+            <% if (isOwner) { %>
+                <div class="absolute top-2 right-2 sm:top-3 sm:right-3 flex items-center gap-1.5 sm:gap-2 z-10">
+                    <button type="button"
+                        class="edit-block-btn w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-indigo-100 text-sm sm:text-base"
+                        data-id="<%= block._id %>"
+                        data-name="<%= block.name %>"
+                        data-html="<%= encodeURIComponent(block.html) %>">
+                        ✏️
+                    </button>
+
+
+
+                     <button type="button"
+        class="share-block-btn w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-green-100 text-sm sm:text-base"
+        data-id="<%= block._id %>">
+        🔗
+    </button>
+
+  
+                    <div class="relative">
+                        <button type="button" class="delete-toggle-btn w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-red-100 text-sm sm:text-base">
+                            🗑️
+                        </button>
+                        <div class="delete-dropdown hidden absolute right-0 mt-2 w-48 sm:w-56 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-20">
+                            <form action="/tests/<%= listing._id %>/detach-block/<%= block._id %>?_method=PUT" method="POST">
+                                <button type="submit" class="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm hover:bg-gray-50">
+                                    Detach from this listing
+                                </button>
+                            </form>
+                            <form action="/owner/content-library/<%= block._id %>?_method=DELETE" method="POST"
+                                  onsubmit="return confirm('Ye block sab listings se hamesha ke liye delete ho jayega. Sure?');">
+                                <input type="hidden" name="listingId" value="<%= listing._id %>">
+                                <button type="submit" class="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-red-600 hover:bg-red-50 border-t">
+                                    Delete permanently (from library too)
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Owner ke liye icons overlap na karein isliye top pe thoda space -->
+                <div class="h-6 sm:h-0"></div>
+            <% } %>
+
+            <div class="table-scroll-wrap">
+                <%- block.html %>
+            </div>
+        </div>
+    <% }) %>
+</div>
+
+<% if (isOwner) { %>
+    <button id="openAttachModalBtn" type="button"
+        class="mb-8 w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-semibold px-4 py-2.5 sm:py-2 rounded-lg hover:border-indigo-400 hover:text-indigo-600 text-sm sm:text-base">
+        📎 Attach Content Blocks
+    </button>
+<% } %>
+
+<% if (isOwner) { %>
+<div id="attachModal" class="hidden fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full h-full sm:h-auto sm:rounded-xl sm:w-full sm:max-w-2xl sm:max-h-[85vh] overflow-y-auto">
+
+        <div class="flex items-center justify-between p-4 sm:p-5 border-b border-gray-200 sticky top-0 bg-white z-10">
+            <h3 class="font-bold text-base sm:text-lg">Attach Content</h3>
+            <button id="closeAttachModalBtn" type="button" class="text-gray-400 hover:text-gray-600 text-xl leading-none p-1">✕</button>
+        </div>
+
+        <div class="flex border-b border-gray-200">
+            <button type="button" class="tab-btn flex-1 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-indigo-600 border-b-2 border-indigo-600" data-tab="existing">
+                Existing Blocks
+            </button>
+            <button type="button" class="tab-btn flex-1 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-gray-500" data-tab="new">
+                + New Block
+            </button>
+        </div>
+
+        <div id="tab-existing" class="tab-panel p-4 sm:p-5">
+            <form action="/tests/<%= listing._id %>/attach-content?_method=PUT" method="POST" class="space-y-2.5 sm:space-y-3">
+                <% allBlocks.forEach(b => { %>
+                    <label class="flex items-center gap-3 p-2.5 sm:p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300">
+                        <input type="checkbox" name="contentBlocks" value="<%= b._id %>"
+                            class="w-4 h-4 shrink-0"
+                            <% if (listing.contentBlocks.some(cb => String(cb._id) === String(b._id))) { %> checked <% } %>>
+                        <span class="text-sm sm:text-base break-words"><%= b.name %></span>
+                    </label>
+                <% }) %>
+                <% if (allBlocks.length === 0) { %>
+                    <p class="text-gray-500 text-sm">Koi block library me nahi hai abhi. "+ New Block" tab se pehla block banao.</p>
+                <% } %>
+                <button type="submit" class="w-full mt-3 bg-indigo-600 text-white font-bold py-2.5 sm:py-3 rounded-lg hover:bg-indigo-700 text-sm sm:text-base">
+                    Save Attached Blocks
+                </button>
+            </form>
+        </div>
+
+        <div id="tab-new" class="tab-panel p-4 sm:p-5 hidden">
+            <form id="newBlockForm" action="/tests/<%= listing._id %>/create-and-attach-block" method="POST" class="space-y-3 sm:space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Name</label>
+                    <input type="text" name="name" id="blockNameInput" required
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm sm:text-base">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">HTML Content</label>
+                    <textarea name="html" id="htmlTextarea" rows="6" required
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs sm:text-sm sm:rows-10"
+                        placeholder="<div>...</div>"></textarea>
+                </div>
+                <button type="submit" id="newBlockSubmitBtn" class="w-full bg-indigo-600 text-white font-bold py-2.5 sm:py-3 rounded-lg hover:bg-indigo-700 text-sm sm:text-base">
+                    Save & Attach
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<% } %>
+
+
+
+<!-- ============ COPY TO... MODAL ============ -->
+<% if (isOwner) { %>
+<div id="copyToModal" class="hidden fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full h-full sm:h-auto sm:rounded-xl sm:w-full sm:max-w-md sm:max-h-[85vh] overflow-y-auto flex flex-col">
+
+        <div class="p-4 sm:p-5 border-b border-gray-200 sticky top-0 bg-white z-10">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-base sm:text-lg">Copy To...</h3>
+                <button id="closeCopyModalBtn" type="button" class="text-gray-400 hover:text-gray-600 text-xl leading-none p-1">✕</button>
+            </div>
+            <p id="copyModalSubtitle" class="text-xs text-gray-500 mt-1">All Exams</p>
+        </div>
+
+        <div class="p-4 sm:p-5 pb-2">
+            <div class="relative">
+                <input type="text" id="copySearchInput" placeholder="Search test series..."
+                    class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+            </div>
+        </div>
+
+        <form id="copyToForm" method="POST" class="flex-1 overflow-y-auto">
+            <input type="hidden" name="sourceListingId" value="<%= listing._id %>">
+
+            <!-- Exam Categories -->
+            <div class="px-4 sm:px-5">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide mt-2 mb-2">Exam Categories</p>
+                <div id="examCategoryList" class="space-y-1 mb-3">
+                    <% examGroups.forEach(exam => { %>
+                        <label class="copy-exam-row flex items-center justify-between gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer"
+                               data-search="<%= exam.name.toLowerCase() %>">
+                            <span class="flex items-center gap-2 text-sm font-medium text-gray-800">
+                                <i class="fa-solid fa-graduation-cap text-indigo-500"></i>
+                                <%= exam.name %>
+                            </span>
+                            <span class="flex items-center gap-2">
+                                <span class="text-xs text-gray-400"><%= exam.count %> tests</span>
+                                <input type="checkbox" name="examNames" value="<%= exam.name %>" class="w-4 h-4">
+                            </span>
+                        </label>
+                    <% }) %>
+                </div>
+            </div>
+
+            <hr class="border-gray-200">
+
+            <!-- Individual Test Series -->
+            <div class="px-4 sm:px-5">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide mt-3 mb-2">Individual Test Series</p>
+                <div id="listingSeriesList" class="space-y-1 mb-3">
+                    <% allListingsForCopy.forEach(l => { %>
+                        <label class="copy-listing-row flex items-center justify-between gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer"
+                               data-search="<%= (l.title + ' ' + l.exam).toLowerCase() %>">
+                            <span class="text-sm text-gray-800 truncate"><%= l.title %></span>
+                            <input type="checkbox" name="listingIds" value="<%= l._id %>" class="w-4 h-4 shrink-0">
+                        </label>
+                    <% }) %>
+                </div>
+                <p id="noResultsMsg" class="hidden text-center text-sm text-gray-400 py-4">Koi match nahi mila</p>
+            </div>
+        </form>
+
+        <div class="p-4 sm:p-5 border-t border-gray-200 flex justify-end gap-3 sticky bottom-0 bg-white">
+            <button type="button" id="cancelCopyBtn" class="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 text-sm font-semibold">
+                Cancel
+            </button>
+            <button type="submit" form="copyToForm" class="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">
+                Paste Here
+            </button>
+        </div>
+
+    </div>
+</div>
+<% } %>
+
+
+<% if (isOwner) { %>
+    <script>
+        window.CURRENT_LISTING_ID = "<%= listing._id %>";
+    </script>
+    <script src="/js/contentBlocks.js"></script>
+<% } %>

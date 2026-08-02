@@ -1,4 +1,6 @@
 import xss from "xss";
+ 
+const SKIP_FIELDS = ["description", "html"];
 
 function sanitizeObject(obj) {
     if (obj && typeof obj === "object") {
@@ -6,6 +8,12 @@ function sanitizeObject(obj) {
             // Prototype pollution + Mongo operator injection block
             if (/^\$/.test(key) || key.includes(".") || key === "__proto__" || key === "constructor" || key === "prototype") {
                 delete obj[key];
+                continue;
+            }
+
+            // Rich text fields ko yahan skip karo — ye alag se
+            // (utils/sanitizeContent.js) via sanitize-html clean honge
+            if (SKIP_FIELDS.includes(key)) {
                 continue;
             }
 

@@ -32,6 +32,7 @@ import { safeJsonStringify } from "./utils/safeJson.js";
 import pageRoutes from "./routes/pageRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import listingRoutes from "./routes/listingRoutes.js";
+import contentBlockRoutes from "./routes/contentBlockRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js";
 import testBuilderRoutes from "./routes/testBuilderRoutes.js";
@@ -53,18 +54,67 @@ const app = express();
 const isProd = process.env.NODE_ENV === "production";
 app.set('trust proxy', 1);
 
+
+// ---------------- FORCE HTTPS (production only) ----------------
+if (isProd) {
+    app.use((req, res, next) => {
+        if (req.headers['x-forwarded-proto'] !== 'https') {
+            return res.redirect(`https://${req.headers.host}${req.url}`);
+        }
+        next();
+    });
+}
+
 // ---------------- SECURITY + PERFORMANCE ----------------
  
 app.use(compression());
  
 
+// app.use(helmet({
+//     contentSecurityPolicy: isProd ? {
+//         directives: { /* ... same as before ... */ },
+//         reportOnly: true   // 👈 सिर्फ warn करेगा, block नहीं करेगा
+//     } : false,
+//     crossOriginEmbedderPolicy: false,
+//     crossOriginResourcePolicy: { policy: "cross-origin" },
+// }));
+
+
 app.use(helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: isProd ? {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: [
+                "'self'",
+                "'unsafe-inline'",
+                "https://checkout.razorpay.com",
+                "https://cdnjs.cloudflare.com",
+                "https://cdn.jsdelivr.net",
+                "https://unpkg.com",
+                "https://checkout-static-next.razorpay.com",
+                "https://browser.sentry-cdn.com",
+                "https://api.sardine.ai"
+            ],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'", "https://api.razorpay.com", "https://lumberjack.razorpay.com", "https://api.sardine.ai"],
+            frameSrc: ["https://api.razorpay.com", "https://checkout.razorpay.com"],
+        },
+    } : false,
     crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
 
-app.use(sanitizeMiddleware);
+
+app.use((req, res, next) => {
+    const richTextRoutes = ['/tests', '/owner/content-library'];
+    const isRichTextRoute = richTextRoutes.some(prefix =>
+        req.path.startsWith(prefix) && ['POST', 'PUT'].includes(req.method)
+    );
+    if (isRichTextRoute) return next();
+    sanitizeMiddleware(req, res, next);
+});
+
 const PORT = process.env.PORT || 8080;
 
 connectDB();
@@ -73,14 +123,14 @@ connectDB();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
-
-
+ 
 
 app.use(express.static(path.join(__dirname, "public"), {
     maxAge: process.env.NODE_ENV === "production" ? "7d" : 0,
 }));
 
+
+app.use('/vendor/ckeditor5', express.static(path.join(__dirname, 'node_modules/ckeditor5/dist')));
 
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(express.json({ limit: "5mb" }));
@@ -147,6 +197,9 @@ app.use((req, res, next) => {
         "/profile",
         "/attempt",    
         "/api/attempt",
+        "/content-blocks",
+        "/owner/content-library",
+        
     ];
 
     const shouldSkip = skipCsrfPrefixes.some(prefix => req.path.startsWith(prefix));
@@ -219,6 +272,7 @@ app.use(pageRoutes);
 app.use(authRoutes);
 app.use("/", ownerRoutes);
 app.use(listingRoutes);
+app.use(contentBlockRoutes);
 app.use(enrollRoutes);
 app.use(paymentRoutes);
 app.use(couponRoutes); 
@@ -246,7 +300,9 @@ app.use((req, res, next) => {
     if (req.originalUrl === '/.well-known/appspecific/com.chrome.devtools.json') {
         return res.status(204).end();
     }
-    console.log("❌ 404 Hit:", req.method, req.originalUrl);
+    if (!isProd) {
+        console.log("❌ 404 Hit:", req.method, req.originalUrl);
+    }
     next(new ExpressError(404, "Page Not Found"));
 });
 

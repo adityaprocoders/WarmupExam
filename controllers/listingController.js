@@ -9,7 +9,7 @@ import ExpressError from "../utils/ExpressError.js";
 import TestQuestion from "../models/TestQuestion.js";
 import slugify from "slugify";
 import cloudinary from "../config/cloudinary.js";
-
+import ContentBlock from "../models/ContentBlock.js";
 
 
 export const allTests = async (req, res) => {
@@ -96,26 +96,60 @@ export const searchTests = async (req, res) => {
 
 export const showTest = async (req, res) => {
     const { id } = req.params;
-    const data = await Listing.findById(id);
+    const data = await Listing.findById(id).populate("contentBlocks");
     if (!data) throw new ExpressError(404, "Test Not Found");
 
     const isOwner = req.user && req.user.role === "owner";
+
+    const allBlocks = isOwner
+        ? await ContentBlock.find().sort({ name: 1 })
+        : [];
+
+    // ✅ NEW: "Copy To..." modal ke liye — saari listings (id, title, exam) + exam-wise grouping
+    let allListingsForCopy = [];
+let examGroups = [];
+if (isOwner) {
+    // Exam Categories — SAARI listings se ban raha hai (poora coverage, search yahan bhi kaam karega)
+    const everyListing = await Listing.find()
+        .select("exam")
+        .lean();
+
+    const examCountMap = {};
+    everyListing.forEach(l => {
+        examCountMap[l.exam] = (examCountMap[l.exam] || 0) + 1;
+    });
+    examGroups = Object.keys(examCountMap)
+        .sort()
+        .map(exam => ({ name: exam, count: examCountMap[exam] }));
+
+    // Individual Test Series — sirf latest 5 (quick-access shortcut)
+    allListingsForCopy = await Listing.find()
+        .select("title exam")
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean();
+}
 
     let enrolledIds = [];
     if (req.user && req.user.enrolledListings) {
         enrolledIds = req.user.enrolledListings.map(e => String(e.listing));
     }
 
-    // ✅ Total tests count nikalo is listing ke
     const totalTestCount = await Test.countDocuments({ listing: data._id });
 
-    res.render("test/show", { listing: data, enrolledIds, isOwner, totalTestCount,
-
-          title: `${data.title} Mock Test Series | WarmupExam`,
-    description: data.description
-        ? data.description.slice(0, 155)   
-        : `Practice ${data.title} with realistic mock tests, true negative marking, AI-powered analysis and AIR rank prediction on WarmupExam.`
-     });
+    res.render("test/show", {
+        listing: data,
+        enrolledIds,
+        isOwner,
+        totalTestCount,
+        allBlocks,
+        allListingsForCopy, // 👈 naya
+        examGroups,         // 👈 naya
+        title: `${data.title} Mock Test Series | WarmupExam`,
+        description: data.description
+            ? data.description.slice(0, 155)
+            : `Practice ${data.title} with realistic mock tests, true negative marking, AI-powered analysis and AIR rank prediction on WarmupExam.`
+    });
 };
 
 export const renderNewTest = (req, res) => res.render("test/new");

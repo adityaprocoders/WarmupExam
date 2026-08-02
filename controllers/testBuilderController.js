@@ -122,7 +122,7 @@ export const createTestBuilder = async (req, res) => {
             const marks = getMarksForSubject(subjectsConfig, body.questions[i].subject);
             return {
                 test: savedTest._id, question: q._id,
-                order: body.questions[i].order || (i + 1),
+                 order: i + 1,
                 positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks
             };
         });
@@ -250,7 +250,7 @@ export const updateTestBuilder = async (req, res) => {
 
                 mappingDocs.push({
                     test: updatedTest._id, question: questionId,
-                    order: q.order || (i + 1),
+                     order: i + 1,
                     positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks
                 });
             }

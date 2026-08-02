@@ -65,6 +65,45 @@ function buildDistribution(arr, userValue, bins = 10) {
     return buckets;
 }
 
+async function enrichFilesWithProgress(files, userId) {
+    if (!files.length) return files;
+
+    const fileIds = files.map(f => f._id);
+
+    const allTests = await Test.find({
+        parentType: "file",
+        parentId: { $in: fileIds }
+    }).select("_id parentId");
+
+    const testsByFile = {};
+    allTests.forEach(t => {
+        const key = String(t.parentId);
+        if (!testsByFile[key]) testsByFile[key] = [];
+        testsByFile[key].push(t._id);
+    });
+
+    const allTestIds = allTests.map(t => t._id);
+
+    const attempts = await Attempt.find({
+        test: { $in: allTestIds },
+        user: userId
+    }).select("test");
+
+    const attemptedTestIds = new Set(attempts.map(a => String(a.test)));
+
+    return files.map(f => {
+        const testIds = testsByFile[String(f._id)] || [];
+        const testCount = testIds.length;
+        const completedCount = testIds.filter(id => attemptedTestIds.has(String(id))).length;
+
+        return {
+            ...f.toObject(),
+            testCount,
+            completedCount
+        };
+    });
+}
+
 export const showSeries = async (req, res) => {
     const { slug } = req.params;
     const { section, statsSection } = req.query;
@@ -108,6 +147,8 @@ export const showSeries = async (req, res) => {
         files = await File.find({
             listing: listing._id, section: currentSection._id, parentType: "section", parentId: null
         }).sort({ createdAt: 1 });
+
+        files = await enrichFilesWithProgress(files, req.user._id);
 
         tests = await Test.find({
             listing: listing._id, section: currentSection._id, parentType: "section", parentId: null
@@ -404,7 +445,8 @@ export const showFolder = async (req, res) => {
     const sections = await Section.find({ listing: listing._id }).sort({ createdAt: 1 });;
 
     const folders = await Folder.find({ parentType: "folder", parentId: folder._id });
-    const files = await File.find({ parentType: "folder", parentId: folder._id });
+    let files = await File.find({ parentType: "folder", parentId: folder._id });
+    files = await enrichFilesWithProgress(files, req.user._id);
     let tests = await Test.find({ parentType: "folder", parentId: folder._id });
 
     const testIds = tests.map(t => t._id);
@@ -471,9 +513,26 @@ export const showFile = async (req, res) => {
     const sections = await Section.find({ listing: listing._id }).sort({ createdAt: 1 });;
 
     const folders = await Folder.find({ parentType: "file", parentId: file._id }).sort({ createdAt: 1 });
-    const files = await File.find({ parentType: "file", parentId: file._id }).sort({ createdAt: 1 });
-    const tests = (await Test.find({ parentType: "file", parentId: file._id }).sort({ createdAt: 1 }))
-        .map(t => ({ ...t.toObject(), testStatus: getTestStatus(t) }));
+    let files = await File.find({ parentType: "file", parentId: file._id }).sort({ createdAt: 1 });
+files = await enrichFilesWithProgress(files, req.user._id);
+    let tests = await Test.find({ parentType: "file", parentId: file._id }).sort({ createdAt: 1 });
+
+const testIds = tests.map(t => t._id);
+
+// ✅ Current user ke attempts fetch karo (jaise showFolder me hota hai)
+const attempts = await Attempt.find({ test: { $in: testIds }, user: req.user._id }).sort({ createdAt: -1 });
+
+const latestAttemptByTest = {};
+attempts.forEach(a => {
+    const key = String(a.test);
+    if (!latestAttemptByTest[key]) latestAttemptByTest[key] = a;
+});
+
+tests = tests.map(t => ({
+    ...t.toObject(),
+    latestAttempt: latestAttemptByTest[String(t._id)] || null,
+    testStatus: getTestStatus(t)
+}));
 
     res.render("dashboard/index", {
         layout: "layouts/dashboard",
