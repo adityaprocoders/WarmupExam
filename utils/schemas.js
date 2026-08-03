@@ -177,6 +177,11 @@ export const createListingSchema = Joi.object({
         "string.empty": "Exam is required"
     }),
 
+     category: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required().messages({
+        "string.empty": "Category is required",
+        "string.pattern.base": "Invalid category selected"
+    }),
+
     marks: Joi.array().items(
         Joi.object({
             subject: Joi.string().trim().required().messages({
@@ -377,4 +382,25 @@ export const attachContentBlocksSchema = Joi.object({
         Joi.string().pattern(/^[0-9a-fA-F]{24}$/),
         Joi.allow(null, "")
     ).default([])
+});
+
+
+// ==================== CATEGORY ====================
+
+export const createCategorySchema = Joi.object({
+    name: Joi.string().trim().min(2).max(40).required().messages({
+        "string.empty": "Category name is required",
+        "string.min": "Category name must be at least 2 characters",
+        "string.max": "Category name cannot exceed 40 characters"
+    }),
+
+    icon: Joi.string().trim().max(50).required().messages({
+        "string.empty": "Icon is required",
+        "string.max": "Icon class cannot exceed 50 characters"
+    }),
+
+    description: Joi.string().trim().max(120).required().messages({
+        "string.empty": "Description is required",
+        "string.max": "Description cannot exceed 120 characters"
+    })
 });

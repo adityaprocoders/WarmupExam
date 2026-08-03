@@ -28,6 +28,16 @@
         </div>
 
         <div>
+        <label class="block text-sm font-semibold text-gray-700">Category</label>
+        <select id="category-select" name="listing[category]" required class="w-full mt-1 p-2 border rounded-md">
+            <option value="">Select a category</option>
+            <% categories.forEach(cat => { %>
+                <option value="<%= cat._id %>"><%= cat.name %></option>
+            <% }) %>
+        </select>
+    </div>
+
+        <div>
     <label class="block text-sm font-semibold text-gray-700">
         Language
     </label>
@@ -251,7 +261,23 @@
     </form>
 </div>
 
+ 
+
+<!-- Choices.js — searchable category dropdown -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+    const categorySelect = document.getElementById('category-select');
+    if (categorySelect) {
+        new Choices(categorySelect, {
+            searchEnabled: true,
+            itemSelectText: '',
+            placeholder: true,
+            placeholderValue: 'Search category...',
+            shouldSort: false,
+        });
+    }
+</script>
+
 <script src="/js/testNew.js"></script>
-
-
 

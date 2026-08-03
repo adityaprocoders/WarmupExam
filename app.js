@@ -30,6 +30,7 @@ import { safeJsonStringify } from "./utils/safeJson.js";
 
 
 import pageRoutes from "./routes/pageRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import listingRoutes from "./routes/listingRoutes.js";
 import contentBlockRoutes from "./routes/contentBlockRoutes.js";
@@ -268,6 +269,7 @@ app.set("layout", "layouts/main");
 // ---------------- ROUTES ----------------
 
 app.use(pageRoutes);
+app.use("/", categoryRoutes);
 app.use(authRoutes);
 app.use("/", ownerRoutes);
 app.use(listingRoutes);

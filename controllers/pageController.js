@@ -1,12 +1,32 @@
 import Listing from "../models/listing.js";
 import Test from "../models/Test.js";
 import router from "../routes/ownerRoutes.js";
+import Category from "../models/Category.js";
 
 export const home = async (req, res) => {
     const isOwner = req.user && req.user.role === "owner";
 
     const filter = isOwner ? {} : { visibility: "public" };
-    const tests = await Listing.find(filter).limit(6).lean();
+     const tests = await Listing.find(filter)
+        .populate("category", "name icon")
+        .limit(6)
+        .lean();
+
+    const categories = await Category.find({}).sort({ createdAt: -1 }).lean();
+
+const categoryIds = categories.map(c => c._id);
+const listingCounts = await Listing.aggregate([
+    { $match: { category: { $in: categoryIds } } },
+    { $group: { _id: "$category", count: { $sum: 1 } } }
+]);
+
+const countMap = {};
+listingCounts.forEach(c => { countMap[String(c._id)] = c.count; });
+
+categories.forEach(c => {
+    c.examCount = countMap[String(c._id)] || 0;
+});
+
 
     // Total tests count nikalo har listing ke liye
     const listingIds = tests.map(l => l._id);
@@ -33,6 +53,7 @@ export const home = async (req, res) => {
 
     res.render("pages/home", {
     tests,
+    categories,
     enrolledIds,
     enrolledExpiryMap,
     isOwner,

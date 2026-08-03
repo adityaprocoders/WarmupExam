@@ -10,7 +10,7 @@ import TestQuestion from "../models/TestQuestion.js";
 import slugify from "slugify";
 import cloudinary from "../config/cloudinary.js";
 import ContentBlock from "../models/ContentBlock.js";
-
+import Category from "../models/Category.js";
 
 export const allTests = async (req, res) => {
     const { exam, search } = req.query;
@@ -152,7 +152,10 @@ if (isOwner) {
     });
 };
 
-export const renderNewTest = (req, res) => res.render("test/new");
+export const renderNewTest = async (req, res) => {
+    const categories = await Category.find({}).select("name _id").sort({ name: 1 }).lean();
+    res.render("test/new", { categories });
+};
 
 // rankPredictorData me se empty/invalid rows hata do
 function cleanRankPredictorData(raw) {
@@ -204,7 +207,10 @@ export const renderEditTest = async (req, res) => {
     const { id } = req.params;
     const listing = await Listing.findById(id);
     if (!listing) throw new ExpressError(404, "Test Not Found");
-    res.render("test/edit.ejs", { listing });
+
+    const categories = await Category.find({}).select("name _id").sort({ name: 1 }).lean();
+
+    res.render("test/edit.ejs", { listing, categories });
 };
 
 export const updateTest = async (req, res) => {

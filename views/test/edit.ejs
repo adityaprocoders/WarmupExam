@@ -20,7 +20,25 @@
             <label class="block text-sm font-semibold text-gray-700">Exam</label>
             <input type="text" name="listing[exam]" value="<%= listing.exam %>" required class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
         </div>
+
+         <div>
+        <label class="block text-sm font-semibold text-gray-700">Category</label>
+        <select id="category-select" name="listing[category]" required class="w-full mt-1 p-2 border rounded-md">
+            <option value="">Select a category</option>
+            <% categories.forEach(cat => { %>
+                <option value="<%= cat._id %>"
+                    <%= String(listing.category) === String(cat._id) ? 'selected' : '' %>>
+                    <%= cat.name %>
+                </option>
+            <% }) %>
+        </select>
     </div>
+ 
+
+
+    </div>
+
+
 
     <div>
         <label class="block text-sm font-semibold text-gray-700">Language</label>
@@ -174,13 +192,26 @@
 
 
 </div>
+ 
 
-<!-- Existing counts testNew.js ko batana zaroori hai, warna naye row add karte waqt purane index overwrite ho jayenge -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+    const categorySelect = document.getElementById('category-select');
+    if (categorySelect) {
+        new Choices(categorySelect, {
+            searchEnabled: true,
+            itemSelectText: '',
+            placeholder: true,
+            placeholderValue: 'Search category...',
+            shouldSort: false,
+        });
+    }
+</script>
+
 <script>
     window.initialSubjectIndex = <%= listing.marks.length %>;
     window.initialRankIndex = <%= (listing.rankPredictorData && listing.rankPredictorData.length > 0) ? listing.rankPredictorData.length : 1 %>;
 </script>
 <script src="/js/testNew.js"></script>
-
-
 

@@ -1,0 +1,190 @@
+<div class="max-w-7xl mx-auto pt-16 px-4">
+
+    <div class="flex flex-col items-center gap-4 mb-10">
+        <div class="text-center px-8 py-5">
+            <h2 class="text-3xl font-bold text-indigo-700">Explore Exams</h2>
+            <p class="mx-auto mt-3 max-w-4xl px-4 text-center text-sm font-medium leading-7 text-slate-500 sm:text-base md:text-lg lg:text-xl">
+                Find your target exam and start practicing with expertly crafted mock tests.
+            </p>
+        </div>
+
+        <% if (isOwner) { %>
+        <button onclick="openCategoryModal()"
+            class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition duration-200 shadow-sm">
+            <i class="fa-solid fa-plus"></i> Add Category
+        </button>
+        <% } %>
+    </div>
+
+    <!-- Category Cards -->
+    <div>
+
+        <% if (categories.length === 0) { %>
+            <div class="text-center py-10">
+                <i class="fa-solid fa-shapes text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500 text-sm">No categories added yet.</p>
+                <% if (isOwner) { %>
+                    <p class="text-gray-400 text-xs mt-1">Click "Add Category" above to create your first one.</p>
+                <% } %>
+            </div>
+        <% } else { %>
+
+            <!-- First 8 categories -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <% categories.slice(0, 8).forEach((category, i) => { %>
+                    <%- include("categoryCard.ejs", { category, isOwner, index: i }) %>
+                <% }) %>
+            </div>
+
+            <!-- Remaining categories -->
+            <% if (categories.length > 8) { %>
+                <div id="extraCategories" class="hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-5">
+                        <% categories.slice(8).forEach((category, i) => { %>
+                            <%- include("categoryCard.ejs", { category, isOwner, index: i + 8 }) %>
+                        <% }) %>
+                    </div>
+                </div>
+
+                <div class="flex justify-center mt-12">
+    <button
+        id="viewAllBtn"
+        onclick="toggleAllCategories()"
+        class="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition duration-300 shadow-md">
+
+        <span id="viewAllText">View All Exams</span>
+
+        <i id="viewAllIcon" class="fa-solid fa-arrow-right transition-transform duration-300"></i>
+
+    </button>
+</div>
+            <% } %>
+
+        <% } %>
+
+    </div>
+</div>
+
+<!-- Add Category Modal (owner only) -->
+<% if (isOwner) { %>
+<div id="categoryModalOverlay" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-bold text-gray-900">Add New Category</h3>
+            <button onclick="closeCategoryModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+        </div>
+
+        <form method="POST" action="/categories" class="space-y-4">
+
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Category Name</label>
+                <input type="text" name="name" required placeholder="e.g. Medical"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Icon (Font Awesome class)</label>
+                <input type="text" name="icon" required placeholder="e.g. fa-solid fa-stethoscope"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                <p class="text-[11px] text-gray-400 mt-1">Use any Font Awesome class, e.g. <code>fa-solid fa-shield</code></p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Description</label>
+                <input type="text" name="description" required placeholder="e.g. AIIMS, NEET-PG and more."
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            </div>
+
+            <button type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl mt-2 transition">
+                Save Category
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openCategoryModal() {
+        document.getElementById('categoryModalOverlay').classList.remove('hidden');
+    }
+    function closeCategoryModal() {
+        document.getElementById('categoryModalOverlay').classList.add('hidden');
+    }
+    document.getElementById('categoryModalOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'categoryModalOverlay') closeCategoryModal();
+    });
+</script>
+<% } %>
+
+<!-- Edit Category Modal (owner only) -->
+<% if (isOwner) { %>
+<div id="editCategoryModalOverlay" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-bold text-gray-900">Edit Category</h3>
+            <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+        </div>
+
+        <form id="editCategoryForm" method="POST" class="space-y-4">
+            <input type="hidden" name="_method" value="PUT" />
+
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Category Name</label>
+                <input type="text" name="name" id="editName" required
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Icon (Font Awesome class)</label>
+                <input type="text" name="icon" id="editIcon" required
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Description</label>
+                <input type="text" name="description" id="editDescription" required
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            </div>
+
+            <button type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl mt-2 transition">
+                Update Category
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEditModal(id, name, icon, description) {
+        document.getElementById('editCategoryForm').action = '/categories/' + id + '?_method=PUT';
+        document.getElementById('editName').value = name;
+        document.getElementById('editIcon').value = icon;
+        document.getElementById('editDescription').value = description;
+        document.getElementById('editCategoryModalOverlay').classList.remove('hidden');
+    }
+    function closeEditModal() {
+        document.getElementById('editCategoryModalOverlay').classList.add('hidden');
+    }
+    document.getElementById('editCategoryModalOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'editCategoryModalOverlay') closeEditModal();
+    });
+</script>
+<% } %>
+
+<script>
+    function toggleAllCategories() {
+        const extra = document.getElementById('extraCategories');
+        const text = document.getElementById('viewAllText');
+        const icon = document.getElementById('viewAllIcon');
+
+        extra.classList.toggle('hidden');
+
+        if (extra.classList.contains('hidden')) {
+            text.textContent = 'View All Categories';
+            icon.className = 'fa-solid fa-arrow-right text-xs transition-transform duration-300';
+        } else {
+            text.textContent = 'Show Less';
+            icon.className = 'fa-solid fa-arrow-up text-xs transition-transform duration-300';
+        }
+    }
+</script>

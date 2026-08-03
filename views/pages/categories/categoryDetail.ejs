@@ -1,0 +1,721 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-4 py-5 sm:py-8">
+
+    <!-- ================= TOP BANNER (hamesha dikhega, empty ho ya na ho) ================= -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100 rounded-2xl sm:rounded-3xl p-4 sm:p-8 lg:p-10 mb-5 sm:mb-8 border border-indigo-100">
+
+        <div class="relative z-10 flex items-start gap-3 sm:gap-5">
+            <div class="w-11 h-11 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white shadow-md flex items-center justify-center shrink-0">
+                <i class="<%= category.icon %> text-lg sm:text-3xl text-indigo-600"></i>
+            </div>
+
+            <div class="min-w-0 flex-1">
+                <h1 class="text-lg sm:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-tight"><%= category.name %></h1>
+                <p class="text-slate-500 text-xs sm:text-base mt-1 sm:mt-2 max-w-2xl leading-relaxed line-clamp-2 sm:line-clamp-none">
+                    <%= category.description %>
+                </p>
+            </div>
+        </div>
+
+        <div class="relative z-10 grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 mt-4 sm:mt-6">
+
+            <div class="flex items-center gap-2 bg-white rounded-xl px-3 py-2 sm:py-2.5 shadow-sm">
+                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs sm:text-sm shrink-0">
+                    <i class="fa-solid fa-layer-group"></i>
+                </span>
+                <div class="min-w-0">
+                    <p class="text-xs sm:text-sm font-bold text-slate-900 leading-tight"><%= totalListingsCount %>+</p>
+                    <p class="text-[10px] text-slate-400 leading-tight">Exams</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 bg-white rounded-xl px-3 py-2 sm:py-2.5 shadow-sm">
+                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs sm:text-sm shrink-0">
+                    <i class="fa-solid fa-file-lines"></i>
+                </span>
+                <div class="min-w-0">
+                    <p class="text-xs sm:text-sm font-bold text-slate-900 leading-tight"><%= totalListingsCount %>+</p>
+                    <p class="text-[10px] text-slate-400 leading-tight">Test Series</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 bg-white rounded-xl px-3 py-2 sm:py-2.5 shadow-sm">
+                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center text-xs sm:text-sm shrink-0">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </span>
+                <div class="min-w-0">
+                    <p class="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Latest</p>
+                    <p class="text-[10px] text-slate-400 leading-tight">Exam Pattern</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 bg-white rounded-xl px-3 py-2 sm:py-2.5 shadow-sm">
+                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xs sm:text-sm shrink-0">
+                    <i class="fa-solid fa-star"></i>
+                </span>
+                <div class="min-w-0">
+                    <p class="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Updated</p>
+                    <p class="text-[10px] text-slate-400 leading-tight">Daily</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="hidden lg:block absolute -right-4 -bottom-4 opacity-[0.07] text-9xl text-indigo-900 pointer-events-none">
+            <i class="<%= category.icon %>"></i>
+        </div>
+    </div>
+
+    <% if (totalListingsCount === 0) { %>
+
+        <!-- ================= EMPTY STATE ================= -->
+        <div class="flex flex-col items-center justify-center text-center py-16 sm:py-24 bg-white rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-indigo-50 flex items-center justify-center mb-5 sm:mb-6">
+                <i class="fa-solid fa-folder-open text-2xl sm:text-3xl text-indigo-400"></i>
+            </div>
+            <h3 class="text-lg sm:text-2xl font-bold text-slate-800 mb-2">No Test Series Available</h3>
+            <p class="text-sm sm:text-base text-slate-500 max-w-md px-4">
+                We haven't added any test series for <span class="font-semibold text-slate-700"><%= category.name %></span> yet. Please check back soon!
+            </p>
+        </div>
+
+    <% } else { %>
+
+        <!-- ================= SEARCH BAR ================= -->
+        <div class="flex flex-col gap-2.5 sm:gap-3 mb-4 sm:mb-6">
+
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="categorySearchInput"
+                    placeholder="Search <%= category.name %>..."
+                    class="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 sm:py-3 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none">
+
+                <div id="categorySearchDropdown"
+                  class="hidden absolute top-full left-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-2 z-50 max-h-72 overflow-y-auto">
+                </div>
+            </div>
+
+            <!-- ================= ROW 1: EXAM TABS (scrollable) + FIXED "MORE" CORNER BOX ================= -->
+<div class="flex items-center gap-2 bg-white border border-slate-200 rounded-full p-1.5 shadow-sm">
+
+    <!-- Scrollable exam tabs -->
+    <div id="examTabsScroll" class="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1 min-w-0">
+
+        <button data-exam="all" class="examTab active-filter shrink-0 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition">
+            All
+        </button>
+
+        <% exams.forEach(ex => { %>
+            <button data-exam="<%= ex %>" class="examTab shrink-0 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition text-slate-600 bg-slate-50 hover:bg-slate-100">
+                <%= ex %>
+            </button>
+        <% }) %>
+
+    </div>
+
+    <!-- Fixed "More" corner box — hamesha visible, scroll se bahar -->
+    <% if (exams.length > 0) { %>
+    <div class="relative shrink-0 pl-2 border-l border-slate-100" id="moreExamsWrapper">
+        <button type="button" id="moreExamsBtn"
+            class="flex items-center gap-1 shrink-0 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition text-indigo-600 hover:bg-slate-100">
+            More <i class="fa-solid fa-chevron-down text-[9px] transition-transform duration-200" id="moreExamsChevron"></i>
+        </button>
+        <div id="moreExamsMenu"
+              class="hidden bg-white border border-slate-200 rounded-xl shadow-lg z-[9999] w-56 max-h-[60vh] overflow-y-auto py-1.5">
+            <div class="moreExamOption px-4 py-2.5 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 cursor-pointer border-b border-slate-100" data-exam="all">
+                <i class="fa-solid fa-grip mr-1.5"></i> All Exams
+            </div>
+            <% exams.forEach(ex => { %>
+                <div class="moreExamOption px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 cursor-pointer" data-exam="<%= ex %>">
+                    <%= ex %>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+    <% } %>
+
+</div>
+
+            <!-- ================= ROW 2: LANGUAGE / FREE / PAID / LATEST ================= -->
+            <div class="flex items-center gap-1 sm:gap-1.5 bg-white border border-slate-200 rounded-xl p-1 sm:p-1.5 shadow-sm overflow-x-auto no-scrollbar">
+
+                <div class="relative shrink-0" id="languageDropdownWrapper">
+                    <button type="button" id="languageDropdownBtn"
+                        class="flex items-center gap-1.5 shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition text-slate-500 hover:bg-slate-50">
+                        <i class="fa-solid fa-language text-sm sm:text-base"></i>
+                        <span id="languageDropdownLabel">Language</span>
+                        <i class="fa-solid fa-chevron-down text-[9px] transition-transform duration-200" id="languageDropdownChevron"></i>
+                    </button>
+
+                    <div id="languageDropdownMenu"
+                        class="hidden absolute top-full left-0 mt-2 w-48 sm:w-52 bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-64 overflow-y-auto py-1.5">
+                        <div class="language-option px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 cursor-pointer flex items-center justify-between" data-value="all">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-globe text-indigo-500"></i> All Languages
+                            </span>
+                            <i class="fa-solid fa-check text-indigo-600 text-xs"></i>
+                        </div>
+                        <% languages.forEach(lang => { %>
+                        <div class="language-option px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 cursor-pointer flex items-center justify-between" data-value="<%= lang %>">
+                            <span class="flex items-center gap-2">
+                                <i class="fa-solid fa-comment-dots text-slate-400 text-xs"></i> <%= lang %>
+                            </span>
+                            <i class="fa-solid fa-check text-indigo-600 text-xs opacity-0"></i>
+                        </div>
+                        <% }) %>
+                    </div>
+                </div>
+
+                <button data-filter="free" class="filterTab shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition text-slate-500 hover:bg-slate-50">
+                    <i class="fa-solid fa-gift mr-1"></i> Free
+                </button>
+                <button data-filter="paid" class="filterTab shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition text-slate-500 hover:bg-slate-50">
+                    <i class="fa-solid fa-crown mr-1"></i> Paid
+                </button>
+                <button data-filter="latest" class="filterTab shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition text-slate-500 hover:bg-slate-50">
+                    <i class="fa-solid fa-clock mr-1"></i> Latest
+                </button>
+            </div>
+        </div>
+
+        <h3 class="text-sm sm:text-lg font-bold text-slate-900 mb-3 sm:mb-4" id="sectionHeading">All Tests</h3>
+
+        <!-- ================= TEST CARDS GRID ================= -->
+        <div id="testsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <% listings.forEach(test => { %>
+                <%- include("testCard.ejs", { test, enrolledIds, enrolledExpiryMap, isOwner, csrfToken }) %>
+            <% }) %>
+        </div>
+
+        <p id="noResultsMsg" class="hidden text-center text-slate-400 text-sm py-12">
+            No test series found.
+        </p>
+
+        <!-- ================= VIEW ALL BUTTON ================= -->
+        <div class="flex justify-center mt-8 sm:mt-10">
+            <button id="viewAllTestsBtn"
+                class="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm sm:text-base rounded-xl transition duration-300 shadow-md">
+                <span id="viewAllTestsText">View All Test Series</span>
+                <i id="viewAllTestsIcon" class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+    <% } %>
+
+</div>
+
+
+<% if (totalListingsCount > 0) { %>
+<script>
+(function () {
+    const categorySlug = "<%= category.slug %>";
+    const csrfToken = "<%= csrfToken %>";
+    const grid = document.getElementById('testsGrid');
+    const noResultsMsg = document.getElementById('noResultsMsg');
+    const viewAllBtn = document.getElementById('viewAllTestsBtn');
+    const viewAllText = document.getElementById('viewAllTestsText');
+    const viewAllIcon = document.getElementById('viewAllTestsIcon');
+    const searchInput = document.getElementById('categorySearchInput');
+    const sectionHeading = document.getElementById('sectionHeading');
+    const filterTabs = document.querySelectorAll('.filterTab');
+    const examTabs = document.querySelectorAll('.examTab');
+    const searchDropdown = document.getElementById('categorySearchDropdown');
+    const languageBtn = document.getElementById('languageDropdownBtn');
+    const languageMenu = document.getElementById('languageDropdownMenu');
+    const languageLabel = document.getElementById('languageDropdownLabel');
+    const languageChevron = document.getElementById('languageDropdownChevron');
+    const languageOptions = document.querySelectorAll('.language-option');
+    const examTabsScroll = document.getElementById('examTabsScroll');
+    const examTabsFade = document.getElementById('examTabsFade');
+    const moreExamsBtn = document.getElementById('moreExamsBtn');
+    const moreExamsMenu = document.getElementById('moreExamsMenu');
+    const moreExamsChevron = document.getElementById('moreExamsChevron');
+    const moreExamOptions = document.querySelectorAll('.moreExamOption');
+
+    let currentFilter = 'all';
+    let currentExam = 'all';   // 👈 NAYA — exam filter independent
+    let currentSearch = '';
+    let currentPage = 1;
+    let currentLanguage = 'all';
+    let searchExpanded = false;
+    let searchTimeout = null;
+    let suggestionTimeout = null;
+
+    function setActiveTabUI(filter) {
+        filterTabs.forEach(tab => {
+            if (tab.dataset.filter === filter) {
+                tab.classList.add('active-filter');
+                tab.classList.remove('text-slate-500', 'hover:bg-slate-50');
+            } else {
+                tab.classList.remove('active-filter');
+                tab.classList.add('text-slate-500', 'hover:bg-slate-50');
+            }
+        });
+    }
+
+    function setActiveExamUI(examValue) {
+    examTabs.forEach(tab => {
+        if (tab.dataset.exam === examValue) {
+            tab.classList.add('active-filter');
+            tab.classList.remove('text-slate-500', 'hover:bg-slate-50');
+        } else {
+            tab.classList.remove('active-filter');
+            tab.classList.add('text-slate-500', 'hover:bg-slate-50');
+        }
+    });
+}
+    
+
+function updateSectionHeading() {
+        const headingMap = {
+            all: 'All Tests',
+            free: 'Free Tests',
+            paid: 'Paid Tests',
+            latest: 'Latest Tests'
+        };
+        let text = headingMap[currentFilter] || 'All Tests';
+        if (currentExam !== 'all') {
+            text = currentExam + ' Tests';
+        }
+        sectionHeading.textContent = text;
+    }
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ================= EXAM-TABS SCROLL OVERFLOW DETECTION =================
+    function checkExamTabsOverflow() {
+        if (!examTabsScroll || !examTabsFade) return;
+        const isOverflowing = examTabsScroll.scrollWidth > examTabsScroll.clientWidth + 2;
+        examTabsFade.classList.toggle('hidden', !isOverflowing);
+    }
+    checkExamTabsOverflow();
+    window.addEventListener('resize', checkExamTabsOverflow);
+    if (examTabsScroll) {
+        examTabsScroll.addEventListener('scroll', () => {
+            // scroll ke end tak pahunchte hi fade hata do
+            const atEnd = examTabsScroll.scrollLeft + examTabsScroll.clientWidth >= examTabsScroll.scrollWidth - 2;
+            examTabsFade.classList.toggle('hidden', atEnd);
+        });
+    }
+
+    // ================= GRID FETCH =================
+    async function fetchTests({ reset = true } = {}) {
+        const isSearchMode = currentSearch.length > 0;
+
+        const params = new URLSearchParams({
+            filter: currentFilter,
+            search: currentSearch,
+            language: currentLanguage,
+            exam: currentExam,   // 👈 NAYA
+            page: currentPage,
+        });
+
+        if (isSearchMode) {
+            params.set('limit', searchExpanded ? 'all' : '4');
+        }
+
+        try {
+            const res = await fetch(`/api/categories/${categorySlug}/tests?${params.toString()}`);
+            const data = await res.json();
+
+            if (!data.success) return;
+
+            if (reset) grid.innerHTML = '';
+
+            if (data.listings.length === 0 && reset) {
+                noResultsMsg.classList.remove('hidden');
+            } else {
+                noResultsMsg.classList.add('hidden');
+            }
+
+            data.listings.forEach(test => {
+                grid.insertAdjacentHTML('beforeend', renderTestCard(test));
+            });
+
+            if (isSearchMode) {
+                if (data.total > 4) {
+                    viewAllBtn.classList.remove('hidden');
+                    if (searchExpanded) {
+                        viewAllText.textContent = 'Show Less';
+                        viewAllIcon.className = 'fa-solid fa-arrow-up';
+                    } else {
+                        viewAllText.textContent = 'Show Tests';
+                        viewAllIcon.className = 'fa-solid fa-arrow-right';
+                    }
+                } else {
+                    viewAllBtn.classList.add('hidden');
+                }
+            } else {
+                if (data.hasMore) {
+                    viewAllBtn.classList.remove('hidden');
+                    viewAllText.textContent = 'View All Test Series';
+                    viewAllIcon.className = 'fa-solid fa-arrow-right';
+                } else {
+                    viewAllBtn.classList.add('hidden');
+                }
+            }
+
+        } catch (err) {
+            console.error('Failed to load tests', err);
+        }
+    }
+
+    function renderTestCard(test) {
+        const typeBadge = test.type === 'Free'
+            ? `<span class="bg-green-50 text-green-600 border-green-300 absolute top-3 right-3 text-xs font-bold px-3 py-1.5 rounded-full border">FREE</span>`
+            : `<span class="bg-amber-50 text-amber-600 border-amber-300 absolute top-3 right-3 text-xs font-bold px-3 py-1.5 rounded-full border shadow-[0_0_12px_rgba(251,146,60,0.8)]">PREMIUM</span>`;
+
+        const priceHtml = test.type === 'Free'
+            ? `<div class="text-indigo-700 font-bold text-base sm:text-lg">FREE</div>`
+            : `<div class="flex items-baseline gap-2">
+                 <span class="text-xl sm:text-2xl font-bold text-gray-900">₹${test.price}</span>
+                 ${test.originalPrice > test.price ? `<span class="text-gray-400 line-through text-sm sm:text-base">${test.originalPrice}</span>` : ''}
+               </div>`;
+
+        const ownerControlsHtml = test.isOwner ? `
+            <div class="flex items-center gap-2 px-4 pt-4 pb-3">
+                <a href="/tests/${test._id}/edit"
+                   class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition duration-200 shadow-sm">
+                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                    <span>Edit</span>
+                </a>
+                <form method="POST" action="/test/${test._id}?_method=DELETE"
+                      onsubmit="return confirm('Are you sure you want to delete this?');" class="m-0">
+                    <input type="hidden" name="_csrf" value="${csrfToken}">
+                    <button type="submit"
+                            class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition duration-200 shadow-sm">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                        <span>Delete</span>
+                    </button>
+                </form>
+                ${test.visibility === 'private' ? `
+                    <span class="ml-auto text-[10px] font-bold uppercase tracking-wide text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+                        <i class="fa-solid fa-lock text-[9px]"></i> Private
+                    </span>` : ''}
+            </div>` : '';
+
+        let actionHtml;
+        if (test.isOwner) {
+            actionHtml = `<a href="/test/${test._id}" class="flex-1 min-w-[100px] text-center border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold text-sm py-2.5 rounded-xl transition">EXPLORE</a>
+                           <a href="/series/${test.slug}" class="flex-1 min-w-[100px] text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">🚀 Start Test</a>`;
+        } else if (test.canAccess) {
+            actionHtml = `<a href="/series/${test.slug}" class="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">🚀 Start Test</a>`;
+        } else {
+            actionHtml = `<a href="/test/${test._id}" class="flex-1 min-w-[100px] text-center border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold text-sm py-2.5 rounded-xl transition">EXPLORE</a>
+               <button onclick="${test.type === 'Free' ? `enrollNow('${test._id}', ${!!test.currentUser})` : `buyNow('${test._id}', ${!!test.currentUser})`}"
+                    class="flex-1 min-w-[100px] text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">
+                    ${test.type === 'Free' ? 'ENROLL NOW' : 'BUY NOW'}
+               </button>`;
+        }
+
+        return `
+        <div class="group bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+            ${ownerControlsHtml}
+            <div class="relative overflow-hidden">
+                <img src="${escapeHtml(test.image)}" alt="${escapeHtml(test.title)}" class="w-full h-36 sm:h-40 lg:h-44 object-cover group-hover:scale-105 transition-transform duration-300">
+                ${typeBadge}
+            </div>
+            <div class="p-4 sm:p-5 flex flex-col flex-grow">
+                <div class="flex items-start justify-between gap-3 mb-2.5 sm:mb-3">
+                    <h4 class="text-base sm:text-xl font-bold text-gray-900 leading-snug">${escapeHtml(test.title)}</h4>
+                    ${test.language ? `<span class="shrink-0 text-[10px] sm:text-xs font-semibold text-indigo-600 border border-indigo-300 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full whitespace-nowrap">${escapeHtml(test.language)}</span>` : ''}
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5 sm:mb-3">
+                    ${test.exam ? `<div class="flex items-center gap-1.5 text-gray-700 text-xs sm:text-sm"><i class="fa-solid fa-book"></i><span class="font-medium">${escapeHtml(test.exam)}</span></div>` : ''}
+                    <span class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full whitespace-nowrap">
+                        <i class="fa-solid fa-file-lines"></i> ${test.totalTestCount} Total Tests
+                    </span>
+                </div>
+                <p class="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 flex-grow line-clamp-3">${escapeHtml(test.shortDescription)}</p>
+                <div class="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-gray-700 mb-3 sm:mb-4">
+                    <i class="fa-regular fa-clock"></i> ${test.validityDays} days access after enrollment
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 sm:mb-4">
+                    ${priceHtml}
+                </div>
+                <div class="flex flex-wrap gap-2 mt-auto">
+                    ${actionHtml}
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // ================= TYPE FILTER TABS (Free / Paid / Latest — toggle behavior) =================
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const clickedFilter = tab.dataset.filter;
+            // agar already active hai to toggle off -> 'all'
+            currentFilter = (currentFilter === clickedFilter) ? 'all' : clickedFilter;
+            currentPage = 1;
+            searchExpanded = false;
+            setActiveTabUI(currentFilter);
+            updateSectionHeading();
+            fetchTests({ reset: true });
+        });
+    });
+
+    // ================= EXAM TABS (independent row) =================
+    examTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            currentExam = tab.dataset.exam;
+            currentPage = 1;
+            searchExpanded = false;
+            setActiveExamUI(currentExam);
+            updateSectionHeading();
+            fetchTests({ reset: true });
+        });
+    });
+
+    // ================= MORE EXAMS DROPDOWN =================
+     // ================= MORE EXAMS DROPDOWN =================
+if (moreExamsBtn) {
+    moreExamsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = moreExamsMenu.classList.contains('hidden');
+
+        if (isHidden) {
+            const rect = moreExamsBtn.getBoundingClientRect();
+            moreExamsMenu.style.position = 'fixed';
+            moreExamsMenu.style.top = (rect.bottom + 8) + 'px';
+            const menuWidth = 224;
+            let leftPos = rect.right - menuWidth;
+            if (leftPos < 8) leftPos = 8;
+            moreExamsMenu.style.left = leftPos + 'px';
+            document.body.appendChild(moreExamsMenu);
+        }
+
+        moreExamsMenu.classList.toggle('hidden');
+        moreExamsChevron.classList.toggle('rotate-180');
+    });
+
+    moreExamOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+            currentExam = opt.dataset.exam;
+            currentPage = 1;
+            searchExpanded = false;
+            setActiveExamUI(currentExam);
+            updateSectionHeading();
+            moreExamsMenu.classList.add('hidden');
+            moreExamsChevron.classList.remove('rotate-180');
+            fetchTests({ reset: true });
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!moreExamsBtn.contains(e.target) && !moreExamsMenu.contains(e.target)) {
+            moreExamsMenu.classList.add('hidden');
+            moreExamsChevron.classList.remove('rotate-180');
+        }
+    });
+
+    // 👇 NAYA — page scroll hote hi dropdown band ho jaye
+    window.addEventListener('scroll', () => {
+        if (!moreExamsMenu.classList.contains('hidden')) {
+            moreExamsMenu.classList.add('hidden');
+            moreExamsChevron.classList.remove('rotate-180');
+        }
+    }, { passive: true });
+}
+
+
+
+    // ================= LANGUAGE DROPDOWN =================
+    languageBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = languageMenu.classList.contains('hidden');
+
+        if (isHidden) {
+            const rect = languageBtn.getBoundingClientRect();
+            languageMenu.style.position = 'fixed';
+            languageMenu.style.top = (rect.bottom + 8) + 'px';
+            languageMenu.style.left = rect.left + 'px';
+            document.body.appendChild(languageMenu);
+        }
+
+        languageMenu.classList.toggle('hidden');
+        languageChevron.classList.toggle('rotate-180');
+    });
+
+    languageOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+            currentLanguage = opt.dataset.value;
+
+            languageOptions.forEach(o => o.querySelector('.fa-check').classList.add('opacity-0'));
+            opt.querySelector('.fa-check').classList.remove('opacity-0');
+
+            if (currentLanguage === 'all') {
+                languageLabel.textContent = 'Language';
+                languageBtn.classList.remove('active-filter');
+                languageBtn.classList.add('text-slate-500', 'hover:bg-slate-50');
+            } else {
+                languageLabel.textContent = currentLanguage;
+                languageBtn.classList.add('active-filter');
+                languageBtn.classList.remove('text-slate-500', 'hover:bg-slate-50');
+            }
+
+            languageMenu.classList.add('hidden');
+            languageChevron.classList.remove('rotate-180');
+            currentPage = 1;
+            searchExpanded = false;
+            fetchTests({ reset: true });
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!languageBtn.contains(e.target) && !languageMenu.contains(e.target)) {
+            languageMenu.classList.add('hidden');
+            languageChevron.classList.remove('rotate-180');
+        }
+    });
+
+    // ================= SEARCH =================
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimeout);
+        clearTimeout(suggestionTimeout);
+        const q = this.value.trim();
+
+        if (!q) {
+            searchDropdown.classList.add('hidden');
+            currentSearch = '';
+            currentPage = 1;
+            searchExpanded = false;
+            fetchTests({ reset: true });
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            currentSearch = q;
+            currentPage = 1;
+            searchExpanded = false;
+            fetchTests({ reset: true });
+        }, 400);
+
+        suggestionTimeout = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/categories/${categorySlug}/search-suggestions?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                renderSearchDropdown(data, q);
+            } catch (err) {
+                console.error('Suggestions fetch failed', err);
+            }
+        }, 300);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            clearTimeout(searchTimeout);
+            currentSearch = searchInput.value.trim();
+            currentPage = 1;
+            searchExpanded = false;
+            searchDropdown.classList.add('hidden');
+            fetchTests({ reset: true });
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+            searchDropdown.classList.add('hidden');
+        }
+    });
+
+    function renderSearchDropdown(data, q) {
+        const hasExams = data.exams.length > 0;
+        const hasSeries = data.series.length > 0;
+
+        if (!hasExams && !hasSeries) {
+            searchDropdown.innerHTML = `<div class="p-4 text-sm text-slate-400">"${escapeHtml(q)}"No results found.</div>`;
+            searchDropdown.classList.remove('hidden');
+            return;
+        }
+
+        let html = '';
+
+        if (hasExams) {
+            html += `<div class="px-4 pt-3 pb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+                        <i class="fa-solid fa-book mr-1"></i> Exam
+                     </div>`;
+            data.exams.forEach(ex => {
+                html += `<div class="suggestion-item px-4 py-2.5 hover:bg-indigo-50 cursor-pointer text-sm text-slate-800"
+                              data-type="exam" data-value="${escapeHtml(ex.label)}">
+                            ${escapeHtml(ex.label)}
+                         </div>`;
+            });
+        }
+
+        if (hasSeries) {
+            html += `<div class="px-4 pt-3 pb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+                        <i class="fa-solid fa-file-lines mr-1"></i> Test Series
+                     </div>`;
+            data.series.forEach(s => {
+                html += `<div class="suggestion-item px-4 py-2.5 hover:bg-indigo-50 cursor-pointer text-sm text-slate-800"
+                              data-type="series" data-value="${escapeHtml(s.label)}" data-slug="${escapeHtml(s.slug)}">
+                            ${escapeHtml(s.label)}
+                         </div>`;
+            });
+        }
+
+        searchDropdown.innerHTML = html;
+        searchDropdown.classList.remove('hidden');
+
+        searchDropdown.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.dataset.type;
+
+                if (type === 'series') {
+                    window.location.href = `/series/${item.dataset.slug}`;
+                    return;
+                }
+
+                searchInput.value = item.dataset.value;
+                currentSearch = item.dataset.value;
+                currentPage = 1;
+                searchExpanded = false;
+                searchDropdown.classList.add('hidden');
+                fetchTests({ reset: true });
+            });
+        });
+    }
+
+    // ================= VIEW ALL / SHOW TESTS BUTTON =================
+    viewAllBtn.addEventListener('click', () => {
+        const isSearchMode = currentSearch.length > 0;
+
+        if (isSearchMode) {
+            searchExpanded = !searchExpanded;
+            fetchTests({ reset: true });
+        } else {
+            currentPage += 1;
+            fetchTests({ reset: true });
+        }
+    });
+
+})();
+</script>
+<% } %>
+
+<style>
+    .active-filter {
+        background: #4f46e5;
+        color: white;
+    }
+    .rotate-180 {
+        transform: rotate(180deg);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+
+<script src="/js/enrollment.js"></script>
