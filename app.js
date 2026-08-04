@@ -123,7 +123,11 @@ connectDB();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
- 
+
+app.get("/sw.js", (req, res) => {
+    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.sendFile(path.join(__dirname, "public", "sw.js"));
+});
 
 app.use(express.static(path.join(__dirname, "public"), {
     maxAge: process.env.NODE_ENV === "production" ? "7d" : 0,
