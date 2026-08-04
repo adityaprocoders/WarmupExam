@@ -263,6 +263,13 @@ export const createTestSchema = Joi.object({
     parentType: Joi.string().valid("section", "folder", "file").default("section"),
     parentId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).allow(null, ""),
 
+    // 👇 NAYA: Language Settings
+    languageMode: Joi.string().valid("single", "multiple").default("single"),
+
+    languages: Joi.array().items(
+        Joi.string().trim().min(1).required()
+    ).default(["English"]),
+
     timeStrategy: Joi.string().valid("total", "subject").default("total"),
 
     duration: Joi.number().integer().min(1).default(60),
@@ -293,9 +300,29 @@ export const createTestSchema = Joi.object({
             topic: Joi.string().trim().allow("", null),
             subTopic: Joi.string().trim().allow("", null),
             difficulty: Joi.string().valid("Easy", "Medium", "Hard").default("Medium"),
+
+            // 👇 NAYA: question-level language fields
+            languageMode: Joi.string().valid("single", "multiple").default("single"),
+
+            // single mode ke fields (jab languageMode = "single")
             question: Joi.string().trim().allow("", null),
             questionImage: Joi.string().uri().allow("", null),
             options: Joi.array().items(Joi.any()).default([]),
+
+            // multiple mode ka field (jab languageMode = "multiple")
+            translations: Joi.array().items(
+                Joi.object({
+                    lang: Joi.string().trim().required(),
+                    question: Joi.string().trim().allow("", null),
+                    questionImage: Joi.string().uri().allow("", null),
+                    options: Joi.array().items(Joi.any()).default([]),
+                    solution: Joi.object({
+                        text: Joi.string().allow("", null),
+                        image: Joi.string().uri().allow("", null)
+                    }).default({ text: "", image: null })
+                }).unknown(true)
+            ).default([]),
+
             correctAnswers: Joi.array().items(Joi.any()).default([]),
             numericAnswer: Joi.number().allow(null),
             solution: Joi.object({

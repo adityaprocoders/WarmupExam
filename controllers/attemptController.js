@@ -7,6 +7,38 @@ import ExpressError from "../utils/ExpressError.js";
 import { calculateRankFromPredictor } from "../utils/rankHelper.js";
 import { getTestStatus, formatDateTime } from "../utils/testStatus.js";
 
+// Question document ko selected language ke hisaab se FLAT object me convert karta hai
+// (translations[] se ya single-mode field se) — attempt.ejs isi flat shape ko expect karta hai.
+function resolveQuestionForLanguage(qDoc, lang) {
+    const q = qDoc.toObject ? qDoc.toObject() : qDoc;
+
+    if (q.languageMode === "multiple") {
+        const t =
+            (q.translations || []).find(tr => tr.lang === lang) ||
+            (q.translations || [])[0]; // fallback: pehli available translation
+
+        return {
+            ...q,
+            question: t?.question || "",
+            questionImage: t?.questionImage || q.questionImage || null, // image shared bhi ho sakti hai
+            options: (t?.options && t.options.length > 0)
+                ? t.options.map((opt, idx) => ({
+                    text: opt.text || "",
+                    image: opt.image || (q.options?.[idx]?.image ?? null) // fallback shared image
+                }))
+                : q.options || [],
+            solution: {
+                text: t?.solution?.text || q.solution?.text || "",
+                image: t?.solution?.image || q.solution?.image || null
+            }
+        };
+    }
+
+    // single mode — jaisa hai waisa hi (already flat)
+    return q;
+}
+
+
 export const showInstructions = async (req, res) => {
     const { id } = req.params;
 
@@ -29,10 +61,35 @@ export const showInstructions = async (req, res) => {
 
     const listing = await Listing.findById(test.listing).select("exam title");
     const mappings = await TestQuestion.find({ test: id }).sort({ order: 1 }).populate("question");
+     
+    // ✅ Language validate karo (query param se)
+    let lang = req.query.lang || (test.languages && test.languages[0]) || "English";
+    if (test.languageMode === "multiple") {
+        if (!test.languages || !test.languages.includes(lang)) {
+            lang = test.languages && test.languages[0] ? test.languages[0] : "English";
+        }
+    } else {
+        lang = (test.languages && test.languages[0]) || "English";
+    }
+
+    // 👇 NAYA
+let availableLanguages = test.languages || ["English"];
+if (test.languageMode === "multiple" && test.showLanguage && test.showLanguage !== "all") {
+    if (test.languages && test.languages.includes(test.showLanguage)) {
+        availableLanguages = [test.showLanguage];
+    }
+}
+if (availableLanguages.length === 1) {
+    lang = availableLanguages[0];
+}
 
     const questions = mappings.filter(m => m.question).map(m => ({
-        ...m.question.toObject(), order: m.order, positiveMarks: m.positiveMarks, negativeMarks: m.negativeMarks
+        ...resolveQuestionForLanguage(m.question, lang),
+        order: m.order,
+        positiveMarks: m.positiveMarks,
+        negativeMarks: m.negativeMarks
     }));
+ 
 
     const subjectMap = {};
     questions.forEach(q => {
@@ -44,7 +101,9 @@ export const showInstructions = async (req, res) => {
 
     res.render("dashboard/instructions", {
         layout: false, test, listing, questions,
-        subjectBreakdown: Object.values(subjectMap)
+        subjectBreakdown: Object.values(subjectMap),
+        availableLanguages,
+        lang
     });
 };
 
@@ -66,8 +125,23 @@ export const showAttempt = async (req, res) => {
 
     const mappings = await TestQuestion.find({ test: id }).sort({ order: 1 }).populate("question");
 
+    // ✅ Language validate karo (query param se) — questions banane se PEHLE
+    let lang = req.query.lang || (test.languages && test.languages[0]) || "English";
+
+    if (test.languageMode === "multiple") {
+        if (!test.languages || !test.languages.includes(lang)) {
+            lang = test.languages && test.languages[0] ? test.languages[0] : "English";
+        }
+    } else {
+        lang = (test.languages && test.languages[0]) || "English";
+    }
+
+    // ✅ Har question ko isi language ke hisaab se resolve karo (translations[] handle karega)
     const questions = mappings.filter(m => m.question).map(m => ({
-        ...m.question.toObject(), order: m.order, positiveMarks: m.positiveMarks, negativeMarks: m.negativeMarks
+        ...resolveQuestionForLanguage(m.question, lang),
+        order: m.order,
+        positiveMarks: m.positiveMarks,
+        negativeMarks: m.negativeMarks
     }));
 
     const subjectsOrder = [];
@@ -81,8 +155,9 @@ export const showAttempt = async (req, res) => {
         grouped[q.subject].push(q);
     });
 
-    const session = await AttemptSession.create({ test: id, user: req.user._id });
+    const session = await AttemptSession.create({ test: id, user: req.user._id, language: lang });
 
+    
     const returnUrl = req.query.from || req.headers.referer || "/dashboard";
 
     res.render("dashboard/attempt", {
@@ -190,7 +265,8 @@ export const submitAttempt = async (req, res) => {
         user: req.user._id,
         answers: savedAnswers,
         score, totalMarks: test.totalMarks, correctCount, wrongCount, skippedCount,
-        timeTaken: timeTaken || 0, submitType: submitType || "manual"
+        timeTaken: timeTaken || 0, submitType: submitType || "manual",
+        language: session.language || "English"   // 👈 naya
     });
 
     res.status(200).json({ success: true, attemptId: attempt._id });
@@ -262,6 +338,9 @@ export const showAnalysis = async (req, res) => {
         if (status === "correct") subjectMap[subject].correct += 1;
         if (status === "wrong") subjectMap[subject].wrong += 1;
 
+        // ✅ Attempt ke waqt candidate ne jo language choose ki thi, wahi analysis me bhi dikhao
+        const resolvedQ = resolveQuestionForLanguage(q, attempt.language || "English");
+
         solutions.push({
             order: idx + 1,
             subject: q.subject || "",
@@ -270,15 +349,15 @@ export const showAnalysis = async (req, res) => {
             subtopic: q.subtopic || "",
             difficulty: q.difficulty || "",
             status,
-            questionText: q.question || "",
-            questionImage: q.questionImage || null,
-            options: q.options || [],
+            questionText: resolvedQ.question || "",
+            questionImage: resolvedQ.questionImage || null,
+            options: resolvedQ.options || [],
             correctAnswers: q.correctAnswers || [],
             numericAnswer: q.numericAnswer ?? null,
             selectedOptions: a.selectedOptions || [],
             userNumericAnswer: a.numericAnswer ?? null,
-            solutionText: q.solution?.text || "",
-            solutionImage: q.solution?.image || null
+            solutionText: resolvedQ.solution?.text || "",
+            solutionImage: resolvedQ.solution?.image || null
         });
     });
 

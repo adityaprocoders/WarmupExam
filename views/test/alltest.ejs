@@ -5,22 +5,30 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div class="flex items-center gap-3">
 
-            <% if (hasSearched) { %>
+        <% if (hasSearched) { %>
+            <a href="/alltests"
+               class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition">
+                <i class="fa-solid fa-arrow-left text-xl text-gray-700"></i>
+            </a>
+        <% } %>
 
-                <a href="/alltests"
-                   class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition">
-
-                    <i class="fa-solid fa-arrow-left text-xl text-gray-700"></i>
-
-                </a>
-
-            <% } %>
-
+        <div>
             <h3 class="text-2xl font-bold text-gray-800">
-                All Tests
+                <% if (hasSearched) { %>
+                    "<%= search || selectedExam %>" Results
+                <% } else { %>
+                    All Tests
+                <% } %>
             </h3>
 
+            <% if (hasSearched) { %>
+                <p class="text-sm text-gray-500 mt-1">
+                    <%= matchedListings ? matchedListings.length : 0 %> test series available
+                </p>
+            <% } %>
         </div>
+
+    </div>
 
         <div class="relative w-full md:w-96">
 

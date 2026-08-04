@@ -3,16 +3,39 @@
     <div class="bg-white rounded-2xl sm:rounded-3xl w-full max-w-4xl h-[95vh] sm:h-[90vh] flex flex-col shadow-2xl overflow-hidden">
 
         <!-- Header -->
+ 
         <!-- Header -->
 <div class="p-5 sm:p-6 border-b bg-gray-50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 shrink-0">
     <div>
         <h3 class="text-xl sm:text-2xl font-extrabold text-[#2B3674] truncate"><%= test.title %></h3>
         <p class="text-[10px] uppercase tracking-wider text-gray-400 font-bold mt-1">Test Instructions</p>
     </div>
-    <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2 shrink-0">
-        <span class="text-sm font-bold text-[#4318FF]">
-            <%= test.duration %> Minutes Duration
-        </span>
+
+    <div class="flex items-center gap-4 shrink-0">
+         
+        <% if (test.languageMode === 'multiple' && availableLanguages && availableLanguages.length > 1) { %>
+    <div class="relative bg-gradient-to-b from-white to-indigo-50/40 border border-indigo-200 rounded-xl px-4 py-2 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all">
+        <label class="block text-[9px] uppercase font-bold tracking-wider text-indigo-400 mb-1">Choose Language</label>
+        <div class="flex items-center gap-2">
+            <i data-lucide="languages" class="w-3.5 h-3.5 text-[#4318FF]"></i>
+            <select id="languageSelect" onchange="handleLanguageSelect(this.value)"
+                class="text-sm font-bold text-[#4318FF] outline-none bg-transparent appearance-none pr-5 cursor-pointer">
+                <% availableLanguages.forEach((lang, idx) => { %>
+                    <option value="<%= lang %>" <%= idx === 0 ? 'selected' : '' %>><%= lang %></option>
+                <% }) %>
+            </select>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-indigo-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+        </div>
+    </div>
+<% } %>
+
+<input type="hidden" id="effectiveTestLanguage" value="<%= lang %>">
+
+        <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2">
+            <span class="text-sm font-bold text-[#4318FF]">
+                <%= test.duration %> Minutes Duration
+            </span>
+        </div>
     </div>
 </div>
 
@@ -123,22 +146,4 @@
     </div>
 
 </div>
-
-<!-- <script>
-    
-function startTest(testId) {
-    const el = document.documentElement;
-    const requestFS = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
-    if (requestFS) {
-        requestFS.call(el).finally(() => {
-            window.location.href = `/attempt/${testId}`;
-        });
-    } else {
-        window.location.href = `/attempt/${testId}`;
-    }
-}
- 
-</script> -->
-
-
 

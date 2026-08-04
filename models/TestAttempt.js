@@ -25,7 +25,9 @@ const attemptSchema = new mongoose.Schema({
     skippedCount: { type: Number, default: 0 },
 
     timeTaken: { type: Number, default: 0 },
-    submitType: { type: String, enum: ["manual", "auto"], default: "manual" }
+    submitType: { type: String, enum: ["manual", "auto"], default: "manual" },
+    
+    language: { type: String, default: "English" } 
 
 }, { timestamps: true });
 

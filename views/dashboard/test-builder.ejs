@@ -26,7 +26,18 @@
         <option value="subject">Subject Wise</option>
       </select>
     </div>
+    <div>
+    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Choose Language</label>
+    <select id="languageMode" onchange="handleLanguageUI()" class="w-full p-3 border rounded-xl bg-gray-50 font-bold">
+      <option value="single">Single</option>
+      <option value="multiple">Multiple</option>
+    </select>
   </div>
+
+  <div id="showLanguageFieldContainer"></div>
+  </div>
+
+   <div id="languageFieldContainer" class="mb-6"></div>
 
   <!-- DYNAMIC CONTAINER -->
   <div id="mainContainer"></div>
@@ -62,28 +73,31 @@
 </button>
  
 <script>
-    const urlParams = new URLSearchParams(window.location.search);
+  const urlParams = new URLSearchParams(window.location.search);
 const contextData = {
     listingId: urlParams.get('listingId') || '',
     sectionId: urlParams.get('sectionId') || '',
     parentType: urlParams.get('parentType') || 'section',
     parentId: urlParams.get('parentId') || '',
     returnUrl: urlParams.get('returnUrl') || '/',
-    editId: urlParams.get('editId') || '' 
+    editId: urlParams.get('editId') || ''
 };
 
 let selectedSubjects = new Set();
-let subjectTimeList = []; 
+let testLanguageMode = 'single';
+let testLanguages = ['English'];
+let testShowLanguage = 'all';
+let subjectTimeList = [];
 let editingSubjectTimeIndex = null;
 let questionCount = 0;
 let isEditMode = !!contextData.editId;
-let currentViewMode = 'manual';   
-let testQuestionsState = [];      
+let currentViewMode = 'manual';
+let testQuestionsState = [];
 let subjectsList = [];
-let testDurationState = 0; 
+let testDurationState = 0;
 
- 
-const imageDataStore = {};  
+
+const imageDataStore = {};
 
 function ensureImageStore(qId) {
   if (!imageDataStore[qId]) {
@@ -126,7 +140,7 @@ async function uploadAndStore(inputEl, kind, qId, optionIdx) {
   }
 }
 
- let previewLoadQueue = [];
+let previewLoadQueue = [];
 let previewLoadTimer = null;
 
 function showPreview(imgId, url) {
@@ -194,19 +208,17 @@ function getMarksForSubject(subjectName) {
         : { positiveMarks: 0, negativeMarks: 0 };
 }
 
- 
+
 /* ---------------------------------------------------------
    TAB SWITCH
 --------------------------------------------------------- */
 
 function renderView(mode) {
-     // Tab switch se pehle current Total Time value state me save karo
     const totalInputBeforeSwitch = document.getElementById('totalTimeInput');
     if (totalInputBeforeSwitch) {
         testDurationState = Number(totalInputBeforeSwitch.value) || 0;
     }
 
-    // Tab switch se pehle current view ka data state me save karo
     if (currentViewMode === 'manual' && document.getElementById('questionsListContainer')) {
         testQuestionsState = collectManualQuestions();
     } else if (currentViewMode === 'json') {
@@ -245,12 +257,20 @@ function renderView(mode) {
             </button>
         `;
         handleTimeUI();
-        renderManualQuestions(testQuestionsState);   // 🔧 blank addQuestion() ki jagah stored data render
+        renderManualQuestions(testQuestionsState);
     } else {
         container.innerHTML = `
             <div id="timeDynamicContainer" class="p-6 border rounded-xl bg-gray-50 mb-6"></div>
             <div>
-                <label class="block text-sm font-bold mb-2">JSON Configuration</label>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-sm font-bold">JSON Configuration</label>
+                    <button type="button" onclick="loadDemoIntoEditor()" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline">
+                        📋 Load Example Format (${testLanguageMode === 'multiple' ? 'Multiple' : 'Single'} Language)
+                    </button>
+                </div>
+                <p class="text-xs text-gray-400 mb-2">
+                    Ye editor <b>${testLanguageMode === 'multiple' ? 'Multiple' : 'Single'}-language</b> mode me hai. Format guide ke liye upar "Load Example" click karo.
+                </p>
                 <textarea id="jsonEditor" oninput="calculateTotalMarksFromJson()" class="w-full h-72 p-4 border rounded-xl font-mono text-sm" placeholder='Paste JSON configuration here...'></textarea>
             </div>
         `;
@@ -258,7 +278,11 @@ function renderView(mode) {
 
         const jsonEditor = document.getElementById('jsonEditor');
         if (jsonEditor) {
-            jsonEditor.value = JSON.stringify(testQuestionsState, null, 2);   // 🔧 stored data JSON me dikhao
+            // 🔧 Agar koi saved data nahi hai to language-mode ke hisaab se DEMO dikhao
+            const dataToShow = (Array.isArray(testQuestionsState) && testQuestionsState.length > 0)
+                ? testQuestionsState
+                : getDemoQuestionsJson();
+            jsonEditor.value = JSON.stringify(dataToShow, null, 2);
         }
         calculateTotalMarksFromJson();
     }
@@ -279,7 +303,7 @@ function handleTimeUI() {
     container.innerHTML = `<div id="totalTimeField"><label class="block text-sm font-bold mb-2">Total Time (in minutes)</label><input type="number" id="totalTimeInput" placeholder="e.g. 120" class="w-full p-3 border rounded-lg" value="${testDurationState || ''}"></div>`;
     selectedSubjects.clear();
   } else {
-    editingSubjectTimeIndex = null; 
+    editingSubjectTimeIndex = null;
     container.innerHTML = `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -298,7 +322,7 @@ function handleTimeUI() {
       </div>
       <div id="addedList" class="mt-6 pt-4 border-t border-gray-200"><h3 class="text-sm font-bold mb-2">Allocated Times:</h3></div>`;
 
-    renderSubjectTimeList();   
+    renderSubjectTimeList();
   }
 }
 
@@ -330,7 +354,6 @@ function renderSubjectTimeList() {
 function removeSubjectTime(index) {
   subjectTimeList.splice(index, 1);
 
-  // 🔧 agar wahi entry edit ho rahi thi jo delete hui, edit mode cancel karo
   if (editingSubjectTimeIndex === index) {
     editingSubjectTimeIndex = null;
     resetAddSubjectTimeButton();
@@ -338,30 +361,25 @@ function removeSubjectTime(index) {
     renderTags();
     document.getElementById('subTime').value = "";
   } else if (editingSubjectTimeIndex !== null && index < editingSubjectTimeIndex) {
-    // upar wali entry delete hui to index shift ho gaya, adjust karo
     editingSubjectTimeIndex--;
   }
 
   renderSubjectTimeList();
 }
 
- 
+
 function editSubjectTime(index) {
   const entry = subjectTimeList[index];
   if (!entry) return;
 
-  // 🔧 Entry ko list se hatate nahi — sirf edit mode me rakhte hain
   editingSubjectTimeIndex = index;
 
-  // Subject(s) ko tags me wapas bhar do (agar "A + B" tha to dono tags bane)
   selectedSubjects.clear();
   entry.subject.split(' + ').forEach(s => selectedSubjects.add(s.trim()));
   renderTags();
 
-  // Duration input me purani value daal do
   document.getElementById('subTime').value = entry.duration;
 
-  // Button ka text "Update" kar do taaki user ko pata chale edit mode chal raha hai
   const btn = document.querySelector('#addedList')?.previousElementSibling?.querySelector('button[onclick="addSubjectTime()"]')
       || document.querySelector('button[onclick="addSubjectTime()"]');
   if (btn) btn.innerText = "Update Subject Time";
@@ -383,12 +401,10 @@ function addSubjectTime() {
     const newEntry = { subject: subjectLabel, duration: Number(t) };
 
     if (editingSubjectTimeIndex !== null) {
-      // 🔧 Edit mode: usi position pe update karo, end me push mat karo
       subjectTimeList[editingSubjectTimeIndex] = newEntry;
       editingSubjectTimeIndex = null;
       resetAddSubjectTimeButton();
     } else {
-      // Naya entry: end me add karo
       subjectTimeList.push(newEntry);
     }
 
@@ -397,7 +413,137 @@ function addSubjectTime() {
     renderTags();
     document.getElementById('subTime').value = "";
   }
-} 
+}
+
+/* ---------------------------------------------------------
+   LANGUAGE MODE UI
+--------------------------------------------------------- */
+function handleLanguageUI() {
+  const container = document.getElementById('languageFieldContainer');
+  if (!container) return;
+
+  const mode = document.getElementById('languageMode').value;
+  testLanguageMode = mode;
+
+  if (mode === 'single') {
+    const currentLang = testLanguages[0] || '';
+    container.innerHTML = `
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Language</label>
+        <input type="text" id="singleLanguageInput" placeholder="e.g. English, Hindi, Punjabi..."
+          value="${currentLang}"
+          oninput="testLanguages = [this.value || 'English']"
+          class="w-full md:w-1/3 p-3 border rounded-xl">
+      </div>`;
+  } else {
+    container.innerHTML = `
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Languages (kam se kam 2)</label>
+        <div id="langTagContainer" class="min-h-[50px] p-2 border bg-white rounded-xl flex flex-wrap gap-2 mb-2"></div>
+        <div class="flex gap-2">
+          <input type="text" id="langInput" placeholder="e.g. Hindi, English, Bhojpuri..." class="flex-1 p-3 border rounded-xl">
+          <button type="button" onclick="addLanguageTag()" class="bg-indigo-600 text-white px-4 rounded-xl font-bold">Add</button>
+        </div>
+      </div>`; 
+    renderLanguageTags();
+  }
+
+  // 🔧 Sirf har question ka BODY re-render karo (header/topic/subject safe rehta hai)
+  document.querySelectorAll('[id^="question_"]').forEach(block => {
+    const qId = block.id.split('_')[1];
+    renderQuestionBody(qId);
+  });
+
+  // 🔧 JSON tab khula ho aur khaali/demo dikh raha ho to usko bhi refresh karo
+   if (currentViewMode === 'json') {
+    // Header label turant update karo (mode badalte hi)
+    const labelBtn = document.querySelector('[onclick="loadDemoIntoEditor()"]');
+    if (labelBtn) {
+        labelBtn.textContent = `📋 Load Example Format (${testLanguageMode === 'multiple' ? 'Multiple' : 'Single'} Language)`;
+    }
+    const modeHint = document.querySelector('#mainContainer p.text-xs.text-gray-400');
+    if (modeHint) {
+        modeHint.innerHTML = `Ye editor <b>${testLanguageMode === 'multiple' ? 'Multiple' : 'Single'}-language</b> mode me hai. Format guide ke liye upar "Load Example" click karo.`;
+    }
+
+    const jsonEditor = document.getElementById('jsonEditor');
+    if (jsonEditor && (!jsonEditor.value.trim() || jsonEditor.value.trim() === '[]')) {
+      jsonEditor.value = JSON.stringify(getDemoQuestionsJson(), null, 2);
+      calculateTotalMarksFromJson();
+    }
+  }
+   renderShowLanguageUI(); 
+}
+
+function renderShowLanguageUI() {
+  const container = document.getElementById('showLanguageFieldContainer');
+  if (!container) return;
+
+  if (testLanguageMode !== 'multiple' || testLanguages.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  if (testShowLanguage !== 'all' && !testLanguages.includes(testShowLanguage)) {
+    testShowLanguage = 'all';
+  }
+
+  const optionsHtml = [
+    `<option value="all" ${testShowLanguage === 'all' ? 'selected' : ''}>All</option>`,
+    ...testLanguages.map(lang =>
+      `<option value="${lang}" ${testShowLanguage === lang ? 'selected' : ''}>${lang}</option>`
+    )
+  ].join('');
+
+  container.innerHTML = `
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Show Language</label>
+      <select id="showLanguageSelect" onchange="testShowLanguage = this.value" class="w-full p-3 border rounded-xl bg-gray-50 font-bold">
+        ${optionsHtml}
+      </select>
+    </div>`;
+}
+
+
+function addLanguageTag() {
+  const input = document.getElementById('langInput');
+  const val = input.value.trim();
+  if (val && !testLanguages.includes(val)) {
+    testLanguages.push(val);
+    renderLanguageTags();
+
+    document.querySelectorAll('[id^="question_"]').forEach(block => {
+      const qId = block.id.split('_')[1];
+      renderQuestionBody(qId);
+    });
+
+    renderShowLanguageUI();   
+  }
+  input.value = '';
+}
+
+function removeLanguageTag(lang) {
+  testLanguages = testLanguages.filter(l => l !== lang);
+  renderLanguageTags();
+
+  document.querySelectorAll('[id^="question_"]').forEach(block => {
+    const qId = block.id.split('_')[1];
+    renderQuestionBody(qId);
+    
+  });
+
+  renderShowLanguageUI();
+}
+
+function renderLanguageTags() {
+  const c = document.getElementById('langTagContainer');
+  if (!c) return;
+  c.innerHTML = '';
+  testLanguages.forEach(lang => {
+    c.innerHTML += `<span class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2">${lang} <button type="button" onclick="removeLanguageTag('${lang}')" class="hover:text-red-200 font-bold">✕</button></span>`;
+  });
+}
+
 
 /* ---------------------------------------------------------
    QUESTION BUILDER
@@ -418,7 +564,7 @@ function addQuestion() {
         ${getSubjectOptionsHtml(null)}
       </select>
 
-      <select id="qType_${qId}" onchange="updateUI(${qId})" class="bg-white border rounded-lg px-3 py-1 outline-none text-sm font-medium">
+      <select id="qType_${qId}" onchange="renderQuestionBody(${qId})" class="bg-white border rounded-lg px-3 py-1 outline-none text-sm font-medium">
         <option value="mcq">MCQ</option>
         <option value="multiple">Multiple MCQ</option>
         <option value="integer">Integer/Numeric</option>
@@ -435,29 +581,11 @@ function addQuestion() {
       <button type="button" onclick="removeQuestion(${qId})" class="text-red-400 hover:text-red-600">🗑️</button>
     </div>
 
-    <textarea id="qText_${qId}" placeholder="Enter Question..." class="w-full p-4 border rounded-xl mb-4 h-32 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
-
-    <div class="border-2 border-dashed rounded-xl p-4 text-center mb-6 text-gray-400 text-sm">
-      <p class="mb-1">QUESTION PHOTO (OPTIONAL)</p>
-      <input type="file" id="qImageFile_${qId}" accept="image/*" onchange="uploadAndStore(this, 'question', ${qId})" class="text-sm">
-      <img id="qImagePreview_${qId}" class="hidden mt-2 h-20 mx-auto rounded" />
-    </div>
-
-    <div id="dynamicFields_${qId}" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
-
-     <div class="mb-2">
-      <p class="text-xs font-bold text-indigo-700 mb-2">QUESTION SOLUTION</p>
-      <textarea id="qSolution_${qId}" class="w-full p-4 border rounded-xl h-24 mb-2 outline-none" placeholder="Enter solution details..."></textarea>
-      <div class="border-2 border-dashed rounded-xl p-3 text-center bg-gray-50">
-        <label class="text-xs text-gray-500 block mb-1">UPLOAD SOLUTION PHOTO</label>
-        <input type="file" id="qSolImageFile_${qId}" accept="image/*" onchange="uploadAndStore(this, 'solution', ${qId})" class="text-sm">
-        <img id="qSolImagePreview_${qId}" class="hidden mt-2 h-20 mx-auto rounded" />
-      </div>
-    </div>
+    <div id="qBody_${qId}"></div>
   `;
 
   list.appendChild(block);
-  updateUI(qId);
+  renderQuestionBody(qId);
   renumberQuestions();
   calculateTotalMarks();
 }
@@ -474,9 +602,143 @@ function renumberQuestions() {
   badges.forEach((badge, index) => { badge.textContent = `Q${index + 1}`; });
 }
 
+/* ---------------------------------------------------------
+   QUESTION BODY — Single vs Multiple language render
+--------------------------------------------------------- */
+function renderQuestionBody(qId) {
+  const typeEl = document.getElementById(`qType_${qId}`);
+  const type = typeEl ? typeEl.value : 'mcq';
+  const body = document.getElementById(`qBody_${qId}`);
+  if (!body) return;
+
+  if (testLanguageMode === 'multiple') {
+    body.innerHTML = renderMultiLanguageBody(qId, type);
+  } else {
+    body.innerHTML = renderSingleLanguageBody(qId, type);
+    updateUI(qId);
+  }
+  calculateTotalMarks();
+}
+
+function renderSingleLanguageBody(qId, type) {
+  return `
+    <textarea id="qText_${qId}" placeholder="Enter Question..." class="w-full p-4 border rounded-xl mb-4 h-32 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+
+    <div class="border-2 border-dashed rounded-xl p-4 text-center mb-6 text-gray-400 text-sm">
+      <p class="mb-1">QUESTION PHOTO (OPTIONAL)</p>
+      <input type="file" id="qImageFile_${qId}" accept="image/*" onchange="uploadAndStore(this, 'question', ${qId})" class="text-sm">
+      <img id="qImagePreview_${qId}" class="hidden mt-2 h-20 mx-auto rounded" />
+    </div>
+
+    <div id="dynamicFields_${qId}" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
+
+    <div class="mb-2">
+      <p class="text-xs font-bold text-indigo-700 mb-2">QUESTION SOLUTION</p>
+      <textarea id="qSolution_${qId}" class="w-full p-4 border rounded-xl h-24 mb-2 outline-none" placeholder="Enter solution details..."></textarea>
+      <div class="border-2 border-dashed rounded-xl p-3 text-center bg-gray-50">
+        <label class="text-xs text-gray-500 block mb-1">UPLOAD SOLUTION PHOTO</label>
+        <input type="file" id="qSolImageFile_${qId}" accept="image/*" onchange="uploadAndStore(this, 'solution', ${qId})" class="text-sm">
+        <img id="qSolImagePreview_${qId}" class="hidden mt-2 h-20 mx-auto rounded" />
+      </div>
+    </div>
+  `;
+}
+
+function renderMultiLanguageBody(qId, type) {
+  let html = '';
+
+  // 👇 SHARED Question Image — ek hi diagram sabhi languages ke liye
+  html += `
+    <div class="border-2 border-dashed rounded-xl p-4 text-center mb-4 text-gray-400 text-sm bg-gray-50">
+      <p class="mb-1 font-bold text-indigo-700">QUESTION PHOTO / DIAGRAM (SHARED — sabhi languages me same rahega)</p>
+      <input type="file" id="qImageFile_${qId}" accept="image/*" onchange="uploadAndStore(this, 'question', ${qId})" class="text-sm">
+      <img id="qImagePreview_${qId}" class="hidden mt-2 h-20 mx-auto rounded" />
+    </div>
+  `;
+
+  // 👇 Har language ka apna sirf TEXT box (image nahi)
+  testLanguages.forEach((lang, li) => {
+    html += `
+      <div class="border border-indigo-100 rounded-xl p-4 mb-4 bg-indigo-50/30">
+        <p class="text-xs font-bold text-indigo-700 uppercase mb-2">Question Text (${lang})</p>
+        <textarea id="qTransQuestion_${qId}_${li}" placeholder="Enter Question in ${lang}..." class="w-full p-4 border rounded-xl h-28 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+      </div>
+    `;
+  });
+
+  if (type !== 'integer') {
+    // 👇 SHARED Option Images
+    html += `<div class="p-4 border rounded-xl bg-gray-50 mb-4">
+      <p class="text-xs font-bold text-indigo-700 uppercase mb-3">OPTION IMAGES (SHARED — optional, sabhi languages me same)</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
+    ['A', 'B', 'C', 'D'].forEach((opt, oi) => {
+      html += `
+        <div class="p-3 border rounded-xl bg-white">
+          <label class="text-xs font-bold uppercase block mb-1">Option ${opt} Image</label>
+          <input type="file" id="qOptImageFile_${qId}_${oi}" accept="image/*" onchange="uploadAndStore(this, 'option', ${qId}, ${oi})" class="text-xs">
+          <img id="qOptImagePreview_${qId}_${oi}" class="hidden mt-2 h-16 rounded" />
+        </div>`;
+    });
+    html += `</div></div>`;
+
+    // 👇 Har language ke Option TEXTS
+    testLanguages.forEach((lang, li) => {
+      html += `<div class="p-4 border rounded-xl bg-indigo-50/30 mb-4">
+        <p class="text-xs font-bold text-indigo-700 uppercase mb-2">Option Texts (${lang})</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
+      ['A', 'B', 'C', 'D'].forEach((opt, oi) => {
+        html += `
+          <div>
+            <label class="text-xs font-bold uppercase block mb-1">Option ${opt} (${lang})</label>
+            <input type="text" id="qTransOptText_${qId}_${li}_${oi}" class="w-full p-2 border rounded" placeholder="Text in ${lang}...">
+          </div>`;
+      });
+      html += `</div></div>`;
+    });
+
+    // 👇 Correct Answer — SHARED (option index sabhi languages me same order follow karta hai)
+    const inputType = (type === 'multiple') ? 'checkbox' : 'radio';
+    html += `<div class="p-4 border rounded-xl bg-gray-50 mb-4"><p class="text-xs font-bold text-gray-600 uppercase mb-2">Correct Answer (Option Index)</p><div class="grid grid-cols-2 md:grid-cols-4 gap-3">`;
+    ['A', 'B', 'C', 'D'].forEach((opt, oi) => {
+      html += `
+        <label class="flex items-center gap-2 p-2 border rounded-lg bg-white text-sm font-bold">
+          <input type="${inputType}" name="qOption_${qId}" value="${oi}" class="qCorrect_${qId} w-4 h-4">
+          Option ${opt}
+        </label>`;
+    });
+    html += `</div></div>`;
+  } else {
+    html += `
+      <div class="p-6 border rounded-xl bg-gray-50 mb-4">
+        <label class="block text-sm font-bold mb-2">Enter Numeric Answer:</label>
+        <input type="number" step="any" id="qNumeric_${qId}" class="w-full p-3 border rounded-lg" placeholder="Enter integer or decimal value">
+      </div>`;
+  }
+
+  // 👇 SHARED Solution Image + har language ka Solution TEXT
+  html += `
+    <div class="mb-2">
+      <p class="text-xs font-bold text-indigo-700 mb-2">SOLUTION PHOTO (SHARED)</p>
+      <div class="border-2 border-dashed rounded-xl p-3 text-center bg-gray-50 mb-4">
+        <input type="file" id="qSolImageFile_${qId}" accept="image/*" onchange="uploadAndStore(this, 'solution', ${qId})" class="text-sm">
+        <img id="qSolImagePreview_${qId}" class="hidden mt-2 h-20 mx-auto rounded" />
+      </div>
+  `;
+  testLanguages.forEach((lang, li) => {
+    html += `
+      <p class="text-xs font-bold text-indigo-700 uppercase mb-1">Solution Text (${lang})</p>
+      <textarea id="qTransSolutionText_${qId}_${li}" class="w-full p-3 border rounded-xl h-20 mb-3 outline-none" placeholder="Solution in ${lang}..."></textarea>
+    `;
+  });
+  html += `</div>`;
+
+  return html;
+}
+
 function updateUI(qId) {
   const type = document.getElementById(`qType_${qId}`).value;
   const container = document.getElementById(`dynamicFields_${qId}`);
+  if (!container) return;
 
   if (type === 'integer') {
     container.innerHTML = `
@@ -501,7 +763,7 @@ function updateUI(qId) {
           <img id="qOptImagePreview_${qId}_${idx}" class="hidden mt-2 h-16 rounded" />
         </div>`;
     });
-    
+
     container.innerHTML = html;
   }
   calculateTotalMarks();
@@ -556,7 +818,10 @@ function buildPayload() {
   const payload = {
     title: document.getElementById('testTitleInput').value,
     totalMarks: calculateTotalMarks(),
-    timeStrategy: timeStrategy
+    timeStrategy: timeStrategy,
+    languageMode: testLanguageMode,  
+    languages: testLanguages,
+    showLanguage: testLanguageMode === 'multiple' ? testShowLanguage : 'all'       
   };
 
   if (timeStrategy === 'total') {
@@ -564,7 +829,6 @@ function buildPayload() {
     payload.duration = totalInput ? Number(totalInput.value) || 0 : 0;
     payload.subjectTime = [];
   } else {
-    // Subject-wise time hone par saare subject ki durations ka total duration calculate karo
     payload.duration = subjectTimeList.reduce((sum, st) => sum + Number(st.duration || 0), 0);
     payload.subjectTime = subjectTimeList;
   }
@@ -586,16 +850,48 @@ function buildPayload() {
 }
 
 function normalizeImportedQuestion(q, idx) {
-  return {
+  const languageMode = q.languageMode === 'multiple' ? 'multiple' : 'single';
+
+  const base = {
     order: q.order || q.id || (idx + 1),
     subject: q.subject || q.sub || '',
     type: q.type || 'mcq',
     topic: q.topic || '',
     subTopic: q.subTopic || '',
     difficulty: q.difficulty || 'Medium',
-    question: q.question || q.text || '',
-    questionImage: q.questionImage || q.qImg || null,
-    options: (q.options || []).map((opt, i) => {
+    languageMode: languageMode,
+    correctAnswers: Array.isArray(q.correctAnswers)
+      ? q.correctAnswers
+      : (typeof q.correct === 'number' ? [q.correct] : []),
+    numericAnswer: q.numericAnswer ?? null
+  };
+
+  if (languageMode === 'multiple') {
+    base.questionImage = q.questionImage || q.qImg || null;   // shared
+    base.options = (q.options || []).map(opt =>
+      typeof opt === 'string' ? { text: '', image: null } : { text: '', image: opt.image || null }
+    );
+    base.solution = q.solution || { text: '', image: q.solImg || null };
+    base.question = '';
+
+    base.translations = (q.translations || []).map(t => ({
+      lang: t.lang || 'English',
+      question: t.question || '',
+      questionImage: t.questionImage || null,
+      options: (t.options || []).map(o => ({
+        text: typeof o === 'string' ? o : (o?.text || ''),
+        image: (typeof o === 'object' && o?.image) || null
+      })),
+      solution: {
+        text: t.solutionText || t.solution?.text || '',
+        image: t.solution?.image || null
+      }
+    }));
+    
+  } else {
+    base.question = q.question || q.text || '';
+    base.questionImage = q.questionImage || q.qImg || null;
+    base.options = (q.options || []).map((opt, i) => {
       if (typeof opt === 'string') {
         return { text: opt, image: (q.optImgs && q.optImgs[i]) || null };
       }
@@ -603,13 +899,12 @@ function normalizeImportedQuestion(q, idx) {
         text: opt.text || '',
         image: opt.image || (q.optImgs && q.optImgs[i]) || null
       };
-    }),
-    correctAnswers: Array.isArray(q.correctAnswers)
-      ? q.correctAnswers
-      : (typeof q.correct === 'number' ? [q.correct] : []),
-    numericAnswer: q.numericAnswer ?? null,
-    solution: q.solution || { text: q.sol || '', image: q.solImg || null }
-  };
+    });
+    base.solution = q.solution || { text: q.sol || '', image: q.solImg || null };
+    base.translations = [];
+  }
+
+  return base;
 }
 
 function collectManualQuestions() {
@@ -635,29 +930,74 @@ function collectManualQuestions() {
       topic: document.getElementById(`qTopic_${qId}`).value,
       subTopic: document.getElementById(`qSubTopic_${qId}`).value,
       difficulty: document.getElementById(`qDifficulty_${qId}`).value,
-      question: document.getElementById(`qText_${qId}`).value,
-      questionImage: imgStore.question,
-      options: [],
+      languageMode: testLanguageMode,
       correctAnswers: [],
-      numericAnswer: null,
-      solution: {
+      numericAnswer: null
+    };
+
+    if (testLanguageMode === 'multiple') {
+      // 👇 SHARED images (top-level) — sabhi languages ke liye same
+      q.question = "";
+      q.questionImage = imgStore.question;
+      q.options = [];
+      q.solution = { text: "", image: imgStore.solution };
+
+      if (type !== 'integer') {
+        [0, 1, 2, 3].forEach(idx => {
+          q.options.push({ text: "", image: imgStore.options[idx] || null });
+        });
+      }
+
+      // 👇 Har language ka sirf TEXT (options object shape me, image shared)
+      q.translations = testLanguages.map((lang, li) => {
+        const trans = {
+          lang: lang,
+          question: document.getElementById(`qTransQuestion_${qId}_${li}`)?.value || '',
+          questionImage: imgStore.question || null,
+          options: [],
+          solution: {
+            text: document.getElementById(`qTransSolutionText_${qId}_${li}`)?.value || '',
+            image: imgStore.solution || null
+          }
+        };
+
+        if (type !== 'integer') {
+          [0, 1, 2, 3].forEach(oi => {
+            const optInput = document.getElementById(`qTransOptText_${qId}_${li}_${oi}`);
+            trans.options.push({
+              text: optInput ? optInput.value : "",
+              image: imgStore.options[oi] || null
+            });
+          });
+        }
+
+        return trans;
+      });
+    } else {
+      q.question = document.getElementById(`qText_${qId}`).value;
+      q.questionImage = imgStore.question;
+      q.options = [];
+      q.solution = {
         text: document.getElementById(`qSolution_${qId}`).value,
         image: imgStore.solution
+      };
+      q.translations = [];
+
+      if (type !== 'integer') {
+        [0, 1, 2, 3].forEach(idx => {
+          const optInput = document.getElementById(`qOptText_${qId}_${idx}`);
+          q.options.push({
+            text: optInput ? optInput.value : "",
+            image: imgStore.options[idx] || null
+          });
+        });
       }
-    };
+    }
 
     if (type === 'integer') {
       const numInput = document.getElementById(`qNumeric_${qId}`);
       q.numericAnswer = numInput ? Number(numInput.value) : null;
     } else {
-      [0, 1, 2, 3].forEach(idx => {
-        const optInput = document.getElementById(`qOptText_${qId}_${idx}`);
-        q.options.push({
-          text: optInput ? optInput.value : "",
-          image: imgStore.options[idx] || null
-        });
-      });
-
       const checked = document.querySelectorAll(`.qCorrect_${qId}:checked`);
       checked.forEach(el => q.correctAnswers.push(Number(el.value)));
     }
@@ -668,13 +1008,12 @@ function collectManualQuestions() {
   return questions;
 }
 
-
 function renderManualQuestions(questionsArray) {
   document.getElementById('questionsListContainer').innerHTML = '';
   questionCount = 0;
 
   if (!Array.isArray(questionsArray) || questionsArray.length === 0) {
-    addQuestion(); // kam se kam ek khaali block dikhao
+    addQuestion();
     return;
   }
 
@@ -687,31 +1026,62 @@ function renderManualQuestions(questionsArray) {
     document.getElementById(`qTopic_${qId}`).value = q.topic || '';
     document.getElementById(`qSubTopic_${qId}`).value = q.subTopic || '';
     document.getElementById(`qDifficulty_${qId}`).value = q.difficulty || 'Medium';
-    document.getElementById(`qText_${qId}`).value = q.question || '';
-    document.getElementById(`qSolution_${qId}`).value = q.solution?.text || '';
 
-    // 👇 Existing images ko store aur preview me daalo
+    // type set hone ke baad body ko sahi mode me render karo
+    renderQuestionBody(qId);
+
+    const qMode = q.languageMode || testLanguageMode;
     const store = ensureImageStore(qId);
+
+    // 👇 SHARED images (dono mode me top-level se aate hain)
     store.question = q.questionImage || null;
     store.solution = q.solution?.image || null;
     if (store.question) showPreview(`qImagePreview_${qId}`, store.question);
     if (store.solution) showPreview(`qSolImagePreview_${qId}`, store.solution);
 
-    updateUI(qId);
+    if (q.type !== 'integer') {
+      (q.options || []).forEach((opt, idx) => {
+        store.options[idx] = opt.image || null;
+        if (opt.image) showPreview(`qOptImagePreview_${qId}_${idx}`, opt.image);
+      });
+    }
+
+    if (qMode === 'multiple' && Array.isArray(q.translations)) {
+      q.translations.forEach((t, li) => {
+        const qEl = document.getElementById(`qTransQuestion_${qId}_${li}`);
+        if (qEl) qEl.value = t.question || '';
+
+        const solEl = document.getElementById(`qTransSolutionText_${qId}_${li}`);
+        if (solEl) solEl.value = t.solution?.text || t.solutionText || '';
+
+        if (q.type !== 'integer') {
+          (t.options || []).forEach((opt, oi) => {
+            const optInput = document.getElementById(`qTransOptText_${qId}_${li}_${oi}`);
+            if (optInput) {
+              optInput.value = (typeof opt === 'string') ? opt : (opt?.text || '');
+            }
+          });
+        }
+      });
+    } else {
+      const textEl = document.getElementById(`qText_${qId}`);
+      if (textEl) textEl.value = q.question || '';
+
+      const solEl = document.getElementById(`qSolution_${qId}`);
+      if (solEl) solEl.value = q.solution?.text || '';
+
+      if (q.type !== 'integer') {
+        (q.options || []).forEach((opt, idx) => {
+          const optInput = document.getElementById(`qOptText_${qId}_${idx}`);
+          if (optInput) optInput.value = opt.text || '';
+        });
+      }
+    }
 
     if (q.type === 'integer') {
       const numInput = document.getElementById(`qNumeric_${qId}`);
       if (numInput) numInput.value = q.numericAnswer ?? '';
     } else {
-      (q.options || []).forEach((opt, idx) => {
-        const optInput = document.getElementById(`qOptText_${qId}_${idx}`);
-        if (optInput) optInput.value = opt.text || '';
-
-        // 👇 Option image bhi store aur preview me daalo
-        store.options[idx] = opt.image || null;
-        if (opt.image) showPreview(`qOptImagePreview_${qId}_${idx}`, opt.image);
-      });
-
       (q.correctAnswers || []).forEach(ansIdx => {
         const el = document.querySelector(`.qCorrect_${qId}[value="${ansIdx}"]`);
         if (el) el.checked = true;
@@ -722,8 +1092,85 @@ function renderManualQuestions(questionsArray) {
   renumberQuestions();
   calculateTotalMarks();
 }
+
 /* ---------------------------------------------------------
-   FORM SUBMIT -> API CALL (sirf console.log ke liye, DB save nahi)
+   JSON DEMO — Single & Multiple language ke liye
+--------------------------------------------------------- */
+function getDemoQuestionsJson() {
+  const defaultSubject = subjectsList[0]?.subject || "Physics";
+
+  if (testLanguageMode === 'multiple') {
+    return [
+      {
+        subject: defaultSubject,
+        type: "mcq",
+        topic: "Kinematics",
+        subTopic: "Uniform Motion",
+        difficulty: "Medium",
+        languageMode: "multiple",
+        questionImage: null,               // 👈 SHARED diagram (agar ho to yaha URL)
+        options: [
+          { text: "", image: null },
+          { text: "", image: null },
+          { text: "", image: null },
+          { text: "", image: null }
+        ],
+        solution: { text: "", image: null },   // 👈 SHARED solution image
+        translations: testLanguages.map(lang => ({
+          lang: lang,
+          question: `Enter question text in ${lang} here...`,
+          options: [`Option A (${lang})`, `Option B (${lang})`, `Option C (${lang})`, `Option D (${lang})`],
+          solutionText: `Solution text in ${lang}...`
+        })),
+        correctAnswers: [0],
+        numericAnswer: null
+      }
+    ];
+  }
+
+  return [
+    {
+      subject: defaultSubject,
+      type: "mcq",
+      topic: "Kinematics",
+      subTopic: "Uniform Motion",
+      difficulty: "Medium",
+      languageMode: "single",
+      question: "Enter question here...",
+      questionImage: null,
+      options: [
+        { text: "Option A", image: null },
+        { text: "Option B", image: null },
+        { text: "Option C", image: null },
+        { text: "Option D", image: null }
+      ],
+      correctAnswers: [0],
+      numericAnswer: null,
+      solution: { text: "Solution text...", image: null },
+      translations: []
+    }
+  ];
+}
+
+
+function loadDemoIntoEditor() {
+    const jsonEditor = document.getElementById('jsonEditor');
+    if (!jsonEditor) return;
+
+    const hasContent = jsonEditor.value.trim() && jsonEditor.value.trim() !== '[]';
+
+    if (hasContent) {
+        const confirmReplace = confirm(
+            `Editor me pehle se content hai. Example format load karne se ye content REPLACE ho jayega.\n\nKya aap ${testLanguageMode === 'multiple' ? 'Multiple' : 'Single'}-language ka example load karna chahte ho?`
+        );
+        if (!confirmReplace) return;
+    }
+
+    jsonEditor.value = JSON.stringify(getDemoQuestionsJson(), null, 2);
+    calculateTotalMarksFromJson();
+}
+/* ---------------------------------------------------------
+   FORM SUBMIT -> API CALL
 --------------------------------------------------------- */
 
 document.getElementById('testBuilderForm').addEventListener('submit', async function (e) {
@@ -740,13 +1187,8 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
 
   let payload;
 
-
-
-
-
   if (currentViewMode === 'json') {
 
-    // JSON Editor mode - textarea se sirf QUESTIONS ka array aata hai
     const jsonText = document.getElementById('jsonEditor').value;
     let questionsArray;
 
@@ -764,35 +1206,35 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
       return;
     }
 
-    // order field add karo agar questions me nahi diya
     questionsArray = questionsArray.map((q, idx) => normalizeImportedQuestion(q, idx));
 
     const timeStrategy = document.getElementById('timeStrategy').value;
-
+   
     payload = {
-      title: document.getElementById('testTitleInput').value,
-      timeStrategy: timeStrategy,
-      duration: timeStrategy === 'total'
-        ? Number(document.getElementById('totalTimeInput')?.value) || 0
-        : 0,
-      subjectTime: timeStrategy === 'subject' ? subjectTimeList : [],
-      questions: questionsArray,
-      totalQuestions: questionsArray.length,
-      totalMarks: questionsArray.reduce((sum, q) => sum + getMarksForSubject(q.subject).positiveMarks, 0)
-    };
+  title: document.getElementById('testTitleInput').value,
+  timeStrategy: timeStrategy,
+  languageMode: testLanguageMode,
+  languages: testLanguages,
+  showLanguage: testLanguageMode === 'multiple' ? testShowLanguage : 'all',   // 👈 ye line add karo
+  duration: timeStrategy === 'total'
+    ? Number(document.getElementById('totalTimeInput')?.value) || 0
+    : 0,
+  subjectTime: timeStrategy === 'subject' ? subjectTimeList : [],
+  questions: questionsArray,
+  totalQuestions: questionsArray.length,
+  totalMarks: questionsArray.reduce((sum, q) => sum + getMarksForSubject(q.subject).positiveMarks, 0)
+};
 
-    // har question me subject ke hisaab se marks bhi bhar do (backend ko chahiye)
+    
     payload.questions = payload.questions.map(q => {
       const marks = getMarksForSubject(q.subject);
       return { ...q, positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks };
     });
 
   } else {
-    // Manual Builder mode - DOM se collect karo
     payload = buildPayload();
   }
 
-  // Context + visibility hamesha yahi se aayega
   payload.listingId = contextData.listingId;
   payload.sectionId = contextData.sectionId;
   payload.parentType = contextData.parentType;
@@ -802,32 +1244,32 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
       ? document.getElementById('publishAtInput')?.value || null
       : null;
 
-   console.log("Frontend se ja raha payload:", payload);
+  console.log("Frontend se ja raha payload:", payload);
 
-try {
-  const url = isEditMode
-    ? `/api/test-builder/${contextData.editId}`
-    : '/api/test-builder';
+  try {
+    const url = isEditMode
+      ? `/api/test-builder/${contextData.editId}`
+      : '/api/test-builder';
 
-  const method = isEditMode ? 'PUT' : 'POST';
+    const method = isEditMode ? 'PUT' : 'POST';
 
-  const res = await fetch(url, {
-    method: method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+    const res = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-  const result = await res.json();
-  console.log("Server response:", result);
+    const result = await res.json();
+    console.log("Server response:", result);
 
-  if (!result.success) {
-      alert("Issue: " + (result.message || "Unknown error"));
-  } else {
-       window.location.href = contextData.returnUrl;
+    if (!result.success) {
+        alert("Issue: " + (result.message || "Unknown error"));
+    } else {
+         window.location.href = contextData.returnUrl;
+    }
+  } catch (err) {
+    console.error("Fetch error:", err);
   }
-} catch (err) {
-  console.error("Fetch error:", err);
-}
 });
 
 
@@ -890,33 +1332,37 @@ async function loadExistingTest() {
         document.getElementById('timeStrategy').value = test.timeStrategy || 'total';
         document.getElementById('visibilitySelect').value = test.visibility || 'private';
 
+        // 👇 NAYA: Language state pehle set karo, questions render hone se pehle
+        document.getElementById('languageMode').value = test.languageMode || 'single';
+        testLanguageMode = test.languageMode || 'single';
+        testLanguages = (test.languages && test.languages.length > 0) ? test.languages : ['English'];
+        testShowLanguage = test.showLanguage || 'all';
+        handleLanguageUI();
+
         handleTimeUI();
         handleVisibilityUI();
 
          if (test.timeStrategy === 'total') {
-            testDurationState = test.duration || 0;   // 🔧 state me bhi save karo
+            testDurationState = test.duration || 0;
             const totalInput = document.getElementById('totalTimeInput');
             if (totalInput) totalInput.value = test.duration || '';
         } else {
              subjectTimeList = test.subjectTime || [];
-            renderSubjectTimeList();   
+            renderSubjectTimeList();
           }
 
         if (test.visibility === 'scheduled' && test.publishAt) {
             const publishInput = document.getElementById('publishAtInput');
             if (publishInput) {
-                // datetime-local input ko ISO se local format me convert karo
                 const d = new Date(test.publishAt);
                 const localISO = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                 publishInput.value = localISO;
             }
         }
 
-         // Global state me store karo taaki tab switch pe data na ude
         testQuestionsState = questions;
         renderManualQuestions(testQuestionsState);
 
-        // Save button ka text badal do
         document.querySelector('#testBuilderForm button[type="submit"]').innerText = "Update Test";
 
     } catch (err) {
@@ -926,7 +1372,7 @@ async function loadExistingTest() {
 }
 
 /* ---------------------------------------------------------
-   INIT - subjects load karke phir view render karo
+   INIT
 --------------------------------------------------------- */
 window.addEventListener('scroll', function () {
     const btn = document.getElementById('scrollTopBtn');
@@ -942,7 +1388,6 @@ window.addEventListener('scroll', function () {
         btn.classList.add('hidden');
     }
 
-    // Agar page ke bottom ke paas hain, to icon "down" se "up" kar do, warna "down"
     if (scrolled + window.innerHeight >= maxScroll - 50) {
         icon.setAttribute('data-lucide', 'arrow-up');
     } else {
@@ -959,10 +1404,8 @@ function handleScrollBtnClick() {
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
 
     if (scrolled + window.innerHeight >= maxScroll - 50) {
-       
         window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-        
         window.scrollTo({ top: maxScroll, behavior: 'smooth' });
     }
 }
@@ -970,14 +1413,13 @@ function handleScrollBtnClick() {
 async function init() {
   await loadSubjects();
   renderView('manual');
+  handleLanguageUI();
 
   if (isEditMode) {
     await loadExistingTest();
   }
 }
 init();
-
-
 </script>
 
 

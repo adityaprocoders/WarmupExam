@@ -305,12 +305,18 @@ async function openInstructionsModal(testId) {
         document.getElementById('mainContent').classList.add('blur-sm');
         document.body.classList.add('overflow-hidden');
 
+        // 👇 NAYA: dropdown ki pehli language ko default select karo
+        const langSelect = document.getElementById('languageSelect');
+        const hiddenLangField = document.getElementById('effectiveTestLanguage');
+selectedTestLanguage = langSelect ? langSelect.value : (hiddenLangField ? hiddenLangField.value : 'English');
+
         if (window.lucide) lucide.createIcons();
     } catch (err) {
         console.error("Instructions load error:", err);
         alert("Instructions load nahi ho paye");
     }
 }
+
 
 function handleUpcomingClick(btn) {
     const publishAt = new Date(btn.dataset.publishAt);
@@ -369,8 +375,16 @@ function toggleProceedBtn() {
     btn.classList.toggle('cursor-not-allowed', !checked);
 }
 
+let selectedTestLanguage = 'English';
+
+function handleLanguageSelect(lang) {
+    selectedTestLanguage = lang;
+}
+
 function startTest(testId) {
-    window.location.href = `/attempt/${testId}?from=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+    const langParam = encodeURIComponent(selectedTestLanguage || 'English');
+    const fromParam = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/attempt/${testId}?lang=${langParam}&from=${fromParam}`;
 }
 
     if (window.lucide) {

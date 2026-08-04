@@ -33,6 +33,43 @@ const testSchema = new mongoose.Schema(
         default:null
     },
 
+    // Language Settings
+languageMode: {
+    type: String,
+    enum: ["single", "multiple"],
+    default: "single"
+},
+
+languages: {
+    type: [String],       // free text — "English", "Punjabi", "Bhojpuri", koi bhi
+    default: ["English"],  // single mode me default ek language
+    validate: {
+        validator: function (arr) {
+            if (this.languageMode === "single") {
+                return arr.length === 1; // single mode me sirf 1 language honi chahiye
+            }
+            return arr.length >= 2; // multiple mode me kam se kam 2 languages
+        },
+        message: "Single mode me sirf ek language honi chahiye, Multiple mode me kam se kam do."
+    }
+},
+
+
+// Student ko kaunsi language(s) attempt karte waqt dikhengi
+showLanguage: {
+    type: String,
+    default: "all",   // "all" ya "languages" array me se koi ek specific language
+    validate: {
+        validator: function (val) {
+            // "all" hamesha valid hai
+            if (val === "all") return true;
+            // agar specific language di hai, to wo "languages" array me honi chahiye
+            return Array.isArray(this.languages) && this.languages.includes(val);
+        },
+        message: "Show Language ya to 'all' honi chahiye, ya languages list me se koi valid language."
+    }
+},
+
     // Time Strategy
     timeStrategy:{
         type:String,
