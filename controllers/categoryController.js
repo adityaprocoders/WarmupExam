@@ -175,6 +175,26 @@ export const showCategory = async (req, res) => {
         });
     }
 
+   // ============================================================
+    // 🔍 DYNAMIC SEO — category ke basis pe
+    // ============================================================
+
+    const seoTitle = `${category.name} Mock Test Series - ${totalListingsCount} Test Series | WarmupExam`;
+
+    const seoDescription = category.description
+        ? `${category.description} Practice ${totalListingsCount} test series with ${totalTestsCount} total mock tests, true negative marking and AI-powered analysis on WarmupExam.`
+        : `Explore ${category.name} exam preparation on WarmupExam. Browse ${totalListingsCount} mock test series with ${totalTestsCount} total tests, true negative marking and AI-powered performance analysis.`;
+
+    const seoKeywords = [
+        `${category.name} mock test`,
+        `${category.name} test series`,
+        `${category.name} online test`,
+        `${category.name} exam preparation`,
+        ...exams.filter(Boolean).slice(0, 5).map(e => `${e} mock test`)
+    ].join(", ");
+
+    const canonicalUrl = `https://warmupexam.com/categories/${category.slug}`;
+
     res.render("pages/categories/categoryDetail", {
         category,
         listings,
@@ -187,8 +207,10 @@ export const showCategory = async (req, res) => {
         exams: exams.filter(Boolean).sort(),
         csrfToken: req.csrfToken ? req.csrfToken() : "", 
         activeFilter: "all",
-        title: `${category.name} Exams - Mock Tests | WarmupExam`,
-        description: category.description,
+        title: seoTitle,
+        description: seoDescription,
+        keywords: seoKeywords,
+        canonicalUrl,
     });
 };
 

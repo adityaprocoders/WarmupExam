@@ -13,65 +13,131 @@ import ContentBlock from "../models/ContentBlock.js";
 import Category from "../models/Category.js";
 
 export const allTests = async (req, res) => {
-    const { exam, search } = req.query;
-    let filter = {};
-
-    if (exam) {
-        filter.exam = exam;
-    } else if (search) {
-        filter = {
-            $or: [
-                { exam: { $regex: search, $options: "i" } },
-                { title: { $regex: search, $options: "i" } }
-            ]
-        };
-    }
+    const { exam, search, language, filter: filterTab } = req.query;
 
     const isOwner = req.user && req.user.role === "owner";
-    if (!isOwner) {
-        filter.visibility = "public";
+    const hasSearched = !!(exam || search);
+
+    let baseFilter = {};
+    if (!isOwner) baseFilter.visibility = "public";
+
+    if (language) {
+        baseFilter.language = {
+            $regex: `^${language.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+            $options: "i"
+        };
+    }
+    if (filterTab === "free") baseFilter.type = "Free";
+    else if (filterTab === "paid") baseFilter.type = { $ne: "Free" };
+
+    let allListings = [];
+    let matchedListings = [];
+
+    if (hasSearched) {
+        allListings = await Listing.find(baseFilter).lean();
+        if (filterTab === "latest") {
+            allListings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+
+        let searchFilter = { ...baseFilter };
+        if (exam) {
+            searchFilter.exam = exam;
+        } else if (search) {
+            searchFilter.$or = [
+                { exam: { $regex: search, $options: "i" } },
+                { title: { $regex: search, $options: "i" } }
+            ];
+        }
+        matchedListings = await Listing.find(searchFilter).lean();
     }
 
-    const allListings = await Listing.find(filter).lean();
-
-    // ✅ Har listing ke liye total tests count nikalo
-    const listingIds = allListings.map(l => l._id);
+    const combinedIds = [...matchedListings, ...allListings].map(l => l._id);
     const testCounts = await Test.aggregate([
-        { $match: { listing: { $in: listingIds } } },
+        { $match: { listing: { $in: combinedIds } } },
         { $group: { _id: "$listing", count: { $sum: 1 } } }
     ]);
     const testCountMap = {};
     testCounts.forEach(t => { testCountMap[String(t._id)] = t.count; });
 
-    allListings.forEach(l => {
-        l.totalTestCount = testCountMap[String(l._id)] || 0;
-    });
+    matchedListings.forEach(l => { l.totalTestCount = testCountMap[String(l._id)] || 0; });
+    allListings.forEach(l => { l.totalTestCount = testCountMap[String(l._id)] || 0; });
 
-     
-let enrolledIds = [];
-let enrolledExpiryMap = {};
-if (req.user && req.user.enrolledListings) {
-    req.user.enrolledListings.forEach(e => {
-        const id = e.listing && e.listing._id ? e.listing._id : e.listing;
-        enrolledIds.push(String(id));
-        enrolledExpiryMap[String(id)] = e.expiresAt;
-    });
-}
+    let enrolledIds = [];
+    let enrolledExpiryMap = {};
+    if (req.user && req.user.enrolledListings) {
+        req.user.enrolledListings.forEach(e => {
+            const id = e.listing && e.listing._id ? e.listing._id : e.listing;
+            enrolledIds.push(String(id));
+            enrolledExpiryMap[String(id)] = e.expiresAt;
+        });
+    }
+
+    const languages = (await Listing.distinct("language")).filter(Boolean).sort();
+
+    const categories = await Category.find({}).sort({ createdAt: -1 }).lean();
+    const listingCounts = await Listing.aggregate([
+        { $group: { _id: "$category", count: { $sum: 1 } } }
+    ]);
+    const countMap = {};
+    listingCounts.forEach(c => { countMap[String(c._id)] = c.count; });
+    categories.forEach(c => { c.examCount = countMap[String(c._id)] || 0; });
+
+    // ============================================================
+    // 🔍 DYNAMIC SEO — search/exam/language ke basis pe
+    // ============================================================
+
+    const searchTerm = exam || search || "";
+    let seoTitle, seoDescription, seoKeywords, canonicalUrl;
+
+    if (searchTerm) {
+        const matchCount = matchedListings.length;
+        const langPart = language ? ` in ${language}` : "";
+
+        seoTitle = `${searchTerm} Mock Test Series${langPart} | Free & Paid Practice Tests | WarmupExam`;
+
+        seoDescription = matchCount > 0
+            ? `Practice ${matchCount} ${searchTerm} mock test${matchCount > 1 ? "s" : ""}${langPart} with true negative marking, AI-powered weak-area analysis and rank prediction on WarmupExam.`
+            : `Explore ${searchTerm} exam preparation resources and mock test series on WarmupExam. Browse all available test series for ${searchTerm}.`;
+
+        seoKeywords = [
+            `${searchTerm} mock test`,
+            `${searchTerm} test series`,
+            `${searchTerm} online test`,
+            `${searchTerm} practice test`,
+            `${searchTerm} exam preparation`,
+            language ? `${searchTerm} ${language}` : null
+        ].filter(Boolean).join(", ");
+
+        const params = new URLSearchParams();
+        if (exam) params.set("exam", exam);
+        else if (search) params.set("search", search);
+        if (language) params.set("language", language);
+        canonicalUrl = `https://warmupexam.com/alltests?${params.toString()}`;
+
+    } else {
+        seoTitle = "All Test Series – UPSC, SSC, JEE, NEET, GATE & More | WarmupExam";
+        seoDescription = "Browse mock test series for UPSC, SSC, Defence, JEE, NEET, GATE, CAT, CUET & 15+ competitive exams with true negative marking and AI-powered analysis.";
+        seoKeywords = "mock test series, online test series, competitive exam preparation, UPSC mock test, SSC mock test, JEE mock test, NEET mock test, GATE mock test";
+        canonicalUrl = "https://warmupexam.com/alltests";
+    }
 
     res.render("test/alltest", {
+        matchedListings,
         allListings,
+        hasSearched,
         search: search || "",
         selectedExam: exam || "",
+        selectedLanguage: language || "",
+        selectedFilter: filterTab || "",
+        languages,
+        categories,
+        csrfToken: req.csrfToken ? req.csrfToken() : "",
         enrolledIds,
         enrolledExpiryMap,
-
-
-         title: exam
-        ? `${exam} Mock Test Series | WarmupExam`
-        : "All Test Series – UPSC, SSC, JEE, NEET, GATE & More | WarmupExam",
-    description: exam
-        ? `Explore ${exam} mock tests, PYQs and AI-powered practice series on WarmupExam.`
-        : "Browse mock test series for UPSC, SSC, Defence, JEE, NEET, GATE, CAT, CUET & 15+ competitive exams."
+        title: seoTitle,
+        description: seoDescription,
+        keywords: seoKeywords,
+        canonicalUrl
     });
 };
 
