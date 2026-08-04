@@ -48,7 +48,7 @@ import couponRoutes from "./routes/couponRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 
-
+import minifyHTML from "express-minify-html-terser";
 
 
 const app = express();
@@ -271,6 +271,23 @@ app.use(expressLayouts);
 app.set("layout", "layouts/main");
 
 // ---------------- ROUTES ----------------
+
+    app.use(
+        minifyHTML({
+            override: true,
+            exception_url: false,
+            htmlMinifier: {
+                removeComments: true,
+                collapseWhitespace: true,
+                collapseBooleanAttributes: true,
+                removeEmptyAttributes: true,
+                removeRedundantAttributes: true,
+                minifyJS: false,    
+                minifyCSS: false,   
+            },
+        })
+    );
+
 
 app.use(pageRoutes);
 app.use("/", categoryRoutes);
