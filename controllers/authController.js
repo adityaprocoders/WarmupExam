@@ -5,6 +5,10 @@ import ExpressError from "../utils/ExpressError.js";
 import User from "../models/usersShema.js";
 import { getDashboardRedirectUrl } from "../utils/authHelpers.js";
 import { logOwnerLogin } from "../utils/loginLogger.js";
+import LoginHistory from "../models/LoginHistory.js";
+import { generateSessionId } from "../utils/sessionHelper.js";
+
+
 
 export const renderOwnerLogin = (req, res) => res.render("auth/owner-login", {
     title: "Login | WarmupExam",
@@ -14,13 +18,32 @@ export const renderOwnerLogin = (req, res) => res.render("auth/owner-login", {
 export const ownerLogin = (req, res, next) => {
     passport.authenticate("owner-local", (err, owner, info) => {
         if (err) return next(err);
+
         if (!owner) {
             req.flash("error", "Invalid owner credentials");
             return req.session.save(() => res.redirect("/owner-login"));
         }
-        req.login(owner, async(err) => {
+
+        req.login(owner, async (err) => {
             if (err) return next(err);
+
+            // 👇 yahan hona chahiye tha — async callback ke andar
+            const newSessionId = generateSessionId();
+            owner.activeSessionId = newSessionId;
+            await owner.save();
+            req.session.currentSessionId = newSessionId;
+
             await logOwnerLogin(req, owner);
+
+            await LoginHistory.create({
+                ownerEmail: req.body.email,
+                ipAddress: req.ip || req.headers["x-forwarded-for"] || "Unknown",
+                userAgent: req.headers["user-agent"] || "",
+                device: req.headers["user-agent"] || "Unknown",
+                location: "Unknown",
+                status: "success"
+            });
+
             req.flash("success", "Welcome Owner!");
             req.session.save(() => res.redirect("/owner-dashboard"));
         });
@@ -69,15 +92,20 @@ export const register = async (req, res, next) => {
 
         const newUser = await User.create({ name, email: cleaned, password, authProvider: "local" });
 
-        req.login(newUser, (err) => {
-            if (err) return next(err);
-            req.flash("success", "Account created successfully!");
+        req.login(newUser, async (err) => {
+    if (err) return next(err);
+ 
+    const newSessionId = generateSessionId();
+    newUser.activeSessionId = newSessionId;
+    await newUser.save();
+    req.session.currentSessionId = newSessionId;
 
-            const redirectUrl = (req.body.returnTo && req.body.returnTo.startsWith('/')) ? req.body.returnTo : "/";
-            req.session.save(() => {
-                res.redirect(redirectUrl);
-            });
-        });
+    req.flash("success", "Account created successfully!");
+    const redirectUrl = (req.body.returnTo && req.body.returnTo.startsWith('/')) ? req.body.returnTo : "/";
+    req.session.save(() => {
+        res.redirect(redirectUrl);
+    });
+});
     } catch (err) {
         next(err); // koi aur unexpected error ho to normal error-handler ko de do
     }
@@ -97,6 +125,13 @@ export const login = (req, res, next) => {
 
         req.login(user, async (err) => {
     if (err) return next(err);
+
+    // 👇 add these 3 lines (yahan missing thi)
+    const newSessionId = generateSessionId();
+    user.activeSessionId = newSessionId;
+    await user.save();
+    req.session.currentSessionId = newSessionId;
+
     req.flash("success", "Logged in successfully!");
 
     const dashboardUrl = await getDashboardRedirectUrl(user);
@@ -133,6 +168,11 @@ export const googleCallback = (req, res, next) => {
         req.login(user, async (err) => {
             if (err) return next(err);
 
+             const newSessionId = generateSessionId();
+             user.activeSessionId = newSessionId;
+             await user.save();
+             req.session.currentSessionId = newSessionId;
+
             req.flash("success", "Successfully signed in with Google.");
 
             const redirectUrl = (await getDashboardRedirectUrl(user)) || "/";
@@ -143,8 +183,16 @@ export const googleCallback = (req, res, next) => {
 };
 
 export const logout = (req, res, next) => {
-    req.logout((err) => {
+    const userId = req.user?._id; // logout se PEHLE user id save kar lo
+
+    req.logout(async (err) => {
         if (err) return next(err);
+
+        if (userId) {
+            await User.findByIdAndUpdate(userId, { activeSessionId: null });
+        }
+        req.session.currentSessionId = null;
+
         req.flash("success", "Logged out successfully!");
         req.session.save(() => {
             res.redirect("/");

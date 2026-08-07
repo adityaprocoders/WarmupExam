@@ -7,6 +7,9 @@
 
     <meta name="csrf-token" content="<%= csrfToken %>">
 
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.2.0/css/all.min.css">
     
      <link rel="icon" href="/favicon.ico" sizes="any">
@@ -21,7 +24,7 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.469.0"></script>
 
     <link rel="stylesheet" href="/css/output.css">
     <link rel="stylesheet" href="/css/hero.css">
@@ -60,13 +63,17 @@
 
     <%- include('../partials/authModal') %>
 
+    <%- include("../partials/logoutModal") %>
+
     <!-- js -->
-    <script src="/js/loader.js"></script>
-    <script src="/js/common.js"></script>
-    <script src="/js/navbar.js"></script>
-    <script src="/js/hero.js"></script>
-    <script src="/js/whyChoose.js"></script>
-    <script src="/js/aboutUs.js"></script>
+    <script src="/js/logout.js" defer></script>
+    <script src="/js/loader.js" defer></script>
+    <script src="/js/common.js" defer></script>
+    <script src="/js/navbar.js" defer></script>
+    <script src="/js/hero.js" defer></script>
+    <script src="/js/whyChoose.js" defer></script>
+    <script src="/js/aboutUs.js" defer></script>
+    
 
     <script>
         const params = new URLSearchParams(window.location.search);
@@ -104,24 +111,25 @@
         // 2. Saare fetch() calls ko automatically CSRF header de do
         const originalFetch = window.fetch;
         window.fetch = function (url, options = {}) {
-            const method = (options.method || "GET").toUpperCase();
-            const isStateChanging = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-            const isSameOrigin = typeof url === "string" && !url.startsWith("http");
+            try {
+                const method = (options.method || "GET").toUpperCase();
+                const isStateChanging = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+                const isSameOrigin = typeof url === "string" && !/^([a-z]+:)?\/\//i.test(url);
 
-            if (isStateChanging && isSameOrigin) {
-                options.headers = options.headers || {};
-                if (!options.headers["x-csrf-token"]) {
-                    options.headers["x-csrf-token"] = csrfToken;
+                if (isStateChanging && isSameOrigin) {
+                    options.headers = options.headers || {};
+                    if (!options.headers["x-csrf-token"]) {
+                        options.headers["x-csrf-token"] = csrfToken;
+                    }
                 }
+            } catch (err) {
+                // agar url malformed ho ya Request object ho, fetch ko fail mat hone do
             }
 
             return originalFetch(url, options);
         };
     })();
 </script>
-
+   
 </body>
 </html>
-
-
-

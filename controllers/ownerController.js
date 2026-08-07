@@ -5,6 +5,8 @@ import Attempt from "../models/TestAttempt.js";
 const resend = new Resend(process.env.RESEND_API_KEY);  
 import cloudinary from "../config/cloudinary.js";
 import { getPublicIdFromUrl } from "../utils/cloudinaryHelper.js";
+import LoginHistory from "../models/LoginHistory.js";
+
 
 // ---------------- DASHBOARD STATS ----------------
 export const getDashboardStats = async (req, res) => {
@@ -553,5 +555,40 @@ export const getAllPaymentsOwner = async (req, res) => {
     } catch (err) {
         console.error("Get payments error:", err);
         res.status(500).json({ success: false, message: "Payments load nahi ho paye" });
+    }
+};
+
+
+export const getLoginHistory = async (req, res) => {
+    try {
+        const history = await LoginHistory.find({ ownerEmail: req.user.email })
+            .sort({ createdAt: -1 })
+            .limit(200)
+            .lean();
+
+        res.json({ success: true, history });
+    } catch (err) {
+        console.error("Get login history error:", err);
+        res.status(500).json({ success: false, message: "Login history load nahi ho payi" });
+    }
+};
+
+export const deleteLoginHistory = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const deleted = await LoginHistory.findOneAndDelete({
+            _id: id,
+            ownerEmail: req.user.email  // security: sirf apni khud ki entry delete kar paye
+        });
+
+        if (!deleted) {
+            return res.status(404).json({ success: false, message: "Entry nahi mili" });
+        }
+
+        res.json({ success: true, message: "Entry delete ho gayi" });
+    } catch (err) {
+        console.error("Delete login history error:", err);
+        res.status(500).json({ success: false, message: "Delete nahi ho paya" });
     }
 };

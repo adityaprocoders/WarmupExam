@@ -7,6 +7,7 @@ import { forgotPassword, resetPassword } from "../controllers/authController.js"
 import { validateBody } from "../middleware/validate.js";
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../utils/schemas.js";
 import { getLoginHistoryApi, deleteLoginHistoryEntry } from "../controllers/authController.js";
+import LoginHistory from "../models/LoginHistory.js";
 
 
 const router = express.Router();

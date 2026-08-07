@@ -26,7 +26,7 @@ import errorHandler from "./middleware/errorHandler.js";
 import ownerRoutes from "./routes/ownerRoutes.js";
 import { doubleCsrfProtection, generateCsrfToken } from "./config/csrf.js";
 import { safeJsonStringify } from "./utils/safeJson.js";
-
+import { checkSingleSession } from "./middleware/checkSingleSession.js";
 
 
 import pageRoutes from "./routes/pageRoutes.js";
@@ -190,7 +190,7 @@ app.use((req, res, next) => {
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
- 
+app.use(checkSingleSession);
 
  
 app.use((req, res, next) => {
@@ -338,3 +338,4 @@ app.use(errorHandler);
 app.listen(PORT, () => {
     console.log(`Server Running on port ${PORT} [${process.env.NODE_ENV || "development"}]`);
 });
+ 

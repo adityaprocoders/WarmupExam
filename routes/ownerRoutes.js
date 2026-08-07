@@ -15,6 +15,8 @@ import {
     getAllPaymentsOwner
 } from "../controllers/ownerController.js";
 import { isOwner } from "../middleware/isLoggedIn.js";
+import { getLoginHistory, deleteLoginHistory } from "../controllers/ownerController.js";
+
 
 const router = express.Router();
 
@@ -37,5 +39,10 @@ router.patch("/api/owner/users/:id/ban", isOwner, toggleBanUser);
 router.post("/api/owner/users/:id/reset-password", isOwner, ownerResetUserPassword);
 
 router.get("/api/owner/payments", isOwner, getAllPaymentsOwner);
+
+
+
+router.get("/api/owner/login-history", isOwner, getLoginHistory);
+router.delete("/api/owner/login-history/:id", isOwner, deleteLoginHistory);
 
 export default router;

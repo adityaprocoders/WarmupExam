@@ -139,6 +139,12 @@ const userSchema = new mongoose.Schema({
         default: false
     },
 
+    activeSessionId: {
+        type: String,
+        default: null
+    },
+
+    
     permissions: {
         type: [String],
         default: []

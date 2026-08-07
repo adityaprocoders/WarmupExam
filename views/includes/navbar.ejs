@@ -89,7 +89,7 @@
                     <i class="fa-solid fa-user w-4 text-slate-400"></i> Open Profile
                 </a>
             <% } %>
-            <form action="/logout" method="POST">
+            <form action="/logout" method="POST" class="logout-form">
                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition text-left">
                     <i class="fa-solid fa-right-from-bracket w-4"></i> Logout
@@ -211,7 +211,7 @@
                     </a>
                 <% } %>
 
-                <form action="/logout" method="POST">
+                <form action="/logout" method="POST" class="logout-form">
                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit"
                         class="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 px-5 py-3 rounded-xl font-semibold hover:bg-red-100 transition">

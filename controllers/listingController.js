@@ -11,6 +11,7 @@ import slugify from "slugify";
 import cloudinary from "../config/cloudinary.js";
 import ContentBlock from "../models/ContentBlock.js";
 import Category from "../models/Category.js";
+import { generatePlaceholderImage } from "../utils/placeholderImage.js";
 
 export const allTests = async (req, res) => {
     const { exam, search, language, filter: filterTab } = req.query;
@@ -243,6 +244,8 @@ export const createTest = async (req, res) => {
 
     if (req.file) {
         data.image = req.file.path;
+    } else {
+        data.image = generatePlaceholderImage(data.exam, data.title); // 👈 naya
     }
 
     const test = new Listing(data);
@@ -287,11 +290,17 @@ export const updateTest = async (req, res) => {
     data.price = Math.round(data.originalPrice - (data.originalPrice * data.discountPercentage / 100));
     data.validityDays = Number(data.validityDays) || 365;
     data.rankPredictorData = cleanRankPredictorData(data.rankPredictorData);
-     if (req.file) {
+
+    if (req.file) {
         data.image = req.file.path;
     } else {
-        delete data.image;  
-    } 
+        const existing = await Listing.findById(id).select("image");
+        if (existing?.image?.startsWith("data:image/svg+xml")) {
+            data.image = generatePlaceholderImage(data.exam, data.title); // regenerate with updated text
+        } else {
+            delete data.image; // real image untouched
+        }
+    }
 
     const listing = await Listing.findByIdAndUpdate(id, data, { new: true });
     if (!listing) throw new ExpressError(404, "Test Not Found");
