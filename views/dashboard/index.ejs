@@ -253,7 +253,22 @@ function goToTestBuilder(e) {
     });
 
     window.location.href = `/test-builder/new?${params.toString()}`;
-} 
+}
+
+function goToGeneratePaper(e) {
+    e.preventDefault();
+
+    const params = new URLSearchParams({
+        listingId: "<%= listing._id %>",
+        sectionId: "<%= currentSection ? currentSection._id : '' %>",
+        parentType: "<%= folder ? 'folder' : (file ? 'file' : 'section') %>",
+        parentId: "<%= folder ? folder._id : (file ? file._id : '') %>",
+        returnUrl: window.location.pathname + window.location.search
+    });
+
+    window.location.href = `/generate-paper/new?${params.toString()}`;
+}
+
 
 window.addEventListener('scroll', function () {
     const btn = document.getElementById('scrollTopBtn');
@@ -305,10 +320,11 @@ async function openInstructionsModal(testId) {
         document.getElementById('mainContent').classList.add('blur-sm');
         document.body.classList.add('overflow-hidden');
 
-        // 👇 NAYA: dropdown ki pehli language ko default select karo
-        const langSelect = document.getElementById('languageSelect');
-        const hiddenLangField = document.getElementById('effectiveTestLanguage');
-selectedTestLanguage = langSelect ? langSelect.value : (hiddenLangField ? hiddenLangField.value : 'English');
+        const hiddenLangField = document.getElementById("effectiveTestLanguage");
+
+selectedTestLanguage = hiddenLangField
+    ? hiddenLangField.value
+    : "English";
 
         if (window.lucide) lucide.createIcons();
     } catch (err) {
@@ -377,9 +393,59 @@ function toggleProceedBtn() {
 
 let selectedTestLanguage = 'English';
 
-function handleLanguageSelect(lang) {
+function handleLanguageSelect(lang){
+
     selectedTestLanguage = lang;
+
+    const hidden=document.getElementById("effectiveTestLanguage");
+
+    if(hidden){
+        hidden.value=lang;
+    }
+
 }
+
+
+function toggleLanguageDropdown(){
+
+    document.getElementById("languageMenu").classList.toggle("hidden");
+
+    document.getElementById("languageArrow").classList.toggle("rotate-180");
+
+}
+
+function selectLanguage(lang){
+
+    document.getElementById("selectedLanguage").innerText=lang;
+
+    handleLanguageSelect(lang);
+
+    document.querySelectorAll("[class*='check-']").forEach(el=>{
+        el.classList.add("hidden");
+    });
+
+    const check=document.querySelector(".check-"+lang);
+
+    if(check) check.classList.remove("hidden");
+
+    document.getElementById("languageMenu").classList.add("hidden");
+
+}
+
+window.addEventListener("click",function(e){
+
+    const dropdown=document.getElementById("languageDropdown");
+
+    if(dropdown && !dropdown.contains(e.target)){
+
+        document.getElementById("languageMenu").classList.add("hidden");
+
+        document.getElementById("languageArrow").classList.remove("rotate-180");
+
+    }
+
+});
+
 
 function startTest(testId) {
     const langParam = encodeURIComponent(selectedTestLanguage || 'English');

@@ -13,20 +13,66 @@
 
     <div class="flex items-center gap-4 shrink-0">
          
-        <% if (test.languageMode === 'multiple' && availableLanguages && availableLanguages.length > 1) { %>
-    <div class="relative bg-gradient-to-b from-white to-indigo-50/40 border border-indigo-200 rounded-xl px-4 py-2 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all">
-        <label class="block text-[9px] uppercase font-bold tracking-wider text-indigo-400 mb-1">Choose Language</label>
+     <% if (test.languageMode === 'multiple' && availableLanguages && availableLanguages.length > 1) { %>
+
+<div class="relative w-full sm:w-48" id="languageDropdown">
+
+    <label class="block text-[10px] uppercase tracking-wider font-bold text-indigo-400 mb-2">
+        Choose Language
+    </label>
+
+    <button
+        type="button"
+        onclick="toggleLanguageDropdown()"
+        class="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-indigo-200 bg-white shadow hover:border-[#4318FF]">
+
         <div class="flex items-center gap-2">
-            <i data-lucide="languages" class="w-3.5 h-3.5 text-[#4318FF]"></i>
-            <select id="languageSelect" onchange="handleLanguageSelect(this.value)"
-                class="text-sm font-bold text-[#4318FF] outline-none bg-transparent appearance-none pr-5 cursor-pointer">
-                <% availableLanguages.forEach((lang, idx) => { %>
-                    <option value="<%= lang %>" <%= idx === 0 ? 'selected' : '' %>><%= lang %></option>
-                <% }) %>
-            </select>
-            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-indigo-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+
+            <i data-lucide="languages" class="w-5 h-5 text-[#4318FF]"></i>
+
+            <span id="selectedLanguage"
+                class="font-bold text-[#4318FF]">
+
+                <%= availableLanguages[0] %>
+
+            </span>
+
         </div>
+
+        <i
+            id="languageArrow"
+            data-lucide="chevron-down"
+            class="w-4 h-4 transition">
+        </i>
+
+    </button>
+
+    <div
+        id="languageMenu"
+        class="hidden absolute left-0 top-full mt-2 w-full bg-white rounded-xl border shadow-xl overflow-hidden z-50">
+
+        <% availableLanguages.forEach(lang=>{ %>
+
+        <button
+            type="button"
+            onclick="selectLanguage('<%= lang %>')"
+            class="w-full px-4 py-3 text-left hover:bg-indigo-50 flex justify-between">
+
+            <span><%= lang %></span>
+
+            <i
+                data-lucide="check"
+                class="hidden check-<%= lang %> w-4 h-4 text-[#4318FF]">
+            </i>
+
+        </button>
+
+        <% }) %>
+
     </div>
+
+</div>
+
 <% } %>
 
 <input type="hidden" id="effectiveTestLanguage" value="<%= lang %>">

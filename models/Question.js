@@ -24,6 +24,7 @@ const questionSchema = new mongoose.Schema({
     listing: { type: mongoose.Schema.Types.ObjectId, ref: "Listing", required: true },
     subject: { type: String, required: true },
     type: { type: String, enum: ["mcq", "multiple", "integer"], default: "mcq" },
+    section: { type: String, default: "", trim: true },
     topic: { type: String, required: true, trim: true },
     subTopic: { type: String, default: "", trim: true },
     difficulty: { type: String, enum: ["Easy", "Medium", "Hard"], default: "Medium" },

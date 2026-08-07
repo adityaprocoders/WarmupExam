@@ -548,7 +548,11 @@ function renderLanguageTags() {
 /* ---------------------------------------------------------
    QUESTION BUILDER
 --------------------------------------------------------- */
-function addQuestion() {
+function addQuestion(existingMongoId) {
+   if (!existingMongoId && subjectsList.length === 0) {
+    alert("Pehle Listing me subjects/marks configure karo, tabhi questions add ho sakte hain.");
+    return;
+  }
   questionCount++;
   const qId = questionCount;
   const list = document.getElementById('questionsListContainer');
@@ -556,20 +560,22 @@ function addQuestion() {
   const block = document.createElement('div');
   block.id = `question_${qId}`;
   block.className = "border border-gray-100 rounded-2xl p-4 bg-white";
+  block.dataset.mongoId = existingMongoId || '';    
   block.innerHTML = `
     <div class="flex flex-wrap items-center gap-3 mb-6 bg-gray-50 p-3 rounded-xl">
       <div class="bg-indigo-600 text-white px-3 py-1 rounded-lg font-bold qBadge">Q${qId}</div>
 
-      <select id="qSubject_${qId}" onchange="calculateTotalMarks()" class="bg-white border rounded-lg px-3 py-1 outline-none text-sm font-medium">
-        ${getSubjectOptionsHtml(null)}
-      </select>
+      <select id="qSubject_${qId}" onchange="renderQuestionBody(${qId})" class="bg-white border rounded-lg px-3 py-1 outline-none text-sm font-medium">
+    ${getSubjectOptionsHtml(null)}
+</select>
 
       <select id="qType_${qId}" onchange="renderQuestionBody(${qId})" class="bg-white border rounded-lg px-3 py-1 outline-none text-sm font-medium">
         <option value="mcq">MCQ</option>
         <option value="multiple">Multiple MCQ</option>
         <option value="integer">Integer/Numeric</option>
       </select>
-
+        
+      <input type="text" id="qSection_${qId}" placeholder="Section" class="bg-white border rounded-lg px-3 py-1 text-sm flex-1">
       <input type="text" id="qTopic_${qId}" placeholder="Topic" class="bg-white border rounded-lg px-3 py-1 text-sm flex-1">
       <input type="text" id="qSubTopic_${qId}" placeholder="Sub Topic" class="bg-white border rounded-lg px-3 py-1 text-sm flex-1">
 
@@ -605,13 +611,21 @@ function renumberQuestions() {
 /* ---------------------------------------------------------
    QUESTION BODY — Single vs Multiple language render
 --------------------------------------------------------- */
+function isEnglishSubject(qId) {
+  const subjectEl = document.getElementById(`qSubject_${qId}`);
+  const subjectVal = subjectEl ? subjectEl.value.trim().toLowerCase() : '';
+  return subjectVal === 'english';
+}
+
 function renderQuestionBody(qId) {
   const typeEl = document.getElementById(`qType_${qId}`);
   const type = typeEl ? typeEl.value : 'mcq';
   const body = document.getElementById(`qBody_${qId}`);
   if (!body) return;
 
-  if (testLanguageMode === 'multiple') {
+  const forceSingle = isEnglishSubject(qId);   // 👈 English subject = hamesha single
+
+  if (testLanguageMode === 'multiple' && !forceSingle) {
     body.innerHTML = renderMultiLanguageBody(qId, type);
   } else {
     body.innerHTML = renderSingleLanguageBody(qId, type);
@@ -849,19 +863,35 @@ function buildPayload() {
   return payload;
 }
 
-function normalizeImportedQuestion(q, idx) {
-  const languageMode = q.languageMode === 'multiple' ? 'multiple' : 'single';
+function letterToOptionIndex(val) {
+  if (typeof val === 'number') return val;
+  if (typeof val !== 'string') return null;
 
+  const cleaned = val.trim().toLowerCase();
+  const letterMap = { a: 0, b: 1, c: 2, d: 3 };
+
+  if (cleaned in letterMap) return letterMap[cleaned];
+
+  const asNumber = Number(cleaned);
+  return isNaN(asNumber) ? null : asNumber;
+}
+
+function normalizeImportedQuestion(q, idx) {
+  const subjectName = (q.subject || q.sub || '').trim().toLowerCase();
+  const forceSingle = subjectName === 'english';  
+  const languageMode = forceSingle ? 'single' : (q.languageMode === 'multiple' ? 'multiple' : 'single');
   const base = {
+    _id: q._id || undefined,   
     order: q.order || q.id || (idx + 1),
     subject: q.subject || q.sub || '',
     type: q.type || 'mcq',
+    section: q.section || '',
     topic: q.topic || '',
     subTopic: q.subTopic || '',
     difficulty: q.difficulty || 'Medium',
     languageMode: languageMode,
     correctAnswers: Array.isArray(q.correctAnswers)
-      ? q.correctAnswers
+      ? q.correctAnswers.map(letterToOptionIndex).filter(v => v !== null)
       : (typeof q.correct === 'number' ? [q.correct] : []),
     numericAnswer: q.numericAnswer ?? null
   };
@@ -921,22 +951,28 @@ function collectManualQuestions() {
     const marks = getMarksForSubject(subjectName);
     const imgStore = imageDataStore[qId] || { question: null, options: [null, null, null, null], solution: null };
 
+    const forceSingle = subjectName.trim().toLowerCase() === 'english';
+    const qLanguageMode = forceSingle ? 'single' : testLanguageMode;
+
+    const mongoId = block.dataset.mongoId || null;   // 👈 नई लाइन
+
     const q = {
+      _id: mongoId || undefined,   
       order: index + 1,
       subject: subjectName,
       positiveMarks: marks.positiveMarks,
       negativeMarks: marks.negativeMarks,
       type: type,
+      section: document.getElementById(`qSection_${qId}`).value,
       topic: document.getElementById(`qTopic_${qId}`).value,
       subTopic: document.getElementById(`qSubTopic_${qId}`).value,
       difficulty: document.getElementById(`qDifficulty_${qId}`).value,
-      languageMode: testLanguageMode,
+      languageMode: qLanguageMode,   // 👈 FIX (testLanguageMode se change kiya)
       correctAnswers: [],
       numericAnswer: null
     };
 
-    if (testLanguageMode === 'multiple') {
-      // 👇 SHARED images (top-level) — sabhi languages ke liye same
+    if (qLanguageMode === 'multiple') {    
       q.question = "";
       q.questionImage = imgStore.question;
       q.options = [];
@@ -1018,11 +1054,12 @@ function renderManualQuestions(questionsArray) {
   }
 
   questionsArray.forEach(q => {
-    addQuestion();
+    addQuestion(q._id); 
     const qId = questionCount;
 
     document.getElementById(`qSubject_${qId}`).value = q.subject || '';
     document.getElementById(`qType_${qId}`).value = q.type || 'mcq';
+    document.getElementById(`qSection_${qId}`).value = q.section || '';
     document.getElementById(`qTopic_${qId}`).value = q.topic || '';
     document.getElementById(`qSubTopic_${qId}`).value = q.subTopic || '';
     document.getElementById(`qDifficulty_${qId}`).value = q.difficulty || 'Medium';
@@ -1104,6 +1141,7 @@ function getDemoQuestionsJson() {
       {
         subject: defaultSubject,
         type: "mcq",
+        section: "",
         topic: "Kinematics",
         subTopic: "Uniform Motion",
         difficulty: "Medium",
@@ -1132,6 +1170,7 @@ function getDemoQuestionsJson() {
     {
       subject: defaultSubject,
       type: "mcq",
+      section: "",
       topic: "Kinematics",
       subTopic: "Uniform Motion",
       difficulty: "Medium",
@@ -1175,6 +1214,19 @@ function loadDemoIntoEditor() {
 
 document.getElementById('testBuilderForm').addEventListener('submit', async function (e) {
   e.preventDefault();
+
+
+    if (currentViewMode === 'manual') {
+    const questionBlocks = document.querySelectorAll('[id^="question_"]');
+    for (const block of questionBlocks) {
+      const qId = block.id.split('_')[1];
+      const subjectEl = document.getElementById(`qSubject_${qId}`);
+      if (subjectEl && !subjectEl.value.trim()) {
+        alert(`Question ${qId} me Subject choose karna zaroori hai. Save karne se pehle sabhi questions me subject select karo.`);
+        return;
+      }
+    }
+  }
 
   const visibility = document.getElementById('visibilitySelect').value;
   if (visibility === 'scheduled') {

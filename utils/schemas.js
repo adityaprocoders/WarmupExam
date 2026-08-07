@@ -297,6 +297,7 @@ export const createTestSchema = Joi.object({
         Joi.object({
             subject: Joi.string().trim().allow("", null),
             type: Joi.string().valid("mcq", "numeric").default("mcq"),
+            section: Joi.string().trim().allow("", null),
             topic: Joi.string().trim().allow("", null),
             subTopic: Joi.string().trim().allow("", null),
             difficulty: Joi.string().valid("Easy", "Medium", "Hard").default("Medium"),

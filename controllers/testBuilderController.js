@@ -19,11 +19,33 @@ function normalizeOptions(optionsArr) {
 }
 
 function getMarksForSubject(subjectsConfig, subjectName) {
-    let found = subjectsConfig.find(s => s.subject === subjectName);
-    if (!found && subjectsConfig.length > 0) found = subjectsConfig[0];
+    const found = subjectsConfig.find(s => s.subject === subjectName);
     return found
         ? { positiveMarks: found.positiveMarks, negativeMarks: found.negativeMarks }
-        : { positiveMarks: 0, negativeMarks: 0 };
+        : { positiveMarks: 0, negativeMarks: 0 };   
+}
+
+function resolveQuestionLanguageMode(q, testLanguageMode) {
+    const subjectName = (q.subject || "").trim().toLowerCase();
+    if (subjectName === "english") {
+        return "single";   // 👈 English subject = hamesha single, chahe test multiple mode me ho
+    }
+    return testLanguageMode === "multiple" ? "multiple" : "single";
+}
+
+function pickSingleSource(q) {
+    if (!Array.isArray(q.translations) || q.translations.length === 0) return q;
+    const subjectName = (q.subject || "").trim().toLowerCase();
+
+    if (subjectName === "english") {
+        const englishSlot = q.translations.find(t => (t.lang || "").trim().toLowerCase() === "english");
+        if (englishSlot) return englishSlot;
+    }
+
+    const withContent = q.translations.find(t =>
+        (t.question && t.question.trim()) || (t.questionImage && t.questionImage.trim())
+    );
+    return withContent || q.translations[0] || q;
 }
 
 export const renderTestBuilder = async (req, res) => {
@@ -59,6 +81,7 @@ export const getListingSubjects = async (req, res) => {
 };
 
 export const createTestBuilder = async (req, res) => {
+   try {
     const body = req.body;
 
     if (!body.title) return res.status(400).json({ success: false, message: "Test title zaroori hai" });
@@ -101,11 +124,17 @@ if (testLanguageMode !== "multiple") {
         for (let i = 0; i < body.questions.length; i++) {
             const q = body.questions[i];
 
+            if (!q.subject || !q.subject.trim()) {
+             return res.status(400).json({ success: false, message: `Question ${i + 1}: Subject choose karna zaroori hai` });
+            }
+
             if (!q.topic || !q.topic.trim()) {
                 return res.status(400).json({ success: false, message: `Question ${i + 1}: topic zaroori hai` });
             }
 
-            if (testLanguageMode === "multiple") {
+            const qMode = resolveQuestionLanguageMode(q, testLanguageMode);   // 👈 FIX
+
+            if (qMode === "multiple") {
                 if (!Array.isArray(q.translations) || q.translations.length === 0) {
                     return res.status(400).json({ success: false, message: `Question ${i + 1}: har language ka content dena zaroori hai` });
                 }
@@ -117,8 +146,9 @@ if (testLanguageMode !== "multiple") {
                     }
                 }
             } else {
-                const hasText = q.question && q.question.trim();
-                const hasImage = q.questionImage && q.questionImage.trim();
+                const source = pickSingleSource(q);   // 👈 FIX
+                const hasText = source.question && source.question.trim();
+                const hasImage = source.questionImage && source.questionImage.trim();
                 if (!hasText && !hasImage) {
                     return res.status(400).json({ success: false, message: `Question ${i + 1}: question text ya image me se kam se kam ek dena zaroori hai` });
                 }
@@ -152,13 +182,13 @@ if (testLanguageMode !== "multiple") {
     const savedTest = await testDoc.save();
 
     if (Array.isArray(body.questions) && body.questions.length > 0) {
-        const questionDocs = body.questions.map(q => {
-            const qLanguageMode = testLanguageMode;
-
+       const questionDocs = body.questions.map(q => {
+            const qLanguageMode = resolveQuestionLanguageMode(q, testLanguageMode);   
             const base = {
                 listing: body.listingId,
                 subject: q.subject,
                 type: q.type || "mcq",
+                section: q.section || "",
                 topic: q.topic,
                 subTopic: q.subTopic || "",
                 difficulty: q.difficulty || "Medium",
@@ -180,12 +210,13 @@ if (testLanguageMode !== "multiple") {
                 };
             }
 
+            const singleSource = pickSingleSource(q);   // 👈 FIX
             return {
                 ...base,
-                question: q.question,
-                questionImage: q.questionImage || null,
-                options: normalizeOptions(q.options),
-                solution: q.solution || { text: "", image: null }
+                question: singleSource.question || q.question || "",
+                questionImage: singleSource.questionImage || q.questionImage || null,
+                options: normalizeOptions(singleSource.options || q.options),
+                solution: singleSource.solution || q.solution || { text: "", image: null }
             };
         });
 
@@ -204,6 +235,11 @@ if (testLanguageMode !== "multiple") {
     }
 
     res.status(200).json({ success: true, message: "Test aur questions DB me save ho gaye", testId: savedTest._id });
+ } catch (err) {
+        console.error("Test create error:", err);
+        res.status(500).json({ success: false, message: err.message || "Test create karte waqt error aaya" });
+    }
+
 };
 
 export const getTestBuilder = async (req, res) => {
@@ -224,6 +260,7 @@ export const getTestBuilder = async (req, res) => {
             negativeMarks: m.negativeMarks,
             subject: q.subject,
             type: q.type,
+            section: q.section,
             topic: q.topic,
             subTopic: q.subTopic,
             difficulty: q.difficulty,
@@ -312,29 +349,53 @@ if (testLanguageMode !== "multiple") {
             for (let i = 0; i < body.questions.length; i++) {
                 const q = body.questions[i];
 
+                if (!q.subject || !q.subject.trim()) {
+                 return res.status(400).json({ success: false, message: `Question ${i + 1}: Subject choose karna zaroori hai` });
+                }
+
                 if (!q.topic || !q.topic.trim()) {
                     return res.status(400).json({ success: false, message: `Question ${i + 1}: topic zaroori hai` });
                 }
 
                 // 👇 NAYA: language-mode ke hisaab se validation
-                if (testLanguageMode === "multiple") {
-                    if (!Array.isArray(q.translations) || q.translations.length === 0) {
-                        return res.status(400).json({ success: false, message: `Question ${i + 1}: har language ka content dena zaroori hai` });
-                    }
-                    for (const t of q.translations) {
-                        const hasText = t.question && t.question.trim();
-                        const hasImage = t.questionImage && t.questionImage.trim();
-                        if (!hasText && !hasImage) {
-                            return res.status(400).json({ success: false, message: `Question ${i + 1} (${t.lang}): question text ya image zaroori hai` });
-                        }
-                    }
-                } else {
-                    const hasText = q.question && q.question.trim();
-                    const hasImage = q.questionImage && q.questionImage.trim();
-                    if (!hasText && !hasImage) {
-                        return res.status(400).json({ success: false, message: `Question ${i + 1}: question text ya image me se kam se kam ek dena zaroori hai` });
-                    }
-                }
+                const qMode = resolveQuestionLanguageMode(q, testLanguageMode);
+
+if (qMode === "multiple") {
+
+    if (!Array.isArray(q.translations) || q.translations.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: `Question ${i + 1}: har language ka content dena zaroori hai`
+        });
+    }
+
+    for (const t of q.translations) {
+        const hasText = t.question && t.question.trim();
+        const hasImage = t.questionImage && t.questionImage.trim();
+
+        if (!hasText && !hasImage) {
+            return res.status(400).json({
+                success: false,
+                message: `Question ${i + 1} (${t.lang}): question text ya image zaroori hai`
+            });
+        }
+    }
+
+} else {
+
+    const source = pickSingleSource(q);
+
+    const hasText = source.question && source.question.trim();
+    const hasImage = source.questionImage && source.questionImage.trim();
+
+    if (!hasText && !hasImage) {
+        return res.status(400).json({
+            success: false,
+            message: `Question ${i + 1}: question text ya image me se kam se kam ek dena zaroori hai`
+        });
+    }
+
+}
             }
         }
 
@@ -355,6 +416,10 @@ if (testLanguageMode !== "multiple") {
         existingTest.visibility = visibility;
         existingTest.publishAt = visibility === "scheduled" ? new Date(body.publishAt) : null;
 
+        const oldMappings = await TestQuestion.find({ test: id }).sort({ order: 1 });
+        const oldQuestionByOrder = new Map();
+        oldMappings.forEach(m => oldQuestionByOrder.set(m.order, m.question.toString()));
+
         const updatedTest = await existingTest.save();
 
         await TestQuestion.deleteMany({ test: id });
@@ -363,57 +428,63 @@ if (testLanguageMode !== "multiple") {
             const mappingDocs = [];
 
             for (let i = 0; i < body.questions.length; i++) {
-                const q = body.questions[i];
-                const marks = getMarksForSubject(subjectsConfig, q.subject);
-                const qLanguageMode = testLanguageMode;
+    const q = body.questions[i];
+    const marks = getMarksForSubject(subjectsConfig, q.subject);
+    const qLanguageMode = resolveQuestionLanguageMode(q, testLanguageMode);
 
-                const questionPayload = {
-                    listing: listingId,
-                    subject: q.subject,
-                    type: q.type || "mcq",
-                    topic: q.topic,
-                    subTopic: q.subTopic || "",
-                    difficulty: q.difficulty || "Medium",
-                    languageMode: qLanguageMode,     // 👈 NAYA
-                    correctAnswers: q.correctAnswers || [],
-                    numericAnswer: q.numericAnswer ?? null
-                };
+    const questionPayload = {
+        listing: listingId,
+        subject: q.subject,
+        type: q.type || "mcq",
+        section: q.section || "",
+        topic: q.topic,
+        subTopic: q.subTopic || "",
+        difficulty: q.difficulty || "Medium",
+        languageMode: qLanguageMode,
+        correctAnswers: q.correctAnswers || [],
+        numericAnswer: q.numericAnswer ?? null
+    };
 
-                if (qLanguageMode === "multiple") {
-                    questionPayload.translations = (q.translations || []).map(t => ({
-                        lang: t.lang,
-                        question: t.question || "",
-                        questionImage: t.questionImage || null,
-                        options: normalizeOptions(t.options),   // 👈 FIX
-                        solution: t.solution || { text: "", image: null }
-                    }));
-                    questionPayload.question = "";
-                    questionPayload.questionImage = null;
-                    questionPayload.options = [];
-                    questionPayload.solution = { text: "", image: null };
-                } else {
-                    questionPayload.question = q.question;
-                    questionPayload.questionImage = q.questionImage || null;
-                    questionPayload.options = normalizeOptions(q.options),   // 👈 FIX
-                    questionPayload.solution = q.solution || { text: "", image: null };
-                    questionPayload.translations = [];
-                }
+    if (qLanguageMode === "multiple") {
+        questionPayload.translations = (q.translations || []).map(t => ({
+            lang: t.lang,
+            question: t.question || "",
+            questionImage: t.questionImage || null,
+            options: normalizeOptions(t.options),
+            solution: t.solution || { text: "", image: null }
+        }));
+        questionPayload.question = "";
+        questionPayload.questionImage = null;
+        questionPayload.options = [];
+        questionPayload.solution = { text: "", image: null };
+    } else {
+        const singleSource = pickSingleSource(q);
+        questionPayload.question = singleSource.question || q.question || "";
+        questionPayload.questionImage = singleSource.questionImage || q.questionImage || null;
+        questionPayload.options = normalizeOptions(singleSource.options || q.options);
+        questionPayload.solution = singleSource.solution || q.solution || { text: "", image: null };
+        questionPayload.translations = [];
+    }
 
-                let questionId = q._id;
+    let questionId = q._id;
 
-                if (questionId) {
-                    await Question.findByIdAndUpdate(questionId, questionPayload);
-                } else {
-                    const newQ = await Question.create(questionPayload);
-                    questionId = newQ._id;
-                }
+    if (!questionId) {
+        questionId = oldQuestionByOrder.get(i + 1) || null;   // 👈 FIX
+    }
 
-                mappingDocs.push({
-                    test: updatedTest._id, question: questionId,
-                    order: i + 1,
-                    positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks
-                });
-            }
+    if (questionId) {
+        await Question.findByIdAndUpdate(questionId, questionPayload);
+    } else {
+        const newQ = await Question.create(questionPayload);
+        questionId = newQ._id;
+    }
+
+    mappingDocs.push({
+        test: updatedTest._id, question: questionId,
+        order: i + 1,
+        positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks
+    });
+}
 
             await TestQuestion.insertMany(mappingDocs);
         }
