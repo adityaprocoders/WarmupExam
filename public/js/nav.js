@@ -22,11 +22,32 @@ function toggleSidebar() {
     }
 }
 
-// ---- Profile Dropdown Toggle ----
+// ---- Profile Dropdown Toggle (click) ----
 function toggleProfileDropdown() {
     const menu = document.getElementById('profileDropdownMenu');
     if (menu) menu.classList.toggle('hidden');
 }
+
+// ---- Profile Dropdown Hover ----
+document.addEventListener('DOMContentLoaded', () => {
+    const wrapper = document.getElementById('profileDropdownWrapper');
+    const menu = document.getElementById('profileDropdownMenu');
+
+    if (wrapper && menu) {
+        let hideTimeout;
+
+        wrapper.addEventListener('mouseenter', () => {
+            clearTimeout(hideTimeout);
+            menu.classList.remove('hidden');
+        });
+
+        wrapper.addEventListener('mouseleave', () => {
+            hideTimeout = setTimeout(() => {
+                menu.classList.add('hidden');
+            }, 200);
+        });
+    }
+});
 
 // Click outside profile dropdown => close it
 document.addEventListener('click', function (e) {

@@ -60,40 +60,40 @@ overflow-y-auto">
 
     <!-- Batch -->
     <button
-        id="batchBtn"
-        onclick="toggleBatchModal()"
-        class="w-full flex items-center justify-between p-3 mb-6 bg-slate-50 border rounded-xl hover:bg-slate-100">
+    id="batchBtn"
+    onclick="toggleBatchModal()"
+    class="w-full flex items-center justify-between p-3 mb-6 bg-slate-50 border rounded-xl hover:bg-slate-100">
 
-        <div class="text-left">
+    <div class="text-left">
 
-            <p class="text-xs text-slate-400">
-                Current Batch
-            </p>
+        <p class="text-xs text-slate-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse"></span>
+            Current Batch
+        </p>
 
-             <p id="selectedBatchName" class="font-semibold text-slate-700">
-    <%= currentUser.lastAccessedBatch
-        ? currentUser.lastAccessedBatch.title
-        : (currentUser.enrolledListings && currentUser.enrolledListings[0]
-            ? currentUser.enrolledListings[0].listing.title
-            : 'No Batch') %>
-</p>
+        <p id="selectedBatchName" class="font-semibold text-slate-700">
+            <%= currentUser.lastAccessedBatch
+                ? currentUser.lastAccessedBatch.title
+                : (currentUser.enrolledListings && currentUser.enrolledListings[0]
+                    ? currentUser.enrolledListings[0].listing.title
+                    : 'No Batch') %>
+        </p>
 
-             
+    </div>
 
-        </div>
+    <i data-lucide="chevron-down" class="w-4 h-4"></i>
 
-        <i data-lucide="chevron-down" class="w-4 h-4"></i>
-
-    </button>
+</button>
 
     
     
 
-     <a
-        href="/alltests"
-        class="hover:text-indigo-600 flex items-center gap-3 text-black  p-3 font-semibold"><i class="fa-solid fa-file-lines"></i>
-         Test Series
-    </a>
+     <!-- Test Series -->
+<a href="/alltests" class="hover:text-indigo-600 flex items-center gap-3 text-black p-3 font-semibold">
+    <i class="fa-solid fa-file-lines icon-premium"></i>
+    Test Series
+</a>
+
 
     <!-- Dashboard -->
 
@@ -101,15 +101,19 @@ overflow-y-auto">
    class="flex items-center gap-3 rounded-xl p-3 font-semibold transition
    <%= ((typeof currentSection === 'undefined' || !currentSection) && !(typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)) ? 'bg-indigo-600 text-white' : 'text-black hover:bg-slate-100' %>">
 
-    <i data-lucide="layout-dashboard"></i>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="8" height="8" rx="2" fill="#6366f1"/>
+        <rect x="13" y="3" width="8" height="8" rx="2" fill="#f59e0b"/>
+        <rect x="3" y="13" width="8" height="8" rx="2" fill="#10b981"/>
+        <rect x="13" y="13" width="8" height="8" rx="2" fill="#ec4899"/>
+    </svg>
     Dashboard
 </a>
 
- <!-- Weak Area  -->
-    <a href="/series/<%= listing.slug %>/weak-areas" 
+ <a href="/series/<%= listing.slug %>/weak-areas" 
    class="flex items-center gap-3 rounded-xl p-3 font-semibold transition
    <%= (typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage) ? 'bg-indigo-600 text-white' : 'text-black hover:bg-slate-100' %>">
-    <i data-lucide="target"></i>
+    <i data-lucide="target" style="color:#f50b0b;"></i>
     Weak Area
 </a>
 
@@ -120,7 +124,7 @@ overflow-y-auto">
 
     <div class="mt-8">
     <div class="flex items-center justify-between mb-4">
-    <h3 class="text-xs uppercase tracking-widest text-slate-400 font-bold">
+    <h3 class="text-xs uppercase tracking-widest text-slate-600 font-bold">
         Practice Zones
     </h3>
     <% if (currentUser.role === 'owner') { %>
@@ -415,6 +419,17 @@ overflow-y-auto">
 </div>
 
 <%- include("./bulkCopyModal.ejs") %>
+
+
+<style>
+.icon-premium {
+    background: linear-gradient(135deg, #6366f1, #a855f7, #f59e0b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+</style>
 
 <script src="/js/sideBar.js"></script>
 
