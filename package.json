@@ -13,6 +13,8 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@tailwindcss/cli": "^4.3.2",
+    "tailwindcss": "^4.3.2",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.3.0",
     "ckeditor5": "^48.3.1",
@@ -48,9 +50,7 @@
     "slugify": "^1.6.9",
     "xss": "^1.0.15"
   },
-  "devDependencies": {
-    "@tailwindcss/cli": "^4.3.2",
-    "nodemon": "^3.1.14",
-    "tailwindcss": "^4.3.2"
+  "devDependencies": { 
+    "nodemon": "^3.1.14"
   }
 }
