@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 import cloudinary from "../config/cloudinary.js";
 import { getPublicIdFromUrl } from "../utils/cloudinaryHelper.js";
 import LoginHistory from "../models/LoginHistory.js";
-
+import Notification from "../models/Notification.js";
 
 // ---------------- DASHBOARD STATS ----------------
 export const getDashboardStats = async (req, res) => {
@@ -592,3 +592,157 @@ export const deleteLoginHistory = async (req, res) => {
         res.status(500).json({ success: false, message: "Delete nahi ho paya" });
     }
 };
+
+
+// ---------------- GET ALL NOTIFICATIONS (list view ke liye) ----------------
+export const getAllNotificationsOwner = async (req, res) => {
+    try {
+        const now = new Date();
+
+        // jo "sent" hain aur expire ho chuki hain unhe "expired" mark kar do (lazy update)
+        await Notification.updateMany(
+            { status: "sent", expiresAt: { $lte: now } },
+            { $set: { status: "expired" } }
+        );
+
+        const notifications = await Notification.find().sort({ createdAt: -1 }).limit(100).lean();
+
+        res.json({ success: true, notifications });
+    } catch (err) {
+        console.error("Get notifications error:", err);
+        res.status(500).json({ success: false, message: "Notifications load nahi ho payi" });
+    }
+};
+
+// ---------------- ESTIMATED REACH (audience select karte hi call hota hai) ----------------
+export const getNotificationReach = async (req, res) => {
+    try {
+        const { audienceType, customUserIds } = req.query;
+
+        let count = 0;
+        if (audienceType === "all") {
+            count = await User.countDocuments();
+        } else if (audienceType === "paid") {
+            count = await User.countDocuments({ "enrolledListings.amountPaid": { $gt: 0 } });
+        } else if (audienceType === "free") {
+            count = await User.countDocuments({
+                $or: [{ enrolledListings: { $size: 0 } }, { "enrolledListings.amountPaid": { $not: { $gt: 0 } } }]
+            });
+        } else if (audienceType === "custom") {
+            const ids = customUserIds ? customUserIds.split(",").filter(Boolean) : [];
+            count = ids.length;
+        }
+
+        res.json({ success: true, count });
+    } catch (err) {
+        console.error("Get reach error:", err);
+        res.status(500).json({ success: false, message: "Reach calculate nahi ho paya" });
+    }
+};
+
+// ---------------- SEARCH USERS (custom audience picker ke liye) ----------------
+// ---------------- SEARCH USERS (custom audience picker + edit prefill ke liye) ----------------
+export const searchUsersForNotification = async (req, res) => {
+    try {
+        const { search, ids } = req.query;
+        let filter = {};
+
+        if (ids) {
+            const idList = ids.split(",").filter(Boolean);
+            filter = { _id: { $in: idList } };
+        } else if (search && search.trim() !== "") {
+            const regex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+            filter = { $or: [{ name: regex }, { username: regex }, { email: regex }] };
+        }
+
+        const users = await User.find(filter).select("name username email").limit(ids ? 100 : 20).lean();
+        res.json({ success: true, users });
+    } catch (err) {
+        console.error("Search users error:", err);
+        res.status(500).json({ success: false, message: "User search nahi ho payi" });
+    }
+};
+
+// ---------------- CREATE + SEND NOTIFICATION ----------------
+export const createNotification = async (req, res) => {
+    try {
+        const { title, message, audienceType, customUserIds, scheduleType, scheduledAt } = req.body;
+
+        if (!title || !message || !audienceType) {
+            return res.status(400).json({ success: false, message: "Title, message aur audience zaroori hain" });
+        }
+
+        const doc = new Notification({
+            title,
+            message,
+            audienceType,
+            customUserIds: audienceType === "custom" ? (customUserIds || []) : [],
+            createdBy: req.user._id
+        });
+
+        if (scheduleType === "later" && scheduledAt) {
+            doc.scheduledAt = new Date(scheduledAt);
+            doc.status = "scheduled";
+        } else {
+            doc.sentAt = new Date();
+            doc.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24hr expiry yahi set hoti hai
+            doc.status = "sent";
+        }
+
+        await doc.save();
+        res.json({ success: true, notification: doc, message: "Notification bhej di gayi" });
+    } catch (err) {
+        console.error("Create notification error:", err);
+        res.status(500).json({ success: false, message: "Notification bhej nahi payi" });
+    }
+};
+
+
+export const deleteNotification = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await Notification.findByIdAndDelete(id);
+        if (!deleted) return res.status(404).json({ success: false, message: "Notification nahi mili" });
+        res.json({ success: true, message: "Notification delete ho gayi" });
+    } catch (err) {
+        console.error("Delete notification error:", err);
+        res.status(500).json({ success: false, message: "Delete nahi ho paya" });
+    }
+};
+
+export const updateNotification = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, message, audienceType, customUserIds, scheduleType, scheduledAt } = req.body;
+
+        const notif = await Notification.findById(id);
+        if (!notif) return res.status(404).json({ success: false, message: "Notification nahi mili" });
+
+        if (notif.status === "sent") {
+            return res.status(400).json({ success: false, message: "Already sent notification edit nahi ho sakti — sirf delete karo" });
+        }
+
+        notif.title = title;
+        notif.message = message;
+        notif.audienceType = audienceType;
+        notif.customUserIds = audienceType === "custom" ? (customUserIds || []) : [];
+
+        if (scheduleType === "later" && scheduledAt) {
+            notif.scheduledAt = new Date(scheduledAt);
+            notif.status = "scheduled";
+        } else {
+            notif.sentAt = new Date();
+            notif.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+            notif.status = "sent";
+        }
+
+        await notif.save();
+        res.json({ success: true, notification: notif, message: "Notification update ho gayi" });
+    } catch (err) {
+        console.error("Update notification error:", err);
+        res.status(500).json({ success: false, message: "Update nahi ho paya" });
+    }
+};
+
+
+

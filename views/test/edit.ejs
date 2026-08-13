@@ -95,12 +95,12 @@
 
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold">Marks Configuration</h3>
-            <button type="button" onclick="addSubject()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button type="button" id="addSubjectBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                 + Add Subject
             </button>
         </div>
 
-        <div id="subjectsContainer">
+        <div id="subjectsContainer" data-initial-index="<%= listing.marks.length %>">
              <% listing.marks.forEach(function(mark, i) { %>
 <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 subject-row">
     <input type="text" name="listing[marks][<%= i %>][subject]" value="<%= mark.subject %>" placeholder="Subject" class="border rounded-lg p-2" required>
@@ -115,7 +115,7 @@
             class="text-blue-600 focus:ring-blue-500">
         Qualifying Only
     </label>
-    <button type="button" onclick="removeSubject(this)" class="bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
+    <button type="button"  class="remove-subject-btn bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
         Remove
     </button>
 </div>
@@ -129,20 +129,20 @@
 
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold">Rank Predictor Data</h3>
-            <button type="button" onclick="addRankRow()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            <button type="button" id="addRankRowBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                 + Add Row
             </button>
         </div>
 
         <p class="text-xs text-gray-500 mb-3">Marks aur uske against expected rank enter karo (jaise pichle saal ka data).</p>
 
-        <div id="rankPredictorContainer">
+        <div id="rankPredictorContainer" data-initial-index="<%= (listing.rankPredictorData && listing.rankPredictorData.length > 0) ? listing.rankPredictorData.length : 1 %>">
             <% if (listing.rankPredictorData && listing.rankPredictorData.length > 0) { %>
                 <% listing.rankPredictorData.forEach(function(r, i) { %>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 rank-row">
                     <input type="number" step="0.01" name="listing[rankPredictorData][<%= i %>][marks]" value="<%= r.marks %>" placeholder="Marks" class="border rounded-lg p-2">
                     <input type="number" name="listing[rankPredictorData][<%= i %>][rank]" value="<%= r.rank %>" placeholder="Rank" class="border rounded-lg p-2">
-                    <button type="button" onclick="removeRankRow(this)" class="bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
+                    <button type="button"  class="remove-rank-btn bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
                         Remove
                     </button>
                 </div>
@@ -151,7 +151,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 rank-row">
                     <input type="number" step="0.01" name="listing[rankPredictorData][0][marks]" placeholder="Marks" class="border rounded-lg p-2">
                     <input type="number" name="listing[rankPredictorData][0][rank]" placeholder="Rank" class="border rounded-lg p-2">
-                    <button type="button" onclick="removeRankRow(this)" class="bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
+                    <button type="button" class="remove-rank-btn bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
                         Remove
                     </button>
                 </div>
@@ -195,23 +195,7 @@
  
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<script>
-    const categorySelect = document.getElementById('category-select');
-    if (categorySelect) {
-        new Choices(categorySelect, {
-            searchEnabled: true,
-            itemSelectText: '',
-            placeholder: true,
-            placeholderValue: 'Search category...',
-            shouldSort: false,
-        });
-    }
-</script>
-
-<script>
-    window.initialSubjectIndex = <%= listing.marks.length %>;
-    window.initialRankIndex = <%= (listing.rankPredictorData && listing.rankPredictorData.length > 0) ? listing.rankPredictorData.length : 1 %>;
-</script>
-<script src="/js/testNew.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js" defer></script>
+<script src="/js/layoutsJs/initChoices.js" defer></script>
+<script src="/js/testNew.js" defer></script>
 

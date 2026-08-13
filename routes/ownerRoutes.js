@@ -12,7 +12,13 @@ import {
     saveUserPermissions,
     toggleBanUser,
     ownerResetUserPassword,
-    getAllPaymentsOwner
+    getAllPaymentsOwner,
+    getAllNotificationsOwner,
+    getNotificationReach,
+    searchUsersForNotification,
+    createNotification,
+    deleteNotification,      
+    updateNotification
 } from "../controllers/ownerController.js";
 import { isOwner } from "../middleware/isLoggedIn.js";
 import { getLoginHistory, deleteLoginHistory } from "../controllers/ownerController.js";
@@ -45,4 +51,12 @@ router.get("/api/owner/payments", isOwner, getAllPaymentsOwner);
 router.get("/api/owner/login-history", isOwner, getLoginHistory);
 router.delete("/api/owner/login-history/:id", isOwner, deleteLoginHistory);
 
+
+
+router.get("/api/owner/notifications", isOwner, getAllNotificationsOwner);
+router.get("/api/owner/notifications/reach", isOwner, getNotificationReach);
+router.get("/api/owner/notifications/search-users", isOwner, searchUsersForNotification);
+router.post("/api/owner/notifications", isOwner, createNotification);
+router.delete("/api/owner/notifications/:id", isOwner, deleteNotification);   
+router.patch("/api/owner/notifications/:id", isOwner, updateNotification);     
 export default router;

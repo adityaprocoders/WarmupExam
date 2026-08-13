@@ -132,12 +132,9 @@
     </div>
 </div>
 
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script>
-    const BASE_PRICE = <%= listing.price %>;
-    let selectedDonation = 0;
-</script>
-<script src="/js/payment.js"></script>
+<div id="orderConfig" data-base-price="<%= listing.price %>" style="display:none;"></div>
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="/js/order/payment.js" defer></script>
 
 

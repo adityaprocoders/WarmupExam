@@ -10,7 +10,7 @@
           <p class="text-sm font-semibold text-slate-800">Success</p>
           <p class="text-sm text-slate-500 mt-0.5"><%= success %></p>
         </div>
-        <button onclick="dismissToast(this)" class="shrink-0 text-slate-300 hover:text-slate-500 transition-colors">
+        <button data-dismiss-toast class="shrink-0 text-slate-300 hover:text-slate-500 transition-colors">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -28,7 +28,7 @@
           <p class="text-sm font-semibold text-slate-800">Error</p>
           <p class="text-sm text-slate-500 mt-0.5"><%= error %></p>
         </div>
-        <button onclick="dismissToast(this)" class="shrink-0 text-slate-300 hover:text-slate-500 transition-colors">
+        <button data-dismiss-toast class="shrink-0 text-slate-300 hover:text-slate-500 transition-colors">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -37,41 +37,10 @@
   <% } %>
 
 </div>
+ 
 
-<style>
-  .toast-progress {
-    animation: toastShrink 3.5s linear forwards;
-    transform-origin: left;
-  }
-  @keyframes toastShrink {
-    from { transform: scaleX(1); }
-    to   { transform: scaleX(0); }
-  }
-</style>
-
-<script>
-  document.querySelectorAll('.flash-toast').forEach((el, i) => {
-    setTimeout(() => {
-      el.classList.remove('translate-x-[120%]', 'opacity-0');
-    }, 80 + i * 120);
-  });
-
-  function removeToast(el) {
-    if (!el) return;
-    el.classList.add('translate-x-[120%]', 'opacity-0');
-    setTimeout(() => el.remove(), 500);
-  }
-
-  function dismissToast(btn) {
-    removeToast(btn.closest('.flash-toast'));
-  }
-
-  document.querySelectorAll('.flash-toast').forEach(el => {
-    setTimeout(() => removeToast(el), 3500);
-  });
-
-  if (window.lucide) lucide.createIcons();
-</script>
-
+<link rel="stylesheet" href="/css/flashToast.css">
+<script src="/js/flashToast.js" defer></script>
+ 
 
 

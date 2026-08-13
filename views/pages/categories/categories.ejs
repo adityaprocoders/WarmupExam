@@ -9,8 +9,8 @@
         </div>
 
         <% if (isOwner) { %>
-        <button onclick="openCategoryModal()"
-            class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition duration-200 shadow-sm">
+        <button id="openCategoryModalBtn"
+        class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition duration-200 shadow-sm">
             <i class="fa-solid fa-plus"></i> Add Category
         </button>
         <% } %>
@@ -48,8 +48,7 @@
 
                 <div class="flex justify-center mt-12">
     <button
-        id="viewAllBtn"
-        onclick="toggleAllCategories()"
+        id="viewAllBtn" 
         class="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition duration-300 shadow-md">
 
         <span id="viewAllText">View All Exams</span>
@@ -71,7 +70,7 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div class="flex items-center justify-between mb-5">
             <h3 class="text-lg font-bold text-gray-900">Add New Category</h3>
-            <button onclick="closeCategoryModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+           <button id="closeCategoryModalBtn" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
         </div>
 
         <form method="POST" action="/categories" class="space-y-4">
@@ -102,18 +101,7 @@
         </form>
     </div>
 </div>
-
-<script>
-    function openCategoryModal() {
-        document.getElementById('categoryModalOverlay').classList.remove('hidden');
-    }
-    function closeCategoryModal() {
-        document.getElementById('categoryModalOverlay').classList.add('hidden');
-    }
-    document.getElementById('categoryModalOverlay').addEventListener('click', (e) => {
-        if (e.target.id === 'categoryModalOverlay') closeCategoryModal();
-    });
-</script>
+ 
 <% } %>
 
 <!-- Edit Category Modal (owner only) -->
@@ -122,7 +110,7 @@
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div class="flex items-center justify-between mb-5">
             <h3 class="text-lg font-bold text-gray-900">Edit Category</h3>
-            <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            <button id="closeEditModalBtn" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
         </div>
 
         <form id="editCategoryForm" method="POST" class="space-y-4">
@@ -153,38 +141,7 @@
         </form>
     </div>
 </div>
-
-<script>
-    function openEditModal(id, name, icon, description) {
-        document.getElementById('editCategoryForm').action = '/categories/' + id + '?_method=PUT';
-        document.getElementById('editName').value = name;
-        document.getElementById('editIcon').value = icon;
-        document.getElementById('editDescription').value = description;
-        document.getElementById('editCategoryModalOverlay').classList.remove('hidden');
-    }
-    function closeEditModal() {
-        document.getElementById('editCategoryModalOverlay').classList.add('hidden');
-    }
-    document.getElementById('editCategoryModalOverlay').addEventListener('click', (e) => {
-        if (e.target.id === 'editCategoryModalOverlay') closeEditModal();
-    });
-</script>
+ 
 <% } %>
 
-<script>
-    function toggleAllCategories() {
-        const extra = document.getElementById('extraCategories');
-        const text = document.getElementById('viewAllText');
-        const icon = document.getElementById('viewAllIcon');
-
-        extra.classList.toggle('hidden');
-
-        if (extra.classList.contains('hidden')) {
-            text.textContent = 'View All Categories';
-            icon.className = 'fa-solid fa-arrow-right text-xs transition-transform duration-300';
-        } else {
-            text.textContent = 'Show Less';
-            icon.className = 'fa-solid fa-arrow-up text-xs transition-transform duration-300';
-        }
-    }
-</script>
+<script src="/js/categories/categories.js" defer></script>

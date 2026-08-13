@@ -1,0 +1,11 @@
+ 
+@media (max-width: 640px) {
+  #an-solutions .overflow-y-auto { max-height: calc(100vh - 260px); }
+}
+
+/* 🆕 Print sirf active tab ka content, poora page nahi */
+@media print {
+  #tab-overall, #sol-filter-group, .no-print { display: none !important; }
+  #view-analysis { padding: 0 !important; }
+  .sticky { position: static !important; }
+}

@@ -125,4 +125,4 @@ const listingSchema = new mongoose.Schema({
     timestamps: true
 });
 
-export default mongoose.model("Listing", listingSchema);
+export default mongoose.models.Listing || mongoose.model("Listing", listingSchema);

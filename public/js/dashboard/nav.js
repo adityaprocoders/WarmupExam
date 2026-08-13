@@ -1,11 +1,13 @@
 // ---- Mobile Sidebar Toggle ----
+
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
     const menuBtn = document.getElementById('menuBtn');
 
     if (!sidebar || !overlay) {
-        console.error('Sidebar elements missing:', { sidebar, overlay });
+        // Sidebar is not present on this page — hide the hamburger button instead
+        if (menuBtn) menuBtn.style.display = 'none';
         return;
     }
 
@@ -13,13 +15,8 @@ function toggleSidebar() {
     overlay.classList.toggle('hidden');
 
     const isOpen = !sidebar.classList.contains('-translate-x-full');
-
     document.body.style.overflow = isOpen ? 'hidden' : '';
-
-    // Top hamburger icon hide/show
-    if (menuBtn) {
-        menuBtn.classList.toggle('hidden', isOpen);
-    }
+    if (menuBtn) menuBtn.classList.toggle('hidden', isOpen);
 }
 
 // ---- Profile Dropdown Toggle (click) ----
@@ -67,4 +64,20 @@ document.addEventListener('DOMContentLoaded', () => {
             link.classList.add("text-indigo-700", "font-semibold");
         }
     });
+});
+
+
+
+document.addEventListener('click', function (e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+
+  switch (el.dataset.action) {
+    case 'toggle-sidebar':
+      toggleSidebar();
+      break;
+    case 'toggle-profile-dropdown':
+      toggleProfileDropdown();
+      break;
+  }
 });

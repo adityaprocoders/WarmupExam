@@ -122,7 +122,7 @@
 
         <button
             type="button"
-            onclick="addSubject()"
+            id="addSubjectBtn"
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
             + Add Subject
         </button>
@@ -167,7 +167,7 @@
     <button
         type="button"
         onclick="removeSubject(this)"
-        class="bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
+        class="remove-subject-btn bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
         Remove
     </button>
 
@@ -185,7 +185,7 @@
 
                 <button
                     type="button"
-                    onclick="addRankRow()"
+                    id="addRankRowBtn"
                     class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                     + Add Row
                 </button>
@@ -212,8 +212,7 @@
 
                     <button
                         type="button"
-                        onclick="removeRankRow(this)"
-                        class="bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
+                        class="remove-rank-btn bg-red-600 text-white rounded-lg px-3 py-2 hover:bg-red-700">
                         Remove
                     </button>
 
@@ -266,18 +265,7 @@
 <!-- Choices.js — searchable category dropdown -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<script>
-    const categorySelect = document.getElementById('category-select');
-    if (categorySelect) {
-        new Choices(categorySelect, {
-            searchEnabled: true,
-            itemSelectText: '',
-            placeholder: true,
-            placeholderValue: 'Search category...',
-            shouldSort: false,
-        });
-    }
-</script>
-
-<script src="/js/testNew.js"></script>
+ 
+<script src="/js/layoutsJs/initChoices.js" defer></script>
+<script src="/js/testNew.js" defer></script>
 

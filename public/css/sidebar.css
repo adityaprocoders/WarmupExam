@@ -1,0 +1,48 @@
+.icon-premium {
+    background: linear-gradient(135deg, #6366f1, #a855f7, #f59e0b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+
+ 
+@keyframes shimmerSlide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); }
+    50% { box-shadow: 0 4px 24px rgba(245, 158, 11, 0.6); }
+}
+
+.featured-card {
+    position: relative;
+    overflow: hidden;
+    animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+.featured-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.35) 50%,
+        transparent 100%
+    );
+    animation: shimmerSlide 2.8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@media (max-width: 480px) {
+    .featured-card::after {
+        width: 80%;
+    }
+}
+ 

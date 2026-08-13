@@ -1,0 +1,4 @@
+.active-filter { background: #4f46e5; color: white; }
+.rotate-180 { transform: rotate(180deg); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

@@ -30,8 +30,10 @@ export const ownerLogin = (req, res, next) => {
             // 👇 yahan hona chahiye tha — async callback ke andar
             const newSessionId = generateSessionId();
             owner.activeSessionId = newSessionId;
-            await owner.save();
-            req.session.currentSessionId = newSessionId;
+            
+            // req.session.currentSessionId = newSessionId;
+            // await owner.save();
+           
 
             await logOwnerLogin(req, owner);
 

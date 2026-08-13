@@ -1,0 +1,8 @@
+.toast-progress {
+    animation: toastShrink 3.5s linear forwards;
+    transform-origin: left;
+}
+@keyframes toastShrink {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}

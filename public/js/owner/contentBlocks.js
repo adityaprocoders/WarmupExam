@@ -88,7 +88,19 @@ document.addEventListener("DOMContentLoaded", () => {
             modal.classList.remove("hidden");
             switchTab("new");
         });
+    }); 
+
+    
+// ---------- Delete permanently: confirm dialog ----------
+document.querySelectorAll('.delete-permanent-form').forEach(form => {
+    form.addEventListener('submit', function (e) {
+        if (!confirm('Ye block sab listings se hamesha ke liye delete ho jayega. Sure?')) {
+            e.preventDefault();
+        }
     });
+});
+
+
 
     // ---------- Delete dropdown toggle ----------
     document.querySelectorAll(".delete-toggle-btn").forEach(btn => {

@@ -7,6 +7,9 @@ import ExpressError from "../utils/ExpressError.js";
 import { calculateRankFromPredictor } from "../utils/rankHelper.js";
 import { getTestStatus, formatDateTime } from "../utils/testStatus.js";
 
+import { updateWarmupStreak } from "./dailyWarmupController.js";
+
+
 // Question document ko selected language ke hisaab se FLAT object me convert karta hai
 // (translations[] se ya single-mode field se) — attempt.ejs isi flat shape ko expect karta hai.
 function resolveQuestionForLanguage(qDoc, lang) {
@@ -268,6 +271,11 @@ export const submitAttempt = async (req, res) => {
         timeTaken: timeTaken || 0, submitType: submitType || "manual",
         language: session.language || "English"   // 👈 naya
     });
+    
+if (test.isDailyWarmup) {
+    await updateWarmupStreak(req.user._id, test.warmupExam);
+}
+
 
     res.status(200).json({ success: true, attemptId: attempt._id });
 };

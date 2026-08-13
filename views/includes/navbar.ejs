@@ -103,12 +103,12 @@
 
                 <% } else { %>
 
-                    <button onclick="openAuthModal('login')"
+                    <button data-action="open-auth" data-mode="login"
                         class="bg-white text-slate-900 px-5 py-2 rounded-lg font-medium hover:bg-slate-100 transition">
                         Login
                     </button>
 
-                    <button onclick="openAuthModal('register')"
+                    <button data-action="open-auth" data-mode="register"
                         class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-indigo-700 transition">
                         Sign Up
                     </button>
@@ -223,12 +223,12 @@
         <% } else { %>
 
             <div class="flex flex-col gap-3 p-6 mt-auto">
-                <button onclick="openAuthModal('login')"
+                <button data-action="open-auth" data-mode="login"
                     class="w-full bg-white text-slate-900 border border-slate-200 px-5 py-3 rounded-xl font-semibold hover:bg-slate-50 transition">
                     Login
                 </button>
 
-                <button onclick="openAuthModal('register')"
+                <button data-action="open-auth" data-mode="register"
                     class="w-full bg-indigo-600 text-white px-5 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition shadow-sm shadow-indigo-200">
                     Sign Up
                 </button>

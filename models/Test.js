@@ -118,6 +118,24 @@ showLanguage: {
     publishAt: {
         type: Date,
         default: null
+    },
+    isDailyWarmup: {
+        type: Boolean,
+        default: false
+    },
+    warmupExam: {                   
+        type: String,
+        default: null,
+        index: true
+    },
+    warmupDate: {
+        type: String,
+        default: null
+    },
+    warmupExpiresAt: {
+        type: Date,
+        default: null,
+        index: true
     }
 
 },

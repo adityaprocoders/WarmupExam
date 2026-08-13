@@ -1,0 +1,39 @@
+ 
+    #contentBlocksContainer table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+        font-size: 0.95rem;
+    }
+    #contentBlocksContainer table th,
+    #contentBlocksContainer table td {
+        border: 1px solid #cbd5e1;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        vertical-align: middle;
+    }
+    #contentBlocksContainer table thead th,
+    #contentBlocksContainer table tr:first-child th {
+        background-color: #e0f2fe;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    #contentBlocksContainer table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    /* Mobile: table ko horizontally scrollable banao taaki layout na toote */
+    @media (max-width: 640px) {
+        #contentBlocksContainer table {
+            font-size: 0.85rem;
+        }
+        #contentBlocksContainer table th,
+        #contentBlocksContainer table td {
+            padding: 0.5rem 0.6rem;
+        }
+        #contentBlocksContainer .table-scroll-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+ 

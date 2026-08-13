@@ -3,34 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     
+
     <meta name="robots" content="noindex, nofollow">
 
     <meta name="csrf-token" content="<%= csrfToken %>">
 
     <link rel="stylesheet" href="/css/output.css">
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-    <link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
- 
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
-<meta name="theme-color" content="#4f46e5">
 
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 
- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js" defer></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#4f46e5">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js" defer></script>
 
     <title>WarmupExam | Dashboard</title>
-
 
     <% if (showAds) { %>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXX"
      crossorigin="anonymous"></script>
-<% } %>
+    <% } %>
 
 </head>
 
@@ -40,54 +42,13 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     <%- include("../partials/flash") %>
 
     <%- body %>
-   
+
     <%- include("../partials/logoutModal") %>
-<script>
-lucide.createIcons();
-</script>
- 
 
-    <script src="/js/common.js"></script>
-    <script src="/js/logout.js"></script>
-         
-     <script>
-    (function () {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        if (!csrfToken) return;
-
-        // 1. Saare HTML <form> submissions ko automatically CSRF token de do
-        document.addEventListener("submit", function (e) {
-            const form = e.target;
-            if (form.tagName !== "FORM") return;
-            if (form.querySelector('input[name="_csrf"]')) return; // pehle se hai to skip
-
-            const input = document.createElement("input");
-            input.type = "hidden";
-            input.name = "_csrf";
-            input.value = csrfToken;
-            form.appendChild(input);
-        });
-
-        // 2. Saare fetch() calls ko automatically CSRF header de do
-        const originalFetch = window.fetch;
-        window.fetch = function (url, options = {}) {
-            const method = (options.method || "GET").toUpperCase();
-            const isStateChanging = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-            const isSameOrigin = typeof url === "string" && !url.startsWith("http");
-
-            if (isStateChanging && isSameOrigin) {
-                options.headers = options.headers || {};
-                if (!options.headers["x-csrf-token"]) {
-                    options.headers["x-csrf-token"] = csrfToken;
-                }
-            }
-
-            return originalFetch(url, options);
-        };
-    })();
-</script>
+    <script src="/js/common.js" defer></script>
+    <script src="/js/logout.js" defer></script>
+    <script src="/js/layoutsJs/initLucide.js" defer></script>
+    <script src="/js/layoutsJs/csrfProtect.js" defer></script>
+    
 </body>
 </html>
-
-
-

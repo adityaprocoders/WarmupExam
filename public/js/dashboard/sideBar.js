@@ -100,3 +100,53 @@ function updateSelectedCount() {
 function toggleBulkCopyDropdown() {
     document.getElementById('bulkCopyDropdown').classList.toggle('hidden');
 }
+
+
+
+document.addEventListener('click', function (e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+
+  switch (el.dataset.action) {
+    case 'toggle-batch-modal':
+      toggleBatchModal();
+      break;
+    case 'toggle-select-mode':
+      toggleSelectMode();
+      break;
+    case 'section-checkbox':
+      e.stopPropagation();
+      updateSelectedCount();
+      break;
+    case 'open-copy-modal':
+      openCopyModal(el.dataset.copyType, el.dataset.copyId);
+      break;
+    case 'toggle-edit':
+      toggleEdit(el.dataset.id);
+      break;
+    case 'save-section':
+      document.getElementById('form-' + el.dataset.id).submit();
+      break;
+    case 'show-add-section':
+      showAddSection();
+      break;
+    case 'continue-batch-selection':
+      continueBatchSelection();
+      break;
+    case 'toggle-bulk-copy-dropdown':
+      toggleBulkCopyDropdown();
+      break;
+    case 'open-bulk-copy-modal':
+      openBulkCopyModal(el.dataset.mode);
+      break;
+  }
+});
+
+document.addEventListener('input', function (e) {
+  const el = e.target.closest('[data-oninput]');
+  if (!el) return;
+
+  if (el.dataset.oninput === 'filter-batch-list') {
+    filterBatchList();
+  }
+});

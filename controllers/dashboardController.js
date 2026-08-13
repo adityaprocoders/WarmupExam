@@ -184,7 +184,7 @@ export const showSeries = async (req, res) => {
         showRankPredictor = !!(selectedSec && selectedSec.showInStatsFilter);
     }
 
-    const testQuery = { listing: listing._id };
+    const testQuery = { listing: listing._id, isDailyWarmup: { $ne: true } };
     if (statsSection && statsSection !== "all") {
         testQuery.section = statsSection;
     }
@@ -565,7 +565,7 @@ export const exportAllAttempts = async (req, res) => {
         return res.status(404).json({ success: false, message: "Listing not found" });
     }
 
-    const testQuery = { listing: listing._id };
+    const testQuery = { listing: listing._id, isDailyWarmup: { $ne: true } };
     if (statsSection && statsSection !== "all") {
         testQuery.section = statsSection;
     }

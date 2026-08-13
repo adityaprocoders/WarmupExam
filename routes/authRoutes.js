@@ -8,6 +8,8 @@ import { validateBody } from "../middleware/validate.js";
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../utils/schemas.js";
 import { getLoginHistoryApi, deleteLoginHistoryEntry } from "../controllers/authController.js";
 import LoginHistory from "../models/LoginHistory.js";
+import { authLimiter, otpLimiter } from "../middleware/rateLimiters.js";
+
 
 
 const router = express.Router();
@@ -20,13 +22,13 @@ router.delete("/api/owner/login-history/:id", isOwner, deleteLoginHistoryEntry);
  
 
 router.get("/register", isLoggedOut, authController.renderRegister);
-router.post("/register", validateBody(registerSchema), wrapAsync(authController.register));
+router.post("/register", authLimiter, validateBody(registerSchema), wrapAsync(authController.register));
 
 router.get("/login", isLoggedOut, authController.renderLogin);
-router.post("/login", validateBody(loginSchema), authController.login);
+router.post("/login", authLimiter, validateBody(loginSchema), authController.login);
 
 router.post("/forgot-password", validateBody(forgotPasswordSchema), wrapAsync(forgotPassword));
-router.post("/reset-password", validateBody(resetPasswordSchema), wrapAsync(resetPassword));
+router.post("/reset-password", authLimiter, validateBody(resetPasswordSchema), wrapAsync(resetPassword));
 
 router.get("/auth/google", passport.authenticate("user-google", { scope: ["profile", "email"] }));
 

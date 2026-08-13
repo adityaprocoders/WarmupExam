@@ -6,6 +6,8 @@ import * as dashboardController from "../controllers/dashboardController.js";
 import { showWeakAreas } from "../controllers/weakAreaController.js";
 import { validateBody } from "../middleware/validate.js";
 import { createSectionSchema, createFolderSchema } from "../utils/schemas.js";
+import { getMyNotifications, markNotificationsSeen, clearMyNotifications } from "../controllers/notificationController.js";
+
 
 const router = express.Router();
 
@@ -51,5 +53,9 @@ router.put(
     wrapAsync(dashboardController.updateStatsVisibility)
 );
 
+
+router.get("/api/notifications/mine", isLoggedIn, getMyNotifications);
+router.post("/api/notifications/mark-seen", isLoggedIn, markNotificationsSeen);
+router.post("/api/notifications/clear-all", isLoggedIn, clearMyNotifications);
 
 export default router;

@@ -1,0 +1,28 @@
+ 
+  body { font-family: 'Inter', sans-serif; }
+  .podium-1 { background: linear-gradient(180deg, #FFF7E0 0%, #FFFFFF 100%); }
+  .podium-2 { background: linear-gradient(180deg, #F1F0FE 0%, #FFFFFF 100%); }
+  .podium-3 { background: linear-gradient(180deg, #FFF1E8 0%, #FFFFFF 100%); }
+
+  /* Hide scrollbar but keep scroll functionality */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Responsive card height */
+  .card-wrapper {
+    height: 85vh;
+    max-height: 720px;
+  }
+  @media (max-width: 480px) {
+    .card-wrapper {
+      height: 100vh;
+      max-height: none;
+      border-radius: 0;
+    }
+  }
+ 

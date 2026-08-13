@@ -1,44 +1,5 @@
 <!-- views/owner/_contentBlocks.ejs -->
-
-<style>
-    #contentBlocksContainer table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 1rem 0;
-        font-size: 0.95rem;
-    }
-    #contentBlocksContainer table th,
-    #contentBlocksContainer table td {
-        border: 1px solid #cbd5e1;
-        padding: 0.75rem 1rem;
-        text-align: left;
-        vertical-align: middle;
-    }
-    #contentBlocksContainer table thead th,
-    #contentBlocksContainer table tr:first-child th {
-        background-color: #e0f2fe;
-        font-weight: 600;
-        color: #1e293b;
-    }
-    #contentBlocksContainer table tbody tr:hover {
-        background-color: #f8fafc;
-    }
-
-    /* Mobile: table ko horizontally scrollable banao taaki layout na toote */
-    @media (max-width: 640px) {
-        #contentBlocksContainer table {
-            font-size: 0.85rem;
-        }
-        #contentBlocksContainer table th,
-        #contentBlocksContainer table td {
-            padding: 0.5rem 0.6rem;
-        }
-        #contentBlocksContainer .table-scroll-wrap {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-    }
-</style>
+<link rel="stylesheet" href="/css/contentBlocks.css">
 
 <div id="contentBlocksContainer" class="space-y-4">
     <% listing.contentBlocks.forEach(block => { %>
@@ -74,7 +35,7 @@
                                 </button>
                             </form>
                             <form action="/owner/content-library/<%= block._id %>?_method=DELETE" method="POST"
-                                  onsubmit="return confirm('Ye block sab listings se hamesha ke liye delete ho jayega. Sure?');">
+                                 class="delete-permanent-form">
                                 <input type="hidden" name="listingId" value="<%= listing._id %>">
                                 <button type="submit" class="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-red-600 hover:bg-red-50 border-t">
                                     Delete permanently (from library too)
@@ -242,5 +203,5 @@
     <script>
         window.CURRENT_LISTING_ID = "<%= listing._id %>";
     </script>
-    <script src="/js/contentBlocks.js"></script>
+    <script src="/js/owner/contentBlocks.js" defer></script>
 <% } %>

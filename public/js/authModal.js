@@ -41,10 +41,32 @@
     // Backdrop click se close
     document.getElementById('authBackdrop').addEventListener('click', closeAuthModal);
 
+ document.addEventListener('click', function (e) {
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    const action = el.dataset.action;
+
+    if (action === 'open-auth') openAuthModal(el.dataset.mode);
+    else if (action === 'close-auth') closeAuthModal();
+    else if (action === 'switch-panel') switchAuthPanel(el.dataset.panel);
+    else if (action === 'toggle-password') togglePassword(el.dataset.field, el.dataset.icon);
+    else if (action === 'resend-otp') resendOtp();
+});
+ 
+
+document.addEventListener('input', function (e) {
+    if (e.target.dataset.oninput === 'lowercase') {
+        e.target.value = e.target.value.toLowerCase();
+    }
+});
+
+
     // Escape key se close
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeAuthModal();
     });
+
+
  
 
 let otpCountdownInterval = null;
@@ -198,13 +220,4 @@ async function resendOtp() {
         btn.disabled = false;
     }
 }
-
-function switchAuthPanel(type) {
-    document.getElementById('loginPanel').classList.toggle('hidden', type !== 'login');
-    document.getElementById('registerPanel').classList.toggle('hidden', type !== 'register');
-    document.getElementById('forgotPanel').classList.toggle('hidden', type !== 'forgot');
-    document.getElementById('resetPanel').classList.toggle('hidden', type !== 'reset');
-
-    if (window.lucide) lucide.createIcons();
-}
-    
+ 

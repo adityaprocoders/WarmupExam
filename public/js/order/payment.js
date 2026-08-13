@@ -1,3 +1,6 @@
+const BASE_PRICE = Number(document.getElementById('orderConfig').dataset.basePrice);
+let selectedDonation = 0;
+
 const donationCheckbox = document.getElementById("donationEnabled");
 const donationOptions = document.getElementById("donationOptions");
 const donationBtns = document.querySelectorAll(".donation-btn");

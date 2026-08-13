@@ -65,7 +65,7 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
 
     <!-- Fullscreen Button -->
     <button
-        onclick="toggleFullscreen()"
+         data-action="toggle-fullscreen"
         id="fsToggleBtn"
         title="Enter Fullscreen"
         class="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition active:scale-95">
@@ -118,7 +118,7 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
 
             <div id="integerContainer" class="max-w-xs hidden">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Enter your answer</label>
-                <input type="number" step="any" id="integerInput" oninput="saveIntegerAnswer()"
+                <input type="number" step="any" id="integerInput" data-action="save-integer-answer"
                     class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
 
@@ -130,11 +130,11 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
 
         <!-- Mark for Review + Clear Response -->
         <div class="grid grid-cols-2 sm:flex gap-2">
-            <button onclick="markForReview()" class="px-3 sm:px-4 py-3 sm:py-2.5 rounded-xl border border-indigo-200 text-indigo-600 font-bold text-xs sm:text-sm hover:bg-indigo-50 active:scale-95 transition truncate">
+            <button data-action="mark-for-review" class="px-3 sm:px-4 py-3 sm:py-2.5 rounded-xl border border-indigo-200 text-indigo-600 font-bold text-xs sm:text-sm hover:bg-indigo-50 active:scale-95 transition truncate">
                 <span class="sm:hidden">Mark & Next</span>
                 <span class="hidden sm:inline">Mark for Review &amp; Next</span>
             </button>
-            <button onclick="clearResponse()" class="px-3 sm:px-4 py-3 sm:py-2.5 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs sm:text-sm hover:bg-gray-50 active:scale-95 transition truncate">
+            <button data-action="clear-response" class="px-3 sm:px-4 py-3 sm:py-2.5 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs sm:text-sm hover:bg-gray-50 active:scale-95 transition truncate">
                 <span class="sm:hidden">Clear</span>
                 <span class="hidden sm:inline">Clear Response</span>
             </button>
@@ -142,10 +142,10 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
 
         <!-- Previous + Save & Next -->
         <div class="grid grid-cols-2 sm:flex items-center gap-2">
-            <button id="prevBtn" onclick="prevQuestion()" class="px-3 sm:px-8 py-3 sm:py-2.5 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs sm:text-sm active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed">
+            <button id="prevBtn" data-action="prev-question" class="px-3 sm:px-8 py-3 sm:py-2.5 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs sm:text-sm active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed">
                 Previous
             </button>
-            <button onclick="saveAndNext()" class="px-3 sm:px-8 py-3 sm:py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-bold text-xs sm:text-sm active:scale-95 transition">
+            <button data-action="save-and-next" class="px-3 sm:px-8 py-3 sm:py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-bold text-xs sm:text-sm active:scale-95 transition">
                 <span class="sm:hidden">Save &amp; Next</span>
                 <span class="hidden sm:inline">Save &amp; Next</span>
             </button>
@@ -200,11 +200,11 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
     </aside>
 
     <!-- Mobile Palette Drawer -->
-    <div id="mobilePaletteOverlay" class="hidden fixed inset-0 bg-black/50 z-[70] lg:hidden" onclick="toggleMobilePalette()"></div>
+    <div id="mobilePaletteOverlay" class="hidden fixed inset-0 bg-black/50 z-[70] lg:hidden"  data-action="toggle-mobile-palette"> 
     <div id="mobilePaletteDrawer" class="hidden fixed right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white z-[80] shadow-2xl flex-col lg:hidden">
         <div class="p-4 border-b flex justify-between items-center">
             <span class="font-bold text-sm">Question Palette</span>
-             <button onclick="toggleMobilePalette()" class="p-1.5 rounded-lg hover:bg-gray-100 active:scale-95 transition"><i class="fa-solid fa-xmark w-5 h-5 text-gray-600 flex items-center justify-center"></i></button>
+             <button data-action="toggle-mobile-palette" class="p-1.5 rounded-lg hover:bg-gray-100 active:scale-95 transition"><i class="fa-solid fa-xmark w-5 h-5 text-gray-600 flex items-center justify-center"></i></button>
         </div>
         <div class="p-4 border-b space-y-2 text-xs">
             <div class="flex items-center gap-2"><span class="w-5 h-5 rounded bg-green-500 text-white flex items-center justify-center text-[10px] font-bold" id="cntAnsweredM">0</span> Answered
@@ -242,8 +242,8 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
             </table>
         </div>
         <div class="flex justify-end gap-3 mt-6">
-            <button id="backToTestBtn" onclick="closeSubmitModal()" class="px-6 py-2.5 rounded-xl border font-bold text-indigo-600 hover:bg-indigo-50 active:scale-95 transition">Back to Test</button>
-            <button onclick="doSubmitTest('manual')"  class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold active:scale-95 transition">Final Submit</button>
+            <button id="backToTestBtn"data-action="close-submit-modal" class="px-6 py-2.5 rounded-xl border font-bold text-indigo-600 hover:bg-indigo-50 active:scale-95 transition">Back to Test</button>
+            <button data-action="submit-test-manual"  class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold active:scale-95 transition">Final Submit</button>
         </div>
     </div>
 </div>
@@ -256,7 +256,7 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
         </div>
         <h3 class="font-bold text-lg mb-1">Test submitted successfully</h3>
         <p class="text-sm text-gray-500 mb-6">Your responses have been recorded.</p>
-        <button onclick="closeSuccessModal()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold active:scale-95 transition">Close</button>
+        <button data-action="close-success-modal" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold active:scale-95 transition">Close</button>
     </div>
 </div>
 
@@ -270,705 +270,24 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
     </div>
 </div>
 
-<script>
-/* ================= DATA FROM SERVER ================= */
-const testData = {
-    id: "<%= test._id %>",
-    sessionId: "<%= sessionId %>",
-    timeStrategy: "<%= test.timeStrategy %>",
-    duration: <%= test.duration || 0 %>,
-    subjectTime: <%- safeJsonStringify(test.subjectTime || []) %>
-};
 
-const returnUrl = <%- safeJsonStringify(returnUrl) %>;
- 
-const HAS_SUBJECT_TABS = <%- safeJsonStringify(hasSubjectTiming) %>;
 
-const subjectsOrder = <%- safeJsonStringify(subjectsOrder) %>; 
-const grouped = <%- safeJsonStringify(grouped) %>;
 
-// Flat ordered list of questions with subject index (subjectIndex refers to subjectsOrder,
-// i.e. the raw individual subject — NOT the combined section, which is resolved below).
-let flatQuestions = [];
-subjectsOrder.forEach((subj, sIdx) => {
-    (grouped[subj] || []).forEach(q => flatQuestions.push({ ...q, subjectIndex: sIdx, sectionIndex: 0 }));
-});
-
-let currentIndex = 0;
-let currentSectionIndex = 0;
-
-// status: 'notVisited' | 'notAnswered' | 'answered' | 'markedNotAnswered' | 'markedAnswered'
-let qState = flatQuestions.map(() => ({ status: 'notVisited', answer: null }));
-let testSubmitted = false;
-
-/* ================= MATH RENDERING (KaTeX) ================= */
-function renderMath(container) {
-    if (window.renderMathInElement) {
-        renderMathInElement(container, {
-            delimiters: [
-                { left: "$$", right: "$$", display: true },
-                { left: "$", right: "$", display: false },
-                { left: "\\(", right: "\\)", display: false },
-                { left: "\\[", right: "\\]", display: true }
-            ],
-            throwOnError: false
-        });
-    }
+<script type="application/json" id="attemptPageData">
+{
+  "testId": <%- safeJsonStringify(test._id) %>,
+  "sessionId": <%- safeJsonStringify(sessionId) %>,
+  "timeStrategy": <%- safeJsonStringify(test.timeStrategy) %>,
+  "duration": <%- safeJsonStringify(test.duration || 0) %>,
+  "subjectTime": <%- safeJsonStringify(test.subjectTime || []) %>,
+  "returnUrl": <%- safeJsonStringify(returnUrl) %>,
+  "hasSubjectTabs": <%- safeJsonStringify(hasSubjectTiming) %>,
+  "subjectsOrder": <%- safeJsonStringify(subjectsOrder) %>,
+  "grouped": <%- safeJsonStringify(grouped) %>
 }
-
-/* ================= FULLSCREEN (silent, no warning banner) =================
-   The exam UI is visible immediately on load. Browsers block requestFullscreen() without a
-   user gesture, so we try immediately and also silently arm it on the first
-   click/keydown/touch anywhere on the page. If the candidate exits fullscreen, nothing is
-   shown/interrupted — they can simply keep going, or use the maximize button to re-enter. */
-function enterFullscreen() {
-    const el = document.documentElement;
-    const req = el.requestFullscreen || el.webkitRequestFullscreen;
-    if (!req) return;
-
-    try {
-        const result = req.call(el);
-        
-        if (result && typeof result.catch === 'function') {
-            result.catch(() => {});
-        }
-    } catch (e) {
-        // sync error bhi silently ignore karo (kuch browsers turant throw kar sakte hain)
-    }
-}
-
-function toggleFullscreen() {
-    if (!document.fullscreenElement) enterFullscreen();
-    else document.exitFullscreen();
-}
-function bootFullscreen() {
-    enterFullscreen();
-    const armOnce = () => enterFullscreen();
-    document.addEventListener('click', armOnce, { once: true });
-    document.addEventListener('keydown', armOnce, { once: true });
-    document.addEventListener('touchstart', armOnce, { once: true });
-}
- 
-document.addEventListener('fullscreenchange', () => {
-    const btn = document.getElementById('fsToggleBtn');
-    if (!btn) return;
-
-    const iconName = document.fullscreenElement ? 'minimize' : 'maximize';
-
-
-    const existingIcon = btn.querySelector('i, svg');
-    if (existingIcon) {
-        const freshIcon = document.createElement('i');
-        freshIcon.setAttribute('data-lucide', iconName);
-        freshIcon.className = existingIcon.getAttribute('class') || 'w-5 h-5 text-blue-600';
-        existingIcon.replaceWith(freshIcon);
-    }
-
-    if (window.lucide) lucide.createIcons();
-});
-
-/* ================= SECTION GROUPING =================
-   A single test.subjectTime entry can cover ONE subject ("Mathematics": 1 min) or MULTIPLE
-   subjects combined into one label ("Chemistry + Physics": 1 min). When combined, those
-   subjects share ONE section, ONE tab, and ONE countdown — not one countdown each. This is
-   worked out dynamically from whatever is actually configured, nothing hardcoded. */
-let sections = []; // [{ subjects: [...], label: "Physics & Chemistry", durationMinutes }]
-
-const DEFAULT_SUBJECT_MINUTES = 20;
-const DEFAULT_TOTAL_MINUTES = 60;
-
-function normalizeName(s) {
-    return (s || '').toString().trim().toLowerCase();
-}
-
-function splitSubjectLabel(label) {
-    return (label || '').toString()
-        .split(/[+,&]/)
-        .map(normalizeName)
-        .filter(Boolean);
-}
-
-function buildSections() {
-    const built = [];
-    const usedSubjects = new Set();
-
-    testData.subjectTime.forEach(entry => {
-        const labelSubjects = splitSubjectLabel(entry.subject);
-        // Only keep subjects that actually have questions in this test, in the same order
-        // they appear in subjectsOrder, so display order stays consistent with the paper.
-        const matchedSubjects = subjectsOrder.filter(s => labelSubjects.includes(normalizeName(s)) && !usedSubjects.has(s));
-        if (matchedSubjects.length === 0) return;
-
-        const mins = Number(entry.duration) > 0 ? Number(entry.duration) : NaN;
-        const durationMinutes = Number.isNaN(mins) ? DEFAULT_SUBJECT_MINUTES : mins;
-        if (Number.isNaN(mins)) {
-            console.warn(`[ExamWarmUp] Invalid duration for subjectTime entry "${entry.subject}" — falling back to ${DEFAULT_SUBJECT_MINUTES} min.`);
-        }
-
-        built.push({
-            subjects: matchedSubjects,
-            label: matchedSubjects.join(' & '),
-            durationMinutes
-        });
-        matchedSubjects.forEach(s => usedSubjects.add(s));
-    });
-
-    // Any subject with real questions but not covered by any subjectTime entry still gets
-    // its own section (default duration) so it never silently disappears from navigation.
-    subjectsOrder.forEach(s => {
-        if (!usedSubjects.has(s)) {
-            console.warn(`[ExamWarmUp] No time configured for subject "${s}" — falling back to ${DEFAULT_SUBJECT_MINUTES} min.`);
-            built.push({ subjects: [s], label: s, durationMinutes: DEFAULT_SUBJECT_MINUTES });
-            usedSubjects.add(s);
-        }
-    });
-
-    return built;
-}
-
-function sectionIndexForSubject(subjectName) {
-    const idx = sections.findIndex(sec => sec.subjects.includes(subjectName));
-    return idx === -1 ? 0 : idx;
-}
-
-function lockSectionsBefore(newIdx) {
-    for (let i = 0; i < newIdx; i++) {
-        if (!sectionDone[i]) {
-            sectionDone[i] = true;
-            sectionTimeLeft[i] = 0;
-        }
-    }
-    updateSubjectTabsState();
-}
-
-
-function renderSubjectTabs() {
-    const bar = document.getElementById('subjectTabs');
-    if (!HAS_SUBJECT_TABS || sections.length === 0) {
-        bar.classList.add('hidden');
-        bar.classList.remove('flex');
-        bar.innerHTML = '';
-        return;
-    }
-    bar.classList.remove('hidden');
-    bar.classList.add('flex');
-    bar.innerHTML = '';
-    sections.forEach((sec, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.dataset.sectionTab = idx;
-        btn.className = 'subject-tab whitespace-nowrap px-4 py-2.5 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-indigo-500 active:scale-95 transition';
-        btn.textContent = sec.label;
-        btn.onclick = () => switchSection(idx);
-        bar.appendChild(btn);
-    });
-}
-
-/* ================= TIMER =================
-   Each section keeps its OWN remaining time (persists even if you switch sections and come
-   back). The timer bar always shows which section's time is currently running. When a
-   section's time hits 0, it auto-switches to the next section that still has time left, and
-   that section's tab becomes disabled so the candidate can't step back into an expired
-   section. When every section's time is used up (or total time is up, in 'total' mode), the
-   test auto-submits. */
-let timerInterval = null;
-let sectionTimeLeft = {}; // keyed by section index
-let sectionDone = {};     // keyed by section index
-
-function initSectionTimers() {
-    sections.forEach((sec, idx) => {
-        sectionTimeLeft[idx] = sec.durationMinutes * 60;
-    });
-}
-
-function initTimer() {
-    if (!HAS_SUBJECT_TABS) {
-        document.getElementById('timerLabel').textContent = 'TEST TIME';
-        if (!window.__totalSecondsSet) {
-            const totalMins = Number(testData.duration) > 0 ? Number(testData.duration) : NaN;
-            if (Number.isNaN(totalMins)) {
-                console.warn(`[ExamWarmUp] No valid total duration configured on this test — falling back to ${DEFAULT_TOTAL_MINUTES} min. Check test.duration.`);
-                window.totalSeconds = DEFAULT_TOTAL_MINUTES * 60;
-            } else {
-                window.totalSeconds = totalMins * 60;
-            }
-            window.__totalSecondsSet = true;
-        }
-    } else {
-        const sec = sections[currentSectionIndex];
-        document.getElementById('timerLabel').textContent = sec.label.toUpperCase() + ' SECTION TIME';
-    }
-    updateTimerDisplay();
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(tick, 1000);
-}
-
-function tick() {
-    if (!HAS_SUBJECT_TABS) {
-        window.totalSeconds--;
-        if (window.totalSeconds <= 0) {
-            window.totalSeconds = 0;
-            updateTimerDisplay();
-            clearInterval(timerInterval);
-            autoSubmit();
-            return;
-        }
-    } else {
-        sectionTimeLeft[currentSectionIndex]--;
-        if (sectionTimeLeft[currentSectionIndex] <= 0) {
-            sectionTimeLeft[currentSectionIndex] = 0;
-            sectionDone[currentSectionIndex] = true;
-            updateSubjectTabsState();
-            clearInterval(timerInterval);
-            goToNextIncompleteSection();
-            return;
-        }
-    }
-    updateTimerDisplay();
-}
-
-function goToNextIncompleteSection() {
-    let nextIdx = -1;
-    for (let i = currentSectionIndex + 1; i < sections.length; i++) {
-        if (!sectionDone[i]) { nextIdx = i; break; }
-    }
-    if (nextIdx === -1) {
-        for (let i = 0; i < currentSectionIndex; i++) {
-            if (!sectionDone[i]) { nextIdx = i; break; }
-        }
-    }
-    if (nextIdx === -1) {
-        // Every section's time is used up — auto-submit the whole test
-        autoSubmit();
-    } else {
-        switchSection(nextIdx, true);
-    }
-}
-
-const TIMER_WARNING_THRESHOLD = 60; // last 60 seconds me warning color dikhega
-
-function updateTimerDisplay() {
-    let secs = !HAS_SUBJECT_TABS
-        ? window.totalSeconds
-        : sectionTimeLeft[currentSectionIndex];
-
-    const m = Math.floor(secs / 60).toString().padStart(2, '0');
-    const s = (secs % 60).toString().padStart(2, '0');
-
-    const labelEl = document.getElementById('timerLabel');
-    const displayEl = document.getElementById('timerDisplay');
-
-    displayEl.textContent = `${m}:${s}`;
-
-    const isWarning = secs <= TIMER_WARNING_THRESHOLD;
-
-    labelEl.classList.toggle('text-orange-500', isWarning);
-    labelEl.classList.toggle('text-slate-500', !isWarning);
-
-    displayEl.classList.toggle('text-orange-600', isWarning);
-    displayEl.classList.toggle('text-slate-800', !isWarning);
-}
-
-
-/* ================= RENDER QUESTION ================= */
-function renderQuestion() {
-    if (flatQuestions.length === 0) return;
-
-    const q = flatQuestions[currentIndex];
-    const state = qState[currentIndex];
-
-    if (state.status === 'notVisited') state.status = 'notAnswered';
-
-    let qNo = currentIndex + 1;
-if (HAS_SUBJECT_TABS) {
-    const sectionStart = flatQuestions.findIndex(fq => fq.sectionIndex === q.sectionIndex);
-    qNo = currentIndex - sectionStart + 1;  
-}
-document.getElementById('questionNoLabel').textContent = `Question No. ${qNo}`;
-
-    const qTextEl = document.getElementById('questionText');
-    qTextEl.textContent = q.question || '';
-    renderMath(qTextEl);
-
-    const qImageEl = document.getElementById('questionImage');
-    if (q.questionImage) {
-        qImageEl.src = q.questionImage;
-        qImageEl.classList.remove('hidden');
-    } else {
-        qImageEl.classList.add('hidden');
-        qImageEl.src = '';
-    }
-
-    const optsWrap = document.getElementById('optionsContainer');
-    const intWrap = document.getElementById('integerContainer');
-
-    if (q.type === 'integer') {
-        intWrap.classList.remove('hidden');
-        optsWrap.classList.add('hidden');
-        document.getElementById('integerInput').value = state.answer ?? '';
-    } else {
-        intWrap.classList.add('hidden');
-        optsWrap.classList.remove('hidden');
-        optsWrap.innerHTML = '';
-
-        const inputType = (q.type === 'multiple') ? 'checkbox' : 'radio';
-         
-        q.options.forEach((opt, idx) => {
-            const selected = q.type === 'multiple'
-                ? Array.isArray(state.answer) && state.answer.includes(idx)
-                : state.answer === idx;
-
-            // Plain row — no border, no background highlight. Only the radio/checkbox itself
-            // turns blue (accent-indigo-600) when selected.
-            const div = document.createElement('label');
-            div.className = 'flex items-start gap-3 py-3 px-1 cursor-pointer hover:bg-slate-50 rounded-lg';
-            div.innerHTML = `
-                <input type="${inputType}" name="opt" class="w-4 h-4 accent-indigo-600 shrink-0 mt-1" ${selected ? 'checked' : ''}>
-                <div class="flex-1">
-                    <span class="text-sm opt-text"></span>
-                    ${opt.image ? `<img src="${opt.image}" class="mt-2 max-w-[200px] rounded-lg border" alt="Option image">` : ''}
-                </div>
-            `;
-            div.querySelector('.opt-text').textContent = opt.text || '';
-            div.querySelector('input').addEventListener('change', () => selectOption(idx, q.type));
-            optsWrap.appendChild(div);
-        });
-        
-        renderMath(optsWrap);
-    }
-
-    document.getElementById('prevBtn').disabled = currentIndex === 0;
-
-    // section tab highlight (only relevant when the tab bar exists)
-    if (HAS_SUBJECT_TABS) {
-        document.querySelectorAll('.subject-tab').forEach((el, i) => {
-            el.classList.toggle('text-indigo-600', i === q.sectionIndex);
-            el.classList.toggle('border-indigo-600', i === q.sectionIndex);
-            el.classList.toggle('text-gray-400', i !== q.sectionIndex);
-        });
-        updateSubjectTabsState();
-    }
-
-    renderPalette();
-    updateCounts();
-}
-
-function selectOption(idx, type) {
-    const state = qState[currentIndex];
-    if (type === 'multiple') {
-        if (!Array.isArray(state.answer)) state.answer = [];
-        const pos = state.answer.indexOf(idx);
-        if (pos > -1) state.answer.splice(pos, 1); else state.answer.push(idx);
-    } else {
-        state.answer = idx;
-    }
-    if (state.status !== 'markedAnswered') state.status = 'answered';
-    renderQuestion();
-}
-
-function saveIntegerAnswer() {
-    const state = qState[currentIndex];
-    const val = document.getElementById('integerInput').value;
-    state.answer = val === '' ? null : Number(val);
-    state.status = (val === '') ? 'notAnswered' : 'answered';
-    renderPalette();
-    updateCounts();
-}
-
-/* ================= NAV ACTIONS ================= */
-function saveAndNext() {
-    goNext();
-}
-
-function markForReview() {
-    const state = qState[currentIndex];
-    state.status = (state.answer !== null && state.answer !== undefined && !(Array.isArray(state.answer) && state.answer.length === 0))
-        ? 'markedAnswered' : 'markedNotAnswered';
-    goNext();
-}
-
-function clearResponse() {
-    qState[currentIndex].answer = null;
-    qState[currentIndex].status = 'notAnswered';
-    renderQuestion();
-}
-
-function goNext() {
-    if (currentIndex < flatQuestions.length - 1) {
-        currentIndex++;
-        checkSectionSwitch();
-        renderQuestion();
-    }
-}
-
-function prevQuestion() {
-    if (currentIndex > 0) {
-        currentIndex--;
-        checkSectionSwitch();
-        renderQuestion();
-    }
-}
-
-function checkSectionSwitch() {
-    const newSection = flatQuestions[currentIndex].sectionIndex;
-    if (newSection !== currentSectionIndex && HAS_SUBJECT_TABS) {
-        if (newSection > currentSectionIndex) {
-            lockSectionsBefore(newSection);
-        }
-        currentSectionIndex = newSection;
-        initTimer();
-    }
-}
- 
-function switchSection(idx, isAutoSwitch) {
-    if (!HAS_SUBJECT_TABS) return;
-
-    if (!isAutoSwitch && sectionDone[idx]) {
-        // Section time already used up, ya pehle skip ho chuka — wapas nahi ja sakte.
-        return;
-    }
- 
-    if (!isAutoSwitch && idx > currentSectionIndex) {
-        lockSectionsBefore(idx);
-    }
-
-    currentSectionIndex = idx;
-    currentIndex = flatQuestions.findIndex(q => q.sectionIndex === idx);
-    initTimer();
-    renderQuestion();
-}
- 
-function jumpToQuestion(i) {
-    currentIndex = i;
-    currentSectionIndex = flatQuestions[i].sectionIndex;
-    renderQuestion();
-}
-
-// Disables/greys out any section tab whose time has fully run out, so the candidate can't
-// click back into an expired section.
-function updateSubjectTabsState() {
-    if (!HAS_SUBJECT_TABS) return;
-    document.querySelectorAll('.subject-tab').forEach((el, i) => {
-        el.disabled = !!sectionDone[i];
-    });
-}
-
-/* ================= PALETTE ================= */
-const statusColors = {
-    notVisited: 'bg-white border text-gray-500',
-    notAnswered: 'bg-red-500 text-white',
-    answered: 'bg-green-500 text-white',
-    markedNotAnswered: 'bg-indigo-600 text-white',
-    markedAnswered: 'bg-indigo-600 text-white ring-2 ring-offset-1 ring-green-500'
-};
-
-function renderPalette() {
-    const grids = [document.getElementById('paletteGrid'), document.getElementById('paletteGridMobile')];
-    grids.forEach(grid => {
-        if (!grid) return;
-        grid.innerHTML = '';
-        let localNo = 0;
-        flatQuestions.forEach((q, i) => {
-            if (HAS_SUBJECT_TABS && q.sectionIndex !== currentSectionIndex) return;
-            localNo++;
-            const displayNo = HAS_SUBJECT_TABS ? localNo : (i + 1);
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = `palette-btn w-9 h-9 rounded-lg text-xs font-bold active:scale-95 ${statusColors[qState[i].status]} ${i === currentIndex ? 'ring-2 ring-offset-1 ring-indigo-400' : ''}`;
-            btn.textContent = displayNo;
-            btn.onclick = () => jumpToQuestion(i);
-            grid.appendChild(btn);
-        });
-    });
-}
-
-
-
-function updateCounts() {
-    const counts = { answered: 0, notAnswered: 0, notVisited: 0, review: 0, markedAnswered: 0 };
-    qState.forEach(s => {
-        if (s.status === 'answered') counts.answered++;
-        else if (s.status === 'notAnswered') counts.notAnswered++;
-        else if (s.status === 'notVisited') counts.notVisited++;
-        else if (s.status === 'markedNotAnswered') counts.review++;
-        else if (s.status === 'markedAnswered') { counts.markedAnswered++; counts.answered++; }
-    });
-    ['cntAnswered','cntAnsweredM'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = counts.answered; });
-    ['cntNotAnswered','cntNotAnsweredM'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = counts.notAnswered; });
-    const nv = document.getElementById('cntNotVisited'); if (nv) nv.textContent = counts.notVisited;
-    const rv = document.getElementById('cntReview'); if (rv) rv.textContent = counts.review;
-    const ma = document.getElementById('cntMarkedAnswered'); if (ma) ma.textContent = counts.markedAnswered;
-}
-
-/* ================= MOBILE DRAWER ================= */
-function toggleMobilePalette() {
-    document.getElementById('mobilePaletteOverlay').classList.toggle('hidden');
-    document.getElementById('mobilePaletteDrawer').classList.toggle('hidden');
-    document.getElementById('mobilePaletteDrawer').classList.toggle('flex');
-}
-
-/* ================= SUBMIT ================= */
- 
-function tallyIndices(indices) {
-    let answered = 0, notAnswered = 0, notVisited = 0, marked = 0;
-    indices.forEach(i => {
-        const st = qState[i].status;
-        if (st === 'answered' || st === 'markedAnswered') answered++;
-        if (st === 'notAnswered') notAnswered++;
-        if (st === 'notVisited') notVisited++;
-        if (st === 'markedNotAnswered' || st === 'markedAnswered') marked++;
-    });
-    return { total: indices.length, answered, notAnswered, notVisited, marked };
-}
-
-function computeBreakdown() {
-    if (!HAS_SUBJECT_TABS) {
-        const all = flatQuestions.map((_, i) => i);
-        return [{ label: 'All Questions', ...tallyIndices(all) }];
-    }
-    return sections.map((sec, idx) => {
-        const indices = flatQuestions.reduce((arr, q, i) => {
-            if (q.sectionIndex === idx) arr.push(i);
-            return arr;
-        }, []);
-        return { label: sec.label, ...tallyIndices(indices) };
-    });
-}
-
-
-
-
-
-
-
-
-
-function confirmSubmit() {
-    const rows = computeBreakdown();
-    const tbody = document.getElementById('submitBreakdownBody');
-    tbody.innerHTML = '';
-
-    const totals = { total: 0, answered: 0, notAnswered: 0, marked: 0, notVisited: 0 };
-    rows.forEach(r => {
-        totals.total += r.total; totals.answered += r.answered; totals.notAnswered += r.notAnswered;
-        totals.marked += r.marked; totals.notVisited += r.notVisited;
-        tbody.innerHTML += `
-            <tr class="border-b">
-                <td class="py-3 px-4 font-bold text-left">${r.label}</td>
-                <td class="py-3 px-4 text-center">${r.total}</td>
-                <td class="py-3 px-4 text-center text-green-600 font-bold">${r.answered}</td>
-                <td class="py-3 px-4 text-center text-red-500 font-bold">${r.notAnswered}</td>
-                <td class="py-3 px-4 text-center text-indigo-600 font-bold">${r.marked}</td>
-                <td class="py-3 px-4 text-center text-gray-500">${r.notVisited}</td>
-            </tr>`;
-    });
-    tbody.innerHTML += `
-        <tr class="bg-gray-50 font-bold">
-            <td class="py-3 px-4 text-left">Total</td>
-            <td class="py-3 px-4 text-center">${totals.total}</td>
-            <td class="py-3 px-4 text-center text-green-600">${totals.answered}</td>
-            <td class="py-3 px-4 text-center text-red-500">${totals.notAnswered}</td>
-            <td class="py-3 px-4 text-center text-indigo-600">${totals.marked}</td>
-            <td class="py-3 px-4 text-center text-gray-500">${totals.notVisited}</td>
-        </tr>`;
-
-    document.getElementById('submitModal').classList.remove('hidden');
-}
- 
-function closeSubmitModal() {
-    document.getElementById('submitModal').classList.add('hidden');
-}
-
-async function doSubmitTest(submitType = "manual") {
-    if (testSubmitted) return;
-    testSubmitted = true;
-    clearInterval(timerInterval);
-    document.getElementById('submitModal').classList.add('hidden');
-    if (document.fullscreenElement) document.exitFullscreen();
-
-    const totalTimeSpent = HAS_SUBJECT_TABS
-        ? sections.reduce((sum, sec, i) => sum + (sec.durationMinutes * 60 - sectionTimeLeft[i]), 0)
-        : (testData.duration * 60 - (window.totalSeconds ?? 0));
-
-    const payload = {
-        answers: flatQuestions.map((q, i) => ({
-            questionId: q._id,
-            selectedOptions: Array.isArray(qState[i].answer)
-                ? qState[i].answer
-                : (typeof qState[i].answer === 'number' && q.type !== 'integer' ? [qState[i].answer] : []),
-            numericAnswer: (q.type === 'integer') ? qState[i].answer : null,
-            status: qState[i].status
-        })),
-        timeTaken: totalTimeSpent,
-        submitType,
-         sessionId: testData.sessionId 
-    };
-
-    try {
-        await fetch(`/api/attempt/${testData.id}/submit`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-    } catch (err) {
-        console.error("Submit save error:", err);
-    }
-
-    document.getElementById('successModal').classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
-}
-
-function autoSubmit() {
-    document.getElementById('autoSubmitToast').classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
-    setTimeout(() => doSubmitTest("auto"), 1200);
-}
-
-// closeSuccessModal() ko replace() se update karo:
-function closeSuccessModal() {
-    document.getElementById('successModal').classList.add('hidden');
-    window.location.replace(returnUrl);
-}
-
-/* ================= INIT ================= */
-function init() {
-    bootFullscreen();
-
-    if (flatQuestions.length === 0) {
-        document.getElementById('questionNoLabel').textContent = '';
-        document.getElementById('questionText').textContent = 'No questions found for this test.';
-        document.getElementById('timerLabel').textContent = '';
-        document.getElementById('timerDisplay').textContent = '00:00';
-        if (window.lucide) lucide.createIcons();
-        return;
-    }
-
-   if (HAS_SUBJECT_TABS) {
-    sections = buildSections();
-    flatQuestions.forEach(q => {
-        q.sectionIndex = sectionIndexForSubject(subjectsOrder[q.subjectIndex]);
-    });
-
-    const order = flatQuestions.map((_, i) => i);
-    order.sort((a, b) => flatQuestions[a].sectionIndex - flatQuestions[b].sectionIndex);
-    flatQuestions = order.map(i => flatQuestions[i]);
-    qState = order.map(i => qState[i]);  
-
-    initSectionTimers();
-    renderSubjectTabs();
-
-    currentSectionIndex = 0;
-    const firstQIdx = flatQuestions.findIndex(q => q.sectionIndex === 0);
-    currentIndex = firstQIdx !== -1 ? firstQIdx : 0;
-}
-    initTimer();
-    renderQuestion();
-    if (window.lucide) lucide.createIcons();
-}
-init();
-
-
 </script>
+ 
+<script src="/js/dashboard/attempt.js" defer></script>
 
 </body>
 </html>

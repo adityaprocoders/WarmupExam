@@ -6,7 +6,7 @@
     <!-- Card -->
     <div class="relative bg-white w-full max-w-sm rounded-2xl shadow-2xl p-8 animate-[fadeIn_0.2s_ease-out]">
 
-        <button onclick="closeAuthModal()"
+        <button data-action="close-auth"
             class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl leading-none">
             &times;
         </button>
@@ -21,17 +21,17 @@
             <input type="hidden" name="returnTo" id="returnTo_login" value="">
                 <div>
                     <label class="text-xs font-semibold tracking-wide text-slate-500 uppercase">username or email address</label>
-                    <input type="string" name="email"  required
-                    oninput="this.value = this.value.toLowerCase()"
-                        class="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                     <input type="text" name="email" required autocomplete="username"
+data-oninput="lowercase"
+    class="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                 </div>
 
                 <div>
                     <label class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Password</label>
                     <div class="relative mt-1.5">
-                        <input type="password" name="password" id="loginPassword" required
-                            class="w-full rounded-lg border border-slate-200 px-4 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                        <button type="button" onclick="togglePassword('loginPassword', 'eyeIconLogin')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
+                        <input type="password" name="password" id="loginPassword" required autocomplete="current-password"
+    class="w-full rounded-lg border border-slate-200 px-4 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                        <button type="button" data-action="toggle-password" data-field="loginPassword" data-icon="eyeIconLogin" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
                             <!-- Eye Icon (Show) -->
                             <svg id="eyeIconLogin" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -43,7 +43,7 @@
 
 
                 <div class="text-right -mt-2">
-                    <button type="button" onclick="switchAuthPanel('forgot')" class="text-xs font-semibold text-indigo-600 hover:underline">
+                    <button type="button" data-action="switch-panel" data-panel="forgot" class="text-xs font-semibold text-indigo-600 hover:underline">
                         Forgot Password?
                     </button>
                 </div>
@@ -70,7 +70,7 @@
 
             <p class="text-center text-sm text-slate-500 mt-6">
                 Don't have an account?
-                <button onclick="switchAuthPanel('register')" class="text-indigo-600 font-semibold hover:underline">Register</button>
+                <button data-action="switch-panel" data-panel="register" class="text-indigo-600 font-semibold hover:underline">Register</button>
             </p>
 
         </div>
@@ -91,17 +91,17 @@
 
                 <div>
                     <label class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Email</label>
-                    <input type="email" name="email" required
-                        oninput="this.value = this.value.toLowerCase()"
+                    <input type="email" name="email" required autocomplete="email"
+                        data-oninput="lowercase"
                         class="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                 </div>
 
                 <div>
                     <label class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Password</label>
                     <div class="relative mt-1.5">
-                        <input type="password" name="password" id="registerPassword" required minlength="6"
-                            class="w-full rounded-lg border border-slate-200 px-4 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                        <button type="button" onclick="togglePassword('registerPassword', 'eyeIconRegister')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
+                        <input type="password" name="password" id="registerPassword" required minlength="6" autocomplete="new-password"
+    class="w-full rounded-lg border border-slate-200 px-4 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                        <button type="button" data-action="toggle-password" data-field="registerPassword" data-icon="eyeIconRegister" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
                             <!-- Eye Icon (Show) -->
                             <svg id="eyeIconRegister" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -132,7 +132,7 @@
 
             <p class="text-center text-sm text-slate-500 mt-6">
                 Already have an account?
-                <button onclick="switchAuthPanel('login')" class="text-indigo-600 font-semibold hover:underline">Login</button>
+                <button data-action="switch-panel" data-panel="login" class="text-indigo-600 font-semibold hover:underline">Login</button>
             </p>
 
         </div>
@@ -141,7 +141,7 @@
         <!-- ---------- FORGOT PASSWORD PANEL (Step 1: Email) ---------- -->
         <div id="forgotPanel" class="hidden">
 
-            <button onclick="switchAuthPanel('login')" class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
+            <button data-action="switch-panel" data-panel="login" class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Login
             </button>
 
@@ -151,8 +151,8 @@
             <form id="forgotEmailForm" class="space-y-4">
                 <div>
                     <label class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Email Address</label>
-                    <input type="email" id="forgotEmail" required
-                    oninput="this.value = this.value.toLowerCase()"
+                    <input type="email" id="forgotEmail" required autocomplete="email"
+                    data-oninput="lowercase"
                         class="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                 </div>
 
@@ -168,7 +168,7 @@
         <!-- ---------- FORGOT PASSWORD PANEL (Step 2: OTP + New Password) ---------- -->
         <div id="resetPanel" class="hidden">
 
-            <button onclick="switchAuthPanel('forgot')" class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
+            <button data-action="switch-panel" data-panel="forgot" class="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
             </button>
 
@@ -182,16 +182,16 @@
 
                 <div>
                     <label class="text-xs font-semibold tracking-wide text-slate-500 uppercase">OTP</label>
-                    <input type="text" id="resetOtp" required maxlength="6" inputmode="numeric" placeholder="6-digit code"
+                    <input type="text" id="resetOtp" required maxlength="6" inputmode="numeric" autocomplete="one-time-code"  placeholder="6-digit code"
                         class="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition tracking-widest text-center font-bold text-lg">
                 </div>
 
                 <div>
                     <label class="text-xs font-semibold tracking-wide text-slate-500 uppercase">New Password</label>
                     <div class="relative mt-1.5">
-                        <input type="password" id="newPassword" required minlength="6"
-                            class="w-full rounded-lg border border-slate-200 px-4 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                        <button type="button" onclick="togglePassword('newPassword', 'eyeIconReset')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
+                        <input type="password" id="newPassword" required minlength="6" autocomplete="new-password"
+    class="w-full rounded-lg border border-slate-200 px-4 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                        <button type="button" data-action="toggle-password" data-field="newPassword" data-icon="eyeIconReset" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
                             <svg id="eyeIconReset" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -209,7 +209,7 @@
 
                  <p id="otpTimerText" class="text-center text-xs text-slate-400"></p>
 
-                <button type="button" onclick="resendOtp()" id="resendOtpBtn"
+                <button type="button" data-action="resend-otp" id="resendOtpBtn"
                     class="w-full text-xs text-indigo-600 font-semibold hover:underline">
                     Resend OTP
                 </button>
@@ -220,7 +220,7 @@
 </div>
 
 
-<script src="/js/authModal.js"></script>
+<script src="/js/authModal.js" defer></script>
 
 
 

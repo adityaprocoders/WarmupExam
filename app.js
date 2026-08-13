@@ -1,12 +1,15 @@
 import dns from 'dns';
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
+
+import crypto from 'crypto';
 import dotenv from "dotenv";
 dotenv.config(); 
 
 import sanitizeMiddleware from "./middleware/sanitize.js";
 import cookieParser from "cookie-parser";
 import { doubleCsrf } from "csrf-csrf";
+import rateLimit from "express-rate-limit";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -37,9 +40,12 @@ import contentBlockRoutes from "./routes/contentBlockRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js";
 import testBuilderRoutes from "./routes/testBuilderRoutes.js";
+import ownerDailyWarmupRoutes from "./routes/ownerDailyWarmupRoutes.js";
+import dailyWarmupRoutes from "./routes/dailyWarmupRoutes.js";
 import generatePaperRoutes from "./routes/generatePaperRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import attemptRoutes from "./routes/attemptRoutes.js";
+import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import copyPasteRoutes from "./routes/copyPasteRoutes.js";
 import enrollRoutes from "./routes/enrollRoutes.js";
 import { isOwnerUser } from "./utils/authHelpers.js";
@@ -70,41 +76,81 @@ if (isProd) {
 // ---------------- SECURITY + PERFORMANCE ----------------
  
 app.use(compression());
+  
  
+app.use((req, res, next) => {
+    res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
+    next();
+});
+ 
+app.use((req, res, next) => {
+    helmet({
+        contentSecurityPolicy: isProd ? {
+            reportOnly: true,  
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: [
+                    "'self'",
+                    (req, res) => `'nonce-${res.locals.cspNonce}'`,    
+                    "https://checkout.razorpay.com",
+                    "https://cdnjs.cloudflare.com",
+                    "https://cdn.jsdelivr.net",
+                    "https://unpkg.com",
+                    "https://checkout-static-next.razorpay.com",
+                    "https://browser.sentry-cdn.com",
+                    "https://api.sardine.ai",
+                    "https://pagead2.googlesyndication.com",
+                    "https://googleads.g.doubleclick.net",
+                    "https://www.googletagservices.com",
+                    "https://adservice.google.com"
+                ],
+                styleSrc: [
+                    "'self'",
+                    "'unsafe-inline'",  
+                    "https://cdnjs.cloudflare.com",
+                    "https://cdn.jsdelivr.net",
+                    "https://fonts.googleapis.com"
+                ],
+                fontSrc: [
+                    "'self'",
+                    "https://cdnjs.cloudflare.com",
+                    "https://cdn.jsdelivr.net",
+                    "https://fonts.gstatic.com",
+                    "data:"
+                ],
+                imgSrc: ["'self'", "data:", "https:"],
+                connectSrc: [
+                    "'self'",
+                    "https://api.razorpay.com",
+                    "https://lumberjack.razorpay.com",
+                    "https://api.sardine.ai",
+                    "https://pagead2.googlesyndication.com",
+                    "https://googleads.g.doubleclick.net"
+                ],
+                frameSrc: [
+                    "https://api.razorpay.com",
+                    "https://checkout.razorpay.com",
+                    "https://googleads.g.doubleclick.net",
+                    "https://tpc.googlesyndication.com",
+                    "https://www.google.com"
+                ],
+                workerSrc: ["'self'", "blob:"],
+                manifestSrc: ["'self'"],
+                objectSrc: ["'none'"],
+                baseUri: ["'self'"],
+                formAction: ["'self'", "https://checkout.razorpay.com"],
+                frameAncestors: ["'self'"],
+                upgradeInsecureRequests: [],
+                reportUri: ['/csp-violation-report'],
+            },
+        } : false,
+        crossOriginEmbedderPolicy: false,
+        crossOriginResourcePolicy: { policy: "cross-origin" },
+    })(req, res, next);
+});
 
-// app.use(helmet({
-//     contentSecurityPolicy: isProd ? {
-//         directives: { /* ... same as before ... */ },
-//         reportOnly: true   // 👈 सिर्फ warn करेगा, block नहीं करेगा
-//     } : false,
-//     crossOriginEmbedderPolicy: false,
-//     crossOriginResourcePolicy: { policy: "cross-origin" },
-// }));
 
-app.use(helmet({
-    contentSecurityPolicy: isProd ? {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: [
-                "'self'",
-                "'unsafe-inline'",
-                "https://checkout.razorpay.com",
-                "https://cdnjs.cloudflare.com",
-                "https://cdn.jsdelivr.net",
-                "https://unpkg.com",
-                "https://checkout-static-next.razorpay.com",
-                "https://browser.sentry-cdn.com",
-                "https://api.sardine.ai"
-            ],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
-            imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https://api.razorpay.com", "https://lumberjack.razorpay.com", "https://api.sardine.ai"],
-            frameSrc: ["https://api.razorpay.com", "https://checkout.razorpay.com"],
-        },
-    } : false,
-    crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-}));
+
 
 
 app.use((req, res, next) => {
@@ -116,10 +162,14 @@ app.use((req, res, next) => {
     sanitizeMiddleware(req, res, next);
 });
 
+
 const PORT = process.env.PORT || 8080;
 
 connectDB();
 
+// cron
+
+import "./cron/dailyWarmupCron.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -163,6 +213,7 @@ app.use((req, res, next) => {
     next();
 });
 
+  
 
 // ---------------- SESSION + PASSPORT ----------------
 app.use(session({
@@ -302,9 +353,12 @@ app.use(couponRoutes);
 app.use(dashboardRoutes);
 app.use(itemRoutes);
 app.use(testBuilderRoutes);
+app.use(dailyWarmupRoutes);
+app.use(ownerDailyWarmupRoutes);
 app.use(generatePaperRoutes);
 app.use(uploadRoutes);
 app.use(attemptRoutes);
+app.use('/', leaderboardRoutes);
 app.use(copyPasteRoutes);
 app.use(profileRoutes);
 app.use("/", contactRoutes);
@@ -319,6 +373,17 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 
+
+app.post(
+    '/csp-violation-report',
+    express.json({ type: ['application/json', 'application/csp-report'] }),
+    (req, res) => {
+        console.warn('🚨 CSP Violation:', JSON.stringify(req.body, null, 2));
+        res.status(204).end();
+    }
+);
+
+
 // ---------------- 404 ----------------
 app.use((req, res, next) => {
     if (req.originalUrl === '/.well-known/appspecific/com.chrome.devtools.json') {
@@ -330,7 +395,7 @@ app.use((req, res, next) => {
     next(new ExpressError(404, "Page Not Found"));
 });
 
-
+ 
 
 app.use(errorHandler);
 

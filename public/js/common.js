@@ -9,9 +9,9 @@ function initRevealAnimations() {
     });
   }, { threshold: 0.15 });
   return io;
-} 
+}
 
- 
+
 // ================= CSRF AUTO-PROTECTION (sab forms + fetch ke liye) =================
 document.addEventListener('DOMContentLoaded', () => {
     const token = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -47,3 +47,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return originalFetch(url, options);
     };
 })();
+
+
+// adUnit
+
+// AdSense — page pe jitne bhi .adsbygoogle <ins> hain, sabko init karo
+// (data-adsbygoogle-status check se duplicate push safe rehta hai)
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('ins.adsbygoogle').forEach((ins) => {
+        if (ins.getAttribute('data-adsbygoogle-status')) return;
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+    });
+});

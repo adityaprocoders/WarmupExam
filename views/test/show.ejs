@@ -141,10 +141,12 @@
         🚀 Start Test
     </a>
 <% } else { %>
-    <button onclick="<%= listing.type === 'Free' ? 'enrollNow' : 'buyNow' %>('<%= listing._id %>', <%= !!currentUser %>)"
-       class="block w-full text-center bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700">
-        <%= listing.type === 'Free' ? 'ENROLL NOW' : 'BUY NOW' %>
-    </button>
+    <button data-action="<%= listing.type === 'Free' ? 'enroll' : 'buy' %>"
+   data-id="<%= listing._id %>"
+   data-logged-in="<%= !!currentUser %>"
+   class="block w-full text-center bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700">
+    <%= listing.type === 'Free' ? 'ENROLL NOW' : 'BUY NOW' %>
+</button>
 <% } %>
           
     </div>
@@ -180,14 +182,16 @@
         🚀 Start Test
     </a>
 <% } else { %>
-    <button onclick="<%= listing.type === 'Free' ? 'enrollNow' : 'buyNow' %>('<%= listing._id %>', <%= !!currentUser %>)"
-       class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700">
-        <%= listing.type === 'Free' ? 'ENROLL NOW' : 'BUY NOW' %>
-    </button>
+    <button data-action="<%= listing.type === 'Free' ? 'enroll' : 'buy' %>"
+   data-id="<%= listing._id %>"
+   data-logged-in="<%= !!currentUser %>"
+   class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700">
+    <%= listing.type === 'Free' ? 'ENROLL NOW' : 'BUY NOW' %>
+</button>
 <% } %>
 </div>
 
-<script src="/js/enrollment.js"></script>
+<script src="/js/enrollment.js" defer></script>
 
 
 

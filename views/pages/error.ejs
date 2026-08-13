@@ -1,4 +1,36 @@
-<style>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Something Went Wrong | WarmupExam</title>
+
+    <!--
+      NOTE: This meta CSP tag is a FALLBACK only.
+      Once helmet is installed, set the CSP via the response HEADER instead
+      (headers are stronger than meta tags — meta CSP can't set frame-ancestors,
+      report-uri, or block some attack vectors). Keep this meta tag removed
+      or in sync with the helmet config to avoid confusion later.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' https://cdn.jsdelivr.net 'nonce-<%= cspNonce %>';
+        style-src 'self' https://fonts.googleapis.com 'nonce-<%= cspNonce %>';
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data:;
+        connect-src 'self';
+        object-src 'none';
+        base-uri 'self';
+        frame-ancestors 'self';
+    ">
+
+    <link rel="stylesheet" href="/css/output.css">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js" nonce="<%= cspNonce %>"></script>
+
+    <style nonce="<%= cspNonce %>">
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
   .err500-wrap{
@@ -179,16 +211,6 @@
     .err500-wrap h1.title{ font-size:22px; }
   }
 </style>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Something Went Wrong | WarmupExam</title>
-    <link rel="stylesheet" href="/css/output.css">
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 <body>
 
@@ -230,12 +252,9 @@
 
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
   if (window.lucide) { lucide.createIcons(); }
 </script>
 
 </body>
 </html>
-
-
-

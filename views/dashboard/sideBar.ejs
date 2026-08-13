@@ -1,7 +1,10 @@
+<link rel="stylesheet" href="/css/sidebar.css">
+ 
+
 <!-- Overlay -->
 <div
     id="overlay"
-    onclick="toggleSidebar()"
+    data-action="toggle-sidebar"
     class="fixed inset-0 bg-black/40 hidden z-40 md:hidden">
 </div>
 
@@ -49,7 +52,7 @@ overflow-y-auto">
 </div>
 
         <button
-            onclick="toggleSidebar()"
+            data-action="toggle-sidebar"
             class="p-2 rounded-lg hover:bg-slate-100">
 
             <i data-lucide="x"></i>
@@ -61,7 +64,7 @@ overflow-y-auto">
     <!-- Batch -->
     <button
     id="batchBtn"
-    onclick="toggleBatchModal()"
+   data-action="toggle-batch-modal"
     class="w-full flex items-center justify-between p-3 mb-6 bg-slate-50 border rounded-xl hover:bg-slate-100">
 
     <div class="text-left">
@@ -97,9 +100,12 @@ overflow-y-auto">
 
     <!-- Dashboard -->
 
-    <a href="/series/<%= listing.slug %>" 
+     <a href="/series/<%= listing.slug %>" 
    class="flex items-center gap-3 rounded-xl p-3 font-semibold transition
-   <%= ((typeof currentSection === 'undefined' || !currentSection) && !(typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)) ? 'bg-indigo-600 text-white' : 'text-black hover:bg-slate-100' %>">
+   <%= ((typeof currentSection === 'undefined' || !currentSection) 
+        && !(typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)
+        && !(typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)) 
+        ? 'bg-indigo-600 text-white' : 'text-black hover:bg-slate-100' %>">
 
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="3" y="3" width="8" height="8" rx="2" fill="#6366f1"/>
@@ -128,99 +134,112 @@ overflow-y-auto">
         Practice Zones
     </h3>
     <% if (currentUser.role === 'owner') { %>
-    <button type="button" id="selectModeBtn" onclick="toggleSelectMode()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+    <button type="button" id="selectModeBtn" data-action="toggle-select-mode" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
         Select
     </button>
     <% } %>
 </div>
 
 
-   <ul class="space-y-2">
+   <ul class="space-y-2.5">
+
+    <!-- Daily Warmup (static, sections loop se pehle) -->
+<li class="rounded-2xl overflow-hidden transition-all duration-300 shadow-lg shadow-orange-200/60
+    <%= (typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)
+        ? 'scale-[1.02] bg-indigo-600'
+        : 'hover:scale-[1.01]' %>"
+    <% if (typeof isDailyWarmupPage === 'undefined' || !isDailyWarmupPage) { %>
+        style="background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);"
+    <% } %>>
+    <a href="/series/<%= listing.slug %>/daily-warmup" class="flex items-center gap-3 p-3 relative z-10">
+        <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+            <%= (typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage) ? 'bg-white/20' : 'bg-white/20' %>">
+            <i class="fa-solid fa-bolt text-sm text-white"></i>
+        </span>
+        <span class="font-semibold text-sm flex-1 truncate text-white">
+            Daily Warmup
+        </span>
+    </a>
+</li>
 
 <% sections.forEach(section => { %>
-    <% 
-      
+    <%
         const isActive = (currentSection && currentSection._id.toString() === section._id.toString());
+        const isFeatured = section.featured; // future-proof: agar model me flag ho
     %>
 
     <li
         id="section-item-<%= section._id %>"
-        class="group flex items-center justify-between rounded-xl p-3 transition border border-transparent 
-        <%= isActive ? 'bg-indigo-600' : 'hover:bg-indigo-50 hover:border-indigo-200' %>">
-            
+        class="group relative rounded-2xl transition
+        <%= isFeatured
+            ? 'featured-card bg-gradient-to-r from-orange-400 to-amber-500 shadow-md'
+            : (isActive ? 'bg-indigo-600' : 'bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-sm') %>">
 
-        <% if (currentUser.role === 'owner') { %>
-    <input
-        type="checkbox"
-        class="section-select-checkbox hidden mr-2 w-4 h-4 rounded text-indigo-600"
-        data-section-id="<%= section._id %>"
-        onclick="event.stopPropagation(); updateSelectedCount();">
-    <% } %>
+        <div class="flex items-center justify-between p-3">
 
-        <!-- Clickable Section -->
-        <a href="/series/<%= listing.slug %>?section=<%= section._id %>" class="flex items-center gap-3 flex-1">
-            <i class="<%= section.icon %> text-xl <%= isActive ? 'text-white' : 'text-slate-700' %>"></i>
-            
-            <span id="title-text-<%= section._id %>" 
-                  class="font-medium <%= isActive ? 'text-white' : 'text-slate-700' %>">
-                <%= section.title %>
-            </span>
-        </a>
-
-        <!-- Hidden Edit Form -->
-        <form
-            id="form-<%= section._id %>"
-            action="/section/<%= section._id %>?_method=PUT"
-            method="POST"
-            class="hidden flex-1 mx-3">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <% if (currentUser.role === 'owner') { %>
             <input
-                type="text"
-                name="title"
-                id="input-<%= section._id %>"
-                value="<%= section.title %>"
-                class="w-full font-medium border-b-2 border-indigo-200 outline-none bg-transparent text-white">
-        </form>
+                type="checkbox"
+                class="section-select-checkbox hidden mr-2 w-4 h-4 rounded text-indigo-600 shrink-0"
+                data-section-id="<%= section._id %>"
+                data-action="section-checkbox">
+            <% } %>
 
-         <!-- Actions -->
-<% if (currentUser.role === 'owner') { %>
-<div class="hidden group-hover:flex gap-3 items-center">
-    <button
-        type="button"
-        onclick="openCopyModal('section', '<%= section._id %>')"
-        class="<%= isActive ? 'text-indigo-100 hover:text-white' : 'text-slate-400 hover:text-indigo-600' %>">
-        <i class="fa-solid fa-share"></i>
-    </button>
-    <!-- Edit -->
-    <button
-        type="button"
-        id="edit-btn-<%= section._id %>"
-        onclick="toggleEdit('<%= section._id %>')"
-        class="<%= isActive ? 'text-indigo-100 hover:text-white' : 'text-slate-400 hover:text-indigo-600' %>">
-        <i class="fa-solid fa-pen"></i>
-    </button>
+            <!-- Clickable Section -->
+            <a href="/series/<%= listing.slug %>?section=<%= section._id %>"
+               class="flex items-center gap-3 flex-1 min-w-0">
+                <i class="<%= section.icon %> text-lg shrink-0
+                    <%= isFeatured ? 'text-white' : (isActive ? 'text-white' : 'text-slate-500') %>"></i>
 
-    <!-- Save -->
-    <button
-        type="button"
-        id="save-btn-<%= section._id %>"
-        onclick="document.getElementById('form-<%= section._id %>').submit()"
-        class="hidden <%= isActive ? 'text-green-300' : 'text-green-600' %>">
-        <i class="fa-solid fa-check"></i>
-    </button>
+                <span id="title-text-<%= section._id %>"
+                      class="font-semibold text-sm truncate
+                      <%= isFeatured ? 'text-white' : (isActive ? 'text-white' : 'text-slate-700') %>">
+                    <%= section.title %>
+                </span>
+            </a>
 
-    <!-- Delete -->
-    <form action="/section/<%= section._id %>?_method=DELETE" method="POST">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <button
-            type="submit"
-            class="<%= isActive ? 'text-indigo-100 hover:text-red-300' : 'text-slate-400 hover:text-red-600' %>">
-            <i class="fa-solid fa-trash"></i>
-        </button>
-    </form>
-</div>
-<% } %>
-        
+            <!-- Hidden Edit Form -->
+            <form
+                id="form-<%= section._id %>"
+                action="/section/<%= section._id %>?_method=PUT"
+                method="POST"
+                class="hidden flex-1 mx-3">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input
+                    type="text"
+                    name="title"
+                    id="input-<%= section._id %>"
+                    value="<%= section.title %>"
+                    class="w-full font-medium border-b-2 border-indigo-200 outline-none bg-transparent text-white">
+            </form>
+
+            <!-- Owner Actions -->
+            <% if (currentUser.role === 'owner') { %>
+            <div class="hidden group-hover:flex gap-2.5 items-center shrink-0">
+                <button type="button" data-action="open-copy-modal" data-copy-type="section" data-copy-id="<%= section._id %>"
+                    class="<%= (isActive || isFeatured) ? 'text-white/80 hover:text-white' : 'text-slate-400 hover:text-indigo-600' %>">
+                    <i class="fa-solid fa-share text-xs"></i>
+                </button>
+                <button type="button" id="edit-btn-<%= section._id %>" data-action="toggle-edit" data-id="<%= section._id %>"
+                    class="<%= (isActive || isFeatured) ? 'text-white/80 hover:text-white' : 'text-slate-400 hover:text-indigo-600' %>">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                </button>
+                <button type="button" id="save-btn-<%= section._id %>" data-action="save-section" data-id="<%= section._id %>"
+                    class="hidden text-green-500">
+                    <i class="fa-solid fa-check text-xs"></i>
+                </button>
+                <form action="/section/<%= section._id %>?_method=DELETE" method="POST">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="<%= (isActive || isFeatured) ? 'text-white/80 hover:text-red-200' : 'text-slate-400 hover:text-red-600' %>">
+                        <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                </form>
+            </div>
+            <% } else { %>
+                <i data-lucide="chevron-right" class="w-4 h-4 shrink-0 <%= isFeatured || isActive ? 'text-white' : 'text-slate-300' %>"></i>
+            <% } %>
+
+        </div>
     </li>
 <% }) %>
 
@@ -232,7 +251,7 @@ overflow-y-auto">
 <% if (currentUser.role === 'owner') { %>
 <button
     type="button"
-    onclick="showAddSection()"
+   data-action="show-add-section"
     class="mt-6 w-full py-3 rounded-xl bg-slate-900 text-white">
     + Add Section
 </button>
@@ -281,30 +300,15 @@ overflow-y-auto">
 
  
     <!-- Analysis -->
-
-    <!-- <div class="mt-10 border-t pt-6">
-
-        <h3
-            class="text-xs uppercase tracking-widest text-slate-400 font-bold mb-4">
-
-            Analysis
-
-        </h3>
-
-        <a
-
-            href="#"
-
-            class="flex items-center gap-3 rounded-lg p-3 hover:bg-slate-100">
-
-            <i data-lucide="trophy"></i>
-
-            Leaderboard
-
-        </a>
-
-    </div> -->
-
+    
+    <!-- <div class="mt-8 border-t pt-5">
+    <a href="/series/<%= listing.slug %>/leaderboard"
+       class="flex items-center gap-3 rounded-xl p-3 hover:bg-slate-100 font-semibold text-slate-700">
+        <i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i>
+        Leaderboard
+    </a> -->
+</div>
+     
 </aside>
  
 
@@ -316,7 +320,7 @@ overflow-y-auto">
         <!-- Header -->
         <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
             <h2 class="text-lg font-bold text-slate-900">Select your batch</h2>
-            <button onclick="toggleBatchModal()" class="text-slate-400 hover:text-slate-700 transition">
+            <button data-action="toggle-batch-modal" class="text-slate-400 hover:text-slate-700 transition">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
@@ -328,7 +332,7 @@ overflow-y-auto">
                 <input
                     type="text"
                     id="batchSearchInput"
-                    oninput="filterBatchList()"
+                    data-oninput="filter-batch-list"
                     placeholder="Search for your batches"
                     class="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
@@ -385,7 +389,7 @@ overflow-y-auto">
         <!-- Continue Button -->
         <div class="p-4 border-t border-slate-100">
             <button
-                onclick="continueBatchSelection()"
+                data-action="continue-batch-selection"
                 class="w-full py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition">
                 Continue
             </button>
@@ -400,38 +404,24 @@ overflow-y-auto">
     <span id="selectedCountText" class="text-sm font-semibold">0 selected</span>
 
     <div class="relative">
-        <button type="button" onclick="toggleBulkCopyDropdown()" class="bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+        <button type="button" data-action="toggle-bulk-copy-dropdown" class="bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
             Copy <i class="fa-solid fa-chevron-down text-xs"></i>
         </button>
         <div id="bulkCopyDropdown" class="hidden absolute bottom-full mb-2 left-0 w-56 bg-white text-slate-800 rounded-xl shadow-lg py-1.5 border border-slate-100">
-            <button type="button" onclick="openBulkCopyModal('single')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">
+            <button type="button" data-action="open-bulk-copy-modal" data-mode="single" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">
                 Copy to one series
             </button>
-            <button type="button" onclick="openBulkCopyModal('multiple')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">
+            <button type="button" data-action="open-bulk-copy-modal" data-mode="multiple" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">
                 Copy to multiple series
             </button>
         </div>
     </div>
 
-    <button type="button" onclick="toggleSelectMode()" class="text-sm text-slate-300 hover:text-white">
+    <button type="button" data-action="toggle-select-mode" class="text-sm text-slate-300 hover:text-white">
         Cancel
     </button>
 </div>
+ 
+ 
 
-<%- include("./bulkCopyModal.ejs") %>
-
-
-<style>
-.icon-premium {
-    background: linear-gradient(135deg, #6366f1, #a855f7, #f59e0b);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    -webkit-text-fill-color: transparent;
-}
-</style>
-
-<script src="/js/sideBar.js"></script>
-
-
-
+<script src="/js/dashboard/sideBar.js" defer></script>

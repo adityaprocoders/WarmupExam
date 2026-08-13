@@ -1,0 +1,4 @@
+#appModal.open { display: block; }
+.scrollbar-thin::-webkit-scrollbar { height: 6px; width: 6px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+.progress-track { background: #eef0f4; }
