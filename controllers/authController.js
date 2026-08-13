@@ -74,7 +74,10 @@ export const deleteLoginHistoryEntry = async (req, res) => {
   }
 };
 
-export const ownerDashboard = (req, res) => res.render("owner/dashboard", { user: req.user });
+export const ownerDashboard = (req, res) => res.render("owner/dashboard", { 
+    user: req.user,
+    robots: "noindex, nofollow"
+});
 
 export const renderRegister = (req, res) => res.redirect("/?showLogin=true");
 

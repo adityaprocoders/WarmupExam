@@ -86,7 +86,6 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
     helmet({
         contentSecurityPolicy: isProd ? {
-            reportOnly: true,  
             directives: {
                 defaultSrc: ["'self'"],
                 scriptSrc: [
@@ -250,7 +249,6 @@ app.use((req, res, next) => {
         "/alltests",
         "/tests",
         "/test",
-        "/profile",
         "/attempt",    
         "/api/attempt",
         "/content-blocks",

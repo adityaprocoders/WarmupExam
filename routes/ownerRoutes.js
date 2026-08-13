@@ -26,6 +26,11 @@ import { getLoginHistory, deleteLoginHistory } from "../controllers/ownerControl
 
 const router = express.Router();
 
+router.use((req, res, next) => {
+    res.locals.robots = "noindex, nofollow";
+    next();
+});
+
 router.get("/api/owner/dashboard/stats", isOwner, getDashboardStats);
 router.get("/api/owner/dashboard/charts", isOwner, getChartData);
 router.get("/api/owner/testseries", isOwner, getAllTestSeriesOwner);
