@@ -54,12 +54,12 @@ export const showInstructions = async (req, res) => {
             ? `This test has not started yet. It will begin at ${formatDateTime(publishAt)}.`
             : "This test is no longer available because its time window has expired.";
 
-        return res.status(200).send(`
-            <div class="bg-white rounded-2xl p-8 max-w-md mx-auto text-center">
-                <p class="text-slate-700 font-medium mb-4">${message}</p>
-                <button onclick="closeInstructionsModal()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl">Close</button>
-            </div>
-        `);
+         return res.status(200).send(`
+    <div class="bg-white rounded-2xl p-8 max-w-md mx-auto text-center">
+        <p class="text-slate-700 font-medium mb-4">${message}</p>
+        <button data-action="close-instructions" class="bg-indigo-600 text-white px-6 py-2 rounded-xl">Close</button>
+    </div>
+`);
     }
 
     const listing = await Listing.findById(test.listing).select("exam title");
