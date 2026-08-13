@@ -102,6 +102,8 @@ export const createOrder = async (req, res) => {
     });
 };
 
+
+
 export const verifyPayment = async (req, res) => {
     const {
         razorpay_order_id,
@@ -121,8 +123,17 @@ export const verifyPayment = async (req, res) => {
         return res.status(400).json({ success: false, message: "Payment verification failed" });
     }
 
+    const order = await razorpayInstance.orders.fetch(razorpay_order_id);
+
+    if (
+        order.notes.listingId !== listingId ||
+        order.notes.userId !== String(req.user._id)
+    ) {
+        return res.status(400).json({ success: false, message: "Order details mismatch" });
+    }
+
     const listing = await Listing.findById(listingId);
-    if (!listing) throw new ExpressError(404, "Test Series Not Found");
+    if (!listing) throw new ExpressError(404, "Test Series Not Found")
 
     const user = await User.findById(req.user._id);
 
@@ -139,7 +150,7 @@ export const verifyPayment = async (req, res) => {
             expiresAt,
             paymentId: razorpay_payment_id,
             orderId: razorpay_order_id,
-            amountPaid: listing.price
+            amountPaid: order.amount / 100 
         });
         await user.save();
 

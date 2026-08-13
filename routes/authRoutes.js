@@ -27,7 +27,7 @@ router.post("/register", authLimiter, validateBody(registerSchema), wrapAsync(au
 router.get("/login", isLoggedOut, authController.renderLogin);
 router.post("/login", authLimiter, validateBody(loginSchema), authController.login);
 
-router.post("/forgot-password", validateBody(forgotPasswordSchema), wrapAsync(forgotPassword));
+router.post("/forgot-password", otpLimiter, validateBody(forgotPasswordSchema), wrapAsync(forgotPassword));
 router.post("/reset-password", authLimiter, validateBody(resetPasswordSchema), wrapAsync(resetPassword));
 
 router.get("/auth/google", passport.authenticate("user-google", { scope: ["profile", "email"] }));

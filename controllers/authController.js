@@ -222,8 +222,7 @@ export const forgotPassword = async (req, res) => {
     user.resetOtp = otp;
     user.resetOtpExpiry = otpExpiry;
     await user.save();
-
-    console.log("🔑 Generated OTP for", cleaned, ":", otp); // debug — production mein hata dena
+ 
 
     try {
         const { data, error } = await resend.emails.send({
@@ -242,7 +241,7 @@ export const forgotPassword = async (req, res) => {
             `
         });
 
-        console.log("📧 Resend response — data:", data, "error:", error); // debug
+         
 
         if (error) {
             console.error("❌ OTP mail error:", error);

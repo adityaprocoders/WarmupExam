@@ -27,5 +27,24 @@ function makeCloudinaryStorage(folder, transformation) {
 const listingStorage = makeCloudinaryStorage("warmupexam/listings", [{ width: 1200, crop: "limit" }]);
 const avatarStorage = makeCloudinaryStorage("warmupexam/avatars", [{ width: 400, height: 400, crop: "fill", gravity: "face" }]);
 
-export const upload = multer({ storage: listingStorage, limits: { fileSize: 5 * 1024 * 1024 } });
-export const uploadAvatar = multer({ storage: avatarStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+
+const imageFileFilter = (req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.mimetype)) {
+        return cb(new Error("Invalid file type. Only JPEG, PNG, WEBP allowed"));
+    }
+    cb(null, true);
+};
+
+export const upload = multer({
+    storage: listingStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: imageFileFilter         
+});
+
+export const uploadAvatar = multer({
+    storage: avatarStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: imageFileFilter      
+});

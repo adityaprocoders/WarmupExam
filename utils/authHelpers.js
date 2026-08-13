@@ -15,6 +15,10 @@ export function checkEnrollment(req, listingId) {
             return false;
         }
 
+        if (e.suspendedByOwner) {          
+            return false;
+        }
+
         return true;
     });
 }
