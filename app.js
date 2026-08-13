@@ -92,6 +92,7 @@ app.use((req, res, next) => {
                      "'self'",
                      (req, res) => `'nonce-${res.locals.cspNonce}'`,    
                      "https://checkout.razorpay.com",
+                     "https://cdn.razorpay.com",
                      "https://cdnjs.cloudflare.com",
                      "https://cdn.jsdelivr.net",
                      "https://unpkg.com",
@@ -130,7 +131,8 @@ app.use((req, res, next) => {
                     "https://pagead2.googlesyndication.com",
                     "https://googleads.g.doubleclick.net",
                     "https://ep1.adtrafficquality.google",
-                    "https://*.adtrafficquality.google"
+                    "https://*.adtrafficquality.google",
+                    "https://csi.gstatic.com" 
                     ],
                 frameSrc: [
                     "https://api.razorpay.com",
