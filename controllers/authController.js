@@ -27,13 +27,10 @@ export const ownerLogin = (req, res, next) => {
         req.login(owner, async (err) => {
             if (err) return next(err);
 
-            // 👇 yahan hona chahiye tha — async callback ke andar
             const newSessionId = generateSessionId();
-            owner.activeSessionId = newSessionId;
-            
-            // req.session.currentSessionId = newSessionId;
-            // await owner.save();
-           
+owner.activeSessionId = newSessionId;
+req.session.currentSessionId = newSessionId;
+await owner.save();
 
             await logOwnerLogin(req, owner);
 

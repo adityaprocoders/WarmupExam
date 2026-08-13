@@ -119,12 +119,15 @@ app.use((req, res, next) => {
                 ],
                 imgSrc: ["'self'", "data:", "https:"],
                 connectSrc: [
-                    "'self'",
-                    "https://api.razorpay.com",
-                    "https://lumberjack.razorpay.com",
-                    "https://api.sardine.ai",
-                    "https://pagead2.googlesyndication.com",
-                    "https://googleads.g.doubleclick.net"
+                   "'self'",
+                   "https://unpkg.com",
+                   "https://api.razorpay.com",
+                   "https://lumberjack.razorpay.com",
+                   "https://api.sardine.ai",
+                   "https://pagead2.googlesyndication.com",
+                   "https://googleads.g.doubleclick.net",
+                   "https://ep1.adtrafficquality.google",
+                   "https://*.adtrafficquality.google"
                 ],
                 frameSrc: [
                     "https://api.razorpay.com",
