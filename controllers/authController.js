@@ -27,11 +27,9 @@ export const ownerLogin = (req, res, next) => {
         req.login(owner, async (err) => {
             if (err) return next(err);
 
-            const newSessionId = generateSessionId();
-owner.activeSessionId = newSessionId;
-req.session.currentSessionId = newSessionId;
-await owner.save();
-
+             const newSessionId = generateSessionId();
+            req.session.currentSessionId = newSessionId;
+ 
             await logOwnerLogin(req, owner);
 
             await LoginHistory.create({
