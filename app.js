@@ -180,6 +180,9 @@ const __dirname = path.dirname(__filename);
 
 
 app.get("/sw.js", (req, res) => {
+    if (!isProd) {
+        return res.status(404).end();
+    }
     res.set("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.join(__dirname, "public", "sw.js"));
 });
