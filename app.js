@@ -135,7 +135,8 @@ app.use((req, res, next) => {
                     "https://checkout.razorpay.com",
                     "https://googleads.g.doubleclick.net",
                     "https://tpc.googlesyndication.com",
-                    "https://www.google.com"
+                    "https://www.google.com",
+                    "https://*.adtrafficquality.google"
                 ],
                 workerSrc: ["'self'", "blob:"],
                 manifestSrc: ["'self'"],
