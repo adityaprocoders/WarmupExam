@@ -200,7 +200,7 @@
 
 
 <% if (isOwner) { %>
-    <script>
+    <script nonce="<%= cspNonce %>">
         window.CURRENT_LISTING_ID = "<%= listing._id %>";
     </script>
     <script src="/js/owner/contentBlocks.js" defer></script>

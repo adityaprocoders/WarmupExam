@@ -135,7 +135,7 @@
 </div>
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
   window.__leaderboardConfig = {
     slug: <%- JSON.stringify(listing.slug) %>,
     sectionId: <%- JSON.stringify(sectionId || 'all') %>,

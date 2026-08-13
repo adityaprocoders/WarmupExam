@@ -112,7 +112,7 @@
     </div>
 
     <!-- Real attempt data server se aata hai -->
-    <script>
+    <script nonce="<%= cspNonce %>">
         window.ANALYSIS_DATA = <%- safeJsonStringify(analysisData) %>;
     </script>
 
