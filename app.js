@@ -88,21 +88,22 @@ app.use((req, res, next) => {
         contentSecurityPolicy: isProd ? {
             directives: {
                 defaultSrc: ["'self'"],
-                scriptSrc: [
-                    "'self'",
-                    (req, res) => `'nonce-${res.locals.cspNonce}'`,    
-                    "https://checkout.razorpay.com",
-                    "https://cdnjs.cloudflare.com",
-                    "https://cdn.jsdelivr.net",
-                    "https://unpkg.com",
-                    "https://checkout-static-next.razorpay.com",
-                    "https://browser.sentry-cdn.com",
-                    "https://api.sardine.ai",
-                    "https://pagead2.googlesyndication.com",
-                    "https://googleads.g.doubleclick.net",
-                    "https://www.googletagservices.com",
-                    "https://adservice.google.com"
-                ],
+                 scriptSrc: [
+                     "'self'",
+                     (req, res) => `'nonce-${res.locals.cspNonce}'`,    
+                     "https://checkout.razorpay.com",
+                     "https://cdnjs.cloudflare.com",
+                     "https://cdn.jsdelivr.net",
+                     "https://unpkg.com",
+                     "https://checkout-static-next.razorpay.com",
+                     "https://browser.sentry-cdn.com",
+                     "https://api.sardine.ai",
+                     "https://pagead2.googlesyndication.com",
+                     "https://googleads.g.doubleclick.net",
+                     "https://www.googletagservices.com",
+                     "https://adservice.google.com",
+                     "https://*.adtrafficquality.google"
+                 ],
                 styleSrc: [
                     "'self'",
                     "'unsafe-inline'",  
