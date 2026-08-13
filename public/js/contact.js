@@ -5,42 +5,47 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!contactForm) return;
 
     contactForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
+    e.preventDefault();
 
-        const btn = document.getElementById('contactSubmitBtn');
-        const btnText = document.getElementById('contactBtnText');
+    const btn = document.getElementById('contactSubmitBtn');
+    const btnText = document.getElementById('contactBtnText');
 
-        const formData = {
-            name: this.name.value,
-            email: this.email.value,
-            subject: this.subject.value,
-            message: this.message.value
-        };
+    const formData = {
+        name: this.name.value,
+        email: this.email.value,
+        subject: this.subject.value,
+        message: this.message.value
+    };
 
-        btn.disabled = true;
-        btnText.textContent = "Sending...";
+    btn.disabled = true;
+    btnText.textContent = "Sending...";
 
-        try {
-            const res = await fetch('/contact', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            const data = await res.json();
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
-            if (data.success) {
-                showContactPopup(true, "Message Sent Successfully!", "We'll get back to you within 24 hours.");
-                this.reset();
-            } else {
-                showContactPopup(false, "Something Went Wrong", data.message || "Please try again.");
-            }
-        } catch (err) {
-            showContactPopup(false, "Network Error", "Please check your connection and try again.");
+        const res = await fetch('/contact', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-csrf-token': csrfToken
+            },
+            body: JSON.stringify(formData)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showContactPopup(true, "Message Sent Successfully!", "We'll get back to you within 24 hours.");
+            this.reset();
+        } else {
+            showContactPopup(false, "Something Went Wrong", data.message || "Please try again.");
         }
-
+    } catch (err) {
+        showContactPopup(false, "Network Error", "Please check your connection and try again.");
+    } finally {
         btn.disabled = false;
         btnText.textContent = "Send Message";
-    });
+    }
+});
 
     function showContactPopup(isSuccess, title, subtitle) {
         const existing = document.getElementById('contactPopupOverlay');

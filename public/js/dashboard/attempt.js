@@ -169,7 +169,7 @@ function renderSubjectTabs() {
         btn.dataset.sectionTab = idx;
         btn.className = 'subject-tab whitespace-nowrap px-4 py-2.5 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-indigo-500 active:scale-95 transition';
         btn.textContent = sec.label;
-        btn.onclick = () => switchSection(idx);
+        btn.addEventListener('click', () => switchSection(idx));
         bar.appendChild(btn);
     });
 }
