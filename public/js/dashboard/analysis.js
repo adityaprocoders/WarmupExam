@@ -92,8 +92,16 @@
             document.getElementById('bar-attempt').style.width = attemptPct + '%';
 
             document.getElementById('an-time').innerText = data.timeTaken;
-            document.getElementById('an-rank').innerText = fmt(data.rank);
 
+const rankCard = document.getElementById('rank-card');
+const hasValidRank = data.rank !== null && data.rank !== undefined && data.rank !== '' && Number(data.rank) > 0;
+
+if (hasValidRank) {
+    rankCard.classList.remove('hidden');
+    document.getElementById('an-rank').innerText = fmt(data.rank);
+} else {
+    rankCard.classList.add('hidden');
+}
             document.getElementById('an-accuracy').innerText = data.accuracy;
             document.getElementById('bar-accuracy').style.width = data.accuracy + '%';
 

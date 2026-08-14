@@ -24,13 +24,15 @@
         <h3 class="text-2xl font-bold"><%= dashboardStats ? dashboardStats.avgAccuracy : 0 %>%</h3>
       </div>
     </div>
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
-      <div class="p-3 bg-blue-100 rounded-full text-blue-500 mr-4"><i class="fa-solid fa-trophy"></i></div>
-      <div>
-        <p class="text-sm text-gray-400">Current AIR Rank</p>
-        <h3 class="text-2xl font-bold"><%= dashboardStats ? dashboardStats.currentRank : '--' %></h3>
-      </div>
-    </div>
+    <% if (dashboardStats && dashboardStats.currentRank) { %>
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+  <div class="p-3 bg-blue-100 rounded-full text-blue-500 mr-4"><i class="fa-solid fa-trophy"></i></div>
+  <div>
+    <p class="text-sm text-gray-400">Current AIR Rank</p>
+    <h3 class="text-2xl font-bold"><%= dashboardStats.currentRank %></h3>
+  </div>
+</div>
+<% } %>
   </div>
 
   <!-- Performance and Activity -->
