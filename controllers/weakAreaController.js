@@ -31,7 +31,6 @@ const statusFromPct = (pct) => {
     return "Good";
 };
 
-// Attempted-wale pehle (weakest se strongest), unattempted-wale hamesha baad me
 const attemptFirstSort = (a, b) => {
     if (a.attemptedQs > 0 && b.attemptedQs === 0) return -1;
     if (a.attemptedQs === 0 && b.attemptedQs > 0) return 1;
@@ -76,7 +75,6 @@ export const showWeakAreas = async (req, res) => {
         });
     }
 
-    // Hamesha saare attempted tests ka combined weak-area analysis
     const testFilterIds = allTestIds;
 
     const attempts = await Attempt.find({
@@ -102,7 +100,10 @@ export const showWeakAreas = async (req, res) => {
     tqMappings.forEach(m => {
         marksMap[`${m.test}_${m.question}`] = {
             positiveMarks: m.positiveMarks || 0,
-            negativeMarks: m.negativeMarks || 0
+            negativeMarks: m.negativeMarks || 0,
+            subject: m.subject || "",     // 👈 NAYA
+            topic: m.topic || "",         // 👈 NAYA
+            subTopic: m.subTopic || ""    // 👈 NAYA
         };
     });
 
@@ -115,11 +116,14 @@ export const showWeakAreas = async (req, res) => {
             const q = a.question;
             if (!q) return;
 
-            const subject = q.subject;
-            const topic = q.topic;
-            const subTopic = q.subTopic && q.subTopic.trim() ? q.subTopic : topic;
+            const marks = marksMap[`${attempt.test}_${q._id}`] || { positiveMarks: 0, negativeMarks: 0, subject: "", topic: "", subTopic: "" };
+
+            // 👇 CHANGED: subject/topic ab mapping se, fallback q se (purana data)
+            const subject = marks.subject || q.subject;
+            const topic = marks.topic || q.topic;
+            const subTopic = (marks.subTopic && marks.subTopic.trim()) ? marks.subTopic : ((q.subTopic && q.subTopic.trim()) ? q.subTopic : topic);
+
             const { attempted, isCorrect } = evaluateAnswer(q, a);
-            const marks = marksMap[`${attempt.test}_${q._id}`] || { positiveMarks: 0, negativeMarks: 0 };
 
             if (!subjectStats[subject]) subjectStats[subject] = { correct: 0, wrong: 0, skipped: 0, total: 0 };
             subjectStats[subject].total += 1;
@@ -146,7 +150,6 @@ export const showWeakAreas = async (req, res) => {
         });
     });
 
-    // ---- subjects[] : attempted-weak pehle, phir unattempted ----
     const subjects = Object.entries(subjectStats).map(([subject, s], idx) => {
         const attemptedQs = s.correct + s.wrong;
         const pct = attemptedQs > 0 ? Math.round((s.correct / attemptedQs) * 100) : 0;
@@ -205,7 +208,6 @@ export const showWeakAreas = async (req, res) => {
         }).sort(attemptFirstSort);
     }
 
-    // ---- Har subject ke saare topics (dropdown ke liye) ----
     const topicsBySubject = {};
     Object.entries(topicStats).forEach(([subject, tMap]) => {
         topicsBySubject[subject] = Object.entries(tMap).map(([topic, t]) => {
@@ -223,7 +225,6 @@ export const showWeakAreas = async (req, res) => {
         }).sort(attemptFirstSort);
     });
 
-    // ---- Har subject+topic ke saare subtopics (dropdown ke liye) ----
     const subtopicsByTopic = {};
     Object.entries(subtopicStats).forEach(([subject, tMap]) => {
         Object.entries(tMap).forEach(([topic, stMap]) => {
@@ -240,14 +241,13 @@ export const showWeakAreas = async (req, res) => {
         });
     });
 
-    // ---- Top 5 weakest topics — marksLost/wrong/subject rakhe, sirf display ke liye strip baad me ----
     const weakAreasFull = Object.entries(topicStats)
         .flatMap(([subject, tMap]) => Object.entries(tMap).map(([topic, t]) => {
             const attemptedQs = t.correct + t.wrong;
             const pct = attemptedQs > 0 ? Math.round((t.correct / attemptedQs) * 100) : 0;
             return { name: topic, subject, pct, qs: t.total, attemptedQs, wrong: t.wrong, marksLost: t.marksLost };
         }))
-        .filter(t => t.attemptedQs > 0 && t.pct <= 60) // sirf real weakness
+        .filter(t => t.attemptedQs > 0 && t.pct <= 60)
         .sort((a, b) => a.pct - b.pct)
         .slice(0, 5);
 
@@ -265,7 +265,6 @@ export const showWeakAreas = async (req, res) => {
         })
     }));
 
-    // ---- AI Recommendation ----
     const top2Weak = weakAreasFull.slice(0, 2).map(w => w.name);
     const estimatedMarksLosing = weakAreasFull.slice(0, 2).reduce((sum, w) => sum + (w.marksLost || 0), 0);
     const totalWrongInWeakAreas = weakAreasFull.slice(0, 2).reduce((sum, w) => sum + (w.wrong || 0), 0);

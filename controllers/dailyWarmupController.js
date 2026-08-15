@@ -91,24 +91,37 @@ const streakDoc = await WarmupStreak.findOne({
     const testIds = await Test.find({ listing: { $in: config.includedListings } }).distinct("_id");
     if (testIds.length === 0) return;
 
-    const mappings = await TestQuestion.find({ test: { $in: testIds } }).populate("test", "listing");
-    if (mappings.length === 0) return;
+     const mappings = await TestQuestion.find({ test: { $in: testIds } }).populate("test", "listing");
+if (mappings.length === 0) return;
 
-    // question -> source listing map (marks ke liye zaroori, kyunki alag listings ho sakti hain)
-    const questionToListing = new Map();
-    mappings.forEach(m => {
-        if (m.question) questionToListing.set(String(m.question), m.test.listing);
-    });
+// question -> source listing map (marks ke liye zaroori, kyunki alag listings ho sakti hain)
+const questionToListing = new Map();
+mappings.forEach(m => {
+    if (m.question) questionToListing.set(String(m.question), m.test.listing);
+});
 
-    const usedQuestionIds = [...new Set(mappings.map(m => String(m.question)).filter(Boolean))];
+// 👇 NAYA: question -> subject map, MAPPING se (Question.subject se nahi — 
+// kyunki dedup ke baad Question.subject sirf "pehli baar wala" subject hai,
+// asli/current subject TestQuestion mapping me hai)
+const questionToSubject = new Map();
+mappings.forEach(m => {
+    if (m.question && m.subject) questionToSubject.set(String(m.question), m.subject);
+});
 
-    const baseFilter = {
-        _id: { $in: usedQuestionIds },
-        subject: { $in: config.subjects }
-    };
+const usedQuestionIds = [...new Set(mappings.map(m => String(m.question)).filter(Boolean))];
 
-    const candidates = await Question.find(baseFilter).select("_id subject difficulty").lean();
-    if (candidates.length === 0) return;
+// 👇 CHANGED: subject filter ab Question.subject pe nahi, mapping-derived subject pe
+const eligibleIds = usedQuestionIds.filter(qId => config.subjects.includes(questionToSubject.get(qId)));
+
+const candidates = await Question.find({ _id: { $in: eligibleIds } }).select("_id difficulty").lean();
+if (candidates.length === 0) return;
+
+// 👇 NAYA: candidates me subject wapas add karo (mapping se), kyunki select() se nikal diya
+candidates.forEach(c => { c.subject = questionToSubject.get(String(c._id)); });
+
+     
+  
+ 
 
     // cooldown check — exam-level
     const cooldownDate = new Date(Date.now() - COOLDOWN_DAYS * 24 * 60 * 60 * 1000);

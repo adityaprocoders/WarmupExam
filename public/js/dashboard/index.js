@@ -642,7 +642,17 @@ async function doPaste(destListingId, destSectionId, destParentType, destParentI
     if (result.success) {
         alert("Copied successfully!");
         closeCopyModal();
-        location.reload();
+
+        // Destination pe redirect karo, current page reload mat karo
+        if (destParentType === 'folder') {
+            window.location.href = `/folder/${destParentId}`;
+        } else if (destParentType === 'file') {
+            window.location.href = `/file/${destParentId}`;
+        } else if (destSectionId) {
+            window.location.href = `/series/${copyNav.slug}?section=${destSectionId}`;
+        } else {
+            window.location.href = `/series/${copyNav.slug}`;
+        }
     } else {
         alert("Copy failed: " + (result.message || "Unknown error"));
     }
@@ -1055,7 +1065,7 @@ async function saveStatsFilter(slug) {
         const result = await res.json();
 
         if (result.success) {
-            location.reload();
+            window.location.reload(true);
         } else {
             alert('Update fail ho gaya');
         }

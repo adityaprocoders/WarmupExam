@@ -2,6 +2,8 @@ import Folder from "../models/Folder.js";
 import File from "../models/File.js";
 import Test from "../models/Test.js";
 import TestQuestion from "../models/TestQuestion.js";
+import Attempt from "../models/TestAttempt.js";
+import AttemptSession from "../models/AttemptSession.js";
 
 export async function deleteFolderRecursive(folderId) {
     const folders = await Folder.find({ parentType: "folder", parentId: folderId });
@@ -15,7 +17,12 @@ export async function deleteFolderRecursive(folderId) {
     }
 
     const testsToDelete = await Test.find({ parentType: "folder", parentId: folderId });
-    await TestQuestion.deleteMany({ test: { $in: testsToDelete.map(t => t._id) } });
+     const testIds = testsToDelete.map(t => t._id);
+
+     
+    await TestQuestion.deleteMany({ test: { $in: testIds } });
+    await Attempt.deleteMany({ test: { $in: testIds } });
+    await AttemptSession.deleteMany({ test: { $in: testIds } });
     await Test.deleteMany({ parentType: "folder", parentId: folderId });
 
     await Folder.findByIdAndDelete(folderId);
@@ -32,10 +39,11 @@ export async function deleteFileRecursive(fileId) {
         await deleteFileRecursive(file._id);
     }
 
-    // 🔧 FIX: original code me "folderId" (undefined) use ho raha tha, "fileId" hona chahiye
-    const testsToDelete = await Test.find({ parentType: "file", parentId: fileId });
-    await TestQuestion.deleteMany({ test: { $in: testsToDelete.map(t => t._id) } });
+     await TestQuestion.deleteMany({ test: { $in: testIds } });
+    await Attempt.deleteMany({ test: { $in: testIds } });
+    await AttemptSession.deleteMany({ test: { $in: testIds } });
     await Test.deleteMany({ parentType: "file", parentId: fileId });
 
+     
     await File.findByIdAndDelete(fileId);
 }

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 
 const optionSchema = new mongoose.Schema({
     text: { type: String, default: "" },
@@ -10,49 +11,49 @@ const solutionSchema = new mongoose.Schema({
     image: { type: String, default: null }
 }, { _id: false });
 
-
 const languageContentSchema = new mongoose.Schema({
-    lang: { type: String, required: true }, // Test.languages me se koi bhi value
+    lang: { type: String, required: true },
     question: { type: String, default: "" },
     questionImage: { type: String, default: null },
     options: { type: [optionSchema], default: [] },
     solution: { type: solutionSchema, default: () => ({}) }
 }, { _id: false });
 
-
 const questionSchema = new mongoose.Schema({
     listing: { type: mongoose.Schema.Types.ObjectId, ref: "Listing", required: true },
-    subject: { type: String, required: true },
+
+    // 👇 CHANGED: required hataya — ab sirf "originally kis naam se bana" info hai.
+    // Asli/authoritative subject-topic ab TestQuestion mapping me store hoga.
+    subject: { type: String, default: "" },
+    topic: { type: String, default: "", trim: true },
+    subTopic: { type: String, default: "", trim: true },
+
     type: { type: String, enum: ["mcq", "multiple", "integer"], default: "mcq" },
     section: { type: String, default: "", trim: true },
-    topic: { type: String, required: true, trim: true },
-    subTopic: { type: String, default: "", trim: true },
     difficulty: { type: String, enum: ["Easy", "Medium", "Hard"], default: "Medium" },
 
     languageMode: { type: String, enum: ["single", "multiple"], default: "single" },
 
-    // Single mode ke liye text; Multiple mode me ye khaali/unused rahega (text translations[] me hai)
     question: { type: String, default: "" },
-
-    // 👇 Ye SHARED hai — single aur multiple dono mode me same diagram/image use hoga
     questionImage: { type: String, default: null },
-    options: { type: [optionSchema], default: [] }, // multiple mode me sirf .image use hoga, .text ignore
-    solution: { type: solutionSchema, default: () => ({}) }, // multiple mode me sirf .image use hoga
+    options: { type: [optionSchema], default: [] },
+    solution: { type: solutionSchema, default: () => ({}) },
 
     translations: { type: [languageContentSchema], default: [] },
 
     correctAnswers: { type: [Number], default: [] },
-    numericAnswer: { type: Number, default: null }
+    numericAnswer: { type: Number, default: null },
+
+    // 👇 NAYA: dedup ke liye. UNIQUE INDEX NAHI — duplicate check hum
+    // manually findOne() se karte hain code me, isliye crash kabhi nahi hoga.
+    contentHash: { type: String, default: null }
 
 }, { timestamps: true });
 
-questionSchema.index({ listing: 1, subject: 1, topic: 1 });
+questionSchema.index({ contentHash: 1 }); // fast lookup, unique NAHI
 
- 
 questionSchema.pre("validate", function () {
-
     if (this.languageMode === "multiple") {
-        // Multiple language mode validation
         if (!this.translations || this.translations.length === 0) {
             throw new Error("Multiple language mode me kam se kam ek language ka content dena zaroori hai.");
         }
@@ -70,7 +71,6 @@ questionSchema.pre("validate", function () {
             }
         });
     } else {
-        // Single language mode validation (purana behaviour, as-is)
         if (this.options && this.options.length > 0) {
             const invalidOption = this.options.find(
                 (opt) => !opt.text?.trim() && !opt.image
@@ -82,5 +82,40 @@ questionSchema.pre("validate", function () {
     }
 });
 
+// 👇 NAYA: sirf content-fields se hash. Subject/topic/section JAAN-BOOJH KAR
+// shaamil NAHI — warna alag-subject wala same question kabhi match nahi karega.
+export function computeContentHash(payload) {
+    const normalized = {
+        type: payload.type || "mcq",
+        languageMode: payload.languageMode || "single",
+        question: (payload.question || "").trim(),
+        questionImage: payload.questionImage || null,
+        options: (payload.options || []).map(o => ({
+            text: (o.text || "").trim(),
+            image: o.image || null
+        })),
+        solution: {
+            text: (payload.solution?.text || "").trim(),
+            image: payload.solution?.image || null
+        },
+        translations: (payload.translations || []).map(t => ({
+            lang: t.lang,
+            question: (t.question || "").trim(),
+            questionImage: t.questionImage || null,
+            options: (t.options || []).map(o => ({
+                text: (o.text || "").trim(),
+                image: o.image || null
+            })),
+            solution: {
+                text: (t.solution?.text || "").trim(),
+                image: t.solution?.image || null
+            }
+        })),
+        correctAnswers: [...(payload.correctAnswers || [])].sort(),
+        numericAnswer: payload.numericAnswer ?? null
+    };
+
+    return crypto.createHash("sha256").update(JSON.stringify(normalized)).digest("hex");
+}
 
 export default mongoose.model("Question", questionSchema);

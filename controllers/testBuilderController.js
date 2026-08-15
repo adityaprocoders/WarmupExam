@@ -1,13 +1,11 @@
 import Listing from "../models/listing.js";
 import Section from "../models/Section.js";
 import Test from "../models/Test.js";
-import Question from "../models/Question.js";
+import Question, { computeContentHash } from "../models/Question.js";   // 👈 CHANGED
 import TestQuestion from "../models/TestQuestion.js";
 import ExpressError from "../utils/ExpressError.js";
 
 
-// Options ko hamesha { text, image } shape me normalize karta hai —
-// chahe client se plain string aaye ("Mumbai") ya already object aaye ({text, image})
 function normalizeOptions(optionsArr) {
     if (!Array.isArray(optionsArr)) return [];
     return optionsArr.map(opt => {
@@ -28,7 +26,7 @@ function getMarksForSubject(subjectsConfig, subjectName) {
 function resolveQuestionLanguageMode(q, testLanguageMode) {
     const subjectName = (q.subject || "").trim().toLowerCase();
     if (subjectName === "english") {
-        return "single";   // 👈 English subject = hamesha single, chahe test multiple mode me ho
+        return "single";
     }
     return testLanguageMode === "multiple" ? "multiple" : "single";
 }
@@ -114,9 +112,8 @@ export const createTestBuilder = async (req, res) => {
     : "all";
 
 if (testLanguageMode !== "multiple") {
-    testShowLanguage = "all"; // single mode me hamesha "all"
+    testShowLanguage = "all";
 } else if (testShowLanguage !== "all" && !testLanguages.includes(testShowLanguage)) {
-    // agar admin ne jo language select ki wo languages list me hi nahi hai, to reject/reset karo
     testShowLanguage = "all";
 }
 
@@ -132,7 +129,7 @@ if (testLanguageMode !== "multiple") {
                 return res.status(400).json({ success: false, message: `Question ${i + 1}: topic zaroori hai` });
             }
 
-            const qMode = resolveQuestionLanguageMode(q, testLanguageMode);   // 👈 FIX
+            const qMode = resolveQuestionLanguageMode(q, testLanguageMode);
 
             if (qMode === "multiple") {
                 if (!Array.isArray(q.translations) || q.translations.length === 0) {
@@ -146,7 +143,7 @@ if (testLanguageMode !== "multiple") {
                     }
                 }
             } else {
-                const source = pickSingleSource(q);   // 👈 FIX
+                const source = pickSingleSource(q);
                 const hasText = source.question && source.question.trim();
                 const hasImage = source.questionImage && source.questionImage.trim();
                 if (!hasText && !hasImage) {
@@ -181,10 +178,16 @@ if (testLanguageMode !== "multiple") {
 
     const savedTest = await testDoc.save();
 
+    // 👇 CHANGED: poora block naya — dedup + mapping me subject/topic
     if (Array.isArray(body.questions) && body.questions.length > 0) {
-       const questionDocs = body.questions.map(q => {
-            const qLanguageMode = resolveQuestionLanguageMode(q, testLanguageMode);   
-            const base = {
+        const mappingDocs = [];
+
+        for (let i = 0; i < body.questions.length; i++) {
+            const q = body.questions[i];
+            const marks = getMarksForSubject(subjectsConfig, q.subject);
+            const qLanguageMode = resolveQuestionLanguageMode(q, testLanguageMode);
+
+            const questionPayload = {
                 listing: body.listingId,
                 subject: q.subject,
                 type: q.type || "mcq",
@@ -198,38 +201,49 @@ if (testLanguageMode !== "multiple") {
             };
 
             if (qLanguageMode === "multiple") {
-                return {
-                    ...base,
-                    translations: (q.translations || []).map(t => ({
-                        lang: t.lang,
-                        question: t.question || "",
-                        questionImage: t.questionImage || null,
-                        options: normalizeOptions(t.options),
-                        solution: t.solution || { text: "", image: null }
-                    }))
-                };
+                questionPayload.translations = (q.translations || []).map(t => ({
+                    lang: t.lang,
+                    question: t.question || "",
+                    questionImage: t.questionImage || null,
+                    options: normalizeOptions(t.options),
+                    solution: t.solution || { text: "", image: null }
+                }));
+                questionPayload.question = "";
+                questionPayload.questionImage = null;
+                questionPayload.options = [];
+                questionPayload.solution = { text: "", image: null };
+            } else {
+                const singleSource = pickSingleSource(q);
+                questionPayload.question = singleSource.question || q.question || "";
+                questionPayload.questionImage = singleSource.questionImage || q.questionImage || null;
+                questionPayload.options = normalizeOptions(singleSource.options || q.options);
+                questionPayload.solution = singleSource.solution || q.solution || { text: "", image: null };
+                questionPayload.translations = [];
             }
 
-            const singleSource = pickSingleSource(q);   // 👈 FIX
-            return {
-                ...base,
-                question: singleSource.question || q.question || "",
-                questionImage: singleSource.questionImage || q.questionImage || null,
-                options: normalizeOptions(singleSource.options || q.options),
-                solution: singleSource.solution || q.solution || { text: "", image: null }
-            };
-        });
+            // 👇 NAYA: dedup check — globally (koi listing/subject filter nahi)
+            const hash = computeContentHash(questionPayload);
+            let questionId;
 
-        const savedQuestions = await Question.insertMany(questionDocs);
+            const existing = await Question.findOne({ contentHash: hash });
+            if (existing) {
+                questionId = existing._id;   // same content mila — reuse karo
+            } else {
+                questionPayload.contentHash = hash;
+                const newQ = await Question.create(questionPayload);
+                questionId = newQ._id;
+            }
 
-        const mappingDocs = savedQuestions.map((q, i) => {
-            const marks = getMarksForSubject(subjectsConfig, body.questions[i].subject);
-            return {
-                test: savedTest._id, question: q._id,
+            mappingDocs.push({
+                test: savedTest._id, question: questionId,
                 order: i + 1,
+                subject: q.subject,             // 👈 NAYA
+                topic: q.topic,                 // 👈 NAYA
+                subTopic: q.subTopic || "",     // 👈 NAYA
+                section: q.section || "",       // 👈 NAYA
                 positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks
-            };
-        });
+            });
+        }
 
         await TestQuestion.insertMany(mappingDocs);
     }
@@ -258,26 +272,24 @@ export const getTestBuilder = async (req, res) => {
             order: m.order,
             positiveMarks: m.positiveMarks,
             negativeMarks: m.negativeMarks,
-            subject: q.subject,
+            subject: m.subject || q.subject,     // 👈 CHANGED: mapping se, purane data ke liye fallback
             type: q.type,
-            section: q.section,
-            topic: q.topic,
-            subTopic: q.subTopic,
+            section: m.section || q.section,     // 👈 CHANGED
+            topic: m.topic || q.topic,           // 👈 CHANGED
+            subTopic: m.subTopic || q.subTopic,  // 👈 CHANGED
             difficulty: q.difficulty,
-            languageMode: q.languageMode || "single",   // 👈 NAYA
+            languageMode: q.languageMode || "single",
             correctAnswers: q.correctAnswers,
             numericAnswer: q.numericAnswer
         };
 
         if (q.languageMode === "multiple") {
-            // 👇 NAYA: multiple mode me translations bhejo
             return {
                 ...base,
                 translations: q.translations || []
             };
         }
 
-        // single mode — purana behaviour as-is
         return {
             ...base,
             question: q.question,
@@ -292,8 +304,8 @@ export const getTestBuilder = async (req, res) => {
         data: {
             test: {
                 ...test.toObject(),
-                languageMode: test.languageMode || "single",   // 👈 NAYA
-                languages: test.languages || ["English"],       // 👈 NAYA
+                languageMode: test.languageMode || "single",
+                languages: test.languages || ["English"],
                 showLanguage: test.showLanguage || "all" 
             },
             questions
@@ -321,7 +333,6 @@ export const updateTestBuilder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Schedule ke liye publish date/time zaroori hai" });
         }
 
-        // 👇 NAYA: Test-level language settings normalize karo
         const testLanguageMode = body.languageMode === "multiple" ? "multiple" : "single";
         let testLanguages = Array.isArray(body.languages) && body.languages.length > 0
             ? body.languages.map(l => String(l).trim()).filter(Boolean)
@@ -334,7 +345,6 @@ export const updateTestBuilder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Multiple language mode me kam se kam do languages choose karo" });
         }
 
-        // 👇 NAYA: Show Language normalize + validate karo
 let testShowLanguage = body.showLanguage && String(body.showLanguage).trim()
     ? String(body.showLanguage).trim()
     : (existingTest.showLanguage || "all");
@@ -357,7 +367,6 @@ if (testLanguageMode !== "multiple") {
                     return res.status(400).json({ success: false, message: `Question ${i + 1}: topic zaroori hai` });
                 }
 
-                // 👇 NAYA: language-mode ke hisaab se validation
                 const qMode = resolveQuestionLanguageMode(q, testLanguageMode);
 
 if (qMode === "multiple") {
@@ -405,7 +414,7 @@ if (qMode === "multiple") {
         }
 
         existingTest.title = body.title;
-        existingTest.languageMode = testLanguageMode;   // 👈 NAYA
+        existingTest.languageMode = testLanguageMode;
         existingTest.languages = testLanguages;
         existingTest.showLanguage = testShowLanguage; 
         existingTest.timeStrategy = body.timeStrategy || "total";
@@ -469,19 +478,35 @@ if (qMode === "multiple") {
     let questionId = q._id;
 
     if (!questionId) {
-        questionId = oldQuestionByOrder.get(i + 1) || null;   // 👈 FIX
+        questionId = oldQuestionByOrder.get(i + 1) || null;
     }
 
+    // 👇 NAYA: hash nikaalo, dedup + shared-edit logic
+    const hash = computeContentHash(questionPayload);
+    questionPayload.contentHash = hash;
+
     if (questionId) {
+        // Existing question — content update karo. Ye document agar kisi
+        // aur test me bhi shared hai, to wahan bhi reflect hoga (jaisa chaha gaya).
         await Question.findByIdAndUpdate(questionId, questionPayload);
     } else {
-        const newQ = await Question.create(questionPayload);
-        questionId = newQ._id;
+        // Naya question is test me add ho raha hai — pehle dedup check karo
+        const existing = await Question.findOne({ contentHash: hash });
+        if (existing) {
+            questionId = existing._id;
+        } else {
+            const newQ = await Question.create(questionPayload);
+            questionId = newQ._id;
+        }
     }
 
     mappingDocs.push({
         test: updatedTest._id, question: questionId,
         order: i + 1,
+        subject: q.subject,             // 👈 NAYA
+        topic: q.topic,                 // 👈 NAYA
+        subTopic: q.subTopic || "",     // 👈 NAYA
+        section: q.section || "",       // 👈 NAYA
         positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks
     });
 }

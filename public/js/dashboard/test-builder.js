@@ -23,6 +23,16 @@ let subjectsList = [];
 let testDurationState = 0;
 
 const imageDataStore = {};
+const questionOptionCount = {};  
+
+function getOptionCount(qId) {
+  if (!questionOptionCount[qId]) questionOptionCount[qId] = 4;
+  return questionOptionCount[qId];
+}
+
+function indexToLetter(i) {
+  return String.fromCharCode(65 + i);
+}
 
 /* Attribute values me quotes/HTML break na ho isliye chhota escape helper.
    (Pehle inline onclick="fn('${val}')" bhi quotes se break ho sakta tha —
@@ -484,13 +494,14 @@ function renderLanguageTags() {
 /* ---------------------------------------------------------
    QUESTION BUILDER
 --------------------------------------------------------- */
-function addQuestion(existingMongoId) {
+function addQuestion(existingMongoId, initialOptionCount) {
    if (!existingMongoId && subjectsList.length === 0) {
     alert("Pehle Listing me subjects/marks configure karo, tabhi questions add ho sakte hain.");
     return;
   }
   questionCount++;
   const qId = questionCount;
+  questionOptionCount[qId] = initialOptionCount || 4;   
   const list = document.getElementById('questionsListContainer');
 
   const block = document.createElement('div');
@@ -537,6 +548,150 @@ function removeQuestion(qId) {
   if (block) block.remove();
   renumberQuestions();
   calculateTotalMarks();
+}
+
+
+function snapshotQuestionInputs(qId) {
+  const body = document.getElementById(`qBody_${qId}`);
+  if (!body) return null;
+
+  const snap = { text: {}, checked: [] };
+
+  body.querySelectorAll('textarea, input[type="text"], input[type="number"]').forEach(el => {
+    if (el.id) snap.text[el.id] = el.value;
+  });
+
+  body.querySelectorAll('input[type="checkbox"]:checked, input[type="radio"]:checked').forEach(el => {
+    snap.checked.push(`${el.name}::${el.value}`);
+  });
+
+  return snap;
+}
+
+function restoreQuestionInputs(qId, snap) {
+  if (!snap) return;
+  const body = document.getElementById(`qBody_${qId}`);
+  if (!body) return;
+
+  Object.keys(snap.text).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = snap.text[id];
+  });
+
+  snap.checked.forEach(nv => {
+    const [name, val] = nv.split('::');
+    const el = body.querySelector(`input[name="${name}"][value="${val}"]`);
+    if (el) el.checked = true;
+  });
+}
+
+function captureQuestionSnapshot(qId) {
+  const wasMultiple = !!document.getElementById(`qTransQuestion_${qId}_0`);
+  const snap = { wasMultiple, checked: [], numeric: null };
+  const optCount = getOptionCount(qId);
+
+  if (wasMultiple) {
+    snap.translations = testLanguages.map((lang, li) => {
+      const opts = [];
+      for (let oi = 0; oi < optCount; oi++) {
+        opts.push(document.getElementById(`qTransOptText_${qId}_${li}_${oi}`)?.value || '');
+      }
+      return {
+        lang,
+        question: document.getElementById(`qTransQuestion_${qId}_${li}`)?.value || '',
+        solution: document.getElementById(`qTransSolutionText_${qId}_${li}`)?.value || '',
+        options: opts
+      };
+    });
+  } else {
+    const opts = [];
+    for (let oi = 0; oi < optCount; oi++) {
+      opts.push(document.getElementById(`qOptText_${qId}_${oi}`)?.value || '');
+    }
+    snap.question = document.getElementById(`qText_${qId}`)?.value || '';
+    snap.solution = document.getElementById(`qSolution_${qId}`)?.value || '';
+    snap.options = opts;
+  }
+
+  document.querySelectorAll(`.qCorrect_${qId}:checked`).forEach(el => snap.checked.push(el.value));
+  const numEl = document.getElementById(`qNumeric_${qId}`);
+  if (numEl) snap.numeric = numEl.value;
+
+  return snap;
+}
+
+function applyQuestionSnapshot(qId, snap) {
+  if (!snap) return;
+  const isMultipleNow = !!document.getElementById(`qTransQuestion_${qId}_0`);
+
+  if (isMultipleNow) {
+    testLanguages.forEach((lang, li) => {
+      let text = '', solText = '', opts = [];
+      if (snap.wasMultiple) {
+        const match = snap.translations.find(t => t.lang === lang) || snap.translations[li];
+        if (match) { text = match.question; solText = match.solution; opts = match.options; }
+      } else {
+        text = snap.question; solText = snap.solution; opts = snap.options;
+      }
+      const qEl = document.getElementById(`qTransQuestion_${qId}_${li}`);
+      const solEl = document.getElementById(`qTransSolutionText_${qId}_${li}`);
+      if (qEl) qEl.value = text;
+      if (solEl) solEl.value = solText;
+      opts.forEach((val, oi) => {
+        const optEl = document.getElementById(`qTransOptText_${qId}_${li}_${oi}`);
+        if (optEl) optEl.value = val;
+      });
+    });
+  } else {
+    let text = '', solText = '', opts = [];
+    if (snap.wasMultiple) {
+      const first = snap.translations[0];
+      if (first) { text = first.question; solText = first.solution; opts = first.options; }
+    } else {
+      text = snap.question; solText = snap.solution; opts = snap.options;
+    }
+    const qEl = document.getElementById(`qText_${qId}`);
+    const solEl = document.getElementById(`qSolution_${qId}`);
+    if (qEl) qEl.value = text;
+    if (solEl) solEl.value = solText;
+    opts.forEach((val, oi) => {
+      const optEl = document.getElementById(`qOptText_${qId}_${oi}`);
+      if (optEl) optEl.value = val;
+    });
+  }
+
+  snap.checked.forEach(val => {
+    const el = document.querySelector(`.qCorrect_${qId}[value="${val}"]`);
+    if (el) el.checked = true;
+  });
+  if (snap.numeric !== null) {
+    const numEl = document.getElementById(`qNumeric_${qId}`);
+    if (numEl) numEl.value = snap.numeric;
+  }
+}
+
+function addOption(qId) {
+  const count = getOptionCount(qId);
+  questionOptionCount[qId] = count + 1;
+
+  const snap = snapshotQuestionInputs(qId);
+  renderQuestionBody(qId);
+  restoreQuestionInputs(qId, snap);
+}
+
+function removeOption(qId, optIdx) {
+  const count = getOptionCount(qId);
+  if (count <= 2) {
+    alert("Kam se kam 2 options zaroori hain.");
+    return;
+  }
+  const store = ensureImageStore(qId);
+  store.options.splice(optIdx, 1);
+  questionOptionCount[qId] = count - 1;
+
+  const snap = snapshotQuestionInputs(qId);
+  renderQuestionBody(qId);
+  restoreQuestionInputs(qId, snap);
 }
 
 function renumberQuestions() {
@@ -621,41 +776,49 @@ function renderMultiLanguageBody(qId, type) {
     html += `<div class="p-4 border rounded-xl bg-gray-50 mb-4">
       <p class="text-xs font-bold text-indigo-700 uppercase mb-3">OPTION IMAGES (SHARED — optional, sabhi languages me same)</p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
-    ['A', 'B', 'C', 'D'].forEach((opt, oi) => {
+    const optCount = getOptionCount(qId);
+    for (let oi = 0; oi < optCount; oi++) {
+      const opt = indexToLetter(oi);
       html += `
         <div class="p-3 border rounded-xl bg-white">
-          <label class="text-xs font-bold uppercase block mb-1">Option ${opt} Image</label>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-bold uppercase">Option ${opt} Image</label>
+            ${optCount > 2 ? `<button type="button" data-action="remove-option" data-qid="${qId}" data-optidx="${oi}" class="text-red-400 hover:text-red-600 text-xs">🗑️</button>` : ''}
+          </div>
           <input type="file" id="qOptImageFile_${qId}_${oi}" accept="image/*" data-onchange="upload-image" data-kind="option" data-qid="${qId}" data-optidx="${oi}" class="text-xs">
           <img id="qOptImagePreview_${qId}_${oi}" class="hidden mt-2 h-16 rounded" />
         </div>`;
-    });
+    }
     html += `</div></div>`;
+    html += `<div class="col-span-1 md:col-span-2 mb-4"><button type="button" data-action="add-option" data-qid="${qId}" class="w-full py-2 border-2 border-dashed border-indigo-200 text-indigo-600 text-sm font-bold rounded-lg hover:bg-indigo-50">+ Add Option</button></div>`;
 
     // Har language ke Option TEXTS
     testLanguages.forEach((lang, li) => {
       html += `<div class="p-4 border rounded-xl bg-indigo-50/30 mb-4">
         <p class="text-xs font-bold text-indigo-700 uppercase mb-2">Option Texts (${lang})</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
-      ['A', 'B', 'C', 'D'].forEach((opt, oi) => {
+      for (let oi = 0; oi < optCount; oi++) {
+        const opt = indexToLetter(oi);
         html += `
           <div>
             <label class="text-xs font-bold uppercase block mb-1">Option ${opt} (${lang})</label>
             <input type="text" id="qTransOptText_${qId}_${li}_${oi}" class="w-full p-2 border rounded" placeholder="Text in ${lang}...">
           </div>`;
-      });
+      }
       html += `</div></div>`;
     });
 
     // Correct Answer — SHARED (option index sabhi languages me same order follow karta hai)
     const inputType = (type === 'multiple') ? 'checkbox' : 'radio';
     html += `<div class="p-4 border rounded-xl bg-gray-50 mb-4"><p class="text-xs font-bold text-gray-600 uppercase mb-2">Correct Answer (Option Index)</p><div class="grid grid-cols-2 md:grid-cols-4 gap-3">`;
-    ['A', 'B', 'C', 'D'].forEach((opt, oi) => {
+    for (let oi = 0; oi < optCount; oi++) {
+      const opt = indexToLetter(oi);
       html += `
         <label class="flex items-center gap-2 p-2 border rounded-lg bg-white text-sm font-bold">
           <input type="${inputType}" name="qOption_${qId}" value="${oi}" class="qCorrect_${qId} w-4 h-4">
           Option ${opt}
         </label>`;
-    });
+    }
     html += `</div></div>`;
   } else {
     html += `
@@ -696,23 +859,29 @@ function updateUI(qId) {
         <label class="block text-sm font-bold mb-2">Enter Numeric Answer:</label>
         <input type="number" step="any" id="qNumeric_${qId}" class="w-full p-3 border rounded-lg" placeholder="Enter integer or decimal value">
       </div>`;
-  } else {
+   } else {
     const inputType = (type === 'multiple') ? 'checkbox' : 'radio';
-    let options = ['A', 'B', 'C', 'D'];
+    const count = getOptionCount(qId);
     let html = '';
 
-    options.forEach((opt, idx) => {
+    for (let idx = 0; idx < count; idx++) {
+      const opt = indexToLetter(idx);
       html += `
-        <div class="p-4 border rounded-xl bg-gray-50">
+        <div class="p-4 border rounded-xl bg-gray-50 relative">
           <div class="flex items-center gap-2 mb-2">
             <input type="${inputType}" name="qOption_${qId}" value="${idx}" class="qCorrect_${qId} w-4 h-4">
             <label class="text-xs font-bold uppercase">Option ${opt}</label>
+            ${count > 2 ? `<button type="button" data-action="remove-option" data-qid="${qId}" data-optidx="${idx}" class="ml-auto text-red-400 hover:text-red-600 text-xs">🗑️</button>` : ''}
           </div>
           <input type="text" id="qOptText_${qId}_${idx}" class="w-full p-2 border rounded" placeholder="Text...">
           <input type="file" id="qOptImageFile_${qId}_${idx}" accept="image/*" data-onchange="upload-image" data-kind="option" data-qid="${qId}" data-optidx="${idx}" class="mt-2 text-xs">
           <img id="qOptImagePreview_${qId}_${idx}" class="hidden mt-2 h-16 rounded" />
         </div>`;
-    });
+    }
+
+    html += `<div class="col-span-1 md:col-span-2">
+      <button type="button" data-action="add-option" data-qid="${qId}" class="w-full py-2 border-2 border-dashed border-indigo-200 text-indigo-600 text-sm font-bold rounded-lg hover:bg-indigo-50">+ Add Option</button>
+    </div>`;
 
     container.innerHTML = html;
   }
@@ -915,9 +1084,10 @@ function collectManualQuestions() {
       q.solution = { text: "", image: imgStore.solution };
 
       if (type !== 'integer') {
-        [0, 1, 2, 3].forEach(idx => {
+        const optCount = getOptionCount(qId);
+        for (let idx = 0; idx < optCount; idx++) {
           q.options.push({ text: "", image: imgStore.options[idx] || null });
-        });
+        }
       }
 
       // Har language ka sirf TEXT (options object shape me, image shared)
@@ -934,13 +1104,14 @@ function collectManualQuestions() {
         };
 
         if (type !== 'integer') {
-          [0, 1, 2, 3].forEach(oi => {
+          const optCount = getOptionCount(qId);
+          for (let oi = 0; oi < optCount; oi++) {
             const optInput = document.getElementById(`qTransOptText_${qId}_${li}_${oi}`);
             trans.options.push({
               text: optInput ? optInput.value : "",
               image: imgStore.options[oi] || null
             });
-          });
+          }
         }
 
         return trans;
@@ -956,13 +1127,14 @@ function collectManualQuestions() {
       q.translations = [];
 
       if (type !== 'integer') {
-        [0, 1, 2, 3].forEach(idx => {
+        const optCount = getOptionCount(qId);
+        for (let idx = 0; idx < optCount; idx++) {
           const optInput = document.getElementById(`qOptText_${qId}_${idx}`);
           q.options.push({
             text: optInput ? optInput.value : "",
             image: imgStore.options[idx] || null
           });
-        });
+        }
       }
     }
 
@@ -990,7 +1162,8 @@ function renderManualQuestions(questionsArray) {
   }
 
   questionsArray.forEach(q => {
-    addQuestion(q._id);
+    const optCount = (q.options && q.options.length >= 2) ? q.options.length : 4;
+    addQuestion(q._id, optCount);   
     const qId = questionCount;
 
     document.getElementById(`qSubject_${qId}`).value = q.subject || '';
@@ -1446,6 +1619,12 @@ document.addEventListener('click', function (e) {
     case 'remove-question':
       removeQuestion(el.dataset.qid);
       break;
+    case 'add-option':
+      addOption(el.dataset.qid);
+      break;
+    case 'remove-option':
+      removeOption(el.dataset.qid, Number(el.dataset.optidx));
+      break;
   }
 });
 
@@ -1471,9 +1650,13 @@ document.addEventListener('change', function (e) {
     case 'show-language':
       testShowLanguage = el.value;
       break;
-    case 'render-question-body':
-      renderQuestionBody(el.dataset.qid);
-      break;
+      case 'render-question-body': {
+  const qId = el.dataset.qid;
+  const snap = captureQuestionSnapshot(qId);
+  renderQuestionBody(qId);
+  applyQuestionSnapshot(qId, snap);
+  break;
+}
     case 'upload-image':
       uploadAndStore(
         el,

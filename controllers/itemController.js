@@ -43,10 +43,6 @@ export const getItem = async (req, res) => {
 
     if (!item) return res.status(404).json({ success: false, message: "Item not found" });
 
-       if (!checkEnrollment(req, item.listing)) {
-        return res.status(403).json({ success: false, message: "Access denied" });
-    }
-
     res.json({ success: true, data: item });
 };
 

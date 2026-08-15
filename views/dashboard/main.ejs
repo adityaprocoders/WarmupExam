@@ -259,8 +259,8 @@
 <div class="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
     <button
         data-action="open-copy-modal"
-        data-type="folder"
-        data-id="<%= item._id %>"
+        data-copy-type="folder"
+        data-copy-id="<%= item._id %>"
         class="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-600">
         <i data-lucide="send" class="w-3.5 h-3.5"></i>
     </button>
@@ -288,7 +288,7 @@
     <!-- Edit/Delete -->
     <% if (currentUser.role === 'owner') { %>
     <div class="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button data-action="open-copy-modal" data-type="file" data-id="<%= item._id %>" class="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-600">
+        <button data-action="open-copy-modal" data-copy-type="file" data-copy-id="<%= item._id %>" class="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-600">
             <i data-lucide="send" class="w-3.5 h-3.5"></i>
         </button>
         <button data-action="edit-item" data-type="file" data-id="<%= item._id %>" class="p-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg">
@@ -356,8 +356,8 @@
     <div class="flex gap-1.5">
         <button
             data-action="open-copy-modal"
-            data-type="test"
-            data-id="<%= item._id %>"
+            data-copy-type="test"
+            data-copy-id="<%= item._id %>"
             class="p-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-600">
             <i data-lucide="send" class="w-3.5 h-3.5"></i>
         </button>
