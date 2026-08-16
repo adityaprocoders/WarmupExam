@@ -22,7 +22,7 @@
                 </div>
             <% } %>
 
-            <form method="POST" action="/owner-login" class="space-y-4 sm:space-y-5">
+            <form method="POST" action="<%= loginPath %>" class="space-y-4 sm:space-y-5">
                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
                 <!-- Email -->

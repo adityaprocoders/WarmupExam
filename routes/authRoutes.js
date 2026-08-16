@@ -14,8 +14,11 @@ import { authLimiter, otpLimiter } from "../middleware/rateLimiters.js";
 
 const router = express.Router();
 
-router.get("/owner-login", authController.renderOwnerLogin);
-router.post("/owner-login", authLimiter,  validateBody(loginSchema), authController.ownerLogin);
+const ownerLoginPath = `/${process.env.OWNER_LOGIN_PATH}`;
+
+router.get(ownerLoginPath, authController.renderOwnerLogin);
+router.post(ownerLoginPath, authLimiter, validateBody(loginSchema), authController.ownerLogin);
+
 router.get("/owner-dashboard", isOwner, authController.ownerDashboard);
 router.get("/api/owner/login-history", isOwner, getLoginHistoryApi);
 router.delete("/api/owner/login-history/:id", isOwner, deleteLoginHistoryEntry); 

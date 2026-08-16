@@ -12,7 +12,8 @@ import { generateSessionId } from "../utils/sessionHelper.js";
 
 export const renderOwnerLogin = (req, res) => res.render("auth/owner-login", {
     title: "Login | WarmupExam",
-    robots: "noindex, nofollow"
+    robots: "noindex, nofollow",
+    loginPath: `/${process.env.OWNER_LOGIN_PATH}`
 });
 
 export const ownerLogin = (req, res, next) => {
@@ -20,9 +21,9 @@ export const ownerLogin = (req, res, next) => {
         if (err) return next(err);
 
         if (!owner) {
-            req.flash("error", "Invalid owner credentials");
-            return req.session.save(() => res.redirect("/owner-login"));
-        }
+    req.flash("error", "Invalid owner credentials");
+    return req.session.save(() => res.redirect(`/${process.env.OWNER_LOGIN_PATH}`));
+}
 
         req.login(owner, async (err) => {
             if (err) return next(err);

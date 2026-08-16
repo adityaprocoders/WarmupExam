@@ -56,7 +56,7 @@ export const isOwner = (req, res, next) => {
         return res.status(403).json({ success: false, message: "Owner access required" });
     }
     req.flash("error", "Owner access required");
-    res.redirect("/owner-login");
+    res.redirect(`/${process.env.OWNER_LOGIN_PATH}`);
 };
 
 export function isLoggedOut(req, res, next) {

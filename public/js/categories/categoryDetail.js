@@ -211,20 +211,21 @@ grid.addEventListener('submit', (e) => {
                         <i class="fa-solid fa-lock text-[9px]"></i> Private
                     </span>` : ''}
             </div>` : '';
+ 
 
-        let actionHtml;
-        if (test.isOwner) {
-            actionHtml = `<a href="/test/${test._id}" class="flex-1 min-w-[100px] text-center border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold text-sm py-2.5 rounded-xl transition">EXPLORE</a>
-                           <a href="/series/${test.slug}" class="flex-1 min-w-[100px] text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">🚀 Start Test</a>`;
-        } else if (test.canAccess) {
-            actionHtml = `<a href="/series/${test.slug}" class="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">🚀 Start Test</a>`;
-        } else {
-            actionHtml = `<a href="/test/${test._id}" class="flex-1 min-w-[100px] text-center border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold text-sm py-2.5 rounded-xl transition">EXPLORE</a>
-               <button data-action="${test.type === 'Free' ? 'enroll' : 'buy'}" data-id="${test._id}" data-logged-in="${!!test.currentUser}
-                    class="flex-1 min-w-[100px] text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">
-                    ${test.type === 'Free' ? 'ENROLL NOW' : 'BUY NOW'}
-               </button>`;
-        }
+            let actionHtml;
+if (test.isOwner) {
+    actionHtml = `<a href="/test/${test._id}" class="flex-1 min-w-[100px] text-center border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold text-sm py-2.5 rounded-xl transition">EXPLORE</a>
+                   <a href="/series/${test.slug}" class="flex-1 min-w-[100px] text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">🚀 Start Test</a>`;
+} else if (test.canAccess) {
+    actionHtml = `<a href="/series/${test.slug}" class="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">🚀 Start Test</a>`;
+} else {
+    actionHtml = `<a href="/test/${test._id}" class="flex-1 min-w-[100px] text-center border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold text-sm py-2.5 rounded-xl transition">EXPLORE</a>
+       <button data-action="${test.type === 'Free' ? 'enroll' : 'buy'}" data-id="${test._id}" data-logged-in="${!!test.currentUser}"
+            class="flex-1 min-w-[100px] text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">
+            ${test.type === 'Free' ? 'ENROLL NOW' : 'BUY NOW'}
+       </button>`;
+}
 
         return `
         <div class="group bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
