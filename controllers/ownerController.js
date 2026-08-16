@@ -129,9 +129,37 @@ export const getChartData = async (req, res) => {
 };
 
 // ---------------- ALL TEST SERIES (public + private) ----------------
+// ---------------- ALL TEST SERIES (public + private) ----------------
 export const getAllTestSeriesOwner = async (req, res) => {
     try {
         const listings = await Listing.find({}).sort({ createdAt: -1 });
+        const now = new Date();
+
+        // 👇 NAYA: har listing ke liye ACTIVE enrolled count (not suspended, not expired)
+        const enrolledAgg = await User.aggregate([
+            { $unwind: "$enrolledListings" },
+            {
+                $match: {
+                    "enrolledListings.suspendedByOwner": { $ne: true },
+                    $or: [
+                        { "enrolledListings.expiresAt": { $exists: false } },
+                        { "enrolledListings.expiresAt": null },
+                        { "enrolledListings.expiresAt": { $gt: now } }
+                    ]
+                }
+            },
+            { $group: { _id: "$enrolledListings.listing", count: { $sum: 1 } } }
+        ]);
+
+        // 👇 NAYA: har listing ke liye TOTAL purchased count (amountPaid > 0, all-time — expired bhi count)
+        const purchasedAgg = await User.aggregate([
+            { $unwind: "$enrolledListings" },
+            { $match: { "enrolledListings.amountPaid": { $gt: 0 } } },
+            { $group: { _id: "$enrolledListings.listing", count: { $sum: 1 } } }
+        ]);
+
+        const enrolledMap = new Map(enrolledAgg.map(e => [String(e._id), e.count]));
+        const purchasedMap = new Map(purchasedAgg.map(p => [String(p._id), p.count]));
 
         res.json({
             success: true,
@@ -139,12 +167,15 @@ export const getAllTestSeriesOwner = async (req, res) => {
                 _id: l._id,
                 title: l.title,
                 slug: l.slug,
+                exam: l.exam || "",              // 👈 NAYA: search ke liye
                 price: l.price,
-                type: l.type,           // "Free" | "Paid"
-                visibility: l.visibility, // "private" | "public"
+                type: l.type,
+                visibility: l.visibility,
                 image: l.image,
                 validityDays: l.validityDays,
-                createdAt: l.createdAt
+                createdAt: l.createdAt,
+                enrolledCount: enrolledMap.get(String(l._id)) || 0,    // 👈 NAYA
+                purchasedCount: purchasedMap.get(String(l._id)) || 0  // 👈 NAYA
             }))
         });
     } catch (err) {
@@ -172,6 +203,7 @@ export const deleteTestSeries = async (req, res) => {
     }
 };
 
+ 
 // ---------------- ALL USERS (with search) ----------------
 export const getAllUsersOwner = async (req, res) => {
     try {
@@ -179,7 +211,7 @@ export const getAllUsersOwner = async (req, res) => {
 
         let filter = {};
         if (search && search.trim() !== "") {
-            const regex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"); // 🔧 FIX: regex-injection se bachne ke liye special chars escape kiye
+            const regex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
             filter = {
                 $or: [
                     { name: regex },
@@ -197,18 +229,40 @@ export const getAllUsersOwner = async (req, res) => {
 
         res.json({
             success: true,
-            total: search ? totalMatching : totalUsers, // 🔧 FIX: search karne par badge me poora DB total nahi, matching count dikhega
+            total: search ? totalMatching : totalUsers,
             users: users.map(u => {
                 const hasActiveSub = u.enrolledListings.some(e =>
-                    !e.suspendedByOwner && (!e.expiresAt || e.expiresAt > now)
-                );
+    !e.suspendedByOwner && (!e.expiresAt || e.expiresAt > now)
+);
+
+let status;
+if (u.enrolledListings.length === 0) {
+    status = "No Subscription";          // 👈 NAYA case
+} else if (hasActiveSub) {
+    status = "Active";
+} else {
+    const hasSuspended = u.enrolledListings.some(e => e.suspendedByOwner);
+    const hasExpired = u.enrolledListings.some(e => e.expiresAt && e.expiresAt <= now && !e.suspendedByOwner);
+    status = hasSuspended ? "Suspended" : (hasExpired ? "Expired" : "Active");
+}
+
+                // 👇 NAYA: plan (koi paid enrollment kabhi bhi hua ho to Premium)
+                const plan = u.enrolledListings.some(e => e.amountPaid > 0) ? "Premium" : "Free";
+
+                 
+                 
 
                 return {
                     _id: u._id,
                     name: u.name,
                     username: u.username,
                     email: u.email,
-                    hasActiveSub
+                    avatar: u.avatar || null,                // 👈 NAYA
+                    hasActiveSub,
+                    plan,                                    // 👈 NAYA
+                    enrolledCount: u.enrolledListings.length, // 👈 NAYA
+                    status,                                  // 👈 NAYA
+                    joinedOn: u.createdAt                    // 👈 NAYA
                 };
             })
         });
@@ -701,7 +755,7 @@ export const createNotification = async (req, res) => {
 export const deleteNotification = async (req, res) => {
     try {
         const { id } = req.params;
-        const deleted = await Notification.findByIdAndDelete(id);
+        const deleted = await Notification.findByIdAndDelete(id);   // 👈 hamesha poora delete — already sahi hai
         if (!deleted) return res.status(404).json({ success: false, message: "Notification nahi mili" });
         res.json({ success: true, message: "Notification delete ho gayi" });
     } catch (err) {

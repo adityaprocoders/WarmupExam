@@ -1,5 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+
+    function getNotifIcon(notifType) {
+    switch (notifType) {
+        case "new_test_series":
+            return { icon: "clipboard-list", bg: "bg-orange-100", color: "text-orange-600" };
+        case "subscription_expiring":
+            return { icon: "clock", bg: "bg-red-100", color: "text-red-600" };
+        default:
+            return { icon: "bell", bg: "bg-indigo-100", color: "text-indigo-600" };
+    }
+}
+
+
     const bellBtn = document.querySelector('[data-action="toggle-notif-dropdown"]');
     const dropdown = document.getElementById("notifDropdownMenu");
     const listBox = document.getElementById("notifListBox");
@@ -28,13 +41,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
             clearAllBtn?.classList.remove("hidden");   // 🆕 notifications hain -> button dikhao
 
-            listBox.innerHTML = data.notifications.map(n => `
-                <div class="px-4 py-3 border-b border-slate-50 hover:bg-slate-50">
-                    <p class="text-sm font-semibold text-slate-800">${n.title}</p>
-                    <p class="text-xs text-slate-500 mt-0.5">${n.message}</p>
-                    <p class="text-[10px] text-slate-400 mt-1">${new Date(n.sentAt).toLocaleString()}</p>
-                </div>
-            `).join("");
+            listBox.innerHTML = data.notifications.map(n => {
+                const { icon, bg, color } = getNotifIcon(n.notifType);
+                const link = n.meta?.listingId ? `/test/${n.meta.listingId}` : null;
+
+                return `
+                    <div class="flex items-start gap-3 px-4 py-3 border-b border-slate-50 hover:bg-slate-50">
+                        <div class="w-9 h-9 shrink-0 rounded-xl ${bg} flex items-center justify-center">
+                            <i data-lucide="${icon}" class="w-4.5 h-4.5 ${color}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-slate-800">${n.title}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">${n.message}</p>
+                            <div class="flex items-center justify-between mt-1.5">
+                                <p class="text-[10px] text-slate-400">${new Date(n.sentAt).toLocaleString()}</p>
+                                ${link ? `<a href="${link}" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800">View →</a>` : ""}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            if (window.lucide) lucide.createIcons();
         } catch (err) {
             console.error("Load notifications error:", err);
             listBox.innerHTML = `<p class="text-center text-xs text-red-400 py-6">Failed to load.</p>`;

@@ -173,14 +173,49 @@
         testSeriesGrid.innerHTML = `<p class="text-gray-400 text-sm col-span-full text-center py-6">Koi test series nahi mili.</p>`;
         return;
       }
+      allTestSeriesData = data.listings;   // 👈 NAYA
       testSeriesGrid.innerHTML = data.listings.map(testSeriesCard).join('');
       attachTestSeriesEvents();
+
+      // 👈 NAYA: agar search box me pehle se kuch type kiya hua hai, usko re-apply karo
+      const searchInput = document.getElementById('testSeriesSearchInput');
+      if (searchInput && searchInput.value.trim()) {
+        filterTestSeries(searchInput.value);
+      }
     } catch (err) {
       testSeriesGrid.innerHTML = `<p class="text-red-500 text-sm col-span-full text-center py-6">Load karne mein error aayi.</p>`;
     }
-  }
+}
 
-  function testSeriesCard(s) {
+  // 👇 NAYA: client-side filter (title/exam name se), instant hai — koi naya API call nahi
+let allTestSeriesData = [];   // last fetch ka data yahan store rahega
+
+function filterTestSeries(term) {
+    const q = term.trim().toLowerCase();
+    const cards = document.querySelectorAll('#testSeriesGrid > div[data-title]');
+
+    let visibleCount = 0;
+    cards.forEach(card => {
+        const matches = !q || card.dataset.title.includes(q) || card.dataset.exam.includes(q);
+        card.style.display = matches ? '' : 'none';
+        if (matches) visibleCount++;
+    });
+
+    let emptyMsg = document.getElementById('testSeriesEmptyMsg');
+    if (visibleCount === 0) {
+        if (!emptyMsg) {
+            emptyMsg = document.createElement('p');
+            emptyMsg.id = 'testSeriesEmptyMsg';
+            emptyMsg.className = 'text-gray-400 text-sm col-span-full text-center py-6';
+            emptyMsg.textContent = 'Koi matching test series nahi mili.';
+            testSeriesGrid.appendChild(emptyMsg);
+        }
+    } else if (emptyMsg) {
+        emptyMsg.remove();
+    }
+}
+
+function testSeriesCard(s) {
     const priceLabel = s.type === 'Free' ? 'FREE' : fmtCurrency(s.price);
     const typeBadge = s.type === 'Free'
       ? `<span class="text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-600">FREE</span>`
@@ -189,22 +224,28 @@
       ? `<span class="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-50 text-purple-600 ml-1.5">PRIVATE</span>`
       : `<span class="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 ml-1.5">PUBLIC</span>`;
 
+    const enrollBadge = `
+      <span class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 ml-1.5">
+        <i class="fa-solid fa-users text-[10px]"></i> ${s.enrolledCount} enrolled
+      </span>`;
+
     return `
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" data-title="${escapeHtml((s.title || '').toLowerCase())}" data-exam="${escapeHtml((s.exam || '').toLowerCase())}">
         <img src="${escapeHtml(s.image)}" class="w-full h-40 object-cover" loading="lazy">
         <div class="p-4">
           <div class="flex items-center justify-between mb-2">
             <h4 class="font-bold text-gray-900 truncate">${escapeHtml(s.title)}</h4>
           </div>
-          <div class="mb-2">${typeBadge}${visibilityBadge}</div>
-          <p class="text-gray-900 font-bold mb-3">${priceLabel}</p>
+          <div class="mb-2 flex flex-wrap items-center">${typeBadge}${visibilityBadge}${enrollBadge}</div>
+          <p class="text-gray-900 font-bold mb-1">${priceLabel}</p>
+          <p class="text-xs text-gray-400 mb-3">${s.purchasedCount} purchased (all-time)</p>
           <div class="flex gap-2">
-            <a href="/owner/testseries/${s._id}/edit" class="flex-1 text-center border-2 border-indigo-600 text-indigo-600 text-sm font-semibold py-2 rounded-lg hover:bg-indigo-50">Edit</a>
+            <a href="/tests/${s._id}/edit" class="flex-1 text-center border-2 border-indigo-600 text-indigo-600 text-sm font-semibold py-2 rounded-lg hover:bg-indigo-50">Edit</a>
             <button data-id="${s._id}" class="deleteTestSeriesBtn flex-1 text-center bg-red-50 text-red-600 text-sm font-semibold py-2 rounded-lg hover:bg-red-100">Delete</button>
           </div>
         </div>
       </div>`;
-  }
+}
 
   function attachTestSeriesEvents() {
     document.querySelectorAll('.deleteTestSeriesBtn').forEach(btn => {
@@ -395,19 +436,55 @@
     }
   }
 
-  function userRow(u) {
+function statusBadge(status) {
+    const map = {
+        Active:           { dot: 'bg-green-500', text: 'text-green-600' },
+        Expired:          { dot: 'bg-amber-500', text: 'text-amber-600' },
+        Suspended:        { dot: 'bg-red-500',   text: 'text-red-600' },
+        'No Subscription':{ dot: 'bg-gray-400',  text: 'text-gray-500' }   // 👈 NAYA
+    };
+    const c = map[status] || map.Active;
+    return `<span class="inline-flex items-center gap-1.5 text-xs font-semibold ${c.text}">
+        <span class="w-1.5 h-1.5 rounded-full ${c.dot}"></span>${status}
+    </span>`;
+}
+function planBadge(plan) {
+    return plan === 'Premium'
+        ? `<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">Premium</span>`
+        : `<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Free</span>`;
+}
+
+function userAvatar(u, sizeClass) {
     const initial = (u.name || u.username || u.email || '?').charAt(0).toUpperCase();
+    if (u.avatar) {
+        return `<img src="${escapeHtml(u.avatar)}" class="${sizeClass} rounded-full object-cover shrink-0" loading="lazy">`;
+    }
+    return `<div class="${sizeClass} rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs shrink-0">${escapeHtml(initial)}</div>`;
+}
+
+function fmtJoinDate(dateStr) {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function userRow(u) {
     return `
-      <tr class="border-b border-gray-50">
-        <td class="py-3">
+      <tr class="border-b border-gray-50 hover:bg-gray-50/60">
+        <td class="py-3 pr-3">
           <a href="/owner/users/${u._id}" class="flex items-center gap-2.5 hover:underline">
-            <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs shrink-0">${escapeHtml(initial)}</div>
-            <span class="font-semibold text-indigo-900">${escapeHtml(u.name || '-')}</span>
+            ${userAvatar(u, 'w-9 h-9')}
+            <div class="min-w-0">
+              <span class="font-semibold text-indigo-900 block truncate">${escapeHtml(u.name || '-')}</span>
+              <span class="text-[11px] text-gray-400">${u.username ? '@' + escapeHtml(u.username) : '-'}</span>
+            </div>
           </a>
         </td>
-        <td class="py-3 text-gray-600">${escapeHtml(u.username || '-')}</td>
-        <td class="py-3 text-gray-600">${escapeHtml(u.email)}</td>
-        <td class="py-3">
+        <td class="py-3 pr-3 text-gray-600 truncate max-w-[180px]">${escapeHtml(u.email)}</td>
+        <td class="py-3 pr-3">${planBadge(u.plan)}</td>
+        <td class="py-3 pr-3 text-gray-600 text-center">${u.enrolledCount}</td>
+        <td class="py-3 pr-3 text-gray-500 text-xs whitespace-nowrap">${fmtJoinDate(u.joinedOn)}</td>
+        <td class="py-3 pr-3">${statusBadge(u.status)}</td>
+        <td class="py-3 pr-3">
           <button data-id="${u._id}" class="toggleUserBtn relative inline-flex h-6 w-11 items-center rounded-full transition ${u.hasActiveSub ? 'bg-green-500' : 'bg-gray-300'}">
             <span class="inline-block h-4 w-4 transform rounded-full bg-white transition ${u.hasActiveSub ? 'translate-x-6' : 'translate-x-1'}"></span>
           </button>
@@ -418,25 +495,43 @@
           </button>
         </td>
       </tr>`;
-  }
+}
 
-  function userCard(u) {
-    const initial = (u.name || u.username || u.email || '?').charAt(0).toUpperCase();
+function userCard(u) {
     return `
-      <div class="border border-gray-100 rounded-xl p-3 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm shrink-0">${escapeHtml(initial)}</div>
-        <div class="min-w-0 flex-1">
-          <a href="/owner/users/${u._id}" class="font-semibold text-indigo-900 text-sm truncate block hover:underline">${escapeHtml(u.name || '-')}</a>
-          <p class="text-xs text-gray-500 truncate">${escapeHtml(u.email)}</p>
+      <div class="border border-gray-100 rounded-xl p-3.5 space-y-3">
+        <div class="flex items-center gap-3">
+          ${userAvatar(u, 'w-11 h-11')}
+          <div class="min-w-0 flex-1">
+            <a href="/owner/users/${u._id}" class="font-semibold text-indigo-900 text-sm truncate block hover:underline">${escapeHtml(u.name || '-')}</a>
+            <p class="text-[11px] text-gray-400">${u.username ? '@' + escapeHtml(u.username) : '-'}</p>
+            <p class="text-xs text-gray-500 truncate">${escapeHtml(u.email)}</p>
+          </div>
         </div>
-        <button data-id="${u._id}" class="toggleUserBtn relative inline-flex h-6 w-11 items-center rounded-full transition shrink-0 ${u.hasActiveSub ? 'bg-green-500' : 'bg-gray-300'}">
-          <span class="inline-block h-4 w-4 transform rounded-full bg-white transition ${u.hasActiveSub ? 'translate-x-6' : 'translate-x-1'}"></span>
-        </button>
-        <button data-id="${u._id}" class="deleteUserBtn w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center shrink-0">
-          <i class="fa-solid fa-trash text-xs"></i>
-        </button>
+
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          ${planBadge(u.plan)}
+          <span class="text-gray-400">•</span>
+          <span class="text-gray-600">${u.enrolledCount} series enrolled</span>
+          <span class="text-gray-400">•</span>
+          ${statusBadge(u.status)}
+        </div>
+
+        <p class="text-[11px] text-gray-400">Joined on ${fmtJoinDate(u.joinedOn)}</p>
+
+        <div class="flex items-center justify-between pt-1 border-t border-gray-50">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Subscription</span>
+            <button data-id="${u._id}" class="toggleUserBtn relative inline-flex h-6 w-11 items-center rounded-full transition ${u.hasActiveSub ? 'bg-green-500' : 'bg-gray-300'}">
+              <span class="inline-block h-4 w-4 transform rounded-full bg-white transition ${u.hasActiveSub ? 'translate-x-6' : 'translate-x-1'}"></span>
+            </button>
+          </div>
+          <button data-id="${u._id}" class="deleteUserBtn w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center">
+            <i class="fa-solid fa-trash text-xs"></i>
+          </button>
+        </div>
       </div>`;
-  }
+}
 
   function attachUserEvents() {
     document.querySelectorAll('.toggleUserBtn').forEach(btn => {
@@ -572,6 +667,11 @@ function attachLoginHistoryEvents() {
     });
   });
 }
+
+// 👇 NAYA: test series search input
+document.getElementById('testSeriesSearchInput')?.addEventListener('input', function () {
+    filterTestSeries(this.value);
+});
 
   // ---------------- INITIAL LOAD ----------------
   loadDashboard();

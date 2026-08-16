@@ -149,15 +149,23 @@
           <div class="relative w-full" style="height:220px;"><canvas id="enrollmentChart"></canvas></div>
         </div>
       </section>
-
+ 
       <!-- TEST SERIES -->
-      <section id="content-testseries" class="content-section hidden space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-gray-900">All Test Series</h3>
-          <a href="/owner/testseries/new" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700"><i class="fa-solid fa-plus mr-1"></i> Add New</a>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5" id="testSeriesGrid"></div>
-      </section>
+<section id="content-testseries" class="content-section hidden space-y-4">
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <h3 class="font-bold text-gray-900">All Test Series</h3>
+    
+  </div>
+
+  <!-- 👇 NAYA -->
+  <div class="relative">
+    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+    <input type="text" id="testSeriesSearchInput" placeholder="Search by test/exam name..."
+      class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5" id="testSeriesGrid"></div>
+</section>
 
 
       <!-- DAILY WARMUP -->
@@ -381,28 +389,31 @@
               class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
 
-          <!-- Desktop/tablet table -->
-          <div class="overflow-x-auto hidden sm:block">
-            <table class="w-full text-sm">
-              <thead class="text-gray-400 text-xs uppercase">
-                <tr class="border-b border-gray-100">
-                  <th class="text-left py-3 font-semibold">Student Name</th>
-                  <th class="text-left py-3 font-semibold">Username</th>
-                  <th class="text-left py-3 font-semibold">Email</th>
-                  <th class="text-left py-3 font-semibold">Subscription</th>
-                  <th class="text-right py-3 font-semibold">Delete Account</th>
-                </tr>
-              </thead>
-              <tbody id="usersTableBody">
-                <tr><td colspan="5" class="text-center text-gray-400 py-8">Loading users...</td></tr>
-              </tbody>
-            </table>
-          </div>
+         <!-- Desktop/tablet table -->
+<div class="overflow-x-auto hidden sm:block">
+  <table class="w-full text-sm">
+    <thead class="text-gray-400 text-xs uppercase">
+      <tr class="border-b border-gray-100">
+        <th class="text-left py-3 pr-3 font-semibold">Student Name</th>
+        <th class="text-left py-3 pr-3 font-semibold">Email</th>
+        <th class="text-left py-3 pr-3 font-semibold">Plan</th>
+        <th class="text-center py-3 pr-3 font-semibold">Enrolled Series</th>
+        <th class="text-left py-3 pr-3 font-semibold">Joined On</th>
+        <th class="text-left py-3 pr-3 font-semibold">Status</th>
+        <th class="text-left py-3 pr-3 font-semibold">Subscription</th>
+        <th class="text-right py-3 font-semibold">Delete Account</th>
+      </tr>
+    </thead>
+    <tbody id="usersTableBody">
+      <tr><td colspan="8" class="text-center text-gray-400 py-8">Loading users...</td></tr>
+    </tbody>
+  </table>
+</div>
 
-          <!-- Mobile card list (responsive fallback, table pe horizontal scroll force nahi karte) -->
-          <div class="sm:hidden space-y-3" id="usersCardList">
-            <p class="text-center text-gray-400 py-8">Loading users...</p>
-          </div>
+<!-- Mobile card list -->
+<div class="sm:hidden space-y-3" id="usersCardList">
+  <p class="text-center text-gray-400 py-8">Loading users...</p>
+</div>
 
         </div>
       </section>

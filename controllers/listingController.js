@@ -12,6 +12,8 @@ import cloudinary from "../config/cloudinary.js";
 import ContentBlock from "../models/ContentBlock.js";
 import Category from "../models/Category.js";
 import { generatePlaceholderImage } from "../utils/placeholderImage.js";
+import { notifyNewTestSeries } from "../utils/notifyNewTestSeries.js";
+
 
 export const allTests = async (req, res) => {
     const { exam, search, language, filter: filterTab } = req.query;
@@ -262,6 +264,7 @@ export const createTest = async (req, res) => {
 
     try {
         await test.save();
+        await notifyNewTestSeries(test);
         res.redirect("/alltests");
     } catch (err) {
         if (err.code === 11000) {

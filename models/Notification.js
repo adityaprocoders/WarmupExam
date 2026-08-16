@@ -11,6 +11,7 @@ const notificationSchema = new mongoose.Schema({
     },
     customUserIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    clearedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],   // 👈 NAYA
 
     status: {
         type: String,
@@ -23,7 +24,16 @@ const notificationSchema = new mongoose.Schema({
     expiresAt: { type: Date, default: null },
 
     estimatedReach: { type: Number, default: 0 },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    source: { type: String, enum: ["manual", "auto"], default: "manual" },
+notifType: { type: String, default: null },
+meta: {
+    exam: { type: String },
+    listingId: { type: mongoose.Schema.Types.ObjectId, ref: "Listing" }
+}
 }, { timestamps: true });
+
+notificationSchema.index({ status: 1, expiresAt: 1 });
+notificationSchema.index({ status: 1, scheduledAt: 1 });
 
 export default mongoose.model("Notification", notificationSchema);
