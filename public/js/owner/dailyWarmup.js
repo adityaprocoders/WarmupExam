@@ -144,22 +144,24 @@
         renderSubjects(subjects, config);
 
         if (config) {
-            $('#wuQuestionCount').value = config.questionCount || 10;
-            $('#wuDiffEasy').value = config.difficultyDistribution.easy;
-            $('#wuDiffMedium').value = config.difficultyDistribution.medium;
-            $('#wuDiffHard').value = config.difficultyDistribution.hard;
-            $('#wuStartTime').value = config.startTime || '06:00';
-            const langVal = config.languageMode === 'both' ? 'both' : (config.languages[0] || 'English');
-            const radio = $(`input[name="wuLanguage"][value="${langVal}"]`);
-            if (radio) radio.checked = true;
-        } else {
-            $('#wuQuestionCount').value = 10;
-            $('#wuDiffEasy').value = 30;
-            $('#wuDiffMedium').value = 50;
-            $('#wuDiffHard').value = 20;
-            $('#wuStartTime').value = '06:00';
-            $(`input[name="wuLanguage"][value="English"]`).checked = true;
-        }
+    $('#wuQuestionCount').value = config.questionCount || 10;
+    $('#wuDurationInput').value = config.duration || 10;
+    $('#wuDiffEasy').value = config.difficultyDistribution.easy;
+    $('#wuDiffMedium').value = config.difficultyDistribution.medium;
+    $('#wuDiffHard').value = config.difficultyDistribution.hard;
+    $('#wuStartTime').value = config.startTime || '06:00';
+    const langVal = config.languageMode === 'both' ? 'both' : (config.languages[0] || 'English');
+    const radio = $(`input[name="wuLanguage"][value="${langVal}"]`);
+    if (radio) radio.checked = true;
+} else {
+    $('#wuQuestionCount').value = 10;
+    $('#wuDurationInput').value = 10;
+    $('#wuDiffEasy').value = 30;
+    $('#wuDiffMedium').value = 50;
+    $('#wuDiffHard').value = 20;
+    $('#wuStartTime').value = '06:00';
+    $(`input[name="wuLanguage"][value="English"]`).checked = true;
+}
 
         updateDiffBar();
         await updateUniqueCount();
@@ -221,14 +223,15 @@
     }
 
     function updatePreview() {
-        $('#wuPreviewExam').textContent = currentConfigExam || '—';
-        $('#wuPreviewQuestions').textContent = $('#wuQuestionCount').value || '—';
-        $('#wuPreviewSubjects').textContent = $all('input[data-action="wu-subject-checkbox"]:checked').length + ' Subjects';
-        $('#wuPreviewSources').textContent = selectedListingIds.size + ' Series';
-        const lang = $('input[name="wuLanguage"]:checked')?.value || 'English';
-        $('#wuPreviewLanguage').textContent = lang === 'both' ? 'Both' : lang;
-        $('#wuPreviewStartTime').textContent = $('#wuStartTime').value || '—';
-    }
+    $('#wuPreviewExam').textContent = currentConfigExam || '—';
+    $('#wuPreviewQuestions').textContent = $('#wuQuestionCount').value || '—';
+    $('#wuPreviewSubjects').textContent = $all('input[data-action="wu-subject-checkbox"]:checked').length + ' Subjects';
+    $('#wuPreviewSources').textContent = selectedListingIds.size + ' Series';
+    const lang = $('input[name="wuLanguage"]:checked')?.value || 'English';
+    $('#wuPreviewLanguage').textContent = lang === 'both' ? 'Both' : lang;
+    $('#wuPreviewStartTime').textContent = $('#wuStartTime').value || '—';
+    $('#wuPreviewDuration').textContent = $('#wuDurationInput').value ? $('#wuDurationInput').value + ' min' : '—';
+}
 
     async function saveConfig(btn) {
         const easy = parseInt($('#wuDiffEasy').value, 10) || 0;
@@ -254,15 +257,16 @@
         btn.textContent = 'Saving...';
 
         const { ok, data } = await apiPost('/owner/daily-warmup/config', {
-            category: btn.dataset.category,
-            exam: btn.dataset.exam,
-            includedListings: Array.from(selectedListingIds),
-            languageMode: $('input[name="wuLanguage"]:checked').value,
-            subjects,
-            questionCount: parseInt($('#wuQuestionCount').value, 10),
-            difficultyDistribution: { easy, medium, hard },
-            startTime: $('#wuStartTime').value
-        });
+    category: btn.dataset.category,
+    exam: btn.dataset.exam,
+    includedListings: Array.from(selectedListingIds),
+    languageMode: $('input[name="wuLanguage"]:checked').value,
+    subjects,
+    questionCount: parseInt($('#wuQuestionCount').value, 10),
+    duration: parseInt($('#wuDurationInput').value, 10),
+    difficultyDistribution: { easy, medium, hard },
+    startTime: $('#wuStartTime').value
+});
 
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save Configuration`;

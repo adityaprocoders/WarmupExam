@@ -160,6 +160,14 @@ app.use((req, res, next) => {
 
 
 
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+app.use(express.json({ limit: "5mb" }));
+app.use(methodOverride('_method'));
+app.use(cookieParser());
+
+
+
+
 
 app.use((req, res, next) => {
     const richTextRoutes = ['/tests', '/owner/content-library'];
@@ -201,10 +209,7 @@ app.use(express.static(path.join(__dirname, "public"), {
 
 app.use('/vendor/ckeditor5', express.static(path.join(__dirname, 'node_modules/ckeditor5/dist')));
 
-app.use(express.urlencoded({ extended: true, limit: "5mb" }));
-app.use(express.json({ limit: "5mb" }));
-app.use(methodOverride('_method'));
-app.use(cookieParser());
+
 
 
 // ---------------- GLOBAL SEO ----------------
@@ -408,7 +413,16 @@ app.use((req, res, next) => {
     next(new ExpressError(404, "Page Not Found"));
 });
 
- 
+
+app.locals.nl2br = function (str) {
+    if (!str) return "";
+    const escaped = str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    return escaped.replace(/\r\n/g, "\n").replace(/\n/g, "<br>");
+};
+
 
 app.use(errorHandler);
 

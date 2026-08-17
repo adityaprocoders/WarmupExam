@@ -14,4 +14,5 @@ router.get("/owner/daily-warmup/config/:exam", isLoggedIn, isOwner, wrapAsync(ct
 router.post("/owner/daily-warmup/config", isLoggedIn, isOwner, wrapAsync(ctrl.saveConfig));
 router.delete("/owner/daily-warmup/config/:exam", isLoggedIn, isOwner, wrapAsync(ctrl.deleteConfig));
 
+ 
 export default router;

@@ -1,3 +1,5 @@
+import ExpressError from "../utils/ExpressError.js";
+
 // User authenticated hai ya nahi check karta hai
 export function isLoggedIn(req, res, next) {
     if (req.isAuthenticated()) {
@@ -14,10 +16,9 @@ export const isOwner = (req, res, next) => {
         return next();
     }
     if (req.originalUrl.startsWith("/api/") || req.xhr) {
-        return res.status(403).json({ success: false, message: "Owner access required" });
+        return res.status(404).json({ success: false, message: "Not found" });
     }
-    req.flash("error", "Owner access required");
-    res.redirect(`/${process.env.OWNER_LOGIN_PATH}`);
+    return next(new ExpressError(404, "Page Not Found"));
 };
 
 // Already logged in user login/register page pe na jaaye (optional use)

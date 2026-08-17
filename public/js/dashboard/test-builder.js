@@ -53,6 +53,19 @@ function ensureImageStore(qId) {
   return imageDataStore[qId];
 }
 
+function restoreImagePreviews(qId) {
+  const store = imageDataStore[qId];
+  if (!store) return;
+
+  if (store.question) showPreview(`qImagePreview_${qId}`, store.question);
+  if (store.solution) showPreview(`qSolImagePreview_${qId}`, store.solution);
+
+  const optCount = getOptionCount(qId);
+  for (let oi = 0; oi < optCount; oi++) {
+    if (store.options[oi]) showPreview(`qOptImagePreview_${qId}_${oi}`, store.options[oi]);
+  }
+}
+
 async function uploadAndStore(inputEl, kind, qId, optionIdx) {
   const file = inputEl.files[0];
   if (!file) return;
@@ -397,7 +410,9 @@ function handleLanguageUI() {
   // Sirf har question ka BODY re-render karo (header/topic/subject safe rehta hai)
   document.querySelectorAll('[id^="question_"]').forEach(block => {
     const qId = block.id.split('_')[1];
+    const snap = captureQuestionSnapshot(qId);
     renderQuestionBody(qId);
+    applyQuestionSnapshot(qId, snap);
   });
 
   // JSON tab khula ho aur khaali/demo dikh raha ho to usko bhi refresh karo
@@ -460,7 +475,9 @@ function addLanguageTag() {
 
     document.querySelectorAll('[id^="question_"]').forEach(block => {
       const qId = block.id.split('_')[1];
+      const snap = captureQuestionSnapshot(qId);
       renderQuestionBody(qId);
+      applyQuestionSnapshot(qId, snap);
     });
 
     renderShowLanguageUI();
@@ -474,8 +491,9 @@ function removeLanguageTag(lang) {
 
   document.querySelectorAll('[id^="question_"]').forEach(block => {
     const qId = block.id.split('_')[1];
+    const snap = captureQuestionSnapshot(qId);
     renderQuestionBody(qId);
-
+    applyQuestionSnapshot(qId, snap);
   });
 
   renderShowLanguageUI();
@@ -685,13 +703,79 @@ function removeOption(qId, optIdx) {
     alert("Kam se kam 2 options zaroori hain.");
     return;
   }
+
+  const wasMultiple = !!document.getElementById(`qTransQuestion_${qId}_0`);
+
+  // Correct answers ko remap karo — deleted index hatao, upar wale sab 1 shift down
+  const correctBefore = Array.from(document.querySelectorAll(`.qCorrect_${qId}:checked`)).map(el => Number(el.value));
+  const correctAfter = correctBefore
+    .filter(v => v !== optIdx)
+    .map(v => (v > optIdx ? v - 1 : v));
+
+  let optionTextsSingle = [];
+  let optionTextsMulti = [];
+  let questionText = null, solutionText = null, transTexts = null;
+
+  if (wasMultiple) {
+    optionTextsMulti = testLanguages.map((lang, li) => {
+      const arr = [];
+      for (let oi = 0; oi < count; oi++) {
+        arr.push(document.getElementById(`qTransOptText_${qId}_${li}_${oi}`)?.value || '');
+      }
+      arr.splice(optIdx, 1);
+      return arr;
+    });
+    transTexts = testLanguages.map((lang, li) => ({
+      question: document.getElementById(`qTransQuestion_${qId}_${li}`)?.value || '',
+      solution: document.getElementById(`qTransSolutionText_${qId}_${li}`)?.value || ''
+    }));
+  } else {
+    for (let oi = 0; oi < count; oi++) {
+      optionTextsSingle.push(document.getElementById(`qOptText_${qId}_${oi}`)?.value || '');
+    }
+    optionTextsSingle.splice(optIdx, 1);
+    questionText = document.getElementById(`qText_${qId}`)?.value || '';
+    solutionText = document.getElementById(`qSolution_${qId}`)?.value || '';
+  }
+
+  const numericVal = document.getElementById(`qNumeric_${qId}`)?.value ?? null;
+
   const store = ensureImageStore(qId);
   store.options.splice(optIdx, 1);
   questionOptionCount[qId] = count - 1;
 
-  const snap = snapshotQuestionInputs(qId);
   renderQuestionBody(qId);
-  restoreQuestionInputs(qId, snap);
+
+  if (wasMultiple) {
+    testLanguages.forEach((lang, li) => {
+      const qEl = document.getElementById(`qTransQuestion_${qId}_${li}`);
+      if (qEl) qEl.value = transTexts[li].question;
+      const solEl = document.getElementById(`qTransSolutionText_${qId}_${li}`);
+      if (solEl) solEl.value = transTexts[li].solution;
+      optionTextsMulti[li].forEach((val, oi) => {
+        const optEl = document.getElementById(`qTransOptText_${qId}_${li}_${oi}`);
+        if (optEl) optEl.value = val;
+      });
+    });
+  } else {
+    const qEl = document.getElementById(`qText_${qId}`);
+    if (qEl) qEl.value = questionText;
+    const solEl = document.getElementById(`qSolution_${qId}`);
+    if (solEl) solEl.value = solutionText;
+    optionTextsSingle.forEach((val, oi) => {
+      const optEl = document.getElementById(`qOptText_${qId}_${oi}`);
+      if (optEl) optEl.value = val;
+    });
+  }
+
+  correctAfter.forEach(idx => {
+    const el = document.querySelector(`.qCorrect_${qId}[value="${idx}"]`);
+    if (el) el.checked = true;
+  });
+  if (numericVal !== null) {
+    const numEl = document.getElementById(`qNumeric_${qId}`);
+    if (numEl) numEl.value = numericVal;
+  }
 }
 
 function renumberQuestions() {
@@ -722,6 +806,7 @@ function renderQuestionBody(qId) {
     body.innerHTML = renderSingleLanguageBody(qId, type);
     updateUI(qId);
   }
+  restoreImagePreviews(qId);
   calculateTotalMarks();
 }
 

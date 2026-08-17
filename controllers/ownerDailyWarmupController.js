@@ -8,6 +8,8 @@ import WarmupUsageLog from "../models/WarmupUsageLog.js";
 import { generateWarmupForExam } from "./dailyWarmupController.js";
 import WarmupStreak from "../models/WarmupStreak.js";
 
+import Question from "../models/Question.js";
+
 function currentHHMM() {
     const now = new Date();
     return String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
@@ -156,11 +158,11 @@ export const getConfigByExam = async (req, res) => {
 /* POST /owner/daily-warmup/config   (create/update)                 */
 /* ================================================================ */
 export const saveConfig = async (req, res) => {
-     console.log("REQ BODY:", req.body); 
+    
     const {
-        category, exam, includedListings, languageMode, languages,
-        subjects, questionCount, difficultyDistribution, startTime
-    } = req.body;
+    category, exam, includedListings, languageMode, languages,
+    subjects, questionCount, duration, difficultyDistribution, startTime
+} = req.body;
 
     if (!category || !exam) return res.status(400).json({ success: false, message: "Category & exam required." });
     if (!Array.isArray(includedListings) || includedListings.length === 0) {
@@ -172,6 +174,13 @@ export const saveConfig = async (req, res) => {
     if (!questionCount || questionCount < 5 || questionCount > 50) {
         return res.status(400).json({ success: false, message: "Question count must be between 5 and 50." });
     }
+
+
+    if (!duration || duration < 1 || duration > 60) {
+    return res.status(400).json({ success: false, message: "Duration must be between 1 and 60 minutes." });
+}
+
+
     const { easy = 0, medium = 0, hard = 0 } = difficultyDistribution || {};
     if (easy + medium + hard !== 100) {
         return res.status(400).json({ success: false, message: "Difficulty distribution must total 100%." });
@@ -185,18 +194,18 @@ export const saveConfig = async (req, res) => {
     }
 
     const config = await DailyWarmupConfig.findOneAndUpdate(
-        { exam },
-        {
-            category, exam, includedListings,
-            languageMode: languageMode === "both" ? "both" : "single",
-            languages: languageMode === "both" ? ["English", "Hindi"] : [languageMode === "Hindi" ? "Hindi" : "English"],
-            subjects, questionCount,
-            difficultyDistribution: { easy, medium, hard },
-            startTime,
-            createdBy: req.user._id
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
-    );
+    { exam },
+    {
+        category, exam, includedListings,
+        languageMode: languageMode === "both" ? "both" : "single",
+        languages: languageMode === "both" ? ["English", "Hindi"] : [languageMode === "Hindi" ? "Hindi" : "English"],
+        subjects, questionCount, duration,
+        difficultyDistribution: { easy, medium, hard },
+        startTime,
+        createdBy: req.user._id
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
+);
 
     // agar is exam ka koi active warmup nahi hai to turant generate kar do
     const active = await Test.findOne({

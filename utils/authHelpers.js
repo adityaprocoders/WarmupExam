@@ -1,3 +1,6 @@
+import ExpressError from "../utils/ExpressError.js";
+
+
 export function isOwnerUser(req) {
     return !!(req.user && req.user.role === "owner");
 }
@@ -53,10 +56,9 @@ export const isOwner = (req, res, next) => {
         return next();
     }
     if (req.originalUrl.startsWith("/api/") || req.xhr) {
-        return res.status(403).json({ success: false, message: "Owner access required" });
+        return res.status(404).json({ success: false, message: "Not found" });
     }
-    req.flash("error", "Owner access required");
-    res.redirect(`/${process.env.OWNER_LOGIN_PATH}`);
+    return next(new ExpressError(404, "Page Not Found"));
 };
 
 export function isLoggedOut(req, res, next) {

@@ -1,22 +1,18 @@
 import xss from "xss";
- 
- 
 
-function sanitizeObject(obj) {
+function sanitizeObject(obj, depth = 0) {
+    if (depth > 10) return obj;
     if (obj && typeof obj === "object") {
         for (const key in obj) {
-            // Prototype pollution + Mongo operator injection block
             if (/^\$/.test(key) || key.includes(".") || key === "__proto__" || key === "constructor" || key === "prototype") {
                 delete obj[key];
                 continue;
             }
 
-
             if (typeof obj[key] === "string") {
-                // XSS sanitize - HTML/script tags clean karo
                 obj[key] = xss(obj[key]);
             } else if (typeof obj[key] === "object") {
-                sanitizeObject(obj[key]);
+                sanitizeObject(obj[key], depth + 1);
             }
         }
     }

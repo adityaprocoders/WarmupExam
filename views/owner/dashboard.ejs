@@ -346,12 +346,16 @@
                     <p id="wuDiffError" class="hidden text-xs text-red-500 mt-1.5">Difficulty percentages must add up to 100%.</p>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                    <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">5</span>Schedule</h4>
-                    <label class="block text-xs text-gray-500 mb-1">Start Time (daily)</label>
-                    <input type="time" id="wuStartTime" value="06:00" class="w-full border rounded-lg px-3 py-2 text-sm">
-                    <p class="text-xs text-indigo-500 bg-indigo-50 rounded-lg p-2 mt-3">Warm-up will auto-generate every day at this time and stay active for 24 hours.</p>
-                </div>
+                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+    <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">5</span>Schedule</h4>
+    <label class="block text-xs text-gray-500 mb-1">Start Time (daily)</label>
+    <input type="time" id="wuStartTime" value="06:00" class="w-full border rounded-lg px-3 py-2 text-sm mb-4">
+
+    <label class="block text-xs text-gray-500 mb-1">Test Duration (minutes)</label>
+    <input type="number" id="wuDurationInput" min="1" max="60" value="10" class="w-full border rounded-lg px-3 py-2 text-sm">
+
+    <p class="text-xs text-indigo-500 bg-indigo-50 rounded-lg p-2 mt-3">Warm-up will auto-generate every day at this time and stay active for 24 hours.</p>
+</div>
             </div>
         </div>
 
@@ -365,6 +369,7 @@
                 <div><span class="text-gray-400 block">Sources</span><span id="wuPreviewSources" class="font-bold text-gray-800">—</span></div>
                 <div><span class="text-gray-400 block">Language</span><span id="wuPreviewLanguage" class="font-bold text-gray-800">—</span></div>
                 <div><span class="text-gray-400 block">Start Time</span><span id="wuPreviewStartTime" class="font-bold text-gray-800">—</span></div>
+                <div><span class="text-gray-400 block">Duration</span><span id="wuPreviewDuration" class="font-bold text-gray-800">—</span></div>
             </div>
         </div>
 

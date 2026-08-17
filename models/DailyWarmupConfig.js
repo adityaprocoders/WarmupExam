@@ -7,7 +7,8 @@ includedListings: [{ type: mongoose.Schema.Types.ObjectId, ref: "Listing", requi
 languageMode: { type: String, enum: ["single", "both"], default: "single" },
 languages: { type: [String], default: ["English"] },
 subjects: { type: [String], required: true },
-questionCount: { type: Number, required: true, min: 5, max: 50 },    // 👈 YE ADD KARO
+questionCount: { type: Number, required: true, min: 5, max: 50 }, 
+duration: { type: Number, required: true, min: 1, max: 60, default: 10 },
 difficultyDistribution: {
     easy: { type: Number, default: 30 },
     medium: { type: Number, default: 50 },
