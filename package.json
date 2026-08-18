@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "build:css": "tailwindcss -i ./public/input.css -o ./public/css/output.css --minify"
+    "build:css": "tailwindcss -i ./public/input.css -o ./public/css/output.css --minify",
+    "postinstall": "npm run build:css"
   },
   "keywords": [],
   "author": "",
