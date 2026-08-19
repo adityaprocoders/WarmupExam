@@ -289,7 +289,7 @@
     <p class="msg">The page you're looking for has moved, been renamed, or never existed.</p>
 
     <div class="actions">
-      <a href="javascript:history.back()" class="btn btn-primary">
+      <a href="#" id="notFoundBackBtn" class="btn btn-primary">
         <i data-lucide="arrow-left"></i>
         Go back
       </a>
@@ -305,6 +305,10 @@
 
 <script nonce="<%= cspNonce %>">
   if (window.lucide) { lucide.createIcons(); }
+  document.getElementById('notFoundBackBtn')?.addEventListener('click', function(e) {
+      e.preventDefault();
+      history.back();
+  });
 </script>
 
 </body>

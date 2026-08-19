@@ -1103,6 +1103,10 @@ document.addEventListener('click', function (e) {
     switch (action) {
         case 'go-to-url':
             window.location.href = target.dataset.href;
+            break;
+        case 'go-back':
+            e.preventDefault();
+            history.back();
             break; 
         case 'edit-item':
             editItem(target.dataset.type, target.dataset.id);
