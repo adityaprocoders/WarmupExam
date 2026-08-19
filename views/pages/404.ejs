@@ -14,17 +14,16 @@
       report-uri, or block some attack vectors). Keep this meta tag removed
       or in sync with the helmet config to avoid confusion later.
     -->
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' https://cdn.jsdelivr.net 'nonce-<%= cspNonce %>';
-        style-src 'self' https://fonts.googleapis.com 'nonce-<%= cspNonce %>';
-        font-src 'self' https://fonts.gstatic.com;
-        img-src 'self' data:;
-        connect-src 'self';
-        object-src 'none';
-        base-uri 'self';
-        frame-ancestors 'self';
-    ">
+   <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://cdn.jsdelivr.net 'nonce-<%= cspNonce %>';
+    style-src 'self' https://fonts.googleapis.com 'nonce-<%= cspNonce %>';
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data:;
+    connect-src 'self' https://cdn.jsdelivr.net;
+    object-src 'none';
+    base-uri 'self';
+">
 
     <link rel="stylesheet" href="/css/output.css">
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js" nonce="<%= cspNonce %>"></script>

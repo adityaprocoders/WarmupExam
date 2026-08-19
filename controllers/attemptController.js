@@ -262,6 +262,11 @@ export const submitAttempt = async (req, res) => {
         });
     });
 
+    if (!test.isDailyWarmup) {                                    // 👈 NAYA
+        await Attempt.deleteOne({ user: req.user._id, test: testId });  // 👈 NAYA
+    }                                                              // 👈 NAYA
+
+
     const attempt = await Attempt.create({
         test: testId,
         listing: test.listing,

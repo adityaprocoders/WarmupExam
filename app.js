@@ -170,7 +170,7 @@ app.use(cookieParser());
 
 
 app.use((req, res, next) => {
-    const richTextRoutes = ['/tests', '/owner/content-library'];
+    const richTextRoutes = ['/tests', '/owner/content-library', '/api/test-builder'];
     const isRichTextRoute = richTextRoutes.some(prefix =>
         req.path.startsWith(prefix) && ['POST', 'PUT'].includes(req.method)
     );
@@ -189,6 +189,8 @@ connectDB();
 
 import "./cron/dailyWarmupCron.js";
 import "./cron/notificationCron.js";
+import "./cron/expiredEnrollmentCleanupCron.js";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
