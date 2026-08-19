@@ -15,7 +15,7 @@
       report-uri, or block some attack vectors). Keep this meta tag removed
       or in sync with the helmet config to avoid confusion later.
     -->
-    <meta http-equiv="Content-Security-Policy" content="
+         <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' https://cdn.jsdelivr.net 'nonce-<%= cspNonce %>';
         style-src 'self' https://fonts.googleapis.com 'nonce-<%= cspNonce %>';
@@ -24,7 +24,6 @@
         connect-src 'self';
         object-src 'none';
         base-uri 'self';
-        frame-ancestors 'self';
     ">
 
     <link rel="stylesheet" href="/css/output.css">
@@ -254,6 +253,10 @@
 
 <script nonce="<%= cspNonce %>">
   if (window.lucide) { lucide.createIcons(); }
+  document.getElementById('errorReloadBtn')?.addEventListener('click', function(e) {
+      e.preventDefault();
+      location.reload();
+  });
 </script>
 
 </body>

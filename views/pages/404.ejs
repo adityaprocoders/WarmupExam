@@ -141,6 +141,13 @@
     left:50%;
     transform-origin:50% 46px;
   }
+   
+
+  .err404-wrap .tick-0   { transform: rotate(0deg) translateX(-50%); }
+.err404-wrap .tick-90  { transform: rotate(90deg) translateX(-50%); }
+.err404-wrap .tick-180 { transform: rotate(180deg) translateX(-50%); }
+.err404-wrap .tick-270 { transform: rotate(270deg) translateX(-50%); }
+
 
   .err404-wrap .code-row{
     display:flex;
@@ -269,10 +276,10 @@
 
     <div class="compass-wrap">
       <div class="compass-ring">
-        <div class="tick" style="transform: rotate(0deg) translateX(-50%);"></div>
-        <div class="tick" style="transform: rotate(90deg) translateX(-50%);"></div>
-        <div class="tick" style="transform: rotate(180deg) translateX(-50%);"></div>
-        <div class="tick" style="transform: rotate(270deg) translateX(-50%);"></div>
+        <div class="tick tick-0"></div>
+          <div class="tick tick-90"></div>
+          <div class="tick tick-180"></div>
+          <div class="tick tick-270"></div>
         <i data-lucide="navigation" class="needle"></i>
       </div>
     </div>
