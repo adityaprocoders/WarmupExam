@@ -349,9 +349,9 @@ app.set("layout", "layouts/main");
             htmlMinifier: {
                 removeComments: true,
                 collapseWhitespace: true,
-                collapseBooleanAttributes: true,
-                removeEmptyAttributes: true,
-                removeRedundantAttributes: true,
+                collapseBooleanAttributes: false,
+                removeEmptyAttributes: false,
+                removeRedundantAttributes: false,
                 minifyJS: false,    
                 minifyCSS: false,   
             },
