@@ -14,6 +14,8 @@ router.get("/privacy-Policy", pageController.privacyPolicy);
 router.get("/features", pageController.features);
 router.get("/help", pageController.help);
 
+
+
 // ✅ Sitemap route (static + dynamic dono)
 router.get("/sitemap.xml", async (req, res) => {
     res.header("Content-Type", "application/xml");
@@ -24,7 +26,8 @@ router.get("/sitemap.xml", async (req, res) => {
         "contactUs",
         "features",
         "privacy-Policy",
-        "Terms-&amp;-Conditions"
+        "Terms-&amp;-Conditions",
+        "ebooks"
     ];
 
     // ✅ Sirf public tests fetch karo (private wale sitemap me nahi jaane chahiye)

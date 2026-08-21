@@ -1,0 +1,139 @@
+<div class="max-w-xl mx-auto my-10 p-6 bg-white rounded-lg shadow-lg border border-gray-200">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Add E-Book</h2>
+
+    <form method="POST" action="/owner/ebooks" enctype="multipart/form-data" class="space-y-5">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Title</label>
+                <input type="text" name="ebook[title]" required
+                    class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Exam</label>
+                <input type="text" name="ebook[exam]" required placeholder="e.g. SSC CGL, UPSC"
+                    class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-gray-700">Short Description</label>
+                <textarea name="ebook[shortDescription]" rows="2" maxlength="150" required
+                    placeholder="Maximum 150 characters"
+                    class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold text-gray-700">Category</label>
+            <select id="category-select" name="ebook[category]" required class="w-full mt-1 p-2 border rounded-md">
+                <option value="">Select a category</option>
+                <% categories.forEach(cat => { %>
+                    <option value="<%= cat._id %>"><%= cat.name %></option>
+                <% }) %>
+            </select>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Language</label>
+                <input type="text" name="ebook[language]" value="English"
+                    class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Total Pages</label>
+                <input type="number" name="ebook[totalPages]" min="1"
+                    class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold text-gray-700">Description</label>
+            <textarea name="ebook[description]" rows="4" required
+                class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+        </div>
+
+        <!-- Cover image -->
+        <div>
+            <label class="block text-sm font-semibold text-gray-700">Cover Image</label>
+            <input type="file" name="coverImage" accept="image/*" required
+                class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            <p class="text-xs text-gray-500 mt-1">JPG, PNG ya WEBP — max 5MB.</p>
+        </div>
+
+        <!-- PDF file -->
+        <div>
+            <label class="block text-sm font-semibold text-gray-700">E-Book PDF File</label>
+            <input type="file" name="ebookFile" accept="application/pdf" required
+                class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            <p class="text-xs text-gray-500 mt-1">Sirf PDF — max 25MB.</p>
+        </div>
+
+        <!-- Type / Price / Discount -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Type</label>
+                <select id="ebookType" name="ebook[type]" class="w-full mt-1 p-2 border rounded-md">
+                    <option value="Free">Free</option>
+                    <option value="Paid">Paid</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Price</label>
+                <input id="price" type="number" name="ebook[price]" value="0" readonly
+                    class="w-full mt-1 p-2 border rounded-md bg-gray-100">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Original Price</label>
+                <input id="originalPrice" type="number" name="ebook[originalPrice]" required
+                    class="w-full mt-1 p-2 border rounded-md">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Discount %</label>
+                <input id="discountPercentage" type="number" name="ebook[discountPercentage]" value="0" min="0" max="100"
+                    class="w-full mt-1 p-2 border rounded-md">
+            </div>
+        </div>
+
+        <!-- Purchase Limit / Validity -->
+        <div>
+            <label class="block text-sm font-semibold text-gray-700">Purchase Validity (Days)</label>
+            <input type="number" name="ebook[validityDays]" value="365" min="1" required
+                placeholder="e.g. 365"
+                class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+            <p class="text-xs text-gray-500 mt-1">
+                Purchase karne ke baad user ka access kitne din tak valid rahega. Free e-book ke liye ye field ignore ho jaayega.
+            </p>
+        </div>
+
+        <!-- Visibility -->
+        <div class="border rounded-lg p-4 bg-gray-50">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Visibility</label>
+            <div class="flex items-center gap-6">
+                <label class="flex items-center gap-2 text-sm text-gray-700">
+                    <input type="radio" name="ebook[visibility]" value="private" checked class="text-blue-600 focus:ring-blue-500">
+                    Private
+                </label>
+                <label class="flex items-center gap-2 text-sm text-gray-700">
+                    <input type="radio" name="ebook[visibility]" value="public" class="text-blue-600 focus:ring-blue-500">
+                    Public
+                </label>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Public e-book hi students ko store mein dikhegi, Private sirf owner ko.</p>
+        </div>
+
+        <button type="submit"
+            class="w-full bg-blue-600 text-white font-bold py-3 rounded-md hover:bg-blue-700 transition duration-300">
+            Create E-Book
+        </button>
+    </form>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script src="/js/layoutsJs/initChoices.js" defer></script>
+<script src="/js/ebookNew.js" defer></script>
