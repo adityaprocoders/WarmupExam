@@ -408,7 +408,7 @@ export const attachContentBlocksSchema = Joi.object({
     contentBlocks: Joi.alternatives().try(
         Joi.array().items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/)),
         Joi.string().pattern(/^[0-9a-fA-F]{24}$/),
-        Joi.allow(null, "")
+        Joi.allow(null)
     ).default([])
 });
 

@@ -47,3 +47,8 @@
     display: none;
   }
 }
+
+@import "./css/hero.css";
+@import "./css/whyChoose.css";
+@import "./css/features.css";
+@import "./css/aboutUs.css";

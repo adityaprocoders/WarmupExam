@@ -155,7 +155,7 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 
 userSchema.pre('save', async function () {
-  if (this.isModified('password')) {
+  if (this.isModified('password') && this.password) {
     this.password = await bcrypt.hash(this.password, 10);
   }
 });

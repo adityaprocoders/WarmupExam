@@ -104,7 +104,8 @@ app.use((req, res, next) => {
                      "https://googleads.g.doubleclick.net",
                      "https://www.googletagservices.com",
                      "https://adservice.google.com",
-                     "https://*.adtrafficquality.google"
+                     "https://*.adtrafficquality.google",
+                     "https://www.googletagmanager.com"
                  ],
                 styleSrc: [
                     "'self'",
@@ -133,7 +134,9 @@ app.use((req, res, next) => {
                     "https://googleads.g.doubleclick.net",
                     "https://ep1.adtrafficquality.google",
                     "https://*.adtrafficquality.google",
-                    "https://csi.gstatic.com" 
+                    "https://csi.gstatic.com",
+                    "https://www.google-analytics.com",
+                    "https://analytics.google.com"
                     ],
                 frameSrc: [
                     "https://api.razorpay.com",
@@ -191,7 +194,7 @@ connectDB();
 import "./cron/dailyWarmupCron.js";
 import "./cron/notificationCron.js";
 import "./cron/expiredEnrollmentCleanupCron.js";
-
+import "./cron/otpCleanupCron.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

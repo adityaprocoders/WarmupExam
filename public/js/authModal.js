@@ -1,4 +1,29 @@
  
+ function saveResetState(email, expiresInSeconds) {
+    const expiresAt = Date.now() + expiresInSeconds * 1000;
+    sessionStorage.setItem('pendingReset', JSON.stringify({ email, expiresAt }));
+}
+
+function clearResetState() {
+    sessionStorage.removeItem('pendingReset');
+}
+
+function getResetState() {
+    const raw = sessionStorage.getItem('pendingReset');
+    if (!raw) return null;
+    try {
+        const state = JSON.parse(raw);
+        if (state.expiresAt <= Date.now()) {
+            clearResetState();
+            return null;
+        }
+        return state;
+    } catch {
+        return null;
+    }
+}
+
+
     function openAuthModal(type) {
         const currentUrl = window.location.pathname
         document.getElementById('returnTo_login').value = currentUrl;
@@ -8,6 +33,7 @@
         document.body.classList.add('overflow-hidden');
         switchAuthPanel(type);
     }
+    
 
     function closeAuthModal() {
         document.getElementById('authOverlay').classList.add('hidden');
@@ -15,6 +41,21 @@
     }
 
         function switchAuthPanel(type) {
+    if (type === 'login' || type === 'forgot') {
+        const pending = getResetState();
+        if (pending) {
+            document.getElementById('resetEmailDisplay').textContent = pending.email;
+            document.getElementById('resetEmailHidden').value = pending.email;
+            const remaining = Math.max(1, Math.round((pending.expiresAt - Date.now()) / 1000));
+            startOtpCountdown(remaining);
+            type = 'reset';
+        } else if (type === 'forgot') {
+            const msgEl = document.getElementById('forgotEmailMsg');
+            msgEl.classList.add('hidden');
+            msgEl.textContent = '';
+        }
+    }
+
     document.getElementById('loginPanel').classList.toggle('hidden', type !== 'login');
     document.getElementById('registerPanel').classList.toggle('hidden', type !== 'register');
     document.getElementById('forgotPanel').classList.toggle('hidden', type !== 'forgot');
@@ -130,8 +171,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('resetEmailDisplay').textContent = email;
                     document.getElementById('resetEmailHidden').value = email;
 
+                    saveResetState(email, data.expiresIn || 300);
                     switchAuthPanel('reset');
-                    startOtpCountdown(data.expiresIn || 300); // 👈 5 min countdown shuru
+                    startOtpCountdown(data.expiresIn || 300);
                 } else {
                     msgEl.className = "text-center text-sm text-red-600";
                     msgEl.textContent = data.message || "Something went wrong";
@@ -172,6 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 msgEl.classList.remove('hidden');
 
                 if (data.success) {
+                     clearResetState();
                     msgEl.className = "text-center text-sm text-green-600";
                     msgEl.textContent = "Password reset successfully! Redirecting to login...";
                     clearInterval(otpCountdownInterval);
@@ -209,7 +252,8 @@ async function resendOtp() {
         });
         const data = await res.json();
 
-        if (data.success) {
+                 if (data.success) {
+            saveResetState(email, data.expiresIn || 300);
             startOtpCountdown(data.expiresIn || 300);
         } else {
             alert(data.message || "Failed to resend OTP");
@@ -221,3 +265,31 @@ async function resendOtp() {
     }
 }
  
+
+
+
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const resetEmail = params.get('resetEmail');
+    const resetOtp = params.get('resetOtp');
+
+    if (resetEmail && resetOtp) {
+        document.getElementById('authOverlay').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+
+        document.getElementById('resetEmailDisplay').textContent = resetEmail;
+        document.getElementById('resetEmailHidden').value = resetEmail;
+        document.getElementById('resetOtp').value = resetOtp;
+
+        switchAuthPanel('reset');
+        saveResetState(resetEmail, 300);
+        startOtpCountdown(300);
+
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+});

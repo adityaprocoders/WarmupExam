@@ -17,8 +17,9 @@ router.get("/help", pageController.help);
 
 
 // ✅ Sitemap route (static + dynamic dono)
-router.get("/sitemap.xml", async (req, res) => {
+router.get("/sitemap.xml", wrapAsync(async (req, res) => {
     res.header("Content-Type", "application/xml");
+    res.set("Cache-Control", "public, max-age=3600"); // 1 hour cache
 
     const staticPages = [
         "",
@@ -30,7 +31,6 @@ router.get("/sitemap.xml", async (req, res) => {
         "ebooks"
     ];
 
-    // ✅ Sirf public tests fetch karo (private wale sitemap me nahi jaane chahiye)
     const listings = await Listing.find({ visibility: "public" }).select("slug").lean();
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
@@ -56,6 +56,6 @@ router.get("/sitemap.xml", async (req, res) => {
     xml += `\n</urlset>`;
 
     res.send(xml);
-});
+}));
 
 export default router;

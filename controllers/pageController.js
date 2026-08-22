@@ -57,11 +57,11 @@ categories.forEach(c => {
     enrolledIds,
     enrolledExpiryMap,
     isOwner,
-    title: "WarmupExam - WarmupExam – AI-Powered Mock Tests for UPSC, SSC, Defence, JEE, NEET & 15+ Exams",
+    title: "AI-Powered Mock Tests & Test Series for Competitive Exams | WarmupExam",
     description:
-        "India's smartest mock test platform. Practice real exam simulations for NIMCET, UPSC, JEE, SSC, GATE, CAT, NEET and 25+ exams with true negative marking, AI-powered weak-area analysis and rank prediction. Free mock, no card required.",
+    "Practice competitive exams with realistic mock tests, PYQs, detailed performance analysis and rank prediction for SSC, NIMCET, Defence, JEE, NEET, UPSC and more on WarmupExam.",
     keywords:
-        "WarmupExam, mock test, AIR mock test, AIR Rank, online mock test India, NIMCET mock test, UPSC mock test, JEE mock test, SSC CGL mock test, GATE mock test, CAT mock test, NEET mock test, CUET mock test, rank predictor, negative marking test series, AI performance analysis, previous year questions PYQ",
+        "WarmupExam, mock test, AIR mock test, AIR Rank, online mock test India, CUET mock test, UPSC mock test, JEE mock test, SSC mock test, GATE mock test, CAT mock test, NEET mock test, CUET mock test, rank predictor, negative marking test series, AI performance analysis, previous year questions PYQ",
     canonicalUrl: "https://warmupexam.com/"
 });
 };

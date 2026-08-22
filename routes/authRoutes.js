@@ -35,7 +35,7 @@ router.post("/reset-password", authLimiter, validateBody(resetPasswordSchema), w
 
 router.get("/auth/google", passport.authenticate("user-google", { scope: ["profile", "email"] }));
 
-router.get("/api/auth/google/callback", authController.googleCallback);
+router.get("/api/auth/google/callback", wrapAsync(authController.googleCallback));
 
 router.post("/logout", authController.logout);
 

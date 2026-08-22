@@ -204,52 +204,59 @@ export const logout = (req, res, next) => {
 
 
 export const forgotPassword = async (req, res) => {
-    const { email } = req.body;
-
-    if (!email) {
-        return res.status(400).json({ success: false, message: "Email zaroori hai" });
-    }
-
-    const cleaned = email.trim().toLowerCase();
-    const user = await User.findOne({ email: cleaned, authProvider: "local" });
-
-    if (!user) {
-        return res.json({ success: true, message: "Agar ye email registered hai, to OTP bhej diya gaya hai" });
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 👈 5 minute valid (10 se 5 kiya)
-
-    user.resetOtp = otp;
-    user.resetOtpExpiry = otpExpiry;
-    await user.save();
- 
-
     try {
-        const { data, error } = await resend.emails.send({
-            from: `WarmupExam <${process.env.CONTACT_SENDER_EMAIL}>`,
-            to: cleaned,
-            subject: "Your WarmupExam Password Reset OTP",
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px;">
-                    <h2 style="color:#4f46e5; margin-bottom: 8px;">Password Reset Request</h2>
-                    <p style="color:#334155; font-size: 14px;">Use the OTP below to reset your password. It is valid for 5 minutes.</p>
-                    <div style="background:#f8fafc; border-radius:8px; padding: 20px; text-align:center; margin: 20px 0;">
-                        <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color:#4f46e5;">${otp}</span>
-                    </div>
-                    <p style="color:#94a3b8; font-size: 12px;">If you didn't request this, you can safely ignore this email.</p>
-                </div>
-            `
-        });
+        const { email } = req.body;
 
-         
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Email zaroori hai" });
+        }
+
+        const cleaned = email.trim().toLowerCase();
+        const user = await User.findOne({ email: cleaned, authProvider: "local" });
+
+        if (!user) {
+            return res.json({ success: true, message: "Agar ye email registered hai, to OTP bhej diya gaya hai" });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+        const resetLink = `${process.env.BASE_URL}/?resetEmail=${encodeURIComponent(cleaned)}&resetOtp=${otp}`;
+
+        user.resetOtp = otp;
+        user.resetOtpExpiry = otpExpiry;
+        await user.save();
+
+        const { data, error } = await resend.emails.send({
+    from: `WarmupExam <${process.env.CONTACT_SENDER_EMAIL}>`,
+    to: [cleaned],         
+    subject: "Your WarmupExam Password Reset OTP",
+    html: `
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px;">
+            <h2 style="color:#4f46e5; margin-bottom: 8px;">Password Reset Request</h2>
+            <p style="color:#334155; font-size: 14px;">Click the button below to reset your password directly. This link is valid for 5 minutes.</p>
+
+            <div style="text-align:center; margin: 24px 0;">
+                <a href="${resetLink}" style="background:#4f46e5; color:#ffffff; padding:12px 32px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block; font-size:15px;">
+                    Reset Password
+                </a>
+            </div>
+
+            <p style="color:#64748b; font-size: 13px; text-align:center;">Or enter this OTP manually on the site:</p>
+            <div style="background:#f8fafc; border-radius:8px; padding: 16px; text-align:center; margin: 12px 0;">
+                <span style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color:#4f46e5;">${otp}</span>
+            </div>
+
+            <p style="color:#94a3b8; font-size: 12px;">If you didn't request this, you can safely ignore this email.</p>
+        </div>
+    `
+});
 
         if (error) {
             console.error("❌ OTP mail error:", error);
             return res.status(500).json({ success: false, message: "OTP email nahi bhej paye, dobara try karo" });
         }
 
-        res.json({ success: true, message: "OTP sent to your email", expiresIn: 300 }); // 300 sec = 5 min
+        res.json({ success: true, message: "OTP sent to your email", expiresIn: 300 });
     } catch (err) {
         console.error("❌ Forgot password error:", err.message);
         res.status(500).json({ success: false, message: "Kuch galat ho gaya" });
@@ -279,9 +286,12 @@ export const resetPassword = async (req, res) => {
         return res.status(400).json({ success: false, message: "Incorrect OTP" });
     }
 
-    if (new Date() > user.resetOtpExpiry) {
-        return res.status(400).json({ success: false, message: "OTP expire ho gaya, naya mangwao" });
-    }
+     if (new Date() > user.resetOtpExpiry) {
+    user.resetOtp = null;
+    user.resetOtpExpiry = null;
+    await user.save();
+    return res.status(400).json({ success: false, message: "OTP expire ho gaya, naya mangwao" });
+}
 
     // Naya password set karo — pre('save') hook khud hash kar dega
     user.password = newPassword;
