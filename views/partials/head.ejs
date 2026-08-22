@@ -35,13 +35,9 @@
 
 <meta name="theme-color" content="#4F46E5">
 
+<link rel="preload" as="image" href="/images/hero.png" fetchpriority="high">
 
-
-
-
-
-
-<script type="application/ld+json">
+<script type="application/ld+json" nonce="<%= cspNonce %>">
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
@@ -54,10 +50,7 @@
 }
 </script>
 
-
-
-
-<script type="application/ld+json">
+<script type="application/ld+json" nonce="<%= cspNonce %>">
 {
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -72,19 +65,27 @@
 </script>
 
 
+<script type="application/ld+json" nonce="<%= cspNonce %>">
+{
+  "@context": "https://schema.org",
+  "@type": "SiteNavigationElement",
+  "name": ["Home", "Test Series", "E-Books", "About Us", "Contact Us"],
+  "url": [
+    "https://warmupexam.com/",
+    "https://warmupexam.com/alltests",
+    "https://warmupexam.com/ebooks",
+    "https://warmupexam.com/aboutUs",
+    "https://warmupexam.com/contactUs"
+  ]
+}
+</script>
+
+
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9B2V4WNTQV"></script>
-<script>
+<script nonce="<%= cspNonce %>">
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-9B2V4WNTQV');
 </script>
-
-
-
-
-
-
-
-

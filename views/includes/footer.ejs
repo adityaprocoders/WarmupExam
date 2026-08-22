@@ -27,9 +27,9 @@
         <span>India, Bihar</span>
     </div>
     <div class="flex items-center gap-3">
-        <i class="fa-solid fa-envelope w-5 text-indigo-400"></i>
-        <a href="mailto:support@warmupexam.com" class="hover:text-white transition">support@warmupexam.com</a>
-    </div>
+    <i class="fa-solid fa-envelope w-5 text-indigo-400"></i>
+    <a href="#" class="footer-email hover:text-white transition" data-user="support" data-domain="warmupexam.com">Contact via email</a>
+</div>
     <div class="flex items-center gap-3">
         <i class="fa-solid fa-clock w-5 text-indigo-400"></i>
         <span>Support Hours: 10:00 AM – 7:00 PM IST</span>
@@ -130,6 +130,19 @@
         </div>
     </div>
 </footer>
+
+
+
+<script nonce="<%= cspNonce %>">
+document.querySelectorAll('.footer-email').forEach(function(el) {
+    var email = el.dataset.user + '@' + el.dataset.domain;
+    el.textContent = email;
+    el.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = 'mailto:' + email;
+    });
+});
+</script>
 
 <script src="/js/home/footer.js" defer></script>
 

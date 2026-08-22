@@ -17,6 +17,18 @@
                     class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
 
+
+            <div>
+        <label class="block text-sm font-semibold text-gray-700">Content Type</label>
+        <select name="ebook[contentType]" required class="w-full mt-1 p-2 border rounded-md">
+            <option value="E-Book">E-Book</option>
+            <option value="Short Notes">Short Notes</option>
+            <option value="PYQ">PYQ Book</option>
+            <option value="Handwritten Notes">Handwritten Notes</option>
+        </select>
+    </div>
+    
+
             <div class="md:col-span-2">
                 <label class="block text-sm font-semibold text-gray-700">Short Description</label>
                 <textarea name="ebook[shortDescription]" rows="2" maxlength="150" required

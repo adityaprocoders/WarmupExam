@@ -63,13 +63,22 @@ export const view = async (req, res) => {
         hasAccess = purchase && new Date() < new Date(purchase.expiresAt);
     }
 
+     const contentTypeLabels = {
+        "E-Book": "E-Book",
+        "Short Notes": "Short Notes",
+        "PYQ": "PYQ Book",
+        "Handwritten Notes": "Handwritten Notes"
+    };
+    const typeLabel = contentTypeLabels[ebook.contentType] || "E-Book";
+
+
     res.render("pages/ebook/view", {
         ebook,
         hasAccess,
         isOwner,
-        title: `${ebook.title} | WarmupExam E-Books`,
+        title: `${ebook.title} - ${typeLabel} | WarmupExam`,   // 👈 updated
         description: (ebook.shortDescription || ebook.description).slice(0, 155),
-        keywords: `${ebook.title}, WarmupExam ebook, ${ebook.exam}`,
+        keywords: `${ebook.title}, ${typeLabel}, WarmupExam ebook, ${ebook.exam}`,  // 👈 updated
         canonicalUrl: `https://warmupexam.com/ebooks/${ebook.slug}`,
     });
 };
@@ -101,6 +110,8 @@ export const renderNewEbook = async (req, res) => {
 
 export const createEbook = async (req, res) => {
     const data = req.body.ebook;
+
+    if (!data.contentType) data.contentType = "E-Book";
 
     data.originalPrice = Number(data.originalPrice) || 0;
     data.discountPercentage = Number(data.discountPercentage) || 0;

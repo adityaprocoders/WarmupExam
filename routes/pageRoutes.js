@@ -16,46 +16,6 @@ router.get("/help", pageController.help);
 
 
 
-// ✅ Sitemap route (static + dynamic dono)
-router.get("/sitemap.xml", wrapAsync(async (req, res) => {
-    res.header("Content-Type", "application/xml");
-    res.set("Cache-Control", "public, max-age=3600"); // 1 hour cache
 
-    const staticPages = [
-        "",
-        "aboutUs",
-        "contactUs",
-        "features",
-        "privacy-Policy",
-        "Terms-&amp;-Conditions",
-        "ebooks"
-    ];
-
-    const listings = await Listing.find({ visibility: "public" }).select("slug").lean();
-
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
-
-    staticPages.forEach(page => {
-        xml += `
-    <url>
-        <loc>https://warmupexam.com/${page}</loc>
-        <changefreq>weekly</changefreq>
-        <priority>${page === "" ? "1.0" : "0.7"}</priority>
-    </url>`;
-    });
-
-    listings.forEach(listing => {
-        xml += `
-    <url>
-        <loc>https://warmupexam.com/series/${listing.slug}</loc>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>`;
-    });
-
-    xml += `\n</urlset>`;
-
-    res.send(xml);
-}));
 
 export default router;

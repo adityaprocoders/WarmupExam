@@ -21,7 +21,7 @@
             </div>
             
             <div class="border p-6 rounded-xl bg-gray-50">
-                <h1 class="text-3xl font-bold text-gray-900 mb-4">About the Test</h1>
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">About the Test</h2>
                 <p class="text-gray-600 text-lg"><%- nl2br(listing.description) %></p>
             </div>
  
@@ -90,7 +90,7 @@
 
         <!-- Image + Badge overlay -->
         <div class="relative mb-4">
-            <img src="<%= listing.image %>" class="w-full h-48 object-cover rounded-lg">
+            <img src="<%= listing.image %>" alt="<%= listing.title %> cover image" class="w-full h-48 object-cover rounded-lg" loading="lazy">
 
             <span class="<%= listing.type === 'Free' 
                 ? 'bg-green-50 text-green-600 border-green-300' 
@@ -190,6 +190,21 @@
 </button>
 <% } %>
 </div>
+
+
+<script type="application/ld+json" nonce="<%= cspNonce %>">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Who can take this Mock Test?", "acceptedAnswer": { "@type": "Answer", "text": "This mock test platform is designed for students, learners, and aspirants preparing for various competitive, entrance, recruitment, and academic examinations. It provides realistic practice, detailed performance analysis, and AI-powered insights to help improve speed, accuracy, and overall performance." } },
+    { "@type": "Question", "name": "Are the Mock Tests based on the latest exam pattern?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every mock test is prepared according to the latest syllabus, exam pattern, and difficulty level." } },
+    { "@type": "Question", "name": "Will I receive AI Performance Analysis?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. After completing the test, you'll receive an AI-powered performance report showing your strengths, weaknesses, accuracy, speed, and topic-wise analysis." } },
+    { "@type": "Question", "name": "Will I get an All India Rank (AIR)?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. For supported tests, you'll receive an estimated All India Rank along with percentile and performance comparison." } }
+  ]
+}
+</script>
+
 
 <script src="/js/enrollment.js" defer></script>
 

@@ -32,6 +32,7 @@ import { safeJsonStringify } from "./utils/safeJson.js";
 import { checkSingleSession } from "./middleware/checkSingleSession.js";
 
 
+import sitemapRoutes from "./routes/sitemapRoutes.js";
 import pageRoutes from "./routes/pageRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -68,7 +69,10 @@ app.set('trust proxy', 1);
 if (isProd) {
     app.use((req, res, next) => {
         if (req.headers['x-forwarded-proto'] !== 'https') {
-            return res.redirect(`https://${req.headers.host}${req.url}`);
+            return res.redirect(`https://warmupexam.com${req.url}`);
+        }
+        if (req.headers.host !== 'warmupexam.com') {
+            return res.redirect(301, `https://warmupexam.com${req.url}`);
         }
         next();
     });
@@ -346,6 +350,9 @@ app.set("view engine", "ejs");
 app.use(expressLayouts);
 app.set("layout", "layouts/main");
 
+
+app.use(sitemapRoutes);
+
 // ---------------- ROUTES ----------------
 
     app.use(
@@ -363,6 +370,7 @@ app.set("layout", "layouts/main");
             },
         })
     );
+
 
 
 app.use(pageRoutes);

@@ -13,6 +13,13 @@ const ebookSchema = new mongoose.Schema({
         required: true
     },
 
+    contentType: {
+        type: String,
+        enum: ["E-Book", "Short Notes", "PYQ", "Handwritten Notes"],
+        default: "E-Book",
+        required: true
+    },
+
     shortDescription: {
         type: String,
         required: true,

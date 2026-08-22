@@ -2,6 +2,11 @@ import multer from "multer";
 import { Readable } from "stream";
 import cloudinary from "../config/cloudinary.js";
 
+function addAutoFormat(secureUrl) {
+    return secureUrl.replace("/upload/", "/upload/f_auto,q_auto/");
+}
+
+
 function makeCloudinaryStorage(folder, transformation) {
     return {
         _handleFile(req, file, cb) {
@@ -10,7 +15,7 @@ function makeCloudinaryStorage(folder, transformation) {
                 (error, result) => {
                     if (error) return cb(error);
                     cb(null, {
-                        path: result.secure_url,
+                        path: addAutoFormat(result.secure_url),
                         filename: result.public_id,
                         size: result.bytes,
                     });

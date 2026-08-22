@@ -106,6 +106,30 @@
         <% }) %>
     </div>
 
+
+      <div class="flex gap-2 overflow-x-auto pb-2 mb-6 md:mb-8 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+        <a href="/ebooks"
+            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'all' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+            All Types
+        </a>
+        <a href="/ebooks?contentType=E-Book"
+            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'E-Book' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+            E-Books
+        </a>
+        <a href="/ebooks?contentType=Short+Notes"
+            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'Short Notes' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+            Short Notes
+        </a>
+        <a href="/ebooks?contentType=PYQ"
+            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'PYQ' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+            PYQ Books
+        </a>
+        <a href="/ebooks?contentType=Handwritten+Notes"
+            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'Handwritten Notes' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+            Handwritten Notes
+        </a>
+    </div>
+
     <!-- Grid -->
     <% if (ebooks.length === 0) { %>
         <div class="text-center py-16 sm:py-20 text-slate-400">
@@ -142,6 +166,9 @@
 
                     <!-- Info -->
                     <div class="p-2.5 sm:p-3 md:p-4">
+                        <span class="inline-block text-[9px] sm:text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full mb-1">
+                            <%= book.contentType %>
+                        </span>
                         <h4 class="font-semibold text-xs sm:text-sm text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition">
                             <%= book.title %>
                         </h4>
