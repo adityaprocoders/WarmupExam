@@ -4,10 +4,11 @@ import ExpressError from "../utils/ExpressError.js";
 import slugify from "slugify";
 import { generatePlaceholderImage } from "../utils/placeholderImage.js";
 
+
 // ================= PUBLIC =================
 
 export const list = async (req, res) => {
-    const { search, category, exam, sort } = req.query;
+    const { search, category, exam, sort, contentType } = req.query;
     const isOwner = req.user && req.user.role === "owner";
 
     const filter = isOwner ? {} : { visibility: "public" };
@@ -19,6 +20,7 @@ export const list = async (req, res) => {
     }
     if (category && category !== "all") filter.category = category;
     if (exam && exam !== "all") filter.exam = exam;
+    if (contentType && contentType !== "all") filter.contentType = contentType;
 
     let sortOption = { createdAt: -1 };
     if (sort === "popular") sortOption = { downloadCount: -1 };
@@ -41,6 +43,7 @@ export const list = async (req, res) => {
         exams,
         currentCategory: category || "all",
         currentExam: exam || "all",
+        currentContentType: contentType || "all",
         currentSearch: search || "",
         isOwner,
         title: "E-Books - Free & Premium Study Material for Competitive Exams",

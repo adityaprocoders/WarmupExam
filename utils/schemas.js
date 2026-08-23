@@ -36,15 +36,27 @@ export const forgotPasswordSchema = Joi.object({
     })
 });
 
+
 export const resetPasswordSchema = Joi.object({
     email: Joi.string().trim().lowercase().email().required(),
-    otp: Joi.string().length(6).pattern(/^[0-9]+$/).required().messages({
+    otp: Joi.string().length(6).pattern(/^[0-9]+$/).messages({
         "string.length": "OTP must be 6 digits",
         "string.pattern.base": "OTP must contain only numbers"
     }),
+    resetToken: Joi.string().trim(),
     newPassword: Joi.string().min(6).required().messages({
         "string.min": "Password must be at least 6 characters"
     })
+})
+.xor("otp", "resetToken")
+.messages({
+    "object.missing": "OTP ya reset link zaroori hai",
+    "object.xor": "Sirf ek tarika use karo — OTP ya reset link"
+});
+
+export const verifyResetTokenSchema = Joi.object({
+    email: Joi.string().trim().lowercase().email().required(),
+    resetToken: Joi.string().trim().required()
 });
 
 export const updateProfileSchema = Joi.object({

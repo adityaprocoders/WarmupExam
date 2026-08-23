@@ -5,12 +5,17 @@ import User from "../models/usersShema.js";
 cron.schedule("0 * * * *", async () => {
     try {
         const result = await User.updateMany(
-            { resetOtpExpiry: { $lt: new Date() }, resetOtp: { $ne: null } },
-            { $set: { resetOtp: null, resetOtpExpiry: null } }
+            {
+                $or: [
+                    { resetOtpExpiry: { $lt: new Date() }, resetOtp: { $ne: null } },
+                    { resetTokenExpiry: { $lt: new Date() }, resetToken: { $ne: null } }
+                ]
+            },
+            { $set: { resetOtp: null, resetOtpExpiry: null, resetToken: null, resetTokenExpiry: null } }
         );
 
         if (result.modifiedCount > 0) {
-            console.log(`[otp-cleanup] ${result.modifiedCount} expired OTPs cleared`);
+            console.log(`[otp-cleanup] ${result.modifiedCount} expired OTPs/tokens cleared`);
         }
     } catch (err) {
         console.error("[otp-cleanup] cron failed:", err);

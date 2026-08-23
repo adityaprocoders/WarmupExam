@@ -7,7 +7,7 @@ import { getDashboardRedirectUrl } from "../utils/authHelpers.js";
 import { logOwnerLogin } from "../utils/loginLogger.js";
 import LoginHistory from "../models/LoginHistory.js";
 import { generateSessionId } from "../utils/sessionHelper.js";
-
+import crypto from "crypto";
 
 
 export const renderOwnerLogin = (req, res) => res.render("auth/owner-login", {
@@ -220,10 +220,16 @@ export const forgotPassword = async (req, res) => {
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
-        const resetLink = `${process.env.BASE_URL}/?resetEmail=${encodeURIComponent(cleaned)}&resetOtp=${otp}`;
+
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        const resetTokenExpiry = new Date(Date.now() + 5 * 60 * 1000);
+
+        const resetLink = `${process.env.BASE_URL}/?resetEmail=${encodeURIComponent(cleaned)}&resetToken=${resetToken}`;
 
         user.resetOtp = otp;
         user.resetOtpExpiry = otpExpiry;
+        user.resetToken = resetToken;
+        user.resetTokenExpiry = resetTokenExpiry;
         await user.save();
 
         const { data, error } = await resend.emails.send({
@@ -263,11 +269,50 @@ export const forgotPassword = async (req, res) => {
     }
 };
 
+
+// Email-link click hone par token verify karta hai (OTP flow se alag, independent)
+export const verifyResetToken = async (req, res) => {
+    try {
+        const { email, resetToken } = req.body;
+
+        if (!email || !resetToken) {
+            return res.status(400).json({ success: false, message: "Invalid request" });
+        }
+
+        const cleaned = email.trim().toLowerCase();
+        const user = await User.findOne({ email: cleaned, authProvider: "local" });
+
+        if (!user || !user.resetToken || !user.resetTokenExpiry) {
+            return res.status(400).json({ success: false, message: "Invalid or expired link" });
+        }
+
+        if (user.resetToken !== resetToken) {
+            return res.status(400).json({ success: false, message: "Invalid or expired link" });
+        }
+
+        if (new Date() > user.resetTokenExpiry) {
+            user.resetToken = null;
+            user.resetTokenExpiry = null;
+            await user.save();
+            return res.status(400).json({ success: false, message: "This link has expired, please request a new one" });
+        }
+
+         
+
+        res.json({ success: true, message: "Token verified", email: cleaned });
+    } catch (err) {
+        console.error("❌ Verify reset token error:", err.message);
+        res.status(500).json({ success: false, message: "Kuch galat ho gaya" });
+    }
+};
+
+
+
 // Step 2: OTP verify karo aur password reset karo
 export const resetPassword = async (req, res) => {
-    const { email, otp, newPassword } = req.body;
+    const { email, otp, resetToken, newPassword } = req.body;
 
-    if (!email || !otp || !newPassword) {
+    if (!email || !newPassword || (!otp && !resetToken)) {
         return res.status(400).json({ success: false, message: "Sabhi fields zaroori hain" });
     }
 
@@ -278,25 +323,46 @@ export const resetPassword = async (req, res) => {
     const cleaned = email.trim().toLowerCase();
     const user = await User.findOne({ email: cleaned, authProvider: "local" });
 
-    if (!user || !user.resetOtp || !user.resetOtpExpiry) {
-        return res.status(400).json({ success: false, message: "Invalid request, dobara OTP mangwao" });
+    if (!user) {
+        return res.status(400).json({ success: false, message: "Invalid request, dobara try karo" });
     }
 
-    if (user.resetOtp !== otp) {
-        return res.status(400).json({ success: false, message: "Incorrect OTP" });
+    if (otp) {
+        // ----- Path A: Manual OTP flow (jaisa pehle tha) -----
+        if (!user.resetOtp || !user.resetOtpExpiry) {
+            return res.status(400).json({ success: false, message: "Invalid request, dobara OTP mangwao" });
+        }
+        if (user.resetOtp !== otp) {
+            return res.status(400).json({ success: false, message: "Incorrect OTP" });
+        }
+        if (new Date() > user.resetOtpExpiry) {
+            user.resetOtp = null;
+            user.resetOtpExpiry = null;
+            await user.save();
+            return res.status(400).json({ success: false, message: "OTP expire ho gaya, naya mangwao" });
+        }
+    } else {
+        // ----- Path B: Email-link token flow (naya) -----
+        if (!user.resetToken || !user.resetTokenExpiry) {
+            return res.status(400).json({ success: false, message: "Invalid or expired link" });
+        }
+        if (user.resetToken !== resetToken) {
+            return res.status(400).json({ success: false, message: "Invalid or expired link" });
+        }
+        if (new Date() > user.resetTokenExpiry) {
+            user.resetToken = null;
+            user.resetTokenExpiry = null;
+            await user.save();
+            return res.status(400).json({ success: false, message: "This link has expired, please request a new one" });
+        }
     }
-
-     if (new Date() > user.resetOtpExpiry) {
-    user.resetOtp = null;
-    user.resetOtpExpiry = null;
-    await user.save();
-    return res.status(400).json({ success: false, message: "OTP expire ho gaya, naya mangwao" });
-}
 
     // Naya password set karo — pre('save') hook khud hash kar dega
     user.password = newPassword;
     user.resetOtp = null;
     user.resetOtpExpiry = null;
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
     await user.save();
 
     res.json({ success: true, message: "Password reset successful" });

@@ -1,0 +1,222 @@
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- ================= SETTINGS BAR ================= -->
+<div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5 mb-6">
+    <div class="flex flex-wrap items-end gap-4">
+
+        <!-- Language -->
+        <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                <i class="fa-solid fa-language text-slate-400"></i> Language
+            </label>
+            <select id="ttLanguage"
+                class="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition">
+                <option value="en" selected>English</option>
+                <option value="hi">Hindi</option>
+            </select>
+        </div>
+
+        <!-- Time -->
+        <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                <i class="fa-solid fa-clock text-slate-400"></i> Time
+            </label>
+            <select id="ttTime"
+                class="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition">
+                <option value="2" selected>2 Minutes</option>
+                <option value="3">3 Minutes</option>
+                <option value="5">5 Minutes</option>
+                <option value="10">10 Minutes</option>
+                <option value="15">15 Minutes</option>
+                <option value="20">20 Minutes</option>
+                <option value="custom">Custom</option>
+            </select>
+            <input type="number" id="ttTimeCustom" min="1" placeholder="Minutes"
+                class="hidden mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition" />
+        </div>
+
+        <!-- Word Count -->
+        <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                <i class="fa-solid fa-file-lines text-slate-400"></i> Words (Approx.)
+            </label>
+            <select id="ttWordCount"
+                class="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition">
+                <option value="100" selected>100 Words</option>
+                <option value="200">200 Words</option>
+                <option value="300">300 Words</option>
+                <option value="500">500 Words</option>
+                <option value="custom">Custom</option>
+            </select>
+            <input type="number" id="ttWordCountCustom" min="10" placeholder="Words"
+                class="hidden mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition" />
+        </div>
+
+        <!-- Difficulty -->
+        <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                <i class="fa-solid fa-chart-simple text-slate-400"></i> Difficulty
+            </label>
+            <select id="ttDifficulty"
+                class="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
+
+        <!-- Generate -->
+        <button id="ttGenerateBtn"
+            class="ml-auto px-6 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-sm shadow-indigo-200">
+            <i class="fa-solid fa-arrows-rotate mr-1.5"></i> Generate
+        </button>
+
+    </div>
+</div>
+
+    <!-- ================= TEST AREA ================= -->
+    <div id="ttTestSection" class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sm:p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-keyboard text-indigo-500"></i>
+                <span id="ttInstructionText">Configure settings above and click Generate</span>
+            </h2>
+            <div id="ttTimerDisplay" class="hidden items-center gap-1.5 font-mono font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg">
+                <i class="fa-solid fa-stopwatch text-indigo-500"></i>
+                <span id="ttTimerValue">02:00</span>
+            </div>
+        </div>
+
+        <!-- Relative wrapper for blur overlay -->
+        <div id="ttBoxWrapper" class="relative">
+
+            <div id="ttTextBox"
+                class="min-h-[140px] text-xl leading-relaxed font-medium text-slate-400 select-none tracking-wide">
+                <!-- empty until Generate; words rendered here as spans by JS -->
+            </div>
+
+            <!-- Hidden input that actually captures keystrokes -->
+            <input id="ttHiddenInput" type="text" autocomplete="off" autocorrect="off"
+                autocapitalize="off" spellcheck="false"
+                class="absolute opacity-0 pointer-events-none w-px h-px" />
+
+            <!-- Focus overlay -->
+            <div id="ttFocusOverlay"
+                class="hidden absolute inset-0 backdrop-blur-sm bg-white/40 rounded-xl items-center justify-center cursor-text z-10">
+                <span class="text-slate-600 font-medium text-sm bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
+                    Click here to continue (or press Tab)
+                </span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================= LIVE STATS ================= -->
+    <div id="ttLiveStats" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+        <!-- Left: gauge + mini stats -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-amber-500"></i> Live Stats
+                </h3>
+                <span id="ttStatusBadge" class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">In Progress</span>
+            </div>
+
+            <div class="text-center py-4">
+                <p id="ttLiveWpm" class="text-4xl font-extrabold text-slate-800">0</p>
+                <p class="text-xs text-slate-500 font-medium">Words Per Minute</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-2">
+                <div class="bg-slate-50 rounded-xl p-3 text-center">
+                    <p id="ttLiveChars" class="text-lg font-bold text-slate-800">0</p>
+                    <p class="text-xs text-slate-500">Characters</p>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3 text-center">
+                    <p id="ttLiveAccuracy" class="text-lg font-bold text-slate-800">0%</p>
+                    <p class="text-xs text-slate-500">Accuracy</p>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3 text-center">
+                    <p id="ttLiveErrors" class="text-lg font-bold text-red-500">0</p>
+                    <p class="text-xs text-slate-500">Errors</p>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3 text-center">
+                    <p id="ttLiveWords" class="text-lg font-bold text-slate-800">0</p>
+                    <p class="text-xs text-slate-500">Words</p>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <div class="flex justify-between text-xs text-slate-500 mb-1">
+                    <span>Progress</span>
+                    <span id="ttProgressPercent">0%</span>
+                </div>
+                <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="ttProgressBar" class="h-full bg-indigo-600 rounded-full transition-all" style="width:0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: live graph -->
+        <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <p class="text-xs font-semibold text-slate-400 tracking-wide mb-2">WORDS PER MINUTE</p>
+            <canvas id="ttLiveChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- ================= RESULTS ================= -->
+    <div id="ttResults" class="hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+            <!-- Left: final stats + comparison -->
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+                <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-indigo-500"></i> Result
+                </h3>
+
+                <div class="text-center py-2 mb-3">
+                    <p id="ttFinalWpm" class="text-4xl font-extrabold text-slate-800">0</p>
+                    <p class="text-xs text-slate-500 font-medium">Words Per Minute</p>
+                    <span id="ttComparisonBadge" class="hidden inline-flex items-center gap-1 mt-2 text-xs font-semibold px-2.5 py-1 rounded-full"></span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-50 rounded-xl p-3 text-center">
+                        <p id="ttFinalAccuracy" class="text-lg font-bold text-slate-800">0%</p>
+                        <p class="text-xs text-slate-500">Accuracy</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-3 text-center">
+                        <p id="ttFinalChars" class="text-lg font-bold text-slate-800">0</p>
+                        <p class="text-xs text-slate-500">Characters</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-3 text-center">
+                        <p id="ttFinalErrors" class="text-lg font-bold text-red-500">0</p>
+                        <p class="text-xs text-slate-500">Errors</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-3 text-center">
+                        <p id="ttFinalWords" class="text-lg font-bold text-slate-800">0</p>
+                        <p class="text-xs text-slate-500">Words</p>
+                    </div>
+                </div>
+
+                <button id="ttTryAgainBtn"
+                    class="w-full mt-5 px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">
+                    <i class="fa-solid fa-rotate-right mr-1.5"></i> Try Again
+                </button>
+            </div>
+
+            <!-- Right: final graph -->
+            <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+                <p class="text-xs font-semibold text-slate-400 tracking-wide mb-2">WORDS PER MINUTE</p>
+                <canvas id="ttResultChart" height="220"></canvas>
+            </div>
+        </div> 
+    </div>
+
+</div>
+
+ 
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js" nonce="<%= cspNonce %>"></script>
+<script src="/js/skill/typingTest.js" defer></script>

@@ -39,6 +39,9 @@ router.get("/sitemap.xml", async (req, res) => {
         urls.push(urlEntry(`${baseUrl}/Terms-&-Conditions`, { priority: "0.3", lastmod: now }));
         urls.push(urlEntry(`${baseUrl}/ebooks`, { priority: "0.7", lastmod: now }));
         urls.push(urlEntry(`${baseUrl}/alltests`, { priority: "0.9", lastmod: now }));
+        urls.push(urlEntry(`${baseUrl}/skill-tests/typing-test`, { priority: "0.8", lastmod: now }));
+        urls.push(urlEntry(`${baseUrl}/skill-tests/data-entry-test`, { priority: "0.8", lastmod: now }));
+        urls.push(urlEntry(`${baseUrl}/skill-tests/calculation-test`, { priority: "0.8", lastmod: now }));
         urls.push(urlEntry(`${baseUrl}/categories`, { priority: "0.8", lastmod: now }));
 
         // ---------- Categories (dynamic) ----------
@@ -53,17 +56,17 @@ router.get("/sitemap.xml", async (req, res) => {
         });
 
         // ---------- Public listings (dynamic) ----------
-        const listings = await Listing.find({ visibility: "public" })
-            .select("_id updatedAt")
-            .lean();
-        listings.forEach((l) => {
-            urls.push(
-                urlEntry(`${baseUrl}/test/${l._id}`, {
-                    priority: "0.8",
-                    lastmod: l.updatedAt,
-                })
-            );
-        });
+       const listings = await Listing.find({ visibility: "public" })
+    .select("slug updatedAt")
+    .lean();
+listings.forEach((l) => {
+    urls.push(
+        urlEntry(`${baseUrl}/test/${l.slug}`, {
+            priority: "0.8",
+            lastmod: l.updatedAt,
+        })
+    );
+});
 
         // ---------- Public E-Books / Short Notes / PYQ / Handwritten Notes (dynamic) ----------
         // 👇 POORA NAYA BLOCK

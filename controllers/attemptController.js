@@ -41,6 +41,11 @@ function resolveQuestionForLanguage(qDoc, lang) {
     return q;
 }
 
+function stripAnswerFields(q) {
+    const { correctAnswers, numericAnswer, solution, translations, ...safe } = q;
+    return safe;
+}
+
 
 export const showInstructions = async (req, res) => {
     const { id } = req.params;
@@ -86,7 +91,7 @@ if (availableLanguages.length === 1) {
     lang = availableLanguages[0];
 }
 
-    const questions = mappings.filter(m => m.question).map(m => ({
+    const questions = mappings.filter(m => m.question).map(m => stripAnswerFields({
         ...resolveQuestionForLanguage(m.question, lang),
         order: m.order,
         positiveMarks: m.positiveMarks,
@@ -140,7 +145,7 @@ export const showAttempt = async (req, res) => {
     }
 
     // ✅ Har question ko isi language ke hisaab se resolve karo (translations[] handle karega)
-    const questions = mappings.filter(m => m.question).map(m => ({
+    const questions = mappings.filter(m => m.question).map(m => stripAnswerFields({
         ...resolveQuestionForLanguage(m.question, lang),
         order: m.order,
         positiveMarks: m.positiveMarks,

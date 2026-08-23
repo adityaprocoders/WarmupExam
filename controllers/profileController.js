@@ -2,7 +2,8 @@ import User from "../models/usersShema.js";
 import cloudinary from "../config/cloudinary.js";
 import { getPublicIdFromUrl } from "../utils/cloudinaryHelper.js";
 import Attempt from "../models/TestAttempt.js"; 
- 
+import AttemptSession from "../models/AttemptSession.js"; 
+
 export const getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id)
@@ -262,6 +263,7 @@ export const deleteAccount = async (req, res) => {
 
         // ---------- Attempts + User delete ----------
         await Attempt.deleteMany({ user: userId });
+        await AttemptSession.deleteMany({ user: userId });
         await User.findByIdAndDelete(userId);
 
         // ---------- Session/login clear karke logout ----------

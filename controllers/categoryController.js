@@ -1,6 +1,8 @@
 import Category from "../models/Category.js";
 import Listing from "../models/listing.js";
 import Test from "../models/Test.js";
+import { getValidEnrollments } from "../utils/cleanupHelpers.js";
+
 
 // Helper: name se URL-friendly slug banata hai
 const generateSlug = (name) => {
@@ -165,15 +167,7 @@ export const showCategory = async (req, res) => {
         l.totalTestCount = testCountMap[String(l._id)] || 0;
     });
 
-    let enrolledIds = [];
-    let enrolledExpiryMap = {};
-    if (req.user && req.user.enrolledListings) {
-        req.user.enrolledListings.forEach(e => {
-            const id = e.listing && e.listing._id ? e.listing._id : e.listing;
-            enrolledIds.push(String(id));
-            enrolledExpiryMap[String(id)] = e.expiresAt;
-        });
-    }
+    const { enrolledIds, enrolledExpiryMap } = getValidEnrollments(req.user);
 
    // ============================================================
     // 🔍 DYNAMIC SEO — category ke basis pe
@@ -308,12 +302,7 @@ export const getCategoryTestsApi = async (req, res) => {
         const testCountMap = {};
         testCounts.forEach((t) => { testCountMap[String(t._id)] = t.count; });
 
-        let enrolledIds = [];
-        if (req.user && req.user.enrolledListings) {
-            enrolledIds = req.user.enrolledListings.map((e) =>
-                String(e.listing && e.listing._id ? e.listing._id : e.listing)
-            );
-        }
+        const { enrolledIds } = getValidEnrollments(req.user);
 
         const listings = paginated.map((l) => ({
             ...l,

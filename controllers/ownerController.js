@@ -1,7 +1,8 @@
 import User from "../models/usersShema.js";
 import Listing from "../models/listing.js";
 import { Resend } from "resend";  
-import Attempt from "../models/TestAttempt.js"; 
+import Attempt from "../models/TestAttempt.js";
+import AttemptSession from "../models/AttemptSession.js";
 const resend = new Resend(process.env.RESEND_API_KEY);  
 import cloudinary from "../config/cloudinary.js";
 import { getPublicIdFromUrl } from "../utils/cloudinaryHelper.js";
@@ -340,6 +341,7 @@ export const deleteUser = async (req, res) => {
 
         // ---------- Attempts + User delete ----------
         await Attempt.deleteMany({ user: id });
+        await AttemptSession.deleteMany({ user: id });
         await User.findByIdAndDelete(id);
 
         res.json({ success: true, message: "User delete ho gaya" });

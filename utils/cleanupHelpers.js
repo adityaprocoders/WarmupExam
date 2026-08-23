@@ -28,3 +28,23 @@ export async function cleanupExpiredBatchData(userId, listingId) {
         { $set: { lastAccessedBatch: null } }
     );
 }
+
+
+export function getValidEnrollments(user) {
+    const enrolledIds = [];
+    const enrolledExpiryMap = {};
+
+    if (user && user.enrolledListings) {
+        const now = new Date();
+        user.enrolledListings.forEach(e => {
+            const isValid = !e.suspendedByOwner && (!e.expiresAt || new Date(e.expiresAt) > now);
+            if (isValid) {
+                const id = e.listing && e.listing._id ? e.listing._id : e.listing;
+                enrolledIds.push(String(id));
+                enrolledExpiryMap[String(id)] = e.expiresAt;
+            }
+        });
+    }
+
+    return { enrolledIds, enrolledExpiryMap };
+}

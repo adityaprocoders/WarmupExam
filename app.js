@@ -34,6 +34,7 @@ import { checkSingleSession } from "./middleware/checkSingleSession.js";
 
 import sitemapRoutes from "./routes/sitemapRoutes.js";
 import pageRoutes from "./routes/pageRoutes.js";
+import skillTestRoutes from "./routes/skillTestRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import listingRoutes from "./routes/listingRoutes.js";
@@ -229,7 +230,7 @@ app.use((req, res, next) => {
     res.locals.title = "WarmupExam";
     res.locals.description =
         "Practice mock tests, PYQs and AI-powered exam preparation with WarmupExam.";
-
+    res.locals.currentPath = req.path;
     res.locals.keywords =
         "WarmupExam, Mock Test, BOARD EXAM, NIMCET, UPSC, SSC, Banking, Railway, JEE, NEET";
 
@@ -396,6 +397,7 @@ app.use(copyPasteRoutes);
 app.use(profileRoutes);
 app.use("/", contactRoutes);
 app.use(orderRoutes);
+app.use(skillTestRoutes);
 
 // Error
 
@@ -416,6 +418,7 @@ app.post(
     }
 );
 
+ 
 
 // ---------------- 404 ----------------
 app.use((req, res, next) => {

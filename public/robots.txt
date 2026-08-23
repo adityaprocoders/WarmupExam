@@ -1,4 +1,12 @@
 User-agent: *
 Allow: /
  
+User-agent: *
+Allow: /
+Disallow: /profile 
+Disallow: /attempt/
+Disallow: /api/
+Disallow: /test-error
+
+
 Sitemap: https://warmupexam.com/sitemap.xml

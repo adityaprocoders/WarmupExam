@@ -24,6 +24,31 @@ function getResetState() {
 }
 
 
+let currentResetToken = null;
+
+function enterTokenMode(email, token) {
+    currentResetToken = token;
+    saveResetState(email, 300); // countdown ke liye reuse
+    startOtpCountdown(300);
+
+    const otpGroup = document.getElementById('resetOtp')?.closest('div');
+    if (otpGroup) otpGroup.classList.add('hidden');
+    document.getElementById('resetOtp').required = false;
+
+    document.getElementById('resendOtpBtn').classList.add('hidden'); // token-mode mein resend-OTP relevant nahi
+}
+
+function exitTokenMode() {
+    currentResetToken = null;
+
+    const otpGroup = document.getElementById('resetOtp')?.closest('div');
+    if (otpGroup) otpGroup.classList.remove('hidden');
+    document.getElementById('resetOtp').required = true;
+
+    document.getElementById('resendOtpBtn').classList.remove('hidden');
+}
+
+
     function openAuthModal(type) {
         const currentUrl = window.location.pathname
         document.getElementById('returnTo_login').value = currentUrl;
@@ -203,11 +228,15 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.disabled = true;
             btn.textContent = "Resetting...";
 
+                        const payload = currentResetToken
+                ? { email, resetToken: currentResetToken, newPassword }
+                : { email, otp, newPassword };
+
             try {
                 const res = await fetch('/reset-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, otp, newPassword })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
 
@@ -215,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.success) {
                      clearResetState();
+                     exitTokenMode();
                     msgEl.className = "text-center text-sm text-green-600";
                     msgEl.textContent = "Password reset successfully! Redirecting to login...";
                     clearInterval(otpCountdownInterval);
@@ -269,27 +299,42 @@ async function resendOtp() {
 
 
 
-
-
-
-
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const resetEmail = params.get('resetEmail');
-    const resetOtp = params.get('resetOtp');
+    const resetTokenFromUrl = params.get('resetToken');
 
-    if (resetEmail && resetOtp) {
-        document.getElementById('authOverlay').classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
-
-        document.getElementById('resetEmailDisplay').textContent = resetEmail;
-        document.getElementById('resetEmailHidden').value = resetEmail;
-        document.getElementById('resetOtp').value = resetOtp;
-
-        switchAuthPanel('reset');
-        saveResetState(resetEmail, 300);
-        startOtpCountdown(300);
-
+    if (resetEmail && resetTokenFromUrl) {
+        // URL turant clean kar do — chahe verify fail ho ya pass, token dobara URL mein nahi rehna chahiye
         window.history.replaceState({}, document.title, window.location.pathname);
+
+        (async () => {
+            try {
+                const res = await fetch('/verify-reset-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: resetEmail, resetToken: resetTokenFromUrl })
+                });
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(data.message || "This reset link is invalid or has expired. Please request a new one.");
+                    return;
+                }
+
+                // ✅ Token verified — reset panel token-mode mein khol do
+                document.getElementById('authOverlay').classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+
+                document.getElementById('resetEmailDisplay').textContent = resetEmail;
+                document.getElementById('resetEmailHidden').value = resetEmail;
+
+                enterTokenMode(resetEmail, resetTokenFromUrl);
+                switchAuthPanel('reset');
+            } catch (err) {
+                alert("Network error, please try again.");
+            }
+        })();
     }
 });
+

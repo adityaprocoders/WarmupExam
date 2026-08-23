@@ -13,6 +13,9 @@ import ContentBlock from "../models/ContentBlock.js";
 import Category from "../models/Category.js";
 import { generatePlaceholderImage } from "../utils/placeholderImage.js";
 import { notifyNewTestSeries } from "../utils/notifyNewTestSeries.js";
+import mongoose from "mongoose";
+import { getValidEnrollments } from "../utils/cleanupHelpers.js";
+
 
 
 export const allTests = async (req, res) => {
@@ -65,15 +68,7 @@ export const allTests = async (req, res) => {
     matchedListings.forEach(l => { l.totalTestCount = testCountMap[String(l._id)] || 0; });
     allListings.forEach(l => { l.totalTestCount = testCountMap[String(l._id)] || 0; });
 
-    let enrolledIds = [];
-    let enrolledExpiryMap = {};
-    if (req.user && req.user.enrolledListings) {
-        req.user.enrolledListings.forEach(e => {
-            const id = e.listing && e.listing._id ? e.listing._id : e.listing;
-            enrolledIds.push(String(id));
-            enrolledExpiryMap[String(id)] = e.expiresAt;
-        });
-    }
+    const { enrolledIds, enrolledExpiryMap } = getValidEnrollments(req.user);
 
     const languages = (await Listing.distinct("language")).filter(Boolean).sort();
 
@@ -164,10 +159,18 @@ export const searchTests = async (req, res) => {
 };
 
 export const showTest = async (req, res) => {
-    const { id } = req.params;
-    const data = await Listing.findById(id).populate("contentBlocks");
-    if (!data) throw new ExpressError(404, "Test Not Found");
+    const { slug } = req.params;
+    let data = await Listing.findOne({ slug }).populate("contentBlocks");
 
+    // Backward compatibility — agar purana ID-wala URL hit hua (Google index mein already hai)
+    if (!data && mongoose.Types.ObjectId.isValid(slug)) {
+        data = await Listing.findById(slug).populate("contentBlocks");
+        if (data) {
+            return res.redirect(301, `/test/${data.slug}`);
+        }
+    }
+
+    if (!data) throw new ExpressError(404, "Test Not Found");
     const isOwner = req.user && req.user.role === "owner";
 
     const allBlocks = isOwner
@@ -199,10 +202,7 @@ if (isOwner) {
         .lean();
 }
 
-    let enrolledIds = [];
-    if (req.user && req.user.enrolledListings) {
-        enrolledIds = req.user.enrolledListings.map(e => String(e.listing));
-    }
+    const { enrolledIds } = getValidEnrollments(req.user);
 
     const totalTestCount = await Test.countDocuments({ listing: data._id });
 
@@ -306,8 +306,8 @@ export const updateTest = async (req, res) => {
     }
 
     const listing = await Listing.findByIdAndUpdate(id, data, { new: true });
-    if (!listing) throw new ExpressError(404, "Test Not Found");
-    res.redirect(`/test/${id}`);
+if (!listing) throw new ExpressError(404, "Test Not Found");
+res.redirect(`/test/${listing.slug}`);
 };
 
 export const deleteTest = async (req, res) => {

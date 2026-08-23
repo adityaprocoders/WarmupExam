@@ -1,0 +1,80 @@
+{
+  "easy": [
+    "the","and","cat","dog","run","big","sun","fun","hat","map","cup","box","bed","red","top","bag","pen","key","car","toy",
+    "book","fish","milk","door","tree","bird","frog","home","play","walk","jump","swim","eat","fast","slow","good","kind","help","open","close",
+    "hand","foot","head","face","hair","eyes","nose","mouth","ear","arm","leg","back","chair","table","water","light","night","morning","school","friend",
+    "happy","funny","small","large","clean","dirty","early","late","warm","cold","new","old","young","strong","weak","easy","hard","near","far","high",
+    "low","up","down","in","out","on","off","yes","no","stop","go","come","give","take","make","find","look","see","hear","say",
+
+    "apple","ball","bat","boy","girl","man","woman","baby","child","day","week","year","time","home","room","wall","floor","roof","road","park",
+    "bus","train","bike","boat","ship","plane","road","street","shop","store","food","rice","bread","cake","egg","salt","sugar","tea","juice","fruit",
+    "green","blue","black","white","brown","pink","round","long","short","thin","thick","soft","hard","hot","cool","dry","wet","full","empty","clean",
+    "one","two","three","four","five","six","seven","eight","nine","ten","first","last","next","more","less","many","few","some","all","each",
+    "who","what","when","where","why","how","this","that","these","those","here","there","again","always","never","often","sometimes","today","tomorrow","yesterday",
+    "can","will","shall","must","may","might","should","would","could","do","does","did","have","has","had","is","am","are","was","were",
+    "read","write","draw","sing","dance","talk","tell","ask","answer","learn","teach","work","rest","sleep","wake","sit","stand","carry","bring","send",
+    "start","finish","try","use","keep","put","get","buy","sell","pay","call","wait","watch","touch","hold","move","turn","push","pull","cut","wash",
+    "cook","drink","smile","laugh","cry","love","like","want","need","know","think","feel","live","die","win","lose","grow","fall","rise","helpful",
+    "bright","dark","quiet","loud","nice","bad","right","wrong","true","false","safe","free","busy","ready","tired","sick","well","fresh","sweet","small",
+    "big","great","best","better","same","different","simple","clear","quick","slowly","nearby","inside","outside","above","below","before","after","under","over","beside"
+  ],
+
+  "medium": [
+    "computer","yesterday","beautiful","practice","important","language","business","together","children","hospital","building","distance","musician","favorite","holiday","weather","kitchen","science","history","picture",
+    "morning","evening","weekend","exercise","teacher","student","country","village","market","farmer","doctor","engineer","manager","officer","citizen","society","culture","festival","tradition",
+    "communication","technology","environment","government","education","knowledge","experience","opportunity","information","development","performance","confidence","personality","relationship","responsibility","achievement","organization","population","agriculture","transportation",
+    "understand","remember","continue","discover","imagine","celebrate","complete","organize","recognize","establish","introduce","increase","decrease","improve","achieve","succeed","struggle","overcome","maintain","provide",
+    "however","therefore","although","because","between","without","towards","during","against","around","beyond","within","beside","among","throughout","despite","regarding","concerning","according","involving",
+
+    "adventure","agreement","announcement","application","argument","attention","available","background","behavior","candidate","challenge","choice","community","competition","condition","connection","decision","definition","department","direction",
+    "discussion","document","effort","energy","event","example","exchange","family","feature","feeling","future","general","growth","industry","interest","journey","leader","learning","message","method",
+    "natural","necessary","notice","number","opinion","option","pattern","period","personal","planning","problem","process","product","project","purpose","quality","question","reason","result","service",
+    "solution","source","special","support","system","teacher","teamwork","training","understanding","value","village","visitor","activity","address","amount","area","article","average","balance","center",
+    "change","choice","classroom","common","company","customer","daily","detail","difference","early","effect","energy","eventually","example","field","future","general","growth","group","habit",
+    "idea","individual","journey","lesson","member","moment","nature","normal","office","particular","plan","popular","position","possible","power","present","price","private","public","reason",
+    "recent","record","regular","result","role","schedule","section","similar","skill","social","subject","success","team","term","training","travel","useful","various","version","visit",
+    "wonderful","accurate","active","basic","careful","central","certain","common","correct","creative","direct","effective","equal","famous","final","formal","friendly","future","honest","local",
+    "modern","national","official","physical","practical","primary","professional","proper","public","recently","responsible","serious","similarity","successful","technical","traditional","usual","valuable","visible","whole",
+
+    "Computer","Teacher","Student","Science","History","Culture","Festival","Technology","Education","Knowledge",
+    "Business","Manager","Engineer","Government","Country","Market","Communication","Information","Development","Performance",
+    "Important","Beautiful","Practice","Experience","Opportunity","Achievement","Organization","Population","Agriculture","Transportation",
+    "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday","January","February","March","April","June","July","August","September","October","November","December"
+  ],
+
+  "hard": [
+    "extraordinary","phenomenon","bureaucracy","quintessential","juxtaposition","idiosyncrasy","perseverance","unprecedented","sophisticated","controversial","incomprehensible","disproportionate","misunderstanding","interdisciplinary","overwhelming","unconventional","philosophical","psychological","technological","entrepreneurship",
+    "reconciliation","authenticity","implementation","infrastructure","characteristic","consciousness","circumstance","confidentiality","interpretation","recommendation","transformation","accountability","sustainability","vulnerability","accessibility","compatibility","credibility","legitimacy","ambiguity","hierarchy",
+    "acknowledgment","categorization","differentiation","diversification","globalization","industrialization","modernization","optimization","standardization","synchronization","conceptualize","contextualize","operationalize","revolutionize","substantiate","corroborate","extrapolate","perpetuate","reciprocate",
+    "notwithstanding","nevertheless","consequently","predominantly","simultaneously","fundamentally","theoretically","paradoxically","inadvertently","meticulously","substantially","significantly","progressively","retrospectively","comprehensively","unequivocally","unanimously","irreversible","irreplaceable",
+    "bureaucratic","aristocratic","democratic","diplomatic","pragmatic","systematic","charismatic","enthusiastic","sympathetic","hypothetical","analytical","theoretical","statistical","hierarchical","chronological","geographical","biological","ecological",
+
+    "abbreviation","accelerate","accommodation","acquisition","adaptation","administration","adolescent","advantageous","aesthetic","aggressive",
+    "allegation","alternative","amplification","anticipation","appreciation","architecture","articulation","aspiration","assumption","astonishing",
+    "authorization","availability","beneficial","biotechnology","calculation","collaboration","commencement","commercialization","compensation","competence",
+    "complexity","composition","concentration","configuration","confirmation","conservation","consideration","consistency","contemporary","contradiction",
+    "contribution","conventional","coordination","correction","correlation","cultivation","declaration","dedication","deficiency","deliberately",
+    "demonstration","dependency","description","determination","diagnostic","digitalization","discrimination","disruption","documentation","dominant",
+    "dramatically","elaboration","electromagnetic","eligibility","emergency","empirical","encapsulation","encouragement","enforcement","enhancement",
+    "enormous","enterprise","enthusiasm","equilibrium","evaluation","evolutionary","examination","exceptional","excessive","expansion",
+    "explanation","exploration","exposure","facilitation","flexibility","formulation","fragmentation","frequently","functionality","generation",
+    "governance","gradually","harmonization","identification","illustration","imagination","immigration","inclusion","incompatible","inconsistency",
+    "independence","indication","individuality","innovation","inspection","installation","integration","intelligence","interaction","interference",
+    "investigation","justification","legislation","limitation","maintenance","manipulation","measurement","methodology","migration","motivation",
+    "negotiation","observation","occasionally","orientation","participation","perception","perspective","prediction","preparation","preservation",
+    "probability","proceedings","professional","prohibition","projection","proliferation","qualification","quantitative","questionnaire","realization",
+    "reassessment","recognition","reconstruction","refinement","registration","regulation","rehabilitation","reinforcement","reliability","representation",
+    "requirement","resolution","restriction","retrieval","revision","simulation","specification","stability","strategic","transmission",
+    "transparency","uncertainty","understanding","utilization","validation","variation","verification","versatility","visualization","voluntary",
+    "withdrawal","workmanship","accessorize","algorithmic","asynchronous","authentication","decentralization","computational","cryptographic","cybersecurity",
+    "data-driven","fault-tolerant","high-performance","long-term","real-time","self-aware","state-of-the-art","user-friendly","well-defined","next-generation",
+
+    "Background","Capability","Decentralized","Efficiency","Framework","Guideline","Intellectual","Knowledgeable","Leadership","Mechanism",
+    "Negotiable","Objective","Particularly","Questionable","Revolutionary","Specialized","Transparent","Unavoidable","Versatile","Worldwide",
+    "Algorithmic","Authentication","Cryptographic","Cybersecurity","DataScience","MachineLearning","SoftwareEngineering","InformationSecurity","ArtificialIntelligence","Blockchain",
+
+    "abstraction.","adaptability!","complexity?","configuration:","implementation;","researcher's","organization's","system's","user's","company's",
+    "cause-effect","cross-platform","error-prone","decision-making","re-engineering","co-operation","pre-processing","post-processing","input-output","problem-solving",
+    "high-level","low-level","open-source","well-established","evidence-based","research-oriented","security-focused","performance-driven","technology-enabled","knowledge-based"
+  ]
+}

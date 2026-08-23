@@ -11,7 +11,7 @@ const router = express.Router();
 
 // Public — sabke liye
 router.get("/alltests", wrapAsync(listingController.allTests));
-router.get("/test/:id", wrapAsync(listingController.showTest));
+router.get("/test/:slug", wrapAsync(listingController.showTest));
 router.get("/api/search-tests", wrapAsync(listingController.searchTests));
 router.get("/api/exams", wrapAsync(listingController.getExams));
 router.get("/api/exams/:exam/series", wrapAsync(listingController.getSeriesByExam));

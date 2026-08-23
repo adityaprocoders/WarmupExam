@@ -40,6 +40,16 @@ const userSchema = new mongoose.Schema({
         default: null
     },
 
+        resetToken: {
+        type: String,
+        default: null
+    },
+
+    resetTokenExpiry: {
+        type: Date,
+        default: null
+    },
+
     authProvider: {
         type: String,
         enum: ["local", "google"],

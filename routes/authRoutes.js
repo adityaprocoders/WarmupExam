@@ -3,9 +3,9 @@ import passport from "../config/passport.js";
 import wrapAsync from "../utils/wrapAsync.js";
 import { isOwner, isLoggedOut } from "../middleware/isLoggedIn.js";
 import * as authController from "../controllers/authController.js";
-import { forgotPassword, resetPassword } from "../controllers/authController.js";
+import { forgotPassword, resetPassword, verifyResetToken } from "../controllers/authController.js";
 import { validateBody } from "../middleware/validate.js";
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../utils/schemas.js";
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, verifyResetTokenSchema } from "../utils/schemas.js";
 import { getLoginHistoryApi, deleteLoginHistoryEntry } from "../controllers/authController.js";
 import LoginHistory from "../models/LoginHistory.js";
 import { authLimiter, otpLimiter } from "../middleware/rateLimiters.js";
@@ -32,6 +32,7 @@ router.post("/login", authLimiter, validateBody(loginSchema), authController.log
 
 router.post("/forgot-password", otpLimiter, validateBody(forgotPasswordSchema), wrapAsync(forgotPassword));
 router.post("/reset-password", authLimiter, validateBody(resetPasswordSchema), wrapAsync(resetPassword));
+router.post("/verify-reset-token", otpLimiter, validateBody(verifyResetTokenSchema), wrapAsync(verifyResetToken));
 
 router.get("/auth/google", passport.authenticate("user-google", { scope: ["profile", "email"] }));
 

@@ -25,6 +25,14 @@ function toggleProfileDropdown() {
     if (menu) menu.classList.toggle('hidden');
 }
 
+// ---- Skill Tests Nav Dropdown Toggle (click) ----
+function toggleNavSkillTestDropdown() {
+    const menu = document.getElementById('navSkillTestsDropdown');
+    const chevron = document.getElementById('navSkillTestsChevron');
+    if (menu) menu.classList.toggle('hidden');
+    if (chevron) chevron.classList.toggle('rotate-180');
+}
+
 // ---- Profile Dropdown Hover ----
 document.addEventListener('DOMContentLoaded', () => {
     const wrapper = document.getElementById('profileDropdownWrapper');
@@ -55,6 +63,15 @@ document.addEventListener('click', function (e) {
     }
 });
 
+// Click outside skill tests nav dropdown => close it
+document.addEventListener('click', function (e) {
+    const wrapper = document.getElementById('navSkillTestsWrapper');
+    const menu = document.getElementById('navSkillTestsDropdown');
+    if (wrapper && menu && !wrapper.contains(e.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
 // ---- Active Nav Link Highlight ----
 document.addEventListener('DOMContentLoaded', () => {
     const currentPath = window.location.pathname;
@@ -78,6 +95,9 @@ document.addEventListener('click', function (e) {
       break;
     case 'toggle-profile-dropdown':
       toggleProfileDropdown();
+      break;
+    case 'toggle-navskilltest-dropdown':
+      toggleNavSkillTestDropdown();
       break;
   }
 });

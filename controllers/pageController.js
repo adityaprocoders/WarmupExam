@@ -2,6 +2,7 @@ import Listing from "../models/listing.js";
 import Test from "../models/Test.js";
 import router from "../routes/ownerRoutes.js";
 import Category from "../models/Category.js";
+import { getValidEnrollments } from "../utils/cleanupHelpers.js";
 
 export const home = async (req, res) => {
     const isOwner = req.user && req.user.role === "owner";
@@ -41,15 +42,7 @@ categories.forEach(c => {
         l.totalTestCount = testCountMap[String(l._id)] || 0;
     });
 
-    let enrolledIds = [];
-    let enrolledExpiryMap = {};
-    if (req.user && req.user.enrolledListings) {
-        req.user.enrolledListings.forEach(e => {
-            const id = e.listing && e.listing._id ? e.listing._id : e.listing;
-            enrolledIds.push(String(id));
-            enrolledExpiryMap[String(id)] = e.expiresAt;
-        });
-    }
+    const { enrolledIds, enrolledExpiryMap } = getValidEnrollments(req.user);
 
     res.render("pages/home", {
     tests,

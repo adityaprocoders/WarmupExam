@@ -101,8 +101,7 @@ function toggleBulkCopyDropdown() {
     document.getElementById('bulkCopyDropdown').classList.toggle('hidden');
 }
 
-
-
+  
 document.addEventListener('click', function (e) {
   const el = e.target.closest('[data-action]');
   if (!el) return;
@@ -138,7 +137,7 @@ document.addEventListener('click', function (e) {
       break;
     case 'open-bulk-copy-modal':
       openBulkCopyModal(el.dataset.mode);
-      break;
+      break; 
   }
 });
 

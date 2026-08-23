@@ -40,4 +40,15 @@
             link.classList.add("text-indigo-700", "font-semibold");
         }
     });
+
+    const skillTestsToggle = document.getElementById('skillTestsToggle');
+    const skillTestsPanel = document.getElementById('skillTestsPanel');
+    const skillTestsChevron = document.getElementById('skillTestsChevron');
+    if (skillTestsToggle && skillTestsPanel) {
+        skillTestsToggle.addEventListener('click', () => {
+            skillTestsPanel.classList.toggle('hidden');
+            skillTestsPanel.classList.toggle('flex');
+            if (skillTestsChevron) skillTestsChevron.classList.toggle('rotate-180');
+        });
+    }
 })();

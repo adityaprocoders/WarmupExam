@@ -9,7 +9,7 @@
 
         <% if (isOwner) { %>
             <a href="/ebooks-manage/new"
-                class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-orange-500 text-white font-semibold text-sm hover:bg-orange-600 transition shadow-sm shadow-orange-200 shrink-0">
+                class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 transition shadow-sm shadow-indigo-200 shrink-0">
                 <i class="fa-solid fa-upload"></i> Upload E-Book
             </a>
         <% } %>
@@ -17,8 +17,10 @@
     
         <!-- Search + Filters -->
     <form method="GET" action="/ebooks" id="ebookFilterForm" class="mb-6">
-        <input type="hidden" name="exam" id="examInput" value="<%= currentExam %>">
-        <input type="hidden" name="sort" id="sortInput" value="">
+    <input type="hidden" name="exam" id="examInput" value="<%= currentExam %>">
+    <input type="hidden" name="sort" id="sortInput" value="">
+    <input type="hidden" name="category" value="<%= currentCategory %>">
+    <input type="hidden" name="contentType" value="<%= currentContentType %>">
 
         <div class="flex flex-col gap-3">
 
@@ -26,7 +28,7 @@
             <div class="relative w-full">
                 <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
                 <input type="text" name="search" value="<%= currentSearch %>"
-                    placeholder="Search e-books by title, exam or topic..."
+                    placeholder="Search e-books..."
                     class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
             </div>
 
@@ -92,14 +94,28 @@
         </div>
     </form>
 
+        <%
+        const buildEbookUrl = (overrides = {}) => {
+            const params = new URLSearchParams();
+            const category = overrides.category !== undefined ? overrides.category : currentCategory;
+            const contentType = overrides.contentType !== undefined ? overrides.contentType : currentContentType;
+            if (currentExam && currentExam !== "all") params.set("exam", currentExam);
+            if (currentSearch) params.set("search", currentSearch);
+            if (category && category !== "all") params.set("category", category);
+            if (contentType && contentType !== "all") params.set("contentType", contentType);
+            const qs = params.toString();
+            return "/ebooks" + (qs ? "?" + qs : "");
+        };
+    %>
+
     <!-- Category pills -->
     <div class="flex gap-2 overflow-x-auto pb-2 mb-6 md:mb-8 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-        <a href="/ebooks"
+        <a href="<%= buildEbookUrl({ category: 'all' }) %>"
             class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentCategory === 'all' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
             All
         </a>
         <% categories.forEach(cat => { %>
-            <a href="/ebooks?category=<%= cat._id %>"
+            <a href="<%= buildEbookUrl({ category: String(cat._id) }) %>"
                 class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentCategory == cat._id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
                 <%= cat.name %>
             </a>
@@ -108,24 +124,24 @@
 
 
       <div class="flex gap-2 overflow-x-auto pb-2 mb-6 md:mb-8 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-        <a href="/ebooks"
-            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'all' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+        <a href="<%= buildEbookUrl({ contentType: 'all' }) %>"
+            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'all' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
             All Types
         </a>
-        <a href="/ebooks?contentType=E-Book"
-            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'E-Book' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+        <a href="<%= buildEbookUrl({ contentType: 'E-Book' }) %>"
+            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'E-Book' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
             E-Books
         </a>
-        <a href="/ebooks?contentType=Short+Notes"
-            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'Short Notes' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+        <a href="<%= buildEbookUrl({ contentType: 'Short Notes' }) %>"
+            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'Short Notes' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
             Short Notes
         </a>
-        <a href="/ebooks?contentType=PYQ"
-            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'PYQ' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+        <a href="<%= buildEbookUrl({ contentType: 'PYQ' }) %>"
+            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'PYQ' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
             PYQ Books
         </a>
-        <a href="/ebooks?contentType=Handwritten+Notes"
-            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'Handwritten Notes' ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+        <a href="<%= buildEbookUrl({ contentType: 'Handwritten Notes' }) %>"
+            class="shrink-0 px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition <%= currentContentType === 'Handwritten Notes' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
             Handwritten Notes
         </a>
     </div>

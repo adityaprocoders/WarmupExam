@@ -1,0 +1,137 @@
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- ================= SETTINGS BAR ================= -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5 mb-6">
+        <div class="flex flex-wrap items-end gap-4">
+
+            <!-- Operation -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                    <i class="fa-solid fa-calculator text-slate-400"></i> Operation
+                </label>
+                <select id="ctOperation"
+                    class="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition">
+                    <option value="mixed" selected>Mixed</option>
+                    <option value="add">Addition</option>
+                    <option value="sub">Subtraction</option>
+                    <option value="mul">Multiplication</option>
+                    <option value="div">Division</option>
+                </select>
+            </div>
+
+            <!-- Time -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                    <i class="fa-solid fa-clock text-slate-400"></i> Time
+                </label>
+                <select id="ctTime"
+                    class="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition">
+                    <option value="2" selected>2 Minutes</option>
+                    <option value="3">3 Minutes</option>
+                    <option value="5">5 Minutes</option>
+                    <option value="10">10 Minutes</option>
+                    <option value="custom">Custom</option>
+                </select>
+                <input type="number" id="ctTimeCustom" min="1" placeholder="Minutes"
+                    class="hidden mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition" />
+            </div>
+
+            <!-- Difficulty -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                    <i class="fa-solid fa-chart-simple text-slate-400"></i> Difficulty
+                </label>
+                <select id="ctDifficulty"
+                    class="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+
+            <!-- Generate -->
+            <button id="ctGenerateBtn"
+                class="ml-auto px-6 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-sm shadow-indigo-200">
+                <i class="fa-solid fa-arrows-rotate mr-1.5"></i> Generate
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= TEST AREA ================= -->
+    <div id="ctTestSection" class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sm:p-6 mb-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-brain text-indigo-500"></i>
+                <span id="ctInstructionText">Configure settings above and click Generate</span>
+            </h2>
+            <div id="ctTimerDisplay" class="hidden items-center gap-1.5 font-mono font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg">
+                <i class="fa-solid fa-stopwatch text-indigo-500"></i>
+                <span id="ctTimerValue">02:00</span>
+            </div>
+        </div>
+
+        <!-- Question card -->
+        <div class="flex flex-col items-center justify-center py-6 sm:py-10">
+            <div class="bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-2xl px-8 py-8 sm:px-14 sm:py-10 mb-6 w-full max-w-md text-center shadow-sm">
+                <p id="ctQuestion" class="text-3xl sm:text-5xl font-extrabold text-slate-800 font-mono tracking-wide break-all">— &nbsp;+&nbsp; —</p>
+            </div>
+
+            <input id="ctAnswerInput" type="text" inputmode="numeric" autocomplete="off" autocorrect="off"
+                autocapitalize="off" spellcheck="false" placeholder="?"
+                class="w-full max-w-xs text-center text-2xl sm:text-3xl font-mono font-bold px-4 py-3 rounded-xl border-2 border-slate-200 focus:outline-none focus:border-indigo-400 transition" />
+            <p class="text-xs text-slate-400 mt-3">Type your answer and press Enter</p>
+
+            <!-- Feedback flash -->
+            <p id="ctFeedback" class="h-5 mt-2 text-sm font-semibold"></p>
+        </div>
+    </div>
+
+    <!-- ================= RESULTS ================= -->
+    <div id="ctResults" class="hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+                <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-indigo-500"></i> Calculation Score
+                </h3>
+
+                <div class="text-center py-2 mb-3">
+                    <p id="ctFinalQpm" class="text-4xl font-extrabold text-slate-800">0</p>
+                    <p class="text-xs text-slate-500 font-medium">Questions Per Minute</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-50 rounded-xl p-3 text-center">
+                        <p id="ctFinalAccuracy" class="text-lg font-bold text-slate-800">0%</p>
+                        <p class="text-xs text-slate-500">Accuracy</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-3 text-center">
+                        <p id="ctFinalCorrect" class="text-lg font-bold text-slate-800">0</p>
+                        <p class="text-xs text-slate-500">Correct</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-3 text-center">
+                        <p id="ctFinalWrong" class="text-lg font-bold text-red-500">0</p>
+                        <p class="text-xs text-slate-500">Wrong</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-3 text-center">
+                        <p id="ctFinalTimeUsed" class="text-lg font-bold text-slate-800">0:00</p>
+                        <p class="text-xs text-slate-500">Time Used</p>
+                    </div>
+                </div>
+
+                <button id="ctTryAgainBtn"
+                    class="w-full mt-5 px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">
+                    <i class="fa-solid fa-rotate-right mr-1.5"></i> Try Again
+                </button>
+            </div>
+
+            <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+                <p class="text-xs font-semibold text-slate-400 tracking-wide mb-2">QUESTIONS PER MINUTE</p>
+                <canvas id="ctResultChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js" nonce="<%= cspNonce %>"></script>
+<script src="/js/skill/calculationTest.js" defer></script>
