@@ -1,12 +1,32 @@
+sitemap: https://warmupexam.com/sitemap.xml
+
 User-agent: *
 Allow: /
- 
-User-agent: *
-Allow: /
-Disallow: /profile 
+
+
+Disallow: /login
+Disallow: /register
+Disallow: /logout
+Disallow: /auth/google
+Disallow: /api/auth/
+Disallow: /mock-test/*/instructions
 Disallow: /attempt/
+Disallow: /api/attempt/ 
+Disallow: /series/
+Disallow: /section/
+Disallow: /folder/
+Disallow: /file/
+Disallow: /enroll/
+Disallow: /order-summary/
+Disallow: /apply-coupon
+Disallow: /create-order
+Disallow: /verify-payment 
+Disallow: /profile
 Disallow: /api/
 Disallow: /test-error
+Disallow: /csp-violation-report
 
 
-Sitemap: https://warmupexam.com/sitemap.xml
+Disallow: /*?*utm_source=
+Disallow: /*?*utm_medium=
+Disallow: /*?*utm_campaign=

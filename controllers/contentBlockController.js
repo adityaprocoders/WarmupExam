@@ -48,7 +48,19 @@ export const renderAttachPage = async (req, res) => {
 
     const allBlocks = await ContentBlock.find().sort({ name: 1 });
 
-    res.render("owner/attach-content", { listing, allBlocks });
+    // allListingsForCopy - listingController.js ke showTest jaisa pattern
+    const allListingsForCopy = await Listing.find()
+        .select("title exam")
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean();
+
+    res.render("owner/contentBlocks", {
+        listing,
+        allBlocks,
+        allListingsForCopy,
+        robots: "noindex, nofollow"
+    });
 };
 
 // Selected block IDs ko listing me save karo

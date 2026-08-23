@@ -54,7 +54,7 @@ categories.forEach(c => {
     description:
     "Practice mock tests, PYQs & get AI-powered performance analysis and rank prediction for SSC, NIMCET, Defence, JEE, NEET, UPSC & more on WarmupExam.",
     keywords:
-        "WarmupExam, mock test, AIR mock test, AIR Rank, online mock test India, CUET mock test, UPSC mock test, JEE mock test, SSC mock test, GATE mock test, CAT mock test, NEET mock test, CUET mock test, rank predictor, negative marking test series, AI performance analysis, previous year questions PYQ",
+        "WarmupExam, warmupexam, mock test, AIR mock test, Skill test, AIR Rank, online mock test India, CUET mock test, UPSC mock test, JEE mock test, SSC mock test, GATE mock test, CAT mock test, NEET mock test, CUET mock test, rank predictor, negative marking test series, AI performance analysis, previous year questions PYQ",
     canonicalUrl: "https://warmupexam.com/"
 });
 };

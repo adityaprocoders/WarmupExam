@@ -25,16 +25,21 @@ async function getBatchContext(req) {
 async function renderSkillTest(req, res, renderPath, includePath, seoData) {
     if (req.user && req.user.role !== "owner") {
         const { listing, sections } = await getBatchContext(req);
-        return res.render("dashboard/skillTestWrapper", {
-            layout: "layouts/dashboard",
-            skillView: includePath,
-            listing,
-            sections,
-            currentSection: null,
-            ...seoData
-        });
+
+        if (listing) {
+            // user ke paas batch access hai -> dashboard ke andar open karo
+            return res.render("dashboard/skillTestWrapper", {
+                layout: "layouts/dashboard",
+                skillView: includePath,
+                listing,
+                sections,
+                currentSection: null,
+                ...seoData
+            });
+        }
     }
 
+    // bina batch wale user (login ho ya na ho) -> normal page
     res.render(renderPath, seoData);
 }
 

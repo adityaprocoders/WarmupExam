@@ -87,10 +87,11 @@ export const editCategoryForm = async (req, res) => {
         return res.redirect("/");
     }
 
-    res.render("pages/ui/editCategory", {
-        category,
-        title: "Edit Category",
-    });
+    res.render("pages/categories/editCategory", {
+    category,
+    title: "Edit Category",
+    robots: "noindex, nofollow",
+});
 };
 
 // PUT /categories/:id  -> category update karta hai

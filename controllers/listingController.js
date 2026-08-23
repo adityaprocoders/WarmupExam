@@ -223,7 +223,7 @@ if (isOwner) {
 
 export const renderNewTest = async (req, res) => {
     const categories = await Category.find({}).select("name _id").sort({ name: 1 }).lean();
-    res.render("test/new", { categories });
+    res.render("test/new", { categories, robots: "noindex, nofollow" });
 };
 
 // rankPredictorData me se empty/invalid rows hata do
@@ -282,7 +282,7 @@ export const renderEditTest = async (req, res) => {
 
     const categories = await Category.find({}).select("name _id").sort({ name: 1 }).lean();
 
-    res.render("test/edit.ejs", { listing, categories });
+    res.render("test/edit.ejs", { listing, categories, robots: "noindex, nofollow" });
 };
 
 export const updateTest = async (req, res) => {

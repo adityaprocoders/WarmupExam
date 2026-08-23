@@ -108,7 +108,7 @@ export const download = async (req, res) => {
 
 export const renderNewEbook = async (req, res) => {
     const categories = await Category.find({}).select("name _id").sort({ name: 1 }).lean();
-    res.render("pages/ebook/new", { categories });
+    res.render("pages/ebook/new", { categories, robots: "noindex, nofollow" });
 };
 
 export const createEbook = async (req, res) => {
@@ -157,7 +157,7 @@ export const renderEditEbook = async (req, res) => {
     const ebook = await Ebook.findById(req.params.id);
     if (!ebook) throw new ExpressError(404, "E-Book Not Found");
     const categories = await Category.find({}).select("name _id").sort({ name: 1 }).lean();
-    res.render("pages/ebook/edit", { ebook, categories });
+    res.render("pages/ebook/edit", { ebook, categories, robots: "noindex, nofollow" });
 };
 
 export const updateEbook = async (req, res) => {

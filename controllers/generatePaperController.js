@@ -42,7 +42,8 @@ export const renderGeneratePaper = async (req, res) => {
         sectionId: sectionId || "",
         parentType: parentType || "section",
         parentId: parentId || "",
-        returnUrl: returnUrl || "/"
+        returnUrl: returnUrl || "/",
+        robots: "noindex, nofollow"
     });
 };
 

@@ -58,7 +58,8 @@ export const getProfile = async (req, res) => {
         res.render("user/profile", {
             currentUser: req.user,
             isOwner: req.user.role === "owner",
-            myPurchases
+            myPurchases,
+             robots: "noindex, nofollow"
         });
     } catch (err) {
         console.error(err);

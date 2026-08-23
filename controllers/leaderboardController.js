@@ -36,7 +36,8 @@ export const getLeaderboard = async (req, res) => {
         isWeakAreaPage: false,
         csrfToken: req.csrfToken(),
         leaderboardBlocked,
-        sectionId: sectionId || "all"
+        sectionId: sectionId || "all",
+        robots: "noindex, nofollow"
     });
 };
 

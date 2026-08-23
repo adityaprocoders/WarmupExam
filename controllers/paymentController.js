@@ -16,7 +16,7 @@ export const showOrderSummary = async (req, res) => {
         return res.redirect(`/test/${listing._id}`);
     }
 
-    res.render("order/summary", { listing });
+    res.render("order/summary", { listing, robots: "noindex, nofollow" });
 };
 
 // Coupon apply/validate (sirf calculate karta hai, order nahi banata)

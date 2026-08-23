@@ -67,7 +67,8 @@ export const renderTestBuilder = async (req, res) => {
         parentType: parentType || "section",
         parentId: parentId || "",
         returnUrl: returnUrl || "/",
-        editId: editId || ""
+        editId: editId || "",
+        robots: "noindex, nofollow"
     });
 };
 
