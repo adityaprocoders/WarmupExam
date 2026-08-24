@@ -21,12 +21,12 @@ import {
     updateNotification
 } from "../controllers/ownerController.js";
 import { isOwner } from "../middleware/isLoggedIn.js";
-import { getLoginHistory, deleteLoginHistory } from "../controllers/ownerController.js";
+import { getLoginHistory, deleteLoginHistory, deleteAllLoginHistory } from "../controllers/ownerController.js";
 
 
 const router = express.Router();
 
-router.use((req, res, next) => {
+router.use(["/api/owner", "/owner"], (req, res, next) => {
     res.locals.robots = "noindex, nofollow";
     next();
 });
@@ -55,6 +55,7 @@ router.get("/api/owner/payments", isOwner, getAllPaymentsOwner);
 
 router.get("/api/owner/login-history", isOwner, getLoginHistory);
 router.delete("/api/owner/login-history/:id", isOwner, deleteLoginHistory);
+router.delete("/api/owner/login-history-all", isOwner, deleteAllLoginHistory);
 
 
 

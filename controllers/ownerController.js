@@ -649,6 +649,15 @@ export const deleteLoginHistory = async (req, res) => {
     }
 };
 
+export const deleteAllLoginHistory = async (req, res) => {
+    try {
+        await LoginHistory.deleteMany({ ownerEmail: req.user.email });
+        res.json({ success: true, message: "Poori login history delete ho gayi" });
+    } catch (err) {
+        console.error("Delete all login history error:", err);
+        res.status(500).json({ success: false, message: "Delete nahi ho paya" });
+    }
+};
 
 // ---------------- GET ALL NOTIFICATIONS (list view ke liye) ----------------
 export const getAllNotificationsOwner = async (req, res) => {

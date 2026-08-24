@@ -668,6 +668,20 @@ function attachLoginHistoryEvents() {
   });
 }
 
+document.getElementById('deleteAllLoginHistoryBtn')?.addEventListener('click', async function () {
+  if (!confirm('Poori login history delete karna hai? Ye action wapas nahi ho sakta.')) return;
+  this.disabled = true;
+  try {
+    const res = await fetch('/api/owner/login-history-all', { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) loadLoginHistory();
+    else { alert(data.message || 'Delete nahi ho paya'); this.disabled = false; }
+  } catch (err) {
+    alert('Something went wrong');
+    this.disabled = false;
+  }
+});
+
 // 👇 NAYA: test series search input
 document.getElementById('testSeriesSearchInput')?.addEventListener('input', function () {
     filterTestSeries(this.value);
