@@ -54,35 +54,60 @@
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-bold">Recent Activity</h2>
         <button
-            id="exportAllPdfBtn"
-            class="bg-green-100 text-green-600 px-3 py-1 rounded text-xs font-bold hover:bg-green-200 transition disabled:opacity-50">
-            EXPORT ALL PDF
-        </button>
+    id="exportAllPdfBtn"
+    class="flex items-center gap-2 bg-white border-2 border-green-500 text-green-600 px-4 py-2 rounded-full text-xs font-bold hover:bg-green-50 transition disabled:opacity-50">
+    <i class="fa-solid fa-file-pdf text-sm"></i>
+    EXPORT ALL PDF
+</button>
       </div>
 
       <div class="max-h-80 overflow-y-auto pr-3 custom-scrollbar divide-y divide-gray-100">
   <% if (recentActivity && recentActivity.length > 0) { %>
-    <% recentActivity.forEach(item => { %>
-      <div class="flex justify-between items-center py-4 first:pt-0">
-        <div>
-          <p class="font-semibold"><%= item.testTitle %></p>
-          <p class="text-xs text-gray-400">
-            <%= new Date(item.date).toLocaleDateString('en-GB') %>
+   <% recentActivity.forEach(item => { %>
+  <div class="py-4 first:pt-0 border-b border-gray-50 last:border-0">
+
+    <div class="flex items-center gap-1.5 mb-1.5">
+      <span class="w-2 h-2 rounded-full <%= item.sectionColor.dot %>"></span>
+      <span class="text-[10px] font-bold uppercase tracking-wide <%= item.sectionColor.text %>">
+        <%= item.sectionName %>
+      </span>
+    </div>
+
+    <div class="flex justify-between items-start gap-3">
+      <div class="min-w-0">
+        <p class="font-semibold text-slate-800 truncate"><%= item.testTitle %></p>
+
+        <% if (item.locationPath && item.locationPath.length > 0) { %>
+          <p class="text-xs text-gray-400 truncate mt-0.5">
+            <%= item.locationPath.join(' • ') %>
           </p>
-        </div>
-        <div class="flex items-center gap-4">
-          <span class="<%= item.score >= 0 ? 'text-green-500' : 'text-red-500' %> font-bold">
-            <%= item.score %> <span class="text-gray-300">/<%= item.totalMarks %></span>
-          </span>
-          <button
-            data-action="go-to-url"
-            data-href="/attempt/<%= item.attemptId %>/analysis"
-            class="bg-blue-50 text-blue-600 px-4 py-1 rounded-full text-sm">
-            Analysis
-          </button>
-        </div>
+        <% } %>
+
+        <p class="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+          <i class="fa-regular fa-calendar"></i>
+          <%= new Date(item.date).toLocaleDateString('en-GB') %>
+        </p>
       </div>
-    <% }) %>
+
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="text-center">
+          <p class="font-bold text-sm <%= item.score >= 0 ? 'text-green-600' : 'text-red-500' %>">
+            <%= item.score %><span class="text-gray-300 text-xs">/<%= item.totalMarks %></span>
+          </p>
+          <p class="text-[9px] text-gray-400 uppercase tracking-wide">Marks</p>
+        </div>
+
+        <button
+          data-action="go-to-url"
+          data-href="/attempt/<%= item.attemptId %>/analysis"
+          class="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap">
+          Analysis
+        </button>
+      </div>
+    </div>
+
+  </div>
+<% }) %> 
   <% } else { %>
     <p class="text-sm text-gray-400 text-center py-10">Abhi tak koi test attempt nahi kiya.</p>
   <% } %>

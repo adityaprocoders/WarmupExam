@@ -21,9 +21,21 @@
             </div>
             
             <div class="border p-6 rounded-xl bg-gray-50">
-                <h2 class="text-3xl font-bold text-gray-900 mb-4">About the Test</h2>
-                <p class="text-gray-600 text-lg"><%- nl2br(listing.description) %></p>
-            </div>
+    <h2 class="text-3xl font-bold text-gray-900 mb-4">About the Test Series</h2>
+    <ul class="space-y-4">
+        <% aboutTestSeries.forEach(item => { %>
+            <li class="flex items-start gap-3">
+                <span class="w-9 h-9 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 shrink-0">
+                    <i class="<%= item.icon %>"></i>
+                </span>
+                <p class="text-gray-700">
+                    <span class="font-semibold text-gray-900"><%= item.title %>:</span>
+                    <%= item.text %>
+                </p>
+            </li>
+        <% }) %>
+    </ul>
+</div>
  
 <%- include('../owner/contentBlocks', { listing, isOwner, allBlocks }) %>
  

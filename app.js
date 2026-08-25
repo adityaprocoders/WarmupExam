@@ -239,6 +239,7 @@ app.use((req, res, next) => {
     res.locals.canonicalUrl = `${baseUrl}${req.originalUrl}`;
      
      res.locals.safeJsonStringify = safeJsonStringify;
+     res.locals.adsensePublisherId = process.env.ADSENSE_PUBLISHER_ID;
 
     next();
 });
@@ -310,7 +311,14 @@ app.use((req, res, next) => {
 
 
 app.use((req, res, next) => {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    const noCachePaths = ['/login', '/register', '/profile', '/dashboard', '/attempt', '/series', '/api'];
+    const shouldNoCache = noCachePaths.some(p => req.path.startsWith(p));
+
+    if (shouldNoCache) {
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    } else {
+        res.set('Cache-Control', 'public, max-age=60');
+    }
     next();
 });
 

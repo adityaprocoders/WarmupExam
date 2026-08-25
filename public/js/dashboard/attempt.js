@@ -598,7 +598,8 @@ async function doSubmitTest(submitType = "manual") {
     } catch (err) {
         console.error("Submit save error:", err);
     }
-
+    
+    document.getElementById('autoSubmitToast').classList.add('hidden');
     document.getElementById('successModal').classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
 }
@@ -611,6 +612,7 @@ function autoSubmit() {
 
 function closeSuccessModal() {
     document.getElementById('successModal').classList.add('hidden');
+    document.getElementById('autoSubmitToast').classList.add('hidden');
     window.location.replace(returnUrl);
 }
 

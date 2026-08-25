@@ -20,6 +20,21 @@ const sectionSchema = new mongoose.Schema(
             required: true,
             index: true,
         },
+
+
+        unit: {
+            type: String,
+            enum: ["Tests", "Years"],
+            default: "Tests",
+        },
+
+        // 👇 NAYA — "+Add Section" jitni baar click hoga, us hisaab se sequence
+        order: {
+            type: Number,
+            default: 0,
+        },
+
+
          showInStatsFilter: {
             type: Boolean,
             default: false,

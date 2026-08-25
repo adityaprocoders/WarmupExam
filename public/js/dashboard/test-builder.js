@@ -1770,6 +1770,19 @@ document.addEventListener('input', function (e) {
 });
 
 /* ---------------------------------------------------------
+   BFCACHE FIX — Back button se aane par purana cached form
+   dikhne ki bajaye fresh data load ho (save ke baad).
+   Ye sirf browser back/forward navigation par trigger hota
+   hai, baaki sab logic bilkul same rahega.
+--------------------------------------------------------- */
+window.addEventListener('pageshow', function (event) {
+  if (event.persisted) {
+    window.location.reload();
+  }
+});
+
+
+/* ---------------------------------------------------------
    INIT
 --------------------------------------------------------- */
 async function init() {
@@ -1781,4 +1794,5 @@ async function init() {
     await loadExistingTest();
   }
 }
+
 init();

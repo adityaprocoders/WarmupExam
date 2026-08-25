@@ -15,7 +15,7 @@ import { generatePlaceholderImage } from "../utils/placeholderImage.js";
 import { notifyNewTestSeries } from "../utils/notifyNewTestSeries.js";
 import mongoose from "mongoose";
 import { getValidEnrollments } from "../utils/cleanupHelpers.js";
-
+import { buildAboutTestSeries } from "../utils/aboutTestSeries.js";
 
 
 export const allTests = async (req, res) => {
@@ -204,7 +204,9 @@ if (isOwner) {
 
     const { enrolledIds } = getValidEnrollments(req.user);
 
-    const totalTestCount = await Test.countDocuments({ listing: data._id });
+    const totalTestCount = await Test.countDocuments({ listing: data._id }); 
+    const aboutTestSeries = await buildAboutTestSeries(data._id, Section, Test); 
+
 
     res.render("test/show", {
         listing: data,
@@ -212,11 +214,12 @@ if (isOwner) {
         isOwner,
         totalTestCount,
         allBlocks,
+         aboutTestSeries,
         allListingsForCopy, // 👈 naya
         examGroups,         // 👈 naya
-        title: `${data.title} Mock Test Series | WarmupExam`,
-        description: data.description
-            ? data.description.slice(0, 155)
+        title: `${data.title} | WarmupExam`,
+        description: data.shortDescription
+            ? data.shortDescription.replace(/\s+/g, ' ').trim()
             : `Practice ${data.title} with realistic mock tests, true negative marking, AI-powered analysis and AIR rank prediction on WarmupExam.`
     });
 };

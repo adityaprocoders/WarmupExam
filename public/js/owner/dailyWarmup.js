@@ -60,7 +60,11 @@
                 <td class="px-4 py-3 text-gray-600">${r.questionCount}</td>
                 <td class="px-4 py-3 text-gray-600">${r.participants.toLocaleString('en-IN')}</td>
                 <td class="px-4 py-3 text-gray-600">${r.avgScore}</td>
-                <td class="px-4 py-3 text-gray-600">${r.topScore}</td>
+                <td class="px-4 py-3">
+                    <button data-action="wu-view-leaderboard" data-exam="${r.exam}" class="text-indigo-600 text-xs font-semibold hover:underline">
+                        <i class="fa-solid fa-trophy text-amber-400 mr-1"></i>View Leaderboard
+                    </button>
+                </td>
                 <td class="px-4 py-3 text-right">
                     <button data-action="wu-edit-exam" data-exam="${r.exam}" data-category-name="${r.category}" class="text-indigo-600 text-xs font-semibold hover:underline mr-3">Edit</button>
                     <button data-action="wu-delete-exam" data-exam="${r.exam}" class="text-red-500 text-xs font-semibold hover:underline">Delete</button>
@@ -297,6 +301,51 @@ async function deleteConfig(examName) {
     loadDashboardStats();
 }
 
+    async function openLeaderboardModal(examName) {
+        toggleHidden($('#wuLeaderboardModalOverlay'));
+        $('#wuLbExamName').textContent = examName;
+        $('#wuLbContent').innerHTML = `<p class="text-center text-gray-400 py-8">Loading...</p>`;
+
+        const data = await apiGet('/owner/daily-warmup/leaderboard/' + encodeURIComponent(examName));
+
+        if (!data.success || !data.active) {
+            $('#wuLbContent').innerHTML = `<p class="text-center text-gray-400 py-8">No active warmup right now for this exam.</p>`;
+            return;
+        }
+
+        if (data.leaderboard.length === 0) {
+            $('#wuLbContent').innerHTML = `<p class="text-center text-gray-400 py-8">No attempts yet today.</p>`;
+            return;
+        }
+
+        const rows = data.leaderboard.map(entry => `
+            <tr class="border-b border-gray-50">
+                <td class="py-2.5 pr-3 text-gray-500">${entry.rank}</td>
+                <td class="py-2.5 pr-3 text-gray-800 font-medium">${entry.name}</td>
+                <td class="py-2.5 pr-3 text-gray-600">${entry.score}/${entry.totalMarks}</td>
+                <td class="py-2.5 pr-3 text-gray-600">${entry.accuracy}%</td>
+                <td class="py-2.5 text-gray-600">${entry.time}</td>
+            </tr>
+        `).join('');
+
+        $('#wuLbContent').innerHTML = `
+            <p class="text-xs text-gray-400 mb-3">Total Participants: <span class="font-semibold text-gray-600">${data.totalParticipants}</span></p>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-gray-400 text-xs uppercase border-b border-gray-100">
+                        <th class="text-left py-2 pr-3 font-semibold">Rank</th>
+                        <th class="text-left py-2 pr-3 font-semibold">Student</th>
+                        <th class="text-left py-2 pr-3 font-semibold">Score</th>
+                        <th class="text-left py-2 pr-3 font-semibold">Accuracy</th>
+                        <th class="text-left py-2 font-semibold">Time</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+    }
+
+
     function backToList() {
         $('#dailyWarmupConfigView').classList.add('hidden');
         $('#dailyWarmupListView').classList.remove('hidden');
@@ -333,6 +382,11 @@ async function deleteConfig(examName) {
 
         const deleteBtn = e.target.closest('[data-action="wu-delete-exam"]');
         if (deleteBtn) { deleteConfig(deleteBtn.dataset.exam); return; }
+
+        const lbBtn = e.target.closest('[data-action="wu-view-leaderboard"]');
+        if (lbBtn) { openLeaderboardModal(lbBtn.dataset.exam); return; }
+
+        if (e.target.closest('#wuLbCloseBtn')) { toggleHidden($('#wuLeaderboardModalOverlay')); return; }
     });
          
  

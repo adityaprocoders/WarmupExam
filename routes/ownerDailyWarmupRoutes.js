@@ -13,6 +13,7 @@ router.get("/owner/daily-warmup/sources/unique-count", isLoggedIn, isOwner, wrap
 router.get("/owner/daily-warmup/config/:exam", isLoggedIn, isOwner, wrapAsync(ctrl.getConfigByExam));
 router.post("/owner/daily-warmup/config", isLoggedIn, isOwner, wrapAsync(ctrl.saveConfig));
 router.delete("/owner/daily-warmup/config/:exam", isLoggedIn, isOwner, wrapAsync(ctrl.deleteConfig));
+router.get("/owner/daily-warmup/leaderboard/:exam", isLoggedIn, isOwner, wrapAsync(ctrl.getWarmupLeaderboardForOwner));
 
  
 export default router;

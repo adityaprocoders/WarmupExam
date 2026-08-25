@@ -255,3 +255,50 @@ export const deleteConfig = async (req, res) => {
 
     res.json({ success: true });
 };
+
+
+
+export const getWarmupLeaderboardForOwner = async (req, res) => {
+    const { exam } = req.params;
+
+    const todaysWarmup = await Test.findOne({
+        warmupExam: exam,
+        isDailyWarmup: true,
+        warmupExpiresAt: { $gt: new Date() }
+    }).sort({ createdAt: -1 }).lean();
+
+    if (!todaysWarmup) {
+        return res.json({ success: true, leaderboard: [], totalParticipants: 0, active: false });
+    }
+
+    const attempts = await Attempt.find({ test: todaysWarmup._id })
+        .populate("user", "name")
+        .sort({ score: -1, timeTaken: 1 })
+        .lean();
+
+    const leaderboard = attempts.map((a, idx) => {
+        const attempted = (a.correctCount || 0) + (a.wrongCount || 0);
+        const accuracy = attempted > 0 ? Math.round((a.correctCount / attempted) * 100) : 0;
+
+        const mins = Math.floor((a.timeTaken || 0) / 60);
+        const secs = (a.timeTaken || 0) % 60;
+        const timeFormatted = String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
+
+        return {
+            rank: idx + 1,
+            name: a.user?.name || "Anonymous",
+            score: a.score,
+            totalMarks: todaysWarmup.totalMarks,
+            correctCount: a.correctCount || 0,
+            accuracy,
+            time: timeFormatted
+        };
+    });
+
+    res.json({
+        success: true,
+        leaderboard,
+        totalParticipants: leaderboard.length,
+        active: true
+    });
+};

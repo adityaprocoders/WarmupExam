@@ -21,27 +21,32 @@ const escapeRegex = (str) => {
 };
 
 // GET /categories  -> saari categories dikhane wala page
-export const getAllCategories = async (req, res) => {
-    const isOwner = req.user && req.user.role === "owner";
-    const categories = await Category.find({}).sort({ createdAt: -1 }).lean();
+export const getAllCategories = async (req, res, next) => {
+    try {
+        const isOwner = req.user && req.user.role === "owner";
+        const categories = await Category.find({}).sort({ createdAt: -1 }).lean();
 
-    const categoryIds = categories.map(c => c._id);
-    const listingCounts = await Listing.aggregate([
-        { $match: { category: { $in: categoryIds } } },
-        { $group: { _id: "$category", count: { $sum: 1 } } }
-    ]);
-    const countMap = {};
-    listingCounts.forEach(c => { countMap[String(c._id)] = c.count; });
-    categories.forEach(c => { c.examCount = countMap[String(c._id)] || 0; });
+        const categoryIds = categories.map(c => c._id);
+        const listingCounts = await Listing.aggregate([
+            { $match: { category: { $in: categoryIds } } },
+            { $group: { _id: "$category", count: { $sum: 1 } } }
+        ]);
+        const countMap = {};
+        listingCounts.forEach(c => { countMap[String(c._id)] = c.count; });
+        categories.forEach(c => { c.examCount = countMap[String(c._id)] || 0; });
 
-    res.render("pages/categories", {
-        categories,
-        isOwner,
-        title: "All Exam Categories - WarmupExam",
-        description: "Browse all exam categories available on WarmupExam.",
-        keywords: "exam categories, mock test categories",
-        canonicalUrl: "https://warmupexam.com/categories",
-    });
+        res.render("pages/categories/categories", {
+            categories,
+            isOwner,
+            title: "All Exam Categories - WarmupExam",
+            description: "Browse all exam categories available on WarmupExam.",
+            keywords: "exam categories, mock test categories",
+            canonicalUrl: "https://warmupexam.com/categories",
+        });
+    } catch (err) {
+        console.error("Get all categories error:", err);
+        next(err);
+    }
 };
 
 // POST /categories  -> nayi category create karta hai
@@ -129,84 +134,84 @@ export const deleteCategory = async (req, res) => {
 };
 
 // GET /categories/:slug  -> ek category ka detail page
-export const showCategory = async (req, res) => {
-    const { slug } = req.params;
+export const showCategory = async (req, res, next) => {
+    try {
+        const { slug } = req.params;
 
-    const category = await Category.findOne({ slug }).lean();
-    if (!category) {
-        req.flash && req.flash("error", "Category not found");
-        return res.redirect("/");
+        const category = await Category.findOne({ slug }).lean();
+        if (!category) {
+            req.flash && req.flash("error", "Category not found");
+            return res.redirect("/");
+        }
+
+        const isOwner = req.user && req.user.role === "owner";
+
+        const baseFilter = { category: category._id };
+        if (!isOwner) baseFilter.visibility = "public";
+
+        const totalListingsCount = await Listing.countDocuments(baseFilter);
+
+        const categoryListingIds = await Listing.find(baseFilter).select("_id").lean();
+        const listingIds = categoryListingIds.map(l => l._id);
+        const totalTestsCount = await Test.countDocuments({ listing: { $in: listingIds } });
+        const languages = await Listing.distinct("language", baseFilter);
+        const exams = await Listing.distinct("exam", baseFilter);
+
+        const listings = await Listing.find(baseFilter)
+            .sort({ createdAt: -1 })
+            .limit(8)
+            .lean();
+
+        const listingIdsForCount = listings.map(l => l._id);
+        const testCounts = await Test.aggregate([
+            { $match: { listing: { $in: listingIdsForCount } } },
+            { $group: { _id: "$listing", count: { $sum: 1 } } }
+        ]);
+        const testCountMap = {};
+        testCounts.forEach(t => { testCountMap[String(t._id)] = t.count; });
+        listings.forEach(l => {
+            l.totalTestCount = testCountMap[String(l._id)] || 0;
+        });
+
+        const { enrolledIds, enrolledExpiryMap } = getValidEnrollments(req.user);
+
+        const seoTitle = `${category.name} Mock Test Series - ${totalListingsCount} Test Series | WarmupExam`;
+
+        const seoDescription = category.description
+            ? `${category.description} Practice ${totalListingsCount} test series with ${totalTestsCount} total mock tests, true negative marking and AI-powered analysis on WarmupExam.`
+            : `Explore ${category.name} exam preparation on WarmupExam. Browse ${totalListingsCount} mock test series with ${totalTestsCount} total tests, true negative marking and AI-powered performance analysis.`;
+
+        const seoKeywords = [
+            `${category.name} mock test`,
+            `${category.name} test series`,
+            `${category.name} online test`,
+            `${category.name} exam preparation`,
+            ...exams.filter(Boolean).slice(0, 5).map(e => `${e} mock test`)
+        ].join(", ");
+
+        const canonicalUrl = `https://warmupexam.com/categories/${category.slug}`;
+
+        res.render("pages/categories/categoryDetail", {
+            category,
+            listings,
+            totalListingsCount,
+            totalTestsCount,
+            enrolledIds,
+            enrolledExpiryMap,
+            isOwner,
+            languages: languages.filter(Boolean).sort(),
+            exams: exams.filter(Boolean).sort(),
+            csrfToken: req.csrfToken ? req.csrfToken() : "",
+            activeFilter: "all",
+            title: seoTitle,
+            description: seoDescription,
+            keywords: seoKeywords,
+            canonicalUrl,
+        });
+    } catch (err) {
+        console.error("Show category error:", err);
+        next(err);
     }
-
-    const isOwner = req.user && req.user.role === "owner";
-
-    const baseFilter = { category: category._id };
-    if (!isOwner) baseFilter.visibility = "public";
-
-    const totalListingsCount = await Listing.countDocuments(baseFilter);
-
-    const categoryListingIds = await Listing.find(baseFilter).select("_id").lean();
-    const listingIds = categoryListingIds.map(l => l._id);
-    const totalTestsCount = await Test.countDocuments({ listing: { $in: listingIds } });
-    const languages = await Listing.distinct("language", baseFilter);
-    const exams = await Listing.distinct("exam", baseFilter); 
-
-    // Default "All" filter — top 8 listings (newest first)
-    const listings = await Listing.find(baseFilter)
-        .sort({ createdAt: -1 })
-        .limit(8)
-        .lean();
-
-    const listingIdsForCount = listings.map(l => l._id);
-    const testCounts = await Test.aggregate([
-        { $match: { listing: { $in: listingIdsForCount } } },
-        { $group: { _id: "$listing", count: { $sum: 1 } } }
-    ]);
-    const testCountMap = {};
-    testCounts.forEach(t => { testCountMap[String(t._id)] = t.count; });
-    listings.forEach(l => {
-        l.totalTestCount = testCountMap[String(l._id)] || 0;
-    });
-
-    const { enrolledIds, enrolledExpiryMap } = getValidEnrollments(req.user);
-
-   // ============================================================
-    // 🔍 DYNAMIC SEO — category ke basis pe
-    // ============================================================
-
-    const seoTitle = `${category.name} Mock Test Series - ${totalListingsCount} Test Series | WarmupExam`;
-
-    const seoDescription = category.description
-        ? `${category.description} Practice ${totalListingsCount} test series with ${totalTestsCount} total mock tests, true negative marking and AI-powered analysis on WarmupExam.`
-        : `Explore ${category.name} exam preparation on WarmupExam. Browse ${totalListingsCount} mock test series with ${totalTestsCount} total tests, true negative marking and AI-powered performance analysis.`;
-
-    const seoKeywords = [
-        `${category.name} mock test`,
-        `${category.name} test series`,
-        `${category.name} online test`,
-        `${category.name} exam preparation`,
-        ...exams.filter(Boolean).slice(0, 5).map(e => `${e} mock test`)
-    ].join(", ");
-
-    const canonicalUrl = `https://warmupexam.com/categories/${category.slug}`;
-
-    res.render("pages/categories/categoryDetail", {
-        category,
-        listings,
-        totalListingsCount,
-        totalTestsCount,
-        enrolledIds,
-        enrolledExpiryMap,
-        isOwner,
-        languages: languages.filter(Boolean).sort(),
-        exams: exams.filter(Boolean).sort(),
-        csrfToken: req.csrfToken ? req.csrfToken() : "", 
-        activeFilter: "all",
-        title: seoTitle,
-        description: seoDescription,
-        keywords: seoKeywords,
-        canonicalUrl,
-    });
 };
 
 // ============================================================

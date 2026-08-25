@@ -9,6 +9,7 @@ import slugify from "slugify";
 import { checkEnrollment, isOwnerUser } from "../utils/authHelpers.js";
 import { calculateRankFromPredictor } from "../utils/rankHelper.js";
 import { getTestStatus } from "../utils/testStatus.js";
+import { buildTestLocationPath, getSectionColor } from "../utils/locationPath.js";
 
 /* ------------------------------------------------------------------ */
 /* Small stats helpers (pure functions — koi DB call nahi)             */
@@ -131,6 +132,14 @@ export const showSeries = async (req, res) => {
     const sections = await Section.find({ listing: listing._id }).sort({ createdAt: 1 });;
     const statsFilterSections = sections;
 
+
+    const sectionColorMap = {};
+const sectionNameMap = {};
+sections.forEach((sec, idx) => {
+    sectionColorMap[String(sec._id)] = getSectionColor(idx);
+    sectionNameMap[String(sec._id)] = sec.title;
+});
+
     let currentSection = null;
     if (section) {
         currentSection = await Section.findOne({ _id: section, listing: listing._id });
@@ -189,7 +198,7 @@ export const showSeries = async (req, res) => {
         testQuery.section = statsSection;
     }
         
-        const allTests = await Test.find(testQuery).select("_id title totalMarks");
+        const allTests = await Test.find(testQuery).select("_id title totalMarks section parentType parentId");
         const allTestIds = allTests.map(t => t._id);
         const testMap = {};
         allTests.forEach(t => { testMap[String(t._id)] = t; });
@@ -330,13 +339,32 @@ export const showSeries = async (req, res) => {
         };
 
         // Recent Activity — latest 5 attempts (UNCHANGED)
-        recentActivity = allAttempts.map(a => ({
-            attemptId: a._id,
-            testTitle: testMap[String(a.test)]?.title || "Untitled Test",
-            date: a.createdAt,
-            score: a.score,
-            totalMarks: a.totalMarks
-        }));
+        // Recent Activity — latest attempts + section name/color + location path
+const locationCache = {};
+async function getLocationForTest(test) {
+    const key = String(test._id);
+    if (locationCache[key] !== undefined) return locationCache[key];
+    const path = await buildTestLocationPath(test, Folder, File);
+    locationCache[key] = path;
+    return path;
+}
+
+recentActivity = await Promise.all(allAttempts.map(async (a) => {
+    const test = testMap[String(a.test)];
+    const sectionId = test?.section ? String(test.section) : null;
+    const locationPath = test ? await getLocationForTest(test) : [];
+
+    return {
+        attemptId: a._id,
+        testTitle: test?.title || "Untitled Test",
+        date: a.createdAt,
+        score: a.score,
+        totalMarks: a.totalMarks,
+        sectionName: sectionId ? (sectionNameMap[sectionId] || "General") : "General",
+        sectionColor: sectionId ? (sectionColorMap[sectionId] || getSectionColor(0)) : getSectionColor(0),
+        locationPath
+    };
+}));
 
         // Performance Growth & Rank Progress (Purane se naye order me) (UNCHANGED)
         performanceGrowth = [...allAttempts].reverse().map(a => {
@@ -374,14 +402,26 @@ export const showSeries = async (req, res) => {
     });
 };
 
+// controllers/dashboardController.js (ya jahan bhi ye hai)
 export const createSection = async (req, res) => {
     const { slug } = req.params;
-    const { title, icon } = req.body;
+    const { title, icon, unit } = req.body;
 
     const listing = await Listing.findOne({ slug });
     if (!listing) return res.status(404).send("Listing Not Found");
 
-    await Section.create({ title, icon, listing: listing._id });
+    // Naya section hamesha list ke aakhir me jayega (admin ka natural add-order)
+    const lastSection = await Section.findOne({ listing: listing._id }).sort({ order: -1 });
+    const nextOrder = lastSection ? lastSection.order + 1 : 0;
+
+    await Section.create({
+        title,
+        icon,
+        unit: unit === "Years" ? "Years" : "Tests",   // safety default
+        order: nextOrder,
+        listing: listing._id,
+    });
+
     res.redirect(`/series/${slug}`);
 };
 
@@ -390,7 +430,12 @@ export const updateSection = async (req, res) => {
     const section = await Section.findById(id);
     if (!section) return res.status(404).send("Section Not Found");
 
-    await Section.findByIdAndUpdate(id, { title: req.body.title });
+    const { title, icon, unit } = req.body;
+    const updateData = { title };
+    if (icon && icon.trim()) updateData.icon = icon.trim();
+    if (unit === "Tests" || unit === "Years") updateData.unit = unit;
+
+    await Section.findByIdAndUpdate(id, updateData);
     const listing = await Listing.findById(section.listing);
     res.redirect(`/series/${listing.slug}`);
 };
