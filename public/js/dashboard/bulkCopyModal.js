@@ -84,7 +84,11 @@ async function confirmBulkCopy() {
         const res = await fetch('/api/bulk-copy-sections', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sectionIds, destListingIds })
+            body: JSON.stringify({
+                sectionIds,
+                destListingIds,
+                selectedLanguage: selectedShowLanguage   // 👈 sirf ye naya field add hua
+            })
         });
         const data = await res.json();
 

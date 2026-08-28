@@ -16,6 +16,8 @@ import { notifyNewTestSeries } from "../utils/notifyNewTestSeries.js";
 import mongoose from "mongoose";
 import { getValidEnrollments } from "../utils/cleanupHelpers.js";
 import { buildAboutTestSeries } from "../utils/aboutTestSeries.js";
+import { cascadeDeleteListing } from "../utils/deleteHelpers.js";
+
 
 
 export const allTests = async (req, res) => {
@@ -315,33 +317,13 @@ res.redirect(`/test/${listing.slug}`);
 
 export const deleteTest = async (req, res) => {
     const { id } = req.params;
-
     const listing = await Listing.findById(id);
     if (!listing) throw new ExpressError(404, "Test Not Found");
-
-    const tests = await Test.find({ listing: id }).select("_id");
-    const testIds = tests.map(t => t._id);
-
-    await TestQuestion.deleteMany({ test: { $in: testIds } });
-    await Attempt.deleteMany({ test: { $in: testIds } });
-    await Test.deleteMany({ listing: id });
-    await File.deleteMany({ listing: id });
-    await Folder.deleteMany({ listing: id });
-    await Section.deleteMany({ listing: id });
-
-    await User.updateMany(
-        { "enrolledListings.listing": id },
-        { $pull: { enrolledListings: { listing: id } } }
-    );
-
-    await User.updateMany(
-        { lastAccessedBatch: id },
-        { $set: { lastAccessedBatch: null } }
-    );
-
+    await cascadeDeleteListing(id);
     await Listing.findByIdAndDelete(id);
 
-    res.redirect("/alltests");
+    const backUrl = req.body.returnUrl || req.query.returnUrl || "/alltests";
+    res.redirect(backUrl);
 };
 
 export const getExams = async (req, res) => {

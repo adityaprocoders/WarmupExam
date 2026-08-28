@@ -162,10 +162,7 @@ export const createListingSchema = Joi.object({
         "string.max": "Short description cannot exceed 150 characters"
     }),
 
-    description: Joi.string().trim().min(10).required().messages({
-        "string.empty": "Description is required",
-        "string.min": "Description must be at least 10 characters"
-    }),
+    description: Joi.string().trim().allow("", null),
 
     // Image file se aata hai (multer), body me sirf URL string ho sakta hai agar kabhi manually diya jaye
     image: Joi.string().uri().allow("", null).messages({

@@ -10,6 +10,7 @@ import { checkEnrollment, isOwnerUser } from "../utils/authHelpers.js";
 import { calculateRankFromPredictor } from "../utils/rankHelper.js";
 import { getTestStatus } from "../utils/testStatus.js";
 import { buildTestLocationPath, getSectionColor } from "../utils/locationPath.js";
+import { cascadeDeleteSection } from "../utils/deleteHelpers.js";
 
 /* ------------------------------------------------------------------ */
 /* Small stats helpers (pure functions — koi DB call nahi)             */
@@ -446,7 +447,7 @@ export const deleteSection = async (req, res) => {
     if (!section) return res.status(404).send("Section Not Found");
 
     const listing = await Listing.findById(section.listing);
-    await Section.findByIdAndDelete(id);
+    await cascadeDeleteSection(id);
     res.redirect(`/series/${listing.slug}`);
 };
 

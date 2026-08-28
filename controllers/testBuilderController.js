@@ -429,6 +429,7 @@ if (qMode === "multiple") {
         const oldMappings = await TestQuestion.find({ test: id }).sort({ order: 1 });
         const oldQuestionByOrder = new Map();
         oldMappings.forEach(m => oldQuestionByOrder.set(m.order, m.question.toString()));
+        const oldQuestionIds = [...new Set(oldMappings.map(m => m.question.toString()))]; 
 
         const updatedTest = await existingTest.save();
 
@@ -513,6 +514,15 @@ if (qMode === "multiple") {
 }
 
             await TestQuestion.insertMany(mappingDocs);
+            
+            for (const qId of oldQuestionIds) {
+    const stillUsed = await TestQuestion.exists({ question: qId });
+    if (!stillUsed) {
+        await Question.findByIdAndDelete(qId);
+    }
+}
+
+
         }
 
         res.status(200).json({ success: true, message: "Test aur questions update ho gaye", testId: updatedTest._id });

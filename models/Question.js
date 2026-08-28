@@ -46,7 +46,8 @@ const questionSchema = new mongoose.Schema({
 
     // 👇 NAYA: dedup ke liye. UNIQUE INDEX NAHI — duplicate check hum
     // manually findOne() se karte hain code me, isliye crash kabhi nahi hoga.
-    contentHash: { type: String, default: null }
+    contentHash: { type: String, default: null },
+     status: { type: String, enum: ["Active", "Reported", "Disabled"], default: "Active" }
 
 }, { timestamps: true });
 

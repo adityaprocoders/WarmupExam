@@ -57,6 +57,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import couponRoutes from "./routes/couponRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import questionBankRoutes from "./routes/questionBankRoutes.js";
 
 import minifyHTML from "express-minify-html-terser";
 
@@ -232,7 +233,7 @@ app.use((req, res, next) => {
         "Practice mock tests, PYQs and AI-powered exam preparation with WarmupExam.";
     res.locals.currentPath = req.path;
     res.locals.keywords =
-        "WarmupExam, Mock Test, BOARD EXAM, NIMCET, UPSC, SSC, Banking, Railway, JEE, NEET";
+        "WarmupExam, warmup exam, warmupexam, Warmup Exam, Free test Series,  Mock Test, Skill Test, BOARD EXAM, NIMCET, UPSC, SSC, Banking, Railway, JEE, NEET";
 
     res.locals.ogImage = `${baseUrl}/images/og-banner.jpg`;
 
@@ -311,7 +312,7 @@ app.use((req, res, next) => {
 
 
 app.use((req, res, next) => {
-    const noCachePaths = ['/login', '/register', '/profile', '/dashboard', '/attempt', '/series', '/api'];
+    const noCachePaths = ['/login', '/register', '/profile', '/dashboard', '/attempt', '/series', '/api', '/folder', '/file', '/order-summary', '/test-builder','/owner','/mock-test'];
     const shouldNoCache = noCachePaths.some(p => req.path.startsWith(p));
 
     if (shouldNoCache) {
@@ -386,6 +387,7 @@ app.use(pageRoutes);
 app.use("/", categoryRoutes);
 app.use(authRoutes);
 app.use("/", ownerRoutes);
+app.use(questionBankRoutes);
 app.use(listingRoutes);
 app.use(ebookRoutes);
 app.use(contentBlockRoutes);

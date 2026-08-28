@@ -24,7 +24,8 @@
     coupons: loadCoupons,
     users: () => loadUsers(userSearchInput ? userSearchInput.value.trim() : ''),
     payments: loadPayments,
-    loginhistory: loadLoginHistory
+    loginhistory: loadLoginHistory,
+    questionbank: () => loadQuestionBank() 
   };
 
   sideLinks.forEach(link => {

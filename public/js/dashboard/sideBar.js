@@ -117,9 +117,9 @@ document.addEventListener('click', function (e) {
       e.stopPropagation();
       updateSelectedCount();
       break;
-    case 'open-copy-modal':
-      openCopyModal(el.dataset.copyType, el.dataset.copyId);
-      break;
+   case 'open-copy-modal':
+  startSingleCopyWithLanguageCheck(el.dataset.copyType, el.dataset.copyId);   // ✅ CHANGED
+  break;
     case 'toggle-edit':
       toggleEdit(el.dataset.id);
       break;
@@ -136,7 +136,7 @@ document.addEventListener('click', function (e) {
       toggleBulkCopyDropdown();
       break;
     case 'open-bulk-copy-modal':
-      openBulkCopyModal(el.dataset.mode);
+      startBulkCopyWithLanguageCheck(el.dataset.mode);   // ✅ CHANGED
       break; 
   }
 });

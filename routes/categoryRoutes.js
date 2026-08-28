@@ -31,9 +31,7 @@ router.get("/api/categories/:slug/tests", wrapAsync(categoryController.getCatego
 
 router.get("/categories/:slug", wrapAsync(categoryController.showCategory));
 
-
-router.get("/api/categories/:slug/tests", wrapAsync(categoryController.getCategoryTestsApi));
+  
 router.get("/api/categories/:slug/search-suggestions", wrapAsync(categoryController.getCategorySearchSuggestions));
-router.get("/categories/:slug", wrapAsync(categoryController.showCategory));
-
+ 
 export default router;

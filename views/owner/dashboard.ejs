@@ -36,6 +36,9 @@
       <a href="#" data-target="testseries" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
         <i class="fa-solid fa-layer-group w-4 text-gray-400"></i> Test Series
       </a>
+      <a href="#" data-target="questionbank" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+  <i class="fa-solid fa-database w-4 text-gray-400"></i> Question Bank
+</a>
       <a href="#" data-target="dailywarmup" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
         <i class="fa-solid fa-bolt w-4 text-gray-400"></i> Daily Warmup
       </a>
@@ -506,6 +509,120 @@
         </div>
       </section>
 
+
+     <!-- QUESTION BANK -->
+<section id="content-questionbank" class="content-section hidden space-y-4">
+
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <h3 class="font-bold text-gray-900 text-lg">Question Bank</h3>
+    <button id="qbAddQuestionBtn" class="flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 rounded-lg">
+      <i class="fa-solid fa-plus"></i> Add New Question
+    </button>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <span class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2"><i class="fa-solid fa-list-ol text-sm"></i></span>
+      <p class="text-xl font-bold text-gray-900" id="qbStatTotal">—</p>
+      <p class="text-xs text-gray-500 mt-0.5">Total Questions</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <span class="w-9 h-9 rounded-lg bg-green-50 text-green-600 flex items-center justify-center mb-2"><i class="fa-solid fa-circle-check text-sm"></i></span>
+      <p class="text-xl font-bold text-gray-900" id="qbStatActive">—</p>
+      <p class="text-xs text-gray-500 mt-0.5">Active</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <span class="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mb-2"><i class="fa-solid fa-flag text-sm"></i></span>
+      <p class="text-xl font-bold text-gray-900" id="qbStatReported">—</p>
+      <p class="text-xs text-gray-500 mt-0.5">Reported</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <div class="flex flex-wrap gap-2">
+      <div class="relative flex-1 min-w-[200px]">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        <input type="text" id="qbSearchInput" placeholder="Search by ID or question text..." class="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-xs">
+      </div>
+      <select id="qbFilterListing" class="border border-gray-200 rounded-lg px-3 py-2 text-xs"><option value="all">All Exams</option></select>
+      <select id="qbFilterSubject" class="border border-gray-200 rounded-lg px-3 py-2 text-xs"><option value="all">All Subjects</option></select>
+      <select id="qbFilterTopic" class="border border-gray-200 rounded-lg px-3 py-2 text-xs"><option value="all">All Topics</option></select>
+      <select id="qbFilterDifficulty" class="border border-gray-200 rounded-lg px-3 py-2 text-xs">
+        <option value="all">All Difficulty</option><option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option>
+      </select>
+      <select id="qbFilterStatus" class="border border-gray-200 rounded-lg px-3 py-2 text-xs">
+        <option value="all">All Status</option><option value="Active">Active</option><option value="Reported">Reported</option><option value="Disabled">Disabled</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+          <tr>
+            <th class="text-left px-4 py-3 font-semibold">ID</th>
+            <th class="text-left px-4 py-3 font-semibold">Question Preview</th>
+            <th class="text-left px-4 py-3 font-semibold">Exam</th>
+            <th class="text-left px-4 py-3 font-semibold">Topic</th>
+            <th class="text-left px-4 py-3 font-semibold">Difficulty</th>
+            <th class="text-left px-4 py-3 font-semibold">Language</th>
+            <th class="text-left px-4 py-3 font-semibold">Status</th>
+            <th class="text-left px-4 py-3 font-semibold">Used</th>
+            <th class="text-left px-4 py-3 font-semibold">Reports</th>
+            <th class="text-right px-4 py-3 font-semibold">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="qbTableBody"><tr><td colspan="10" class="text-center text-gray-400 py-8">Loading...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="flex items-center justify-between px-4 py-3 border-t border-gray-50">
+      <span id="qbPageInfo" class="text-xs text-gray-400">—</span>
+      <div class="flex gap-1.5">
+        <button id="qbPrevPageBtn" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+        <button id="qbNextPageBtn" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Question Preview Side-panel -->
+<div id="qbDetailOverlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex justify-end">
+  <div class="bg-white w-full max-w-md h-full overflow-y-auto shadow-2xl">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+      <div>
+        <h3 id="qbDetailId" class="font-bold text-gray-900 text-sm">—</h3>
+        <span id="qbDetailStatus" class="text-xs font-semibold">—</span>
+      </div>
+      <button id="qbDetailCloseBtn" class="text-gray-400 hover:text-gray-700"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="qbDetailBody" class="p-5 space-y-4 text-sm"></div>
+    <div id="qbDetailActions" class="flex gap-2 px-5 py-4 border-t border-gray-100 sticky bottom-0 bg-white"></div>
+  </div>
+</div>
+
+<!-- Question Detail Side-panel (slide-over) -->
+<div id="qbDetailOverlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex justify-end">
+  <div class="bg-white w-full max-w-md h-full overflow-y-auto shadow-2xl">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+      <div>
+        <h3 id="qbDetailId" class="font-bold text-gray-900 text-sm">—</h3>
+        <span id="qbDetailStatus" class="text-xs font-semibold text-green-600">Active</span>
+      </div>
+      <button id="qbDetailCloseBtn" class="text-gray-400 hover:text-gray-700"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="qbDetailBody" class="p-5 space-y-4 text-sm"></div>
+    <div class="flex gap-2 px-5 py-4 border-t border-gray-100 sticky bottom-0 bg-white">
+      <button id="qbDetailEditBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2.5 rounded-lg">Edit Question</button>
+      <button id="qbDetailDuplicateBtn" class="flex-1 border-2 border-gray-200 text-gray-600 text-xs font-semibold py-2.5 rounded-lg hover:bg-gray-50">Duplicate</button>
+      <button id="qbDetailDeleteBtn" class="flex-1 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-semibold py-2.5 rounded-lg">Delete</button>
+    </div>
+  </div>
+</div>
+
       <!-- PAYMENTS (ab real data se) -->
       <section id="content-payments" class="content-section hidden space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -800,10 +917,12 @@
     </div>
 </div>
 
+
+
 <script src="/js/owner/owner-dashboard.js" defer></script>
+<script src="/js/owner/questionBank.js" defer></script>
 <script src="/js/owner/dailyWarmup.js" defer></script>
 <script src="/js/owner/notifications.js" defer></script>
-
 
 
 

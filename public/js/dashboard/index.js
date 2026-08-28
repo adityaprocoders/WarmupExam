@@ -405,6 +405,27 @@ if (window.lucide) {
 let copySource = { type: null, id: null };
 let copyNav = { level: null, exam: null, slug: null, listingId: null, sectionId: null, parentType: "section", parentId: null, path: [] };
 
+// naya wrapper — pehle language check karega, phir asli copy modal khulega
+async function startSingleCopyWithLanguageCheck(type, id) {
+    try {
+        const res = await fetch(`/api/copy/languages?sourceType=${type}&sourceId=${id}`);
+        const data = await res.json();
+
+        if (data.success && data.languages && data.languages.length > 0) {
+            openShowLanguageModal(data.languages, null); // mode null hai kyunki single-copy flow hai
+            pendingSingleCopySource = { type, id }; // language confirm hone ke baad ye use hoga
+        } else {
+            openCopyModal(type, id); // koi test/language nahi mili, seedha copy modal
+        }
+    } catch (err) {
+        console.error('Language fetch error:', err);
+        openCopyModal(type, id); // error aaye to bhi purana flow chalta rahe
+    }
+}
+
+let pendingSingleCopySource = null;
+
+
 function openCopyModal(type, id) {
     copySource = { type, id };
     copyNav = { level: null, exam: null, slug: null, listingId: null, sectionId: null, parentType: "section", parentId: null, path: [] };
@@ -623,7 +644,12 @@ function updatePasteFooterBtn() {
 
 async function doPaste(destListingId, destSectionId, destParentType, destParentId) {
 
-    const body = { sourceType: copySource.type, sourceId: copySource.id, destListingId };
+    const body = {
+        sourceType: copySource.type,
+        sourceId: copySource.id,
+        destListingId,
+        selectedLanguage: selectedShowLanguage || null   // 👈 sirf ye ek line add hui
+    };
 
     if (copySource.type !== "section") {
         body.destSectionId = destSectionId;
