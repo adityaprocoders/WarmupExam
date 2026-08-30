@@ -427,8 +427,6 @@ if (qMode === "multiple") {
         existingTest.publishAt = visibility === "scheduled" ? new Date(body.publishAt) : null;
 
         const oldMappings = await TestQuestion.find({ test: id }).sort({ order: 1 });
-        const oldQuestionByOrder = new Map();
-        oldMappings.forEach(m => oldQuestionByOrder.set(m.order, m.question.toString()));
         const oldQuestionIds = [...new Set(oldMappings.map(m => m.question.toString()))]; 
 
         const updatedTest = await existingTest.save();
@@ -477,11 +475,7 @@ if (qMode === "multiple") {
         questionPayload.translations = [];
     }
 
-    let questionId = q._id;
-
-    if (!questionId) {
-        questionId = oldQuestionByOrder.get(i + 1) || null;
-    }
+    let questionId = (q._id && oldQuestionIds.includes(String(q._id))) ? q._id : null;
 
     // 👇 NAYA: hash nikaalo, dedup + shared-edit logic
     const hash = computeContentHash(questionPayload);

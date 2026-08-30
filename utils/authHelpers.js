@@ -35,9 +35,25 @@ export async function getDashboardRedirectUrl(user) {
         { path: "lastAccessedBatch", select: "slug" }
     ]);
 
-    const target = user.lastAccessedBatch
+    const now = new Date();
+
+    // Sirf woh enrollments jo abhi valid hain (expire nahi hue, suspended nahi hain)
+    const validEnrollments = user.enrolledListings.filter(e => {
+        if (!e.listing) return false;
+        if (e.expiresAt && new Date(e.expiresAt) < now) return false;
+        if (e.suspendedByOwner) return false;
+        return true;
+    });
+
+    if (validEnrollments.length === 0) return null;
+
+    // lastAccessedBatch tabhi use karo jab woh valid list me bhi maujood ho
+    const lastAccessedIsValid = user.lastAccessedBatch
+        && validEnrollments.some(e => String(e.listing._id) === String(user.lastAccessedBatch._id));
+
+    const target = lastAccessedIsValid
         ? user.lastAccessedBatch
-        : user.enrolledListings[0].listing;
+        : validEnrollments[0].listing;
 
     return target && target.slug ? `/series/${target.slug}` : null;
 }

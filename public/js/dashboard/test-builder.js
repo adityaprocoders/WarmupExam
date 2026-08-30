@@ -1649,7 +1649,7 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
     if (!result.success) {
         alert("Issue: " + (result.message || "Unknown error"));
     } else {
-         window.location.href = contextData.returnUrl;
+         window.location.replace(contextData.returnUrl);
     }
   } catch (err) {
     console.error("Fetch error:", err);
