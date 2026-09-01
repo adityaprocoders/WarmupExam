@@ -18,6 +18,14 @@ let testShowLanguage = 'all';
 
 let criteriaRowState = {};
 
+let globalSectionsList = [];
+let selectedGlobalSections = new Set();
+
+let questionCountStrategy = 'all';
+let totalQuestionCountState = 0;
+let subjectQuestionCountList = [];
+let editingSubjectQuestionIndex = null;
+
 async function loadSubjects() {
     try {
         const res = await fetch(`/api/listing/${contextData.listingId}/subjects`);
@@ -41,6 +49,63 @@ async function loadLanguages() {
         availableLanguagesList = [];
     }
 }
+
+async function loadGlobalSections() {
+    try {
+        const res = await fetch(`/api/listing/${contextData.listingId}/sections`);
+        const result = await res.json();
+        globalSectionsList = result.success ? result.data : [];
+        renderGlobalSectionDropdown();
+    } catch (err) {
+        console.error("Sections fetch error:", err);
+        globalSectionsList = [];
+        renderGlobalSectionDropdown();
+    }
+}
+
+function renderGlobalSectionDropdown() {
+    const dropdown = document.getElementById('globalSectionDropdown');
+    if (!dropdown) return;
+    const remaining = globalSectionsList.filter(s => !selectedGlobalSections.has(s.sectionId));
+    if (remaining.length === 0) {
+        dropdown.innerHTML = `<option value="" disabled selected>${globalSectionsList.length === 0 ? 'No section found' : 'Sab section select ho gaye'}</option>`;
+        return;
+    }
+    dropdown.innerHTML = `<option value="" disabled selected>Choose section</option>` +
+        remaining.map(s => `<option value="${s.sectionId}">${s.section} (${s.count} Q)</option>`).join('');
+}
+
+function addGlobalSectionTag() {
+    const dropdown = document.getElementById('globalSectionDropdown');
+    const val = dropdown.value;
+    if (val && !selectedGlobalSections.has(val)) {
+        selectedGlobalSections.add(val);
+        renderGlobalSectionTags();
+        renderGlobalSectionDropdown();
+    }
+    dropdown.value = "";
+}
+
+function renderGlobalSectionTags() {
+    const container = document.getElementById('globalSectionTags');
+    if (!container) return;
+    container.innerHTML = Array.from(selectedGlobalSections).map(sid => {
+        const sec = globalSectionsList.find(s => s.sectionId === sid);
+        const label = sec ? sec.section : sid;
+        return `
+        <span class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2">
+            ${label}
+            <button type="button" data-action="remove-global-section-tag" data-value="${sid}" class="hover:text-red-200 font-bold">✕</button>
+        </span>`;
+    }).join('');
+}
+
+function removeGlobalSectionTag(val) {
+    selectedGlobalSections.delete(val);
+    renderGlobalSectionTags();
+    renderGlobalSectionDropdown();
+}
+
 
 function getSubjectOptionsHtml(selectedValue) {
     const placeholder = `<option value="" disabled ${!selectedValue ? "selected" : ""}>Choose subject</option>`;
@@ -100,6 +165,96 @@ function renderShowLanguageUI() {
       class="w-full p-3 border border-gray-200 rounded-xl bg-white font-bold text-sm">
       ${optionsHtml}
     </select>`;
+}
+
+function handleQuestionCountUI() {
+    const container = document.getElementById('questionCountDynamicContainer');
+    if (!container) return;
+
+    const strategy = document.getElementById('questionCountStrategy').value;
+    questionCountStrategy = strategy;
+
+    if (strategy === 'all') {
+        container.innerHTML = `<input type="number" id="totalQuestionCountInput" min="1" placeholder="e.g. 100" class="w-full p-2 rounded-lg text-gray-800 font-bold outline-none bg-white text-sm" value="${totalQuestionCountState || ''}">`;
+    } else {
+        editingSubjectQuestionIndex = null;
+        container.innerHTML = `
+            <select id="qcSubjectDropdown" class="w-full p-2 rounded-lg text-gray-800 font-bold outline-none bg-white text-sm mb-2">
+                <option value="" disabled selected>Choose subject</option>
+                ${getSubjectOptionsHtml(null).replace('<option value="" disabled selected>Choose subject</option>', '')}
+            </select>
+            <input type="number" id="qcCountInput" min="1" placeholder="No of questions" class="w-full p-2 rounded-lg text-gray-800 font-bold outline-none bg-white text-sm mb-2">
+            <button type="button" id="addQcBtn" data-action="add-subject-question-count" class="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-2 rounded-lg text-sm mb-3">Add</button>
+            <div id="qcList"></div>
+        `;
+        renderSubjectQuestionList();
+    }
+}
+
+function renderSubjectQuestionList() {
+    const list = document.getElementById('qcList');
+    if (!list) return;
+    list.innerHTML = '';
+    subjectQuestionCountList.forEach((sq, index) => {
+        list.innerHTML += `
+            <div class="flex justify-between items-center gap-2 p-2 mb-2 bg-white/10 rounded-lg">
+                <span class="text-sm font-medium">${sq.subject}</span>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold">${sq.count} Q</span>
+                    <button type="button" data-action="edit-subject-question-count" data-index="${index}" class="text-white/70 hover:text-white">
+                        <i data-lucide="pencil" class="w-4 h-4 pointer-events-none"></i>
+                    </button>
+                    <button type="button" data-action="remove-subject-question-count" data-index="${index}" class="text-white/70 hover:text-red-200">
+                        <i data-lucide="trash-2" class="w-4 h-4 pointer-events-none"></i>
+                    </button>
+                </div>
+            </div>`;
+    });
+    if (window.lucide) lucide.createIcons();
+}
+
+function addSubjectQuestionCount() {
+    const subjectSel = document.getElementById('qcSubjectDropdown');
+    const countInput = document.getElementById('qcCountInput');
+    const subject = subjectSel.value;
+    const count = Number(countInput.value);
+    if (!subject || !count) return;
+
+    const newEntry = { subject, count };
+    if (editingSubjectQuestionIndex !== null) {
+        subjectQuestionCountList[editingSubjectQuestionIndex] = newEntry;
+        editingSubjectQuestionIndex = null;
+        document.getElementById('addQcBtn').innerText = "Add";
+    } else {
+        subjectQuestionCountList.push(newEntry);
+    }
+    renderSubjectQuestionList();
+    subjectSel.value = "";
+    countInput.value = "";
+}
+
+function editSubjectQuestionCount(index) {
+    const entry = subjectQuestionCountList[index];
+    if (!entry) return;
+    editingSubjectQuestionIndex = index;
+    document.getElementById('qcSubjectDropdown').value = entry.subject;
+    document.getElementById('qcCountInput').value = entry.count;
+    const btn = document.getElementById('addQcBtn');
+    if (btn) btn.innerText = "Update";
+}
+
+function removeSubjectQuestionCount(index) {
+    subjectQuestionCountList.splice(index, 1);
+    if (editingSubjectQuestionIndex === index) {
+        editingSubjectQuestionIndex = null;
+        document.getElementById('qcSubjectDropdown').value = "";
+        document.getElementById('qcCountInput').value = "";
+        const btn = document.getElementById('addQcBtn');
+        if (btn) btn.innerText = "Add";
+    } else if (editingSubjectQuestionIndex !== null && index < editingSubjectQuestionIndex) {
+        editingSubjectQuestionIndex--;
+    }
+    renderSubjectQuestionList();
 }
 
 function renderSubjectTimeList() {
@@ -191,7 +346,7 @@ function addSubjectTime() {
 function addCriteriaRow() {
     criteriaRowCount++;
     const rowId = criteriaRowCount;
-    criteriaRowState[rowId] = { sections: new Set(), topics: new Set() };
+    criteriaRowState[rowId] = { qsections: new Set(), topics: new Set(), subTopics: new Set() };
 
     const container = document.getElementById('criteriaRowsContainer');
 
@@ -201,7 +356,7 @@ function addCriteriaRow() {
     row.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
 
-            <div class="md:col-span-3">
+            <div class="md:col-span-2">
                 <span class="field-name-tag">Subject</span>
                 <select id="critSubject_${rowId}" data-action="row-subject-change" data-row-id="${rowId}"
                     class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
@@ -209,27 +364,36 @@ function addCriteriaRow() {
                 </select>
             </div>
 
-            <div class="md:col-span-3">
+            <div class="md:col-span-2">
                 <span class="field-name-tag">Section</span>
-                <select id="sectionDropdown_${rowId}" data-action="row-section-change" data-row-id="${rowId}"
+                <select id="qsectionDropdown_${rowId}" data-action="row-qsection-change" data-row-id="${rowId}"
                     class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
                     <option value="" disabled selected>Choose subject first</option>
                 </select>
-                <div id="sectionTags_${rowId}" class="flex flex-wrap gap-1 mt-1"></div>
+                <div id="qsectionTags_${rowId}" class="flex flex-wrap gap-1 mt-1"></div>
             </div>
 
-            <div class="md:col-span-3">
+            <div class="md:col-span-2">
                 <span class="field-name-tag">Topic</span>
                 <select id="topicDropdown_${rowId}" data-action="row-topic-change" data-row-id="${rowId}"
                     class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
-                    <option value="" disabled selected>Choose subject first</option>
+                    <option value="" disabled selected>Choose section first</option>
                 </select>
                 <div id="topicTags_${rowId}" class="flex flex-wrap gap-1 mt-1"></div>
             </div>
 
             <div class="md:col-span-2">
+                <span class="field-name-tag">Sub-Topic</span>
+                <select id="subTopicDropdown_${rowId}" data-action="row-subtopic-change" data-row-id="${rowId}"
+                    class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                    <option value="" disabled selected>Choose topic first</option>
+                </select>
+                <div id="subTopicTags_${rowId}" class="flex flex-wrap gap-1 mt-1"></div>
+            </div>
+
+            <div class="md:col-span-1">
                 <span class="field-name-tag">Difficulty</span>
-                <select id="critDifficulty_${rowId}" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                <select id="critDifficulty_${rowId}" class="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-sm outline-none">
                     <option value="Any">Any</option>
                     <option value="Easy">Easy</option>
                     <option value="Medium" selected>Medium</option>
@@ -237,12 +401,14 @@ function addCriteriaRow() {
                 </select>
             </div>
 
-            <div class="md:col-span-1 flex items-end gap-1">
-                <div class="flex-1">
-                    <span class="field-name-tag">No. Question</span>
-                    <input type="number" id="critCount_${rowId}" min="1" value="1"
-                        class="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-sm outline-none">
-                </div>
+            <div class="md:col-span-1">
+                <span class="field-name-tag">Min Q</span>
+                <input type="number" id="critMinCount_${rowId}" min="1" value="1"
+                    class="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-sm outline-none">
+            </div>
+            <div class="md:col-span-2 flex items-end gap-1">
+                <input type="number" id="critMaxCount_${rowId}" min="1" value="1"
+                    class="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-sm outline-none">
                 <button type="button" data-action="remove-criteria-row" data-row-id="${rowId}" class="text-gray-400 hover:text-red-500 shrink-0 pb-2">
                     <i data-lucide="x" class="w-4 h-4 pointer-events-none"></i>
                 </button>
@@ -251,9 +417,10 @@ function addCriteriaRow() {
         </div>
     `;
 
-    container.appendChild(row);
+       container.appendChild(row);
     if (window.lucide) lucide.createIcons();
     container.scrollTop = container.scrollHeight;
+    handleRowSubjectChange(rowId);
 }
 
 function removeCriteriaRow(rowId) {
@@ -262,64 +429,109 @@ function removeCriteriaRow(rowId) {
     delete criteriaRowState[rowId];
 }
 
-async function handleRowSubjectChange(rowId) {
-    const subject = document.getElementById(`critSubject_${rowId}`).value;
 
-    criteriaRowState[rowId].sections.clear();
-    criteriaRowState[rowId].topics.clear();
-    renderRowTags(rowId, 'section');
-    renderRowTags(rowId, 'topic');
+async function fetchRowFilters(rowId) {
+    const subject = document.getElementById(`critSubject_${rowId}`).value || '';
 
-    populateRowDropdown(rowId, 'section', []);
-    populateRowDropdown(rowId, 'topic', []);
+    const state = criteriaRowState[rowId];
+    const sectionQuery = Array.from(selectedGlobalSections).join(',');
+    const qsectionQuery = Array.from(state.qsections).join(',');
+    const topicQuery = Array.from(state.topics).join(',');
 
-    if (!subject) return;
+    const url = `/api/listing/${contextData.listingId}/question-filters?subject=${encodeURIComponent(subject)}&section=${encodeURIComponent(sectionQuery)}&qsection=${encodeURIComponent(qsectionQuery)}&topic=${encodeURIComponent(topicQuery)}`;
 
     try {
-        const res = await fetch(`/api/listing/${contextData.listingId}/question-filters?subject=${encodeURIComponent(subject)}`);
+        const res = await fetch(url);
         const result = await res.json();
-
-        if (result.success) {
-            populateRowDropdown(rowId, 'section', result.data.sections || []);
-            populateRowDropdown(rowId, 'topic', result.data.topics || []);
-        }
+        return result.success ? result.data : null;
     } catch (err) {
         console.error("Question filters fetch error:", err);
+        return null;
     }
 }
 
-function populateRowDropdown(rowId, field, options) {
-    const dropdown = document.getElementById(`${field}Dropdown_${rowId}`);
-    if (!dropdown) return;
+async function handleRowSubjectChange(rowId) {
+    const state = criteriaRowState[rowId];
+    state.qsections.clear();
+    state.topics.clear();
+    state.subTopics.clear();
+    renderRowTags(rowId, 'qsection');
+    renderRowTags(rowId, 'topic');
+    renderRowTags(rowId, 'subTopic');
 
-    if (options.length === 0) {
-        dropdown.innerHTML = `<option value="" disabled selected>No ${field} found</option>`;
-        return;
-    }
-
-    dropdown.innerHTML = `<option value="" disabled selected>Choose ${field}</option>` +
-        options.map(o => `<option value="${o}">${o}</option>`).join('');
+    const data = await fetchRowFilters(rowId);
+    populateRowDropdown(rowId, 'qsection', data ? data.qsections : []);
+    populateRowDropdown(rowId, 'topic', data ? data.topics : []);
+    populateRowDropdown(rowId, 'subTopic', data ? data.subTopics : []);
 }
 
-function addRowTag(rowId, field) {
-    const dropdown = document.getElementById(`${field}Dropdown_${rowId}`);
+async function handleRowQsectionChange(rowId) {
+    const dropdown = document.getElementById(`qsectionDropdown_${rowId}`);
     const val = dropdown.value;
-    const setKey = field === 'section' ? 'sections' : 'topics';
+    const state = criteriaRowState[rowId];
+    if (val && !state.qsections.has(val)) {
+        state.qsections.add(val);
+        renderRowTags(rowId, 'qsection');
+    }
+    dropdown.value = "";
 
-    if (val && !criteriaRowState[rowId][setKey].has(val)) {
-        criteriaRowState[rowId][setKey].add(val);
-        renderRowTags(rowId, field);
+    state.topics.clear();
+    state.subTopics.clear();
+    renderRowTags(rowId, 'topic');
+    renderRowTags(rowId, 'subTopic');
+
+    const data = await fetchRowFilters(rowId);
+    populateRowDropdown(rowId, 'topic', data ? data.topics : []);
+    populateRowDropdown(rowId, 'subTopic', []);
+}
+
+async function handleRowTopicChange(rowId) {
+    const dropdown = document.getElementById(`topicDropdown_${rowId}`);
+    const val = dropdown.value;
+    const state = criteriaRowState[rowId];
+    if (val && !state.topics.has(val)) {
+        state.topics.add(val);
+        renderRowTags(rowId, 'topic');
+    }
+    dropdown.value = "";
+
+    state.subTopics.clear();
+    renderRowTags(rowId, 'subTopic');
+
+    const data = await fetchRowFilters(rowId);
+    populateRowDropdown(rowId, 'subTopic', data ? data.subTopics : []);
+}
+
+function handleRowSubTopicChange(rowId) {
+    const dropdown = document.getElementById(`subTopicDropdown_${rowId}`);
+    const val = dropdown.value;
+    const state = criteriaRowState[rowId];
+    if (val && !state.subTopics.has(val)) {
+        state.subTopics.add(val);
+        renderRowTags(rowId, 'subTopic');
     }
     dropdown.value = "";
 }
 
+function populateRowDropdown(rowId, field, options) {
+    const idMap = { qsection: 'qsectionDropdown', topic: 'topicDropdown', subTopic: 'subTopicDropdown' };
+    const dropdown = document.getElementById(`${idMap[field]}_${rowId}`);
+    if (!dropdown) return;
+
+    if (!options || options.length === 0) {
+        dropdown.innerHTML = `<option value="" disabled selected>No ${field} found</option>`;
+        return;
+    }
+    dropdown.innerHTML = `<option value="" disabled selected>Choose ${field}</option>` +
+        options.map(o => `<option value="${o}">${o}</option>`).join('');
+}
+
 function renderRowTags(rowId, field) {
-    const container = document.getElementById(`${field}Tags_${rowId}`);
+    const idMap = { qsection: 'qsectionTags', topic: 'topicTags', subTopic: 'subTopicTags' };
+    const container = document.getElementById(`${idMap[field]}_${rowId}`);
     if (!container) return;
 
-    const setKey = field === 'section' ? 'sections' : 'topics';
-    const set = criteriaRowState[rowId][setKey];
-
+    const set = criteriaRowState[rowId][field === 'qsection' ? 'qsections' : field === 'topic' ? 'topics' : 'subTopics'];
     container.innerHTML = Array.from(set).map(v => `
         <span class="inline-flex items-center gap-1 bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-full">
             ${v}
@@ -329,7 +541,7 @@ function renderRowTags(rowId, field) {
 }
 
 function removeRowTag(rowId, field, val) {
-    const setKey = field === 'section' ? 'sections' : 'topics';
+    const setKey = field === 'qsection' ? 'qsections' : field === 'topic' ? 'topics' : 'subTopics';
     criteriaRowState[rowId][setKey].delete(val);
     renderRowTags(rowId, field);
 }
@@ -338,41 +550,54 @@ function collectCriteriaRows() {
     const rows = [];
     document.querySelectorAll('#criteriaRowsContainer [id^="criteriaRow_"]').forEach(row => {
         const rowId = row.id.split('_')[1];
-        const state = criteriaRowState[rowId] || { sections: new Set(), topics: new Set() };
+        const state = criteriaRowState[rowId] || { qsections: new Set(), topics: new Set(), subTopics: new Set() };
+
+        const minVal = Number(document.getElementById(`critMinCount_${rowId}`).value) || 1;
+        const maxVal = Number(document.getElementById(`critMaxCount_${rowId}`).value) || 1;
 
         rows.push({
             subject: document.getElementById(`critSubject_${rowId}`).value,
-            section: Array.from(state.sections),
+            section: Array.from(state.qsections),
             topic: Array.from(state.topics),
+            subTopic: Array.from(state.subTopics),
             difficulty: document.getElementById(`critDifficulty_${rowId}`).value,
-            count: Number(document.getElementById(`critCount_${rowId}`).value) || 0
+            minCount: Math.min(minVal, maxVal),
+            maxCount: Math.max(minVal, maxVal)
         });
     });
     return rows;
 }
 
+
 async function generateTest() {
     const criteria = collectCriteriaRows();
 
     if (criteria.length === 0) {
-        alert("Kam se kam ek criteria row add karo (Subject/Topic/No. Question)");
+        alert("Kam se kam ek criteria row add karo (Subject/Topic/Min-Max Question)");
         return;
     }
 
     const timeStrategy = document.getElementById('timeStrategy').value;
 
-     const payload = {
-    title: document.getElementById('testTitleInput').value,
-    languageMode: availableLanguagesList.length > 1 ? 'multiple' : 'single',
-    languages: availableLanguagesList,
-    showLanguage: testShowLanguage,
+    const payload = {
+        title: document.getElementById('testTitleInput').value,
+        languageMode: availableLanguagesList.length > 1 ? 'multiple' : 'single',
+        languages: availableLanguagesList,
+        showLanguage: testShowLanguage,
         timeStrategy,
         duration: timeStrategy === 'total'
             ? Number(document.getElementById('totalTimeInput')?.value) || 0
             : subjectTimeList.reduce((sum, st) => sum + Number(st.duration || 0), 0),
         subjectTime: timeStrategy === 'subject' ? subjectTimeList : [],
+        sections: Array.from(selectedGlobalSections),
+                totalQuestionsStrategy: questionCountStrategy,
+        totalQuestionsCount: questionCountStrategy === 'all'
+            ? (Number(document.getElementById('totalQuestionCountInput')?.value) || 0)
+            : 0,
+        subjectQuestionCounts: questionCountStrategy === 'subject' ? subjectQuestionCountList : [],
         criteria,
         noOfPapers: Number(document.getElementById('noOfPapersInput').value) || 1,
+        maxRepeat: Number(document.getElementById('maxRepeatInput').value) || 2,
         listingId: contextData.listingId,
         sectionId: contextData.sectionId,
         parentType: contextData.parentType,
@@ -393,6 +618,9 @@ async function generateTest() {
         if (!result.success) {
             alert("Issue: " + (result.message || "Unknown error"));
         } else {
+            if (result.warnings && result.warnings.length > 0) {
+                alert("Papers ban gaye, lekin kuch warnings hain:\n\n" + result.warnings.join('\n'));
+            }
             window.location.href = contextData.returnUrl;
         }
     } catch (err) {
@@ -401,7 +629,6 @@ async function generateTest() {
     }
 }
 
-// ---- CSP-safe event delegation ----
 document.addEventListener('click', function (e) {
     const target = e.target.closest('[data-action]');
     if (!target) return;
@@ -426,11 +653,23 @@ document.addEventListener('click', function (e) {
         case 'remove-tag':
             removeTag(target.dataset.subject);
             break;
+        case 'add-subject-time':
+            addSubjectTime();
+            break;
+        case 'remove-global-section-tag':
+            removeGlobalSectionTag(target.dataset.value);
+            break;
         case 'remove-row-tag':
             removeRowTag(target.dataset.rowId, target.dataset.field, target.dataset.value);
             break;
-        case 'add-subject-time':
-            addSubjectTime();
+                case 'add-subject-question-count':
+            addSubjectQuestionCount();
+            break;
+        case 'edit-subject-question-count':
+            editSubjectQuestionCount(Number(target.dataset.index));
+            break;
+        case 'remove-subject-question-count':
+            removeSubjectQuestionCount(Number(target.dataset.index));
             break;
     }
 });
@@ -444,20 +683,29 @@ document.addEventListener('change', function (e) {
         case 'time-strategy-change':
             handleTimeUI();
             break;
+        case 'question-count-strategy-change':
+            handleQuestionCountUI();
+            break;
         case 'subject-dropdown-change':
             addTag();
             break;
         case 'row-subject-change':
             handleRowSubjectChange(target.dataset.rowId);
             break;
-        case 'row-section-change':
-            addRowTag(target.dataset.rowId, 'section');
+        case 'row-qsection-change':
+            handleRowQsectionChange(target.dataset.rowId);
             break;
         case 'row-topic-change':
-            addRowTag(target.dataset.rowId, 'topic');
+            handleRowTopicChange(target.dataset.rowId);
+            break;
+        case 'row-subtopic-change':
+            handleRowSubTopicChange(target.dataset.rowId);
             break;
         case 'show-language-change':
             testShowLanguage = target.value;
+            break;
+        case 'global-section-change':
+            addGlobalSectionTag();
             break;
     }
 });
@@ -465,8 +713,10 @@ document.addEventListener('change', function (e) {
 async function init() {
     await loadSubjects();
     await loadLanguages();
+    await loadGlobalSections();
     handleTimeUI();
     renderShowLanguageUI();
+    handleQuestionCountUI();
     addCriteriaRow();
     if (window.lucide) lucide.createIcons();
 }

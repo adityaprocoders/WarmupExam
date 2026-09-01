@@ -1,5 +1,6 @@
 import Question from "../models/Question.js";
 import QuestionReport from "../models/QuestionReport.js";
+import Listing from "../models/listing.js";
 
 export const submitReport = async (req, res) => {
     try {
@@ -14,6 +15,15 @@ export const submitReport = async (req, res) => {
 
         const question = await Question.findById(questionId);
         if (!question) return res.status(404).json({ success: false, message: "Question nahi mili" });
+
+        // 👇 Sirf Listing.type check — "Paid" (exact enum value, capital P)
+        const listing = await Listing.findById(question.listing).select("type");
+        if (!listing || listing.type !== "Paid") {
+            return res.status(403).json({
+                success: false,
+                message: "Report is available only for questions in paid test series."
+            });
+        }
 
         let report = await QuestionReport.findOne({ question: questionId });
 
@@ -45,6 +55,6 @@ export const submitReport = async (req, res) => {
 
     } catch (err) {
         console.error("Submit report error:", err);
-        res.status(500).json({ success: false, message: "Report submit nahi ho paya" });
+        res.status(500).json({ success: false, message: "Report could not be submitted." });
     }
 };

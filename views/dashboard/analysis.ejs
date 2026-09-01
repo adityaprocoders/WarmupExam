@@ -111,6 +111,48 @@
         </div>
     </div>
 
+
+    <!-- Report Question Modal -->
+<div id="reportModalOverlay" class="hidden fixed inset-0 z-[999] bg-black/40 flex items-center justify-center px-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+            <h2 class="text-lg font-bold text-slate-900">Report Question</h2>
+            <button data-action="close-report-modal" class="text-slate-400 hover:text-slate-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="px-6 py-5 space-y-4">
+            <div>
+                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">What's wrong?</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" data-action="select-report-reason" data-reason="Wrong Question" class="report-reason-btn px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50">Wrong Question</button>
+                    <button type="button" data-action="select-report-reason" data-reason="Wrong Answer" class="report-reason-btn px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50">Wrong Answer</button>
+                    <button type="button" data-action="select-report-reason" data-reason="Wrong Solution" class="report-reason-btn px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50">Wrong Solution</button>
+                    <button type="button" data-action="select-report-reason" data-reason="Other" class="report-reason-btn px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50">Other</button>
+                </div>
+            </div>
+            <div id="reportDescriptionWrap" class="hidden">
+                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Describe the issue</label>
+                <textarea id="reportDescriptionInput" rows="3" class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#4318FF]/30" placeholder="Tell us what's wrong..."></textarea>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-100">
+            <button
+                data-action="submit-report-btn"
+                id="reportSubmitBtn"
+                disabled
+                class="w-full py-3 rounded-xl bg-[#4318FF] hover:bg-indigo-700 text-white font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition">
+                Submit Report
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
     <!-- Real attempt data server se aata hai -->
     <script nonce="<%= cspNonce %>">
         window.ANALYSIS_DATA = <%- safeJsonStringify(analysisData) %>;

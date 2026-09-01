@@ -26,6 +26,28 @@
     } catch (err) { console.error(err); }
   }
 
+  document.getElementById('qbStatReported').closest('.bg-white').style.cursor = 'pointer';
+document.getElementById('qbStatReported').closest('.bg-white').addEventListener('click', () => {
+    document.getElementById('qbFilterStatus').value = 'Reported';
+    qbPage = 1;
+    fetchQbQuestions();
+});
+
+document.getElementById('qbStatActive').closest('.bg-white').style.cursor = 'pointer';
+document.getElementById('qbStatActive').closest('.bg-white').addEventListener('click', () => {
+    document.getElementById('qbFilterStatus').value = 'Active';
+    qbPage = 1;
+    fetchQbQuestions();
+});
+
+document.getElementById('qbStatTotal').closest('.bg-white').style.cursor = 'pointer';
+document.getElementById('qbStatTotal').closest('.bg-white').addEventListener('click', () => {
+    document.getElementById('qbFilterStatus').value = 'all';
+    qbPage = 1;
+    fetchQbQuestions();
+});
+
+
   async function loadQbFilters() {
     try {
       const res = await fetch('/api/owner/question-bank/filters');
@@ -222,12 +244,12 @@
 
   document.getElementById('qbDetailCloseBtn').addEventListener('click', () => qbDetailOverlay.classList.add('hidden'));
 
-  function openQbEdit(id) {
-    alert('Edit question form abhi pending hai — ID: ' + id);
-  }
-  document.getElementById('qbAddQuestionBtn').addEventListener('click', () => {
-    alert('Add Question form abhi pending hai.');
-  });
+ function openQbEdit(id) {
+    openQbQuestionModal('edit', id);
+}
+document.getElementById('qbAddQuestionBtn').addEventListener('click', () => {
+    openQbQuestionModal('add', null);
+});
 
   async function resolveQbQuestion(id) {
     if (!confirm('Is question ko resolve karna hai? Report clear ho jaayegi.')) return;
@@ -281,3 +303,338 @@
     } catch (err) { alert('Something went wrong'); }
   }
 })();
+
+
+
+
+
+// ---------------- ADD/EDIT QUESTION MODAL ----------------
+let qbFormMode = 'add';
+let qbFormEditId = null;
+let qbFormLanguages = [];
+let qbFormActiveLang = null;
+let qbFormLangData = {};
+let optionIdCounter = 0;
+
+const qbFormModalOverlay = document.getElementById('qbFormModalOverlay');
+
+document.querySelectorAll('.qbFormTabBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.qbFormTabBtn').forEach(b => b.className = 'qbFormTabBtn pb-3 pt-3 font-bold text-sm text-gray-400 border-b-2 border-transparent');
+        btn.className = 'qbFormTabBtn pb-3 pt-3 font-bold text-sm text-indigo-600 border-b-2 border-indigo-600';
+        const tab = btn.dataset.qbtab;
+        document.getElementById('qbTabManual').classList.toggle('hidden', tab !== 'manual');
+        document.getElementById('qbTabJson').classList.toggle('hidden', tab !== 'json');
+        if (tab === 'json') syncManualToJson();
+        else syncJsonToManual();
+    });
+});
+
+document.getElementById('qbFormLangMode').addEventListener('change', function () {
+    const isMulti = this.value === 'multiple';
+    document.getElementById('qbSingleContentBlock').classList.toggle('hidden', isMulti);
+    document.getElementById('qbMultiContentBlock').classList.toggle('hidden', !isMulti);
+});
+
+document.getElementById('qbFormType').addEventListener('change', function () {
+    const isInteger = this.value === 'integer';
+    document.getElementById('qbOptionsBlock').classList.toggle('hidden', isInteger);
+    document.getElementById('qbIntegerBlock').classList.toggle('hidden', !isInteger);
+});
+
+async function loadQbFormListings() {
+    const sel = document.getElementById('qbFormListing');
+    sel.innerHTML = '<option value="">Loading...</option>';
+    try {
+        const res = await fetch('/api/owner/question-bank/filters');
+        const data = await res.json();
+        if (data.success) {
+            sel.innerHTML = data.listings.map(l => `<option value="${l._id}">${l.title}</option>`).join('');
+        }
+    } catch (err) { sel.innerHTML = '<option value="">Load error</option>'; }
+}
+
+function addOptionRow(text = '', image = '', isCorrect = false, type = 'mcq') {
+    const id = 'opt_' + (optionIdCounter++);
+    const inputType = type === 'multiple' ? 'checkbox' : 'radio';
+    const list = document.getElementById('qbOptionsList');
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-2 qbOptionRow';
+    row.dataset.optId = id;
+    row.innerHTML = `
+        <input type="${inputType}" name="qbCorrectOpt" ${isCorrect ? 'checked' : ''} class="qbOptCorrect w-4 h-4">
+        <input type="text" placeholder="Option text" value="${text.replace(/"/g, '&quot;')}" class="qbOptText flex-1 border rounded-lg px-3 py-2 text-sm">
+        <button type="button" class="qbRemoveOptBtn text-red-400 hover:text-red-600"><i class="fa-solid fa-xmark"></i></button>
+    `;
+    row.querySelector('.qbRemoveOptBtn').addEventListener('click', () => row.remove());
+    list.appendChild(row);
+}
+
+document.getElementById('qbAddOptionBtn').addEventListener('click', () => {
+    addOptionRow('', '', false, document.getElementById('qbFormType').value);
+});
+
+function resetQbForm() {
+    document.getElementById('qbFormListing').value = '';
+    document.getElementById('qbFormType').value = 'mcq';
+    document.getElementById('qbFormSubject').value = '';
+    document.getElementById('qbFormTopic').value = '';
+    document.getElementById('qbFormSubTopic').value = '';
+    document.getElementById('qbFormDifficulty').value = 'Medium';
+    document.getElementById('qbFormLangMode').value = 'single';
+    document.getElementById('qbFormQuestion').value = '';
+    document.getElementById('qbFormQuestionImage').value = '';
+    document.getElementById('qbFormNumericAnswer').value = '';
+    document.getElementById('qbFormSolutionText').value = '';
+    document.getElementById('qbFormSolutionImage').value = '';
+    document.getElementById('qbOptionsList').innerHTML = '';
+    document.getElementById('qbSingleContentBlock').classList.remove('hidden');
+    document.getElementById('qbMultiContentBlock').classList.add('hidden');
+    document.getElementById('qbOptionsBlock').classList.remove('hidden');
+    document.getElementById('qbIntegerBlock').classList.add('hidden');
+    document.getElementById('qbJsonError').classList.add('hidden');
+    qbFormLanguages = [];
+    qbFormLangData = {};
+    document.getElementById('qbLangTabs').innerHTML = '';
+    document.getElementById('qbLangContentArea').innerHTML = '';
+    addOptionRow(); addOptionRow();
+}
+
+async function openQbQuestionModal(mode, id) {
+    qbFormMode = mode;
+    qbFormEditId = id;
+    resetQbForm();
+    await loadQbFormListings();
+
+    document.getElementById('qbFormTitle').textContent = mode === 'edit' ? 'Edit Question' : 'Add New Question';
+    document.querySelector('.qbFormTabBtn[data-qbtab="manual"]').click();
+    qbFormModalOverlay.classList.remove('hidden');
+
+    if (mode === 'edit') {
+        try {
+            const res = await fetch(`/api/owner/question-bank/questions/${id}`);
+            const data = await res.json();
+            if (data.success) populateQbForm(data.question);
+        } catch (err) { console.error(err); }
+    }
+}
+
+function populateQbForm(q) {
+    document.getElementById('qbFormListing').value = q.listing?._id || q.listing || '';
+    document.getElementById('qbFormType').value = q.type || 'mcq';
+    document.getElementById('qbFormSubject').value = q.subject || '';
+    document.getElementById('qbFormTopic').value = q.topic || '';
+    document.getElementById('qbFormSubTopic').value = q.subTopic || '';
+    document.getElementById('qbFormDifficulty').value = q.difficulty || 'Medium';
+    document.getElementById('qbFormLangMode').value = q.languageMode || 'single';
+    document.getElementById('qbFormLangMode').dispatchEvent(new Event('change'));
+    document.getElementById('qbFormType').dispatchEvent(new Event('change'));
+
+    if (q.languageMode === 'multiple') {
+        (q.translations || []).forEach(t => {
+            qbFormLanguages.push(t.lang);
+            qbFormLangData[t.lang] = {
+                question: t.question || '', questionImage: t.questionImage || '',
+                options: (t.options || []).map(o => o.text || ''),
+                solutionText: t.solution?.text || '', solutionImage: t.solution?.image || ''
+            };
+        });
+        renderLangTabs();
+        if (qbFormLanguages.length) switchLangTab(qbFormLanguages[0]);
+    } else {
+        document.getElementById('qbFormQuestion').value = q.question || '';
+        document.getElementById('qbFormQuestionImage').value = q.questionImage || '';
+        document.getElementById('qbFormSolutionText').value = q.solution?.text || '';
+        document.getElementById('qbFormSolutionImage').value = q.solution?.image || '';
+        document.getElementById('qbOptionsList').innerHTML = '';
+        (q.options || []).forEach((opt, idx) => {
+            addOptionRow(opt.text || '', opt.image || '', (q.correctAnswers || []).includes(idx), q.type);
+        });
+        document.getElementById('qbFormNumericAnswer').value = q.numericAnswer ?? '';
+    }
+}
+
+// ---- Multi-language tabs ----
+document.getElementById('qbAddLangBtn').addEventListener('click', () => {
+    const val = document.getElementById('qbNewLangInput').value.trim();
+    if (!val || qbFormLanguages.includes(val)) return;
+    qbFormLanguages.push(val);
+    qbFormLangData[val] = { question: '', questionImage: '', options: ['', ''], solutionText: '', solutionImage: '' };
+    document.getElementById('qbNewLangInput').value = '';
+    renderLangTabs();
+    switchLangTab(val);
+});
+
+function renderLangTabs() {
+    const wrap = document.getElementById('qbLangTabs');
+    wrap.innerHTML = qbFormLanguages.map(l =>
+        `<button type="button" data-lang="${l}" class="qbLangTabBtn text-xs font-semibold px-3 py-1.5 rounded-full border ${l === qbFormActiveLang ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200'}">${l}</button>`
+    ).join('');
+    wrap.querySelectorAll('.qbLangTabBtn').forEach(btn => {
+        btn.addEventListener('click', () => switchLangTab(btn.dataset.lang));
+    });
+}
+
+function switchLangTab(lang) {
+    saveActiveLangFields();
+    qbFormActiveLang = lang;
+    renderLangTabs();
+    const d = qbFormLangData[lang];
+    const area = document.getElementById('qbLangContentArea');
+    area.innerHTML = `
+        <div class="space-y-3">
+            <textarea id="qbLangQuestion" rows="3" placeholder="Question text (${lang})" class="w-full border rounded-xl px-3 py-2.5 text-sm">${d.question}</textarea>
+            <input type="text" id="qbLangQuestionImage" placeholder="Question image URL" value="${d.questionImage}" class="w-full border rounded-xl px-3 py-2.5 text-sm">
+            <div id="qbLangOptionsList" class="space-y-2"></div>
+            <button type="button" id="qbLangAddOptBtn" class="text-xs font-semibold text-indigo-600">+ Add Option</button>
+            <textarea id="qbLangSolutionText" rows="2" placeholder="Solution (${lang})" class="w-full border rounded-xl px-3 py-2.5 text-sm">${d.solutionText}</textarea>
+        </div>
+    `;
+    const optList = document.getElementById('qbLangOptionsList');
+    d.options.forEach(optText => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 qbLangOptRow';
+        row.innerHTML = `<input type="text" value="${optText.replace(/"/g, '&quot;')}" class="qbLangOptText flex-1 border rounded-lg px-3 py-2 text-sm"><button type="button" class="text-red-400 qbLangRemoveOpt"><i class="fa-solid fa-xmark"></i></button>`;
+        row.querySelector('.qbLangRemoveOpt').addEventListener('click', () => row.remove());
+        optList.appendChild(row);
+    });
+    document.getElementById('qbLangAddOptBtn').addEventListener('click', () => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 qbLangOptRow';
+        row.innerHTML = `<input type="text" class="qbLangOptText flex-1 border rounded-lg px-3 py-2 text-sm"><button type="button" class="text-red-400 qbLangRemoveOpt"><i class="fa-solid fa-xmark"></i></button>`;
+        row.querySelector('.qbLangRemoveOpt').addEventListener('click', () => row.remove());
+        optList.appendChild(row);
+    });
+}
+
+function saveActiveLangFields() {
+    if (!qbFormActiveLang) return;
+    const qEl = document.getElementById('qbLangQuestion');
+    if (!qEl) return;
+    qbFormLangData[qbFormActiveLang] = {
+        question: qEl.value,
+        questionImage: document.getElementById('qbLangQuestionImage').value,
+        options: Array.from(document.querySelectorAll('.qbLangOptText')).map(i => i.value),
+        solutionText: document.getElementById('qbLangSolutionText').value,
+        solutionImage: ''
+    };
+}
+
+// ---- Build payload matching Question schema ----
+function buildQbPayload() {
+    saveActiveLangFields();
+    const type = document.getElementById('qbFormType').value;
+    const langMode = document.getElementById('qbFormLangMode').value;
+
+    const payload = {
+        listing: document.getElementById('qbFormListing').value,
+        subject: document.getElementById('qbFormSubject').value.trim(),
+        topic: document.getElementById('qbFormTopic').value.trim(),
+        subTopic: document.getElementById('qbFormSubTopic').value.trim(),
+        type,
+        difficulty: document.getElementById('qbFormDifficulty').value,
+        languageMode: langMode,
+        correctAnswers: [],
+        numericAnswer: null
+    };
+
+    if (langMode === 'multiple') {
+        payload.translations = qbFormLanguages.map(lang => {
+            const d = qbFormLangData[lang];
+            return {
+                lang,
+                question: d.question,
+                questionImage: d.questionImage || null,
+                options: d.options.filter(t => t.trim()).map(t => ({ text: t, image: null })),
+                solution: { text: d.solutionText, image: d.solutionImage || null }
+            };
+        });
+        payload.question = '';
+        payload.questionImage = null;
+        payload.options = [];
+        payload.solution = { text: '', image: null };
+    } else {
+        payload.question = document.getElementById('qbFormQuestion').value;
+        payload.questionImage = document.getElementById('qbFormQuestionImage').value || null;
+        payload.solution = {
+            text: document.getElementById('qbFormSolutionText').value,
+            image: document.getElementById('qbFormSolutionImage').value || null
+        };
+        payload.translations = [];
+
+        if (type === 'integer') {
+            payload.options = [];
+            payload.numericAnswer = Number(document.getElementById('qbFormNumericAnswer').value);
+        } else {
+            const rows = Array.from(document.querySelectorAll('.qbOptionRow'));
+            payload.options = rows.map(r => ({ text: r.querySelector('.qbOptText').value, image: null }));
+            payload.correctAnswers = rows
+                .map((r, idx) => r.querySelector('.qbOptCorrect').checked ? idx : null)
+                .filter(idx => idx !== null);
+        }
+    }
+
+    return payload;
+}
+
+function syncManualToJson() {
+    const payload = buildQbPayload();
+    document.getElementById('qbJsonTextarea').value = JSON.stringify(payload, null, 2);
+}
+
+function syncJsonToManual() {
+    try {
+        const payload = JSON.parse(document.getElementById('qbJsonTextarea').value);
+        populateQbForm(payload);
+        document.getElementById('qbJsonError').classList.add('hidden');
+    } catch (err) {
+        document.getElementById('qbJsonError').textContent = 'Invalid JSON: ' + err.message;
+        document.getElementById('qbJsonError').classList.remove('hidden');
+    }
+}
+
+document.getElementById('qbFormCloseBtn').addEventListener('click', () => qbFormModalOverlay.classList.add('hidden'));
+document.getElementById('qbFormCancelBtn').addEventListener('click', () => qbFormModalOverlay.classList.add('hidden'));
+
+document.getElementById('qbFormSaveBtn').addEventListener('click', async () => {
+    let payload;
+    const isJsonTab = !document.getElementById('qbTabJson').classList.contains('hidden');
+
+    if (isJsonTab) {
+        try {
+            payload = JSON.parse(document.getElementById('qbJsonTextarea').value);
+        } catch (err) {
+            document.getElementById('qbJsonError').textContent = 'Invalid JSON: ' + err.message;
+            document.getElementById('qbJsonError').classList.remove('hidden');
+            return;
+        }
+    } else {
+        payload = buildQbPayload();
+    }
+
+    if (!payload.listing) return alert('Listing choose karna zaroori hai');
+    if (!payload.subject || !payload.topic) return alert('Subject aur Topic zaroori hain');
+
+    const url = qbFormMode === 'edit'
+        ? `/api/owner/question-bank/questions/${qbFormEditId}`
+        : `/api/owner/question-bank/questions`;
+    const method = qbFormMode === 'edit' ? 'PATCH' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            qbFormModalOverlay.classList.add('hidden');
+            fetchQbQuestions();
+            loadQbStats();
+        } else {
+            alert(data.message || 'Save nahi ho paya');
+        }
+    } catch (err) {
+        alert('Something went wrong');
+    }
+});

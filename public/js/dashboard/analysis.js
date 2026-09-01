@@ -283,6 +283,16 @@ function buildSolutionCard(sol) {
 
             ${sol.solutionText ? `<div class="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg mt-3 katex-content"><strong class="text-gray-700">Solution:</strong> ${escapeHtml(sol.solutionText)}</div>` : ''}
             ${sol.solutionImage ? `<img src="${escapeAttr(sol.solutionImage)}" alt="solution image" class="max-w-full rounded-lg mt-3 border border-gray-100" loading="lazy" />` : ''}
+
+            <div class="flex justify-end mt-4">
+                <button
+                    type="button"
+                    data-action="open-report-modal"
+                    data-question-id="${escapeAttr(sol.questionId)}"
+                    class="flex items-center gap-2 bg-white border border-red-200 text-red-500 px-4 py-2 rounded-full text-xs font-bold hover:bg-red-50 transition">
+                    <i class="fas fa-flag"></i> Report Question
+                </button>
+            </div>
         </div>
     `;
 }
@@ -306,7 +316,11 @@ function buildSolutionCard(sol) {
     else if (action === 'go-back') goBackToPreviousPage();
     else if (action === 'filter-sol') filterSol(el.dataset.filter);
     else if (action === 'download-pdf') downloadFilteredSolutionPDF();
-});
+     else if (action === 'open-report-modal') openReportModal(el.dataset.questionId);
+    else if (action === 'close-report-modal') closeReportModal();
+    else if (action === 'select-report-reason') selectReportReason(el.dataset.reason, el);
+    else if (action === 'submit-report-btn') submitReportRequest();
+}); 
 
         function renderSolutions() {
             const data = window.ANALYSIS_DATA;
@@ -357,6 +371,97 @@ function buildSolutionCard(sol) {
                 setTimeout(renderMath, 200);
             }
         }
+
+
+
+        let reportState = { questionId: null, reason: null };
+
+function showFlashMessage(msg, isError = false) {
+    let el = document.getElementById("inlineFlashMsg");
+    if (!el) {
+        el = document.createElement("div");
+        el.id = "inlineFlashMsg";
+        el.className = "fixed top-20 left-1/2 -translate-x-1/2 text-white px-5 py-3 rounded-xl shadow-lg z-[999] text-sm font-medium transition-opacity";
+        document.body.appendChild(el);
+    }
+    el.style.background = isError ? '#D32F2F' : '#1e293b';
+    el.textContent = msg;
+    el.style.opacity = "1";
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => { el.style.opacity = "0"; }, 4000);
+}
+
+function openReportModal(questionId) {
+    reportState = { questionId, reason: null };
+    document.querySelectorAll('.report-reason-btn').forEach(btn => {
+        btn.className = "report-reason-btn px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50";
+    });
+    document.getElementById('reportDescriptionWrap').classList.add('hidden');
+    document.getElementById('reportDescriptionInput').value = '';
+    document.getElementById('reportSubmitBtn').disabled = true;
+    document.getElementById('reportModalOverlay').classList.remove('hidden');
+}
+
+function closeReportModal() {
+    document.getElementById('reportModalOverlay').classList.add('hidden');
+}
+
+function selectReportReason(reason, btnEl) {
+    reportState.reason = reason;
+    document.querySelectorAll('.report-reason-btn').forEach(btn => {
+        btn.className = "report-reason-btn px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50";
+    });
+    btnEl.className = "report-reason-btn px-3 py-2 rounded-xl text-xs font-bold border border-[#4318FF] bg-[#4318FF]/10 text-[#4318FF]";
+
+    document.getElementById('reportDescriptionWrap').classList.toggle('hidden', reason !== 'Other');
+    document.getElementById('reportSubmitBtn').disabled = false;
+}
+
+async function submitReportRequest() {
+    const { questionId, reason } = reportState;
+    if (!questionId || !reason) return;
+
+    const description = document.getElementById('reportDescriptionInput').value.trim();
+    const btn = document.getElementById('reportSubmitBtn');
+    const originalText = btn.innerText;
+    btn.innerText = "Submitting...";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`/api/questions/${questionId}/report`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reason, description })
+        });
+        const result = await res.json();
+
+        closeReportModal();
+
+        if (!result.success) {
+            showFlashMessage(result.message || "Report submit nahi ho paya", true);
+        } else if (result.alreadyReported) {
+            showFlashMessage("You already reported this question.");
+        } else {
+            showFlashMessage("Thanks for reporting! Our team will review this within 24-48 hours.");
+            markQuestionReported(questionId);
+        }
+    } catch (err) {
+        console.error("Report submit error:", err);
+        showFlashMessage("Report submit nahi ho paya", true);
+        closeReportModal();
+    } finally {
+        btn.innerText = originalText;
+    }
+}
+
+function markQuestionReported(questionId) {
+    const btn = document.querySelector(`[data-action="open-report-modal"][data-question-id="${questionId}"]`);
+    if (btn) {
+        btn.innerHTML = `<i class="fas fa-check"></i> Reported`;
+        btn.disabled = true;
+        btn.className = "flex items-center gap-2 bg-gray-100 border border-gray-200 text-gray-400 px-4 py-2 rounded-full text-xs font-bold cursor-not-allowed";
+    }
+}
 
         window.onload = function () {
             renderAnalysis(window.ANALYSIS_DATA);

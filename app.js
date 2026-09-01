@@ -286,6 +286,7 @@ app.use((req, res, next) => {
         "/api/attempt",
         "/content-blocks",
         "/owner/content-library",
+        "/api/questions",
         
     ];
 

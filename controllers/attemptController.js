@@ -361,6 +361,7 @@ export const showAnalysis = async (req, res) => {
 
         solutions.push({
             order: idx + 1,
+            questionId: q._id,  
             subject: q.subject || "",
             type: q.type || "",
             topic: q.topic || "",
