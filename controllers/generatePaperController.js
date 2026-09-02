@@ -186,6 +186,7 @@ export const generatePaper = async (req, res) => {
     const subjectsConfig = listingDoc.marks || [];
     const noOfPapers = Math.max(1, Number(body.noOfPapers) || 1);
     const maxRepeat = Math.max(1, Number(body.maxRepeat) || 2);
+    const visibility = body.visibility === "public" ? "public" : "private";
 
     const globalSectionIds = Array.isArray(body.sections) ? body.sections.filter(Boolean) : [];
     const testIds = await getTestIdsForListing(body.listingId, globalSectionIds.length > 0 ? globalSectionIds : null);
@@ -287,14 +288,16 @@ export const generatePaper = async (req, res) => {
 
         // 👇 Ab asli Question documents fetch karo (content ke liye), aur difficulty yahi se filter karo
         const questionMatch = { _id: { $in: uniqueQIds.map(x => new mongoose.Types.ObjectId(x)) } };
-        if (c.difficulty && c.difficulty !== "Any") questionMatch.difficulty = c.difficulty;
+        if (Array.isArray(c.difficulty) && c.difficulty.length > 0) {
+            questionMatch.difficulty = { $in: c.difficulty };
+        }
 
         const pool = await Question.find(questionMatch).lean();
 
         if (pool.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: `"${label}" (Difficulty: ${c.difficulty || 'Any'}) ke liye koi question nahi mila.`
+                message: `"${label}" (Difficulty: ${(Array.isArray(c.difficulty) && c.difficulty.length > 0) ? c.difficulty.join('/') : 'Any'}) ke liye koi question nahi mila.`
             });
         }
 
@@ -376,7 +379,7 @@ export const generatePaper = async (req, res) => {
             subjectTime: body.subjectTime || [],
             totalQuestions: pickedQuestions.length,
             totalMarks: calculatedTotalMarks,
-            visibility: "private",
+            visibility,
             publishAt: null
         });
 

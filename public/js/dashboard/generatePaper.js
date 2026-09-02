@@ -346,7 +346,7 @@ function addSubjectTime() {
 function addCriteriaRow() {
     criteriaRowCount++;
     const rowId = criteriaRowCount;
-    criteriaRowState[rowId] = { qsections: new Set(), topics: new Set(), subTopics: new Set() };
+    criteriaRowState[rowId] = { qsections: new Set(), topics: new Set(), subTopics: new Set(), difficulties: new Set() };
 
     const container = document.getElementById('criteriaRowsContainer');
 
@@ -393,12 +393,14 @@ function addCriteriaRow() {
 
             <div class="md:col-span-1">
                 <span class="field-name-tag">Difficulty</span>
-                <select id="critDifficulty_${rowId}" class="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-sm outline-none">
-                    <option value="Any">Any</option>
+                <select id="critDifficultyDropdown_${rowId}" data-action="row-difficulty-change" data-row-id="${rowId}"
+                    class="w-full bg-white border border-gray-200 rounded-lg px-2 py-2 text-sm outline-none">
+                    <option value="" disabled selected>Choose difficulty</option>
                     <option value="Easy">Easy</option>
-                    <option value="Medium" selected>Medium</option>
+                    <option value="Medium">Medium</option>
                     <option value="Hard">Hard</option>
                 </select>
+                <div id="difficultyTags_${rowId}" class="flex flex-wrap gap-1 mt-1"></div>
             </div>
 
             <div class="md:col-span-1">
@@ -546,11 +548,42 @@ function removeRowTag(rowId, field, val) {
     renderRowTags(rowId, field);
 }
 
+
+function handleRowDifficultyChange(rowId) {
+    const dropdown = document.getElementById(`critDifficultyDropdown_${rowId}`);
+    const val = dropdown.value;
+    const state = criteriaRowState[rowId];
+    if (val && !state.difficulties.has(val)) {
+        state.difficulties.add(val);
+        renderDifficultyTags(rowId);
+    }
+    dropdown.value = "";
+}
+
+function renderDifficultyTags(rowId) {
+    const container = document.getElementById(`difficultyTags_${rowId}`);
+    if (!container) return;
+    const set = criteriaRowState[rowId].difficulties;
+    container.innerHTML = Array.from(set).map(v => `
+        <span class="inline-flex items-center gap-1 bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-full">
+            ${v}
+            <button type="button" data-action="remove-difficulty-tag" data-row-id="${rowId}" data-value="${v}" class="hover:text-red-500 font-bold">✕</button>
+        </span>
+    `).join('');
+}
+
+function removeDifficultyTag(rowId, val) {
+    criteriaRowState[rowId].difficulties.delete(val);
+    renderDifficultyTags(rowId);
+}
+
+
+
 function collectCriteriaRows() {
     const rows = [];
     document.querySelectorAll('#criteriaRowsContainer [id^="criteriaRow_"]').forEach(row => {
         const rowId = row.id.split('_')[1];
-        const state = criteriaRowState[rowId] || { qsections: new Set(), topics: new Set(), subTopics: new Set() };
+        const state = criteriaRowState[rowId] || { qsections: new Set(), topics: new Set(), subTopics: new Set(), difficulties: new Set() };
 
         const minVal = Number(document.getElementById(`critMinCount_${rowId}`).value) || 1;
         const maxVal = Number(document.getElementById(`critMaxCount_${rowId}`).value) || 1;
@@ -560,7 +593,7 @@ function collectCriteriaRows() {
             section: Array.from(state.qsections),
             topic: Array.from(state.topics),
             subTopic: Array.from(state.subTopics),
-            difficulty: document.getElementById(`critDifficulty_${rowId}`).value,
+            difficulty: Array.from(state.difficulties),
             minCount: Math.min(minVal, maxVal),
             maxCount: Math.max(minVal, maxVal)
         });
@@ -598,6 +631,7 @@ async function generateTest() {
         criteria,
         noOfPapers: Number(document.getElementById('noOfPapersInput').value) || 1,
         maxRepeat: Number(document.getElementById('maxRepeatInput').value) || 2,
+        visibility: document.getElementById('visibilityInput')?.value || 'private',
         listingId: contextData.listingId,
         sectionId: contextData.sectionId,
         parentType: contextData.parentType,
@@ -662,7 +696,10 @@ document.addEventListener('click', function (e) {
         case 'remove-row-tag':
             removeRowTag(target.dataset.rowId, target.dataset.field, target.dataset.value);
             break;
-                case 'add-subject-question-count':
+        case 'remove-difficulty-tag':
+            removeDifficultyTag(target.dataset.rowId, target.dataset.value);
+            break; 
+        case 'add-subject-question-count':
             addSubjectQuestionCount();
             break;
         case 'edit-subject-question-count':
@@ -700,6 +737,9 @@ document.addEventListener('change', function (e) {
             break;
         case 'row-subtopic-change':
             handleRowSubTopicChange(target.dataset.rowId);
+            break;
+        case 'row-difficulty-change':
+            handleRowDifficultyChange(target.dataset.rowId);
             break;
         case 'show-language-change':
             testShowLanguage = target.value;
