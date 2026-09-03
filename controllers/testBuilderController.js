@@ -209,11 +209,11 @@ if (testLanguageMode !== "multiple") {
                     options: normalizeOptions(t.options),
                     solution: t.solution || { text: "", image: null }
                 }));
-                questionPayload.question = "";
-                questionPayload.questionImage = null;
-                questionPayload.options = [];
-                questionPayload.solution = { text: "", image: null };
-            } else {
+                    questionPayload.question = "";
+    questionPayload.questionImage = q.questionImage || null;
+    questionPayload.options = normalizeOptions(q.options);
+    questionPayload.solution = { text: "", image: q.solution?.image || null };
+} else {
                 const singleSource = pickSingleSource(q);
                 questionPayload.question = singleSource.question || q.question || "";
                 questionPayload.questionImage = singleSource.questionImage || q.questionImage || null;
@@ -268,20 +268,23 @@ export const getTestBuilder = async (req, res) => {
     const questions = mappings.filter(m => m.question).map(m => {
         const q = m.question;
 
-        const base = {
+                const base = {
             _id: q._id,
             order: m.order,
             positiveMarks: m.positiveMarks,
             negativeMarks: m.negativeMarks,
-            subject: m.subject || q.subject,     // 👈 CHANGED: mapping se, purane data ke liye fallback
+            subject: m.subject || q.subject,
             type: q.type,
-            section: m.section || q.section,     // 👈 CHANGED
-            topic: m.topic || q.topic,           // 👈 CHANGED
-            subTopic: m.subTopic || q.subTopic,  // 👈 CHANGED
+            section: m.section || q.section,
+            topic: m.topic || q.topic,
+            subTopic: m.subTopic || q.subTopic,
             difficulty: q.difficulty,
             languageMode: q.languageMode || "single",
             correctAnswers: q.correctAnswers,
-            numericAnswer: q.numericAnswer
+            numericAnswer: q.numericAnswer,
+            questionImage: q.questionImage,
+            options: q.options,
+            solution: q.solution
         };
 
         if (q.languageMode === "multiple") {
@@ -293,10 +296,7 @@ export const getTestBuilder = async (req, res) => {
 
         return {
             ...base,
-            question: q.question,
-            questionImage: q.questionImage,
-            options: q.options,
-            solution: q.solution
+            question: q.question
         };
     });
 
@@ -462,10 +462,10 @@ if (qMode === "multiple") {
             options: normalizeOptions(t.options),
             solution: t.solution || { text: "", image: null }
         }));
-        questionPayload.question = "";
-        questionPayload.questionImage = null;
-        questionPayload.options = [];
-        questionPayload.solution = { text: "", image: null };
+               questionPayload.question = "";
+        questionPayload.questionImage = q.questionImage || null;
+        questionPayload.options = normalizeOptions(q.options);
+        questionPayload.solution = { text: "", image: q.solution?.image || null };
     } else {
         const singleSource = pickSingleSource(q);
         questionPayload.question = singleSource.question || q.question || "";
