@@ -93,7 +93,18 @@ async function confirmBulkCopy() {
         const data = await res.json();
 
         if (data.success) {
-            alert(`${data.copied} copy operations successful` + (data.failed ? `, ${data.failed} failed` : ''));
+            let message = `${data.copied} copy operations successful` + (data.failed ? `, ${data.failed} failed` : '');
+
+            // 👇 NAYA — agar kisi test me language fallback hua ho ("all" pe set hua ho),
+            // to uska path dikhao taaki pata chale kaha aisa hua
+            if (data.fallbacks && data.fallbacks.length > 0) {
+                const fallbackDetails = data.fallbacks
+                    .map(f => `• ${f.path} (chuni gayi language "${f.requestedLanguage}" is test me available nahi thi, "All" set kar diya gaya)`)
+                    .join('\n');
+                message += `\n\nNote: ${data.fallbacks.length} test(s) me language "All" par set ho gayi:\n${fallbackDetails}`;
+            }
+
+            alert(message);
             location.reload();
         } else {
             alert(data.message || 'Copy fail ho gaya');

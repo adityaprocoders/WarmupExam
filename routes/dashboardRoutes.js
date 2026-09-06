@@ -7,7 +7,7 @@ import { showWeakAreas } from "../controllers/weakAreaController.js";
 import { validateBody } from "../middleware/validate.js";
 import { createSectionSchema, createFolderSchema } from "../utils/schemas.js";
 import { getMyNotifications, markNotificationsSeen, clearMyNotifications } from "../controllers/notificationController.js";
-
+import { showDailyWarmupSummary } from "../controllers/dailyWarmupController.js";
 
 const router = express.Router();
 
@@ -27,6 +27,8 @@ router.delete("/section/:id", isLoggedIn, isOwner, wrapAsync(dashboardController
 
 router.get("/series/:slug/weak-areas", isLoggedIn, checkSeriesAccess, wrapAsync(showWeakAreas));
 
+ 
+router.get("/series/:slug/daily-warmup", isLoggedIn, showDailyWarmupSummary);
 
 // router.get("/series/:slug/section/:sectionId/leaderboard", isLoggedIn, wrapAsync(dashboardController.showSectionLeaderboard));
 // router.put("/section/:id/toggle-leaderboard", isLoggedIn, isOwner, wrapAsync(dashboardController.toggleSectionLeaderboard));

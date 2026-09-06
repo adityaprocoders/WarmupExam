@@ -27,22 +27,21 @@ router.get("/sitemap.xml", async (req, res) => {
         res.set("Cache-Control", "public, max-age=3600");   // 👈 NAYA — 1 hour cache
 
         const baseUrl = "https://warmupexam.com";
-        const now = new Date();   // 👈 NAYA — static pages ke lastmod ke liye
         const urls = [];
 
-        // ---------- Static pages ----------
-        urls.push(urlEntry(`${baseUrl}/`, { priority: "1.0", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/aboutUs`, { priority: "0.6", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/contactUs`, { priority: "0.6", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/features`, { priority: "0.6", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/privacy-Policy`, { priority: "0.3", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/Terms-&-Conditions`, { priority: "0.3", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/ebooks`, { priority: "0.7", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/alltests`, { priority: "0.9", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/skill-tests/typing-test`, { priority: "0.8", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/skill-tests/data-entry-test`, { priority: "0.8", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/skill-tests/calculation-test`, { priority: "0.8", lastmod: now }));
-        urls.push(urlEntry(`${baseUrl}/categories`, { priority: "0.8", lastmod: now }));
+       
+        urls.push(urlEntry(`${baseUrl}/`, { priority: "1.0" }));
+        urls.push(urlEntry(`${baseUrl}/aboutUs`, { priority: "0.6" }));
+        urls.push(urlEntry(`${baseUrl}/contactUs`, { priority: "0.6" }));
+        urls.push(urlEntry(`${baseUrl}/features`, { priority: "0.6" }));
+        urls.push(urlEntry(`${baseUrl}/privacy-Policy`, { priority: "0.3" }));
+        urls.push(urlEntry(`${baseUrl}/Terms-&-Conditions`, { priority: "0.3" }));
+        urls.push(urlEntry(`${baseUrl}/ebooks`, { priority: "0.7" }));
+        urls.push(urlEntry(`${baseUrl}/alltests`, { priority: "0.9" }));
+        urls.push(urlEntry(`${baseUrl}/skill-tests/typing-test`, { priority: "0.8" }));
+        urls.push(urlEntry(`${baseUrl}/skill-tests/data-entry-test`, { priority: "0.8" }));
+        urls.push(urlEntry(`${baseUrl}/skill-tests/calculation-test`, { priority: "0.8" }));
+        urls.push(urlEntry(`${baseUrl}/categories`, { priority: "0.8" }));
 
         // ---------- Categories (dynamic) ----------
         const categories = await Category.find({}).select("slug updatedAt").lean();

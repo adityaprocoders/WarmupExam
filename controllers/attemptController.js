@@ -6,10 +6,7 @@ import AttemptSession from "../models/AttemptSession.js";
 import ExpressError from "../utils/ExpressError.js";
 import { calculateRankFromPredictor } from "../utils/rankHelper.js";
 import { getTestStatus, formatDateTime } from "../utils/testStatus.js";
-
-import { updateWarmupStreak } from "./dailyWarmupController.js";
-
-
+ 
 // Question document ko selected language ke hisaab se FLAT object me convert karta hai
 // (translations[] se ya single-mode field se) — attempt.ejs isi flat shape ko expect karta hai.
 function resolveQuestionForLanguage(qDoc, lang) {
@@ -131,6 +128,14 @@ export const showAttempt = async (req, res) => {
         return res.redirect("back");
     }
 
+    if (test.isLiveTest) {
+    const existingAttempt = await Attempt.findOne({ test: id, user: req.user._id });
+    if (existingAttempt) {
+        req.flash("error", "You have already attempted this test.");
+        return res.redirect(`/attempt/${existingAttempt._id}/analysis`);
+    }
+}
+
     const mappings = await TestQuestion.find({ test: id }).sort({ order: 1 }).populate("question");
 
     // ✅ Language validate karo (query param se) — questions banane se PEHLE
@@ -214,6 +219,16 @@ export const submitAttempt = async (req, res) => {
         });
     }
 
+    if (test.isLiveTest) {
+    const alreadyAttempted = await Attempt.findOne({ test: testId, user: req.user._id });
+    if (alreadyAttempted) {
+        return res.status(409).json({
+            success: false,
+            message: "You have already submitted this test."
+        });
+    }
+}
+
     // ✅ Listing ke marks config se qualifying-only subjects nikal lo
     const listingForMarks = await Listing.findById(test.listing).select("marks");
     const qualifyingSubjects = new Set(
@@ -267,9 +282,9 @@ export const submitAttempt = async (req, res) => {
         });
     });
 
-    if (!test.isDailyWarmup) {                                    // 👈 NAYA
-        await Attempt.deleteOne({ user: req.user._id, test: testId });  // 👈 NAYA
-    }                                                              // 👈 NAYA
+    if (!test.isLiveTest) {
+    await Attempt.deleteOne({ user: req.user._id, test: testId });
+}                                                         // 👈 NAYA
 
 
     const attempt = await Attempt.create({
@@ -282,10 +297,6 @@ export const submitAttempt = async (req, res) => {
         language: session.language || "English"   // 👈 naya
     });
     
-if (test.isDailyWarmup) {
-    await updateWarmupStreak(req.user._id, test.warmupExam);
-}
-
 
     res.status(200).json({ success: true, attemptId: attempt._id });
 };

@@ -207,16 +207,54 @@
 <script type="application/ld+json" nonce="<%= cspNonce %>">
 {
   "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    { "@type": "Question", "name": "Who can take this Mock Test?", "acceptedAnswer": { "@type": "Answer", "text": "This mock test platform is designed for students, learners, and aspirants preparing for various competitive, entrance, recruitment, and academic examinations. It provides realistic practice, detailed performance analysis, and AI-powered insights to help improve speed, accuracy, and overall performance." } },
-    { "@type": "Question", "name": "Are the Mock Tests based on the latest exam pattern?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every mock test is prepared according to the latest syllabus, exam pattern, and difficulty level." } },
-    { "@type": "Question", "name": "Will I receive AI Performance Analysis?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. After completing the test, you'll receive an AI-powered performance report showing your strengths, weaknesses, accuracy, speed, and topic-wise analysis." } },
-    { "@type": "Question", "name": "Will I get an All India Rank (AIR)?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. For supported tests, you'll receive an estimated All India Rank along with percentile and performance comparison." } }
-  ]
+  "@type": "Course",
+  "name": "<%- JSON.stringify(listing.title) %>",
+  "description": "<%- JSON.stringify(listing.shortDescription || listing.description || '') %>",
+  "provider": {
+    "@type": "Organization",
+    "name": "WarmupExam",
+    "sameAs": "https://warmupexam.com"
+  },
+  <% if (listing.type !== 'Free' && listing.price) { %>
+  "offers": {
+    "@type": "Offer",
+    "category": "Paid",
+    "price": "<%= listing.price %>",
+    "priceCurrency": "INR",
+    "availability": "https://schema.org/InStock",
+    "url": "https://warmupexam.com/test/<%= listing.slug %>"
+  },
+  <% } else { %>
+  "offers": {
+    "@type": "Offer",
+    "category": "Free",
+    "price": "0",
+    "priceCurrency": "INR",
+    "availability": "https://schema.org/InStock",
+    "url": "https://warmupexam.com/test/<%= listing.slug %>"
+  },
+  <% } %>
+  "hasCourseInstance": {
+    "@type": "CourseInstance",
+    "courseMode": "online",
+    "courseWorkload": "PT<%= listing.validityDays %>D"
+  }
 }
 </script>
 
+
+
+<script type="application/ld+json" nonce="<%= cspNonce %>">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://warmupexam.com/" },
+    { "@type": "ListItem", "position": 2, "name": "<%- JSON.stringify(listing.exam) %>", "item": "https://warmupexam.com/alltests?exam=<%= encodeURIComponent(listing.exam) %>" },
+    { "@type": "ListItem", "position": 3, "name": "<%- JSON.stringify(listing.title) %>", "item": "https://warmupexam.com/test/<%= listing.slug %>" }
+  ]
+}
+</script>
 
 <script src="/js/enrollment.js" defer></script>
 

@@ -96,17 +96,19 @@ export const allTests = async (req, res) => {
         seoTitle = `${searchTerm} Mock Test Series${langPart} | Free & Paid Practice Tests | WarmupExam`;
 
         seoDescription = matchCount > 0
-            ? `Practice ${matchCount} ${searchTerm} mock test${matchCount > 1 ? "s" : ""}${langPart} with true negative marking, AI-powered weak-area analysis and rank prediction on WarmupExam.`
-            : `Explore ${searchTerm} exam preparation resources and mock test series on WarmupExam. Browse all available test series for ${searchTerm}.`;
+    ? `Practice ${matchCount} ${searchTerm} mock test${matchCount > 1 ? "s" : ""}${langPart} with Live Tests (real exam pattern & timing), Daily Warmup, true negative marking and AI-powered rank prediction on WarmupExam.`
+    : `Explore ${searchTerm} exam preparation resources, Live Tests and mock test series on WarmupExam. Browse all available test series for ${searchTerm}.`;
 
-        seoKeywords = [
-            `${searchTerm} mock test`,
-            `${searchTerm} test series`,
-            `${searchTerm} online test`,
-            `${searchTerm} practice test`,
-            `${searchTerm} exam preparation`,
-            language ? `${searchTerm} ${language}` : null
-        ].filter(Boolean).join(", ");
+seoKeywords = [
+    `${searchTerm} live test`,
+    `${searchTerm} mock test`,
+    `${searchTerm} test series`,
+    `${searchTerm} daily warmup`,
+    `${searchTerm} online test`,
+    `${searchTerm} practice test`,
+    `${searchTerm} exam preparation`,
+    language ? `${searchTerm} ${language}` : null
+].filter(Boolean).join(", ");
 
         const params = new URLSearchParams();
         if (exam) params.set("exam", exam);
@@ -117,7 +119,7 @@ export const allTests = async (req, res) => {
     } else {
         seoTitle = "All Test Series – UPSC, SSC, JEE, NEET, GATE & More | WarmupExam";
         seoDescription = "Browse mock test series for UPSC, SSC, Defence, JEE, NEET, GATE, CAT, CUET & 15+ competitive exams with true negative marking and AI-powered analysis.";
-        seoKeywords = "mock test series, online test series, competitive exam preparation, UPSC mock test, SSC mock test, JEE mock test, NEET mock test, GATE mock test";
+        seoKeywords = "live test, live mock test, online test series, daily warmup test, competitive exam preparation, UPSC mock test, SSC mock test, JEE mock test, NEET mock test, GATE mock test";
         canonicalUrl = "https://warmupexam.com/alltests";
     }
 
@@ -155,7 +157,8 @@ export const searchTests = async (req, res) => {
     };
     if (!isOwner) filter.visibility = "public";
 
-    const tests = await Listing.find(filter).select("title exam slug").limit(8);
+    // 👇 CHANGED — Listing ka apna "language" field seedha select kar liya
+    const tests = await Listing.find(filter).select("title exam slug language").limit(8);
 
     res.json(tests);
 };
@@ -221,8 +224,11 @@ if (isOwner) {
         examGroups,         // 👈 naya
         title: `${data.title} | WarmupExam`,
         description: data.shortDescription
-            ? data.shortDescription.replace(/\s+/g, ' ').trim()
-            : `Practice ${data.title} with realistic mock tests, true negative marking, AI-powered analysis and AIR rank prediction on WarmupExam.`
+        ? `${data.shortDescription.replace(/\s+/g, ' ').trim()} Attempt Live Tests with real exam pattern & timing, Daily Warmup, PYQs and AIR Tests with instant rank & AI analysis.`
+        : `Attempt ${data.title} Live Tests with real exam pattern, timing & marks distribution, instant leaderboard & rank, Daily Warmup, previous year questions and AIR tests on WarmupExam.`,
+    keywords: `${data.title} live test, ${data.title} mock test, ${data.title} PYQ, ${data.title} AIR test, ${data.title} daily warmup, ${data.exam} live test series`,
+    canonicalUrl: `https://warmupexam.com/test/${data.slug}`,
+    ogImage: data.image   
     });
 };
 
@@ -337,7 +343,9 @@ export const getSeriesByExam = async (req, res) => {
     const filter = { exam };
     if (!isOwner) filter.visibility = "public";
 
-    const series = await Listing.find(filter).select("title exam slug").sort({ createdAt: -1 });
+    // 👇 CHANGED — Listing ka apna "language" field seedha select kar liya
+    const series = await Listing.find(filter).select("title exam slug language").sort({ createdAt: -1 });
+
     res.json(series);
 };
 

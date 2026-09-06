@@ -119,24 +119,30 @@ showLanguage: {
         type: Date,
         default: null
     },
-    isDailyWarmup: {
-        type: Boolean,
-        default: false
-    },
-    warmupExam: {                   
-        type: String,
-        default: null,
-        index: true
-    },
-    warmupDate: {
-        type: String,
-        default: null
-    },
-    warmupExpiresAt: {
-        type: Date,
-        default: null,
-        index: true
-    }
+    isDailyWarmup: { type: Boolean, default: false },
+dailyWarmupUser: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
+dailyWarmupDayKey: { type: String, default: null },
+dailyWarmupExpiresAt: { type: Date, default: null, index: true },
+
+
+     isLiveTest: {
+    type: Boolean,
+    default: false
+},
+liveTestExam: {                   
+    type: String,
+    default: null,
+    index: true
+},
+liveTestDate: {
+    type: String,
+    default: null
+},
+liveTestExpiresAt: {
+    type: Date,
+    default: null,
+    index: true
+}
 
 },
 

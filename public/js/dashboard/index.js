@@ -497,9 +497,10 @@ async function loadSeriesList(exam) {
 
     const canPasteRow = copySource.type === "section";
 
-    renderRows(seriesList.map(s => ({
+       renderRows(seriesList.map(s => ({
         label: s.title,
         icon: "layers",
+        language: s.language || "",   // 👈 CHANGED — single field, array nahi
         onOpen: () => navigateSeries(s.slug, s._id, s.title),
         canPaste: canPasteRow,
         onPaste: () => doPaste(s._id, null, null, null)
@@ -599,7 +600,13 @@ function renderRows(rows, emptyMsg) {
                 ${r.iconClass
                     ? `<i class="${r.iconClass} text-indigo-500 w-5 text-center shrink-0"></i>`
                     : `<i data-lucide="${r.icon}" class="w-5 h-5 text-indigo-500 shrink-0"></i>`}
-                <span class="truncate text-sm font-medium text-slate-700">${r.label}</span>
+                <div class="min-w-0">
+                    <span class="truncate text-sm font-medium text-slate-700 block">${r.label}</span>
+                    ${r.language !== undefined ? `
+                        <div class="mt-1">
+                            <span class="text-[10px] ${r.language ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-400'} px-2 py-0.5 rounded-full font-medium">${r.language || 'No language set'}</span>
+                        </div>` : ''}
+                </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
                 ${r.canPaste ? `<button data-paste="${i}" class="text-indigo-600 text-xs font-bold px-2 py-1 hover:bg-indigo-100 rounded-lg">Paste</button>` : ""}
@@ -697,6 +704,7 @@ function handleCopySearch(keyword) {
         renderRows(results.map(s => ({
             label: `${s.title} (${s.exam})`,
             icon: "layers",
+            language: s.language || "",   // 👈 CHANGED — single field, array nahi
             onOpen: () => {
                 copyNav.path = [{ label: s.exam, type: "exam", exam: s.exam }];
                 navigateSeries(s.slug, s._id, s.title);

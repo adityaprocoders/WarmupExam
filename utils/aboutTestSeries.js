@@ -1,9 +1,14 @@
 // utils/aboutTestSeries.js
 const FIXED_TOP = [
     {
+        icon: "fa-solid fa-tower-broadcast",
+        title: "Live Test",
+        text: "Attempt tests based on the actual exam pattern with real timing and marks distribution, then get instant analysis with leaderboard and rank — available for 24 hours.",
+    },
+    {
         icon: "fa-solid fa-fire",
         title: "Daily Warmup",
-        text: "Daily test to keep you consistent and improve your preparation.",
+        text: "Get 10 questions every day for 10 minutes, personalized based on your weak areas and previously wrong question topics.",
     },
 ];
 
@@ -11,7 +16,7 @@ const FIXED_BOTTOM = [
     {
         icon: "fa-solid fa-chart-column",
         title: "Performance Analysis",
-        text: "Track your tests attempted, average score, accuracy, percentile, performance growth, and recent activity in one place.",
+        text: "Track your attempted tests, average score, accuracy, and percentile comparison, along with subject and topic-wise weak area analysis to know exactly where you're losing marks.",
     },
     {
         icon: "fa-solid fa-headset",

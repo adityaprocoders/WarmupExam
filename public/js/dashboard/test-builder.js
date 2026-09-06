@@ -21,6 +21,8 @@ let currentViewMode = 'manual';
 let testQuestionsState = [];
 let subjectsList = [];
 let testDurationState = 0;
+let globalSubject = '';
+let questionSubjectOverride = {}; 
 
 const imageDataStore = {};
 const questionOptionCount = {};  
@@ -145,6 +147,10 @@ async function loadSubjects() {
         console.error("Subjects fetch error:", err);
         subjectsList = [];
     }
+     const globalSel = document.getElementById('globalSubjectSelect');
+    if (globalSel) {
+        globalSel.innerHTML = `<option value="">-- Select Subject --</option>${getSubjectOptionsHtml(null)}`;
+    }
 }
 function getSubjectOptionsHtml(selectedValue) {
     if (subjectsList.length === 0) {
@@ -167,6 +173,42 @@ function getMarksForSubject(subjectName) {
         ? { positiveMarks: found.positiveMarks, negativeMarks: found.negativeMarks }
         : { positiveMarks: 0, negativeMarks: 0 };
 }
+
+
+/* ---------------------------------------------------------
+   GLOBAL SUBJECT — Full Marks ke bagal wale dropdown se
+   sabhi (non-overridden) questions me subject+marks set karo
+--------------------------------------------------------- */
+function applyGlobalSubject() {
+  const sel = document.getElementById('globalSubjectSelect');
+  if (!sel) return;
+
+  globalSubject = sel.value;
+  if (!globalSubject) return; // "-- Select Subject --" chuna to kuch mat karo
+
+  const questionBlocks = document.querySelectorAll('[id^="question_"]');
+
+  questionBlocks.forEach(block => {
+    const qId = block.id.split('_')[1];
+
+    // Jis question ka subject user pehle khud manually change kar chuka hai, use touch mat karo
+    if (questionSubjectOverride[qId]) return;
+
+    const subjectSelect = document.getElementById(`qSubject_${qId}`);
+    if (!subjectSelect) return;
+    if (subjectSelect.value === globalSubject) return;
+
+    subjectSelect.value = globalSubject;
+
+    // Subject badalne se body (English force-single etc.) bhi re-render karo, existing text safe rakhte hue
+    const snap = captureQuestionSnapshot(qId);
+    renderQuestionBody(qId);
+    applyQuestionSnapshot(qId, snap);
+  });
+
+  calculateTotalMarks();
+}
+
 
 
 /* ---------------------------------------------------------
@@ -517,10 +559,16 @@ function addQuestion(existingMongoId, initialOptionCount) {
     alert("Pehle Listing me subjects/marks configure karo, tabhi questions add ho sakte hain.");
     return;
   }
+ 
   questionCount++;
   const qId = questionCount;
   questionOptionCount[qId] = initialOptionCount || 4;   
   const list = document.getElementById('questionsListContainer');
+
+ if (!existingMongoId) {
+    questionSubjectOverride[qId] = false;
+  }
+
 
   const block = document.createElement('div');
   block.id = `question_${qId}`;
@@ -531,7 +579,7 @@ function addQuestion(existingMongoId, initialOptionCount) {
       <div class="bg-indigo-600 text-white px-3 py-1 rounded-lg font-bold qBadge">Q${qId}</div>
 
       <select id="qSubject_${qId}" data-onchange="render-question-body" data-qid="${qId}" class="bg-white border rounded-lg px-3 py-1 outline-none text-sm font-medium">
-    ${getSubjectOptionsHtml(null)}
+    ${getSubjectOptionsHtml(existingMongoId ? null : (globalSubject || null))}
 </select>
 
       <select id="qType_${qId}" data-onchange="render-question-body" data-qid="${qId}" class="bg-white border rounded-lg px-3 py-1 outline-none text-sm font-medium">
@@ -1735,8 +1783,17 @@ document.addEventListener('change', function (e) {
     case 'show-language':
       testShowLanguage = el.value;
       break;
-      case 'render-question-body': {
-  const qId = el.dataset.qid;
+    case 'global-subject':
+      applyGlobalSubject();
+      break;
+
+    case 'render-question-body': {
+    const qId = el.dataset.qid;
+
+    if (el.id && el.id.startsWith('qSubject_')) {
+    questionSubjectOverride[qId] = true;
+  }
+
   const snap = captureQuestionSnapshot(qId);
   renderQuestionBody(qId);
   applyQuestionSnapshot(qId, snap);

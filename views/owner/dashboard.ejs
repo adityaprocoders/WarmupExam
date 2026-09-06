@@ -39,9 +39,9 @@
       <a href="#" data-target="questionbank" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
   <i class="fa-solid fa-database w-4 text-gray-400"></i> Question Bank
 </a>
-      <a href="#" data-target="dailywarmup" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
-        <i class="fa-solid fa-bolt w-4 text-gray-400"></i> Daily Warmup
-      </a>
+      <a href="#" data-target="livetest" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+    <i class="fa-solid fa-bolt w-4 text-gray-400"></i> Live Test
+</a>
       <a href="#" data-target="users" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
         <i class="fa-solid fa-users w-4 text-gray-400"></i> Users
       </a>
@@ -171,20 +171,19 @@
 </section>
 
 
-      <!-- DAILY WARMUP -->
-<section id="content-dailywarmup" class="content-section hidden space-y-6">
-
+      <!--  Live test -->
+<section id="content-livetest" class="content-section hidden space-y-6">
     <!-- ===== LIST / STATS VIEW (default) ===== -->
-    <div id="dailyWarmupListView" class="space-y-6">
+    <div id="liveTestListView" class="space-y-6">
 
         <div class="flex items-start justify-between flex-wrap gap-3">
             <div>
-                <h3 class="font-bold text-gray-900 text-lg">Daily Warm-up Dashboard</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Overview of all exams and their daily warm-up status.</p>
+                <h3 class="font-bold text-gray-900 text-lg">Live Test Dashboard</h3>
+<p class="text-xs text-gray-500 mt-0.5">Overview of all exams and their live test status.</p>
             </div>
-            <button id="openAddWarmupModalBtn" class="flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 rounded-lg">
-                <i class="fa-solid fa-plus"></i> Add Daily Warmup
-            </button>
+            <button id="openAddLiveTestModalBtn" ...>
+    <i class="fa-solid fa-plus"></i> Add Live Test
+</button>
         </div>
 
         <!-- Stat cards -->
@@ -257,16 +256,16 @@
         </div>
     </div>
 
-    <!-- ===== CONFIGURATION VIEW (hidden by default) ===== -->
-    <div id="dailyWarmupConfigView" class="hidden space-y-5">
+        <!-- ===== CONFIGURATION VIEW (hidden by default) ===== -->
+    <div id="liveTestConfigView" class="hidden space-y-5">
 
         <div class="flex items-center justify-between flex-wrap gap-3">
             <div>
                 <button id="wuBackToListBtn" class="text-xs font-semibold text-indigo-600 hover:underline flex items-center gap-1.5 mb-1">
                     <i class="fa-solid fa-arrow-left"></i> Back
                 </button>
-                <h3 class="font-bold text-gray-900 text-lg">Daily Warm-up Configuration</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Configure how the daily warm-up test will be generated for <span id="wuConfigExamLabel" class="font-semibold text-gray-700">—</span>.</p>
+                <h3 class="font-bold text-gray-900 text-lg">Live Test Configuration</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Configure how the live test will be generated for <span id="wuConfigExamLabel" class="font-semibold text-gray-700">—</span>.</p>
             </div>
             <button id="wuSaveConfigBtn" data-exam="" data-category="" class="flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 rounded-lg disabled:opacity-60">
                 <i class="fa-solid fa-floppy-disk"></i> Save Configuration
@@ -275,25 +274,27 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-            <!-- 1. Question Sources -->
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-sm font-bold text-gray-800"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">1</span>Question Sources</h4>
-                    <label class="text-xs font-semibold text-indigo-600 flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" id="wuSelectAllSources" class="w-3.5 h-3.5"> Select All
-                    </label>
-                </div>
-                <div id="wuSourcesList" class="space-y-2.5 max-h-60 overflow-y-auto">
-                    <p class="text-xs text-gray-400">Loading sources...</p>
-                </div>
-                <div class="mt-3 bg-indigo-50 text-indigo-700 text-xs rounded-lg p-2.5">
-                    Total unique questions available: <span id="wuTotalUniqueCount" class="font-bold">0</span>
-                    <span class="block text-indigo-500 mt-0.5">(Duplicates across series are removed automatically)</span>
-                </div>
-            </div>
-
-            <!-- 2. Language + 3. Subjects -->
+            <!-- COL 1 -->
             <div class="space-y-4">
+
+                <!-- Question Sources -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-bold text-gray-800"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">1</span>Question Sources</h4>
+                        <label class="text-xs font-semibold text-indigo-600 flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" id="wuSelectAllSources" class="w-3.5 h-3.5"> Select All
+                        </label>
+                    </div>
+                    <div id="wuSourcesList" class="space-y-2.5 max-h-60 overflow-y-auto">
+                        <p class="text-xs text-gray-400">Loading sources...</p>
+                    </div>
+                    <div class="mt-3 bg-indigo-50 text-indigo-700 text-xs rounded-lg p-2.5">
+                        Total unique questions available: <span id="wuTotalUniqueCount" class="font-bold">0</span>
+                        <span class="block text-indigo-500 mt-0.5">(Duplicates across series are removed automatically)</span>
+                    </div>
+                </div>
+
+                <!-- Language -->
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                     <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">2</span>Language</h4>
                     <div class="space-y-2 text-sm">
@@ -310,23 +311,24 @@
                     <p class="text-xs text-green-600 bg-green-50 rounded-lg p-2 mt-3">Students can choose their preferred language while attempting the test.</p>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                    <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">3</span>Subjects</h4>
-                    <div id="wuSubjectsList" class="space-y-2 text-sm max-h-32 overflow-y-auto">
-                        <p class="text-xs text-gray-400">Select an exam first...</p>
-                    </div>
-                </div>
             </div>
 
-            <!-- 4. Questions & Difficulty + 6. Schedule -->
+            <!-- COL 2 -->
             <div class="space-y-4">
+
+                <!-- Questions & Difficulty -->
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                    <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">4</span>Questions & Difficulty</h4>
+                    <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">3</span>Questions & Difficulty</h4>
 
-                    <label class="block text-xs text-gray-500 mb-1">Total Questions</label>
-                    <input type="number" id="wuQuestionCount" min="5" max="50" value="10" class="w-full border rounded-lg px-3 py-2 text-sm mb-4">
+                    <label class="block text-xs text-gray-500 mb-1">Total Questions Strategy</label>
+                    <select id="ltQuestionCountStrategy" class="w-full border rounded-lg px-3 py-2 text-sm mb-3">
+                        <option value="all">All (Combined Total)</option>
+                        <option value="subject">Subject-wise</option>
+                    </select>
 
-                    <label class="block text-xs text-gray-500 mb-2">Difficulty Distribution</label>
+                    <div id="ltQuestionCountDynamicContainer" class="mb-4"></div>
+
+                    <label class="block text-xs text-gray-500 mb-2">Difficulty Distribution (overall %)</label>
                     <div class="grid grid-cols-3 gap-2 mb-2">
                         <div>
                             <span class="text-xs text-green-600 font-semibold">Easy</span>
@@ -349,34 +351,103 @@
                     <p id="wuDiffError" class="hidden text-xs text-red-500 mt-1.5">Difficulty percentages must add up to 100%.</p>
                 </div>
 
-                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-    <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">5</span>Schedule</h4>
-    <label class="block text-xs text-gray-500 mb-1">Start Time (daily)</label>
-    <input type="time" id="wuStartTime" value="06:00" class="w-full border rounded-lg px-3 py-2 text-sm mb-4">
+                <!-- Max Repeat -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                    <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">4</span>Max Repeat</h4>
+                    <label class="block text-xs text-gray-500 mb-1">Ek question max kitni baar dobara aa sakta hai (overall history me)</label>
+                    <input type="number" id="ltMaxRepeat" min="1" value="2" class="w-full border rounded-lg px-3 py-2 text-sm">
+                </div>
 
-    <label class="block text-xs text-gray-500 mb-1">Test Duration (minutes)</label>
-    <input type="number" id="wuDurationInput" min="1" max="60" value="10" class="w-full border rounded-lg px-3 py-2 text-sm">
-
-    <p class="text-xs text-indigo-500 bg-indigo-50 rounded-lg p-2 mt-3">Warm-up will auto-generate every day at this time and stay active for 24 hours.</p>
-</div>
             </div>
+
+            <!-- COL 3 -->
+            <div class="space-y-4">
+
+                <!-- Time -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                    <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">5</span>Time</h4>
+
+                    <label class="block text-xs text-gray-500 mb-1">Time Strategy</label>
+                    <select id="ltTimeStrategy" class="w-full border rounded-lg px-3 py-2 text-sm mb-3">
+                        <option value="total">Total Time (whole paper)</option>
+                        <option value="subject">Subject-wise Time</option>
+                    </select>
+
+                    <div id="ltTimeDynamicContainer"></div>
+                </div>
+
+                <!-- Schedule -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                    <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">6</span>Schedule</h4>
+                    <label class="block text-xs text-gray-500 mb-2">Days</label>
+                    <div class="grid grid-cols-4 gap-2 mb-2" id="ltScheduledDaysBox">
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer border rounded-lg px-2 py-1.5">
+                            <input type="checkbox" data-action="lt-day-checkbox" value="Mon" class="w-3.5 h-3.5"> Mon
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer border rounded-lg px-2 py-1.5">
+                            <input type="checkbox" data-action="lt-day-checkbox" value="Tue" class="w-3.5 h-3.5"> Tue
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer border rounded-lg px-2 py-1.5">
+                            <input type="checkbox" data-action="lt-day-checkbox" value="Wed" class="w-3.5 h-3.5"> Wed
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer border rounded-lg px-2 py-1.5">
+                            <input type="checkbox" data-action="lt-day-checkbox" value="Thu" class="w-3.5 h-3.5"> Thu
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer border rounded-lg px-2 py-1.5">
+                            <input type="checkbox" data-action="lt-day-checkbox" value="Fri" class="w-3.5 h-3.5"> Fri
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer border rounded-lg px-2 py-1.5">
+                            <input type="checkbox" data-action="lt-day-checkbox" value="Sat" class="w-3.5 h-3.5"> Sat
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer border rounded-lg px-2 py-1.5">
+                            <input type="checkbox" data-action="lt-day-checkbox" value="Sun" class="w-3.5 h-3.5"> Sun
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer border rounded-lg px-2 py-1.5 bg-indigo-50">
+                            <input type="checkbox" id="ltDaySelectAll" class="w-3.5 h-3.5"> All
+                        </label>
+                    </div>
+                    <p id="ltDayError" class="hidden text-xs text-red-500 mb-3">Select at least one day.</p>
+                    <label class="block text-xs text-gray-500 mb-1">Start Time</label>
+                    <input type="time" id="ltStartTime" value="06:00" class="w-full border rounded-lg px-3 py-2 text-sm">
+                    <p class="text-xs text-gray-500 mt-1">Selected time: <span id="ltStartTimeDisplay" class="font-semibold text-indigo-600">6:00 AM</span></p>
+                    <p class="text-xs text-indigo-500 bg-indigo-50 rounded-lg p-2 mt-3">Live Test auto-generate hoga selected days pe, is time par, aur 24 ghante active rahega.</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Filter Builder (full width) -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-800">Question Filter Builder</h4>
+                    <p class="text-xs text-gray-400 mt-0.5">Har row = ek Subject + (optional) Section/Topic/SubTopic/Difficulty filter, apne Min/Max Q ke saath.</p>
+                </div>
+                <button type="button" id="ltAddCriteriaRowBtn" class="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-lg">
+                    <i class="fa-solid fa-plus mr-1"></i> Add Row
+                </button>
+            </div>
+            <div id="ltCriteriaRowsContainer" class="space-y-3"></div>
         </div>
 
         <!-- Preview Summary -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h4 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-eye text-indigo-500"></i> Preview Summary</h4>
-            <div class="grid grid-cols-2 sm:grid-cols-6 gap-4 text-xs">
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 text-xs">
                 <div><span class="text-gray-400 block">Exam</span><span id="wuPreviewExam" class="font-bold text-gray-800">—</span></div>
                 <div><span class="text-gray-400 block">Questions</span><span id="wuPreviewQuestions" class="font-bold text-gray-800">—</span></div>
-                <div><span class="text-gray-400 block">Subjects</span><span id="wuPreviewSubjects" class="font-bold text-gray-800">—</span></div>
+                <div><span class="text-gray-400 block">Filter Rows</span><span id="ltPreviewRows" class="font-bold text-gray-800">—</span></div>
                 <div><span class="text-gray-400 block">Sources</span><span id="wuPreviewSources" class="font-bold text-gray-800">—</span></div>
                 <div><span class="text-gray-400 block">Language</span><span id="wuPreviewLanguage" class="font-bold text-gray-800">—</span></div>
+                <div><span class="text-gray-400 block">Max Repeat</span><span id="ltPreviewMaxRepeat" class="font-bold text-gray-800">—</span></div>
                 <div><span class="text-gray-400 block">Start Time</span><span id="wuPreviewStartTime" class="font-bold text-gray-800">—</span></div>
-                <div><span class="text-gray-400 block">Duration</span><span id="wuPreviewDuration" class="font-bold text-gray-800">—</span></div>
+                <div><span class="text-gray-400 block">Days</span><span id="ltPreviewDays" class="font-bold text-gray-800">—</span></div>
             </div>
         </div>
 
     </div>
+
+    
 
 </section>
 
@@ -657,6 +728,7 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+         
           <div>
             <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Difficulty</label>
             <select id="qbFormDifficulty" class="w-full border rounded-xl px-3 py-2.5 text-sm">
@@ -969,13 +1041,13 @@
 </div>
 
 
-<!-- Add Daily Warmup Modal -->
-<div id="addWarmupModalOverlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center px-4">
+<!-- Add  Live test Modal -->
+<div id="addLiveTestModalOverlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center px-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
 
         <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-            <h2 class="text-lg font-bold text-gray-900">Add Daily Warm-up</h2>
-            <button id="closeAddWarmupModalBtn" class="text-gray-400 hover:text-gray-700">
+            <h2 class="text-lg font-bold text-gray-900">Add Live Test</h2>
+            <button id="closeAddLiveTestModalBtn" class="text-gray-400 hover:text-gray-700">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -995,7 +1067,7 @@
                 </select>
                 <p class="text-xs text-gray-400 mt-1.5 flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
-                    Already has a Daily Warmup configured
+                    Already has a Live Test configured
                 </p>
             </div>
         </div>
@@ -1035,7 +1107,7 @@
 
 <script src="/js/owner/owner-dashboard.js" defer></script>
 <script src="/js/owner/questionBank.js" defer></script>
-<script src="/js/owner/dailyWarmup.js" defer></script>
+<script src="/js/owner/liveTest.js" defer></script>
 <script src="/js/owner/notifications.js" defer></script>
 
 

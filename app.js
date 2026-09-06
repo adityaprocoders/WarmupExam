@@ -43,9 +43,8 @@ import contentBlockRoutes from "./routes/contentBlockRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js";
 import testBuilderRoutes from "./routes/testBuilderRoutes.js";
-import ownerDailyWarmupRoutes from "./routes/ownerDailyWarmupRoutes.js";
-import dailyWarmupRoutes from "./routes/dailyWarmupRoutes.js";
-import generatePaperRoutes from "./routes/generatePaperRoutes.js";
+import ownerLiveTestRoutes from "./routes/ownerLiveTestRoutes.js";
+import liveTestRoutes from "./routes/liveTestRoutes.js";import generatePaperRoutes from "./routes/generatePaperRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import attemptRoutes from "./routes/attemptRoutes.js";
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
@@ -197,10 +196,11 @@ connectDB();
 
 // cron
 
-import "./cron/dailyWarmupCron.js";
+import "./cron/liveTestCron.js";
 import "./cron/notificationCron.js";
 import "./cron/expiredEnrollmentCleanupCron.js";
 import "./cron/otpCleanupCron.js";
+import "./cron/dailyWarmupCleanupCron.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -230,10 +230,10 @@ app.use((req, res, next) => {
 
     res.locals.title = "WarmupExam";
     res.locals.description =
-        "Practice mock tests, PYQs and AI-powered exam preparation with WarmupExam.";
+        "Practice mock tests, PYQs and AI-powered exam preparation with WarmupExam. Attempt Live Tests with real exam pattern, timing & instant rank, plus Daily Warmup tests to strengthen your weak areas."
     res.locals.currentPath = req.path;
     res.locals.keywords =
-        "WarmupExam, warmup exam, warmupexam, Warmup Exam, Free test Series,  Mock Test, Skill Test, BOARD EXAM, NIMCET, UPSC, SSC, Banking, Railway, JEE, NEET";
+         "WarmupExam, warmup exam, warmupexam, Warmup Exam, Free test Series,  Mock Test, Skill Test, BOARD EXAM, NIMCET, UPSC, SSC, Banking, Railway, JEE, NEET, live test, live mock test, daily warmup test";
 
     res.locals.ogImage = `${baseUrl}/images/og-banner.jpg`;
 
@@ -398,8 +398,8 @@ app.use(couponRoutes);
 app.use(dashboardRoutes);
 app.use(itemRoutes);
 app.use(testBuilderRoutes);
-app.use(dailyWarmupRoutes);
-app.use(ownerDailyWarmupRoutes);
+app.use(liveTestRoutes);
+app.use(ownerLiveTestRoutes);
 app.use(generatePaperRoutes);
 app.use(uploadRoutes);
 app.use(attemptRoutes);

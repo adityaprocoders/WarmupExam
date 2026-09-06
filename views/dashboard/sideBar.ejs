@@ -101,11 +101,12 @@ overflow-y-auto">
 
     <!-- Dashboard -->
 
-     <a href="/series/<%= listing.slug %>" 
+<a href="/series/<%= listing.slug %>" 
    class="flex items-center gap-3 rounded-xl p-3 font-semibold transition
    <%= ((typeof currentSection === 'undefined' || !currentSection) 
         && !(typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)
-        && !(typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)) 
+        && !(typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)
+        && !(typeof isLiveTestPage !== 'undefined' && isLiveTestPage)) 
         ? 'bg-indigo-600 text-white' : 'text-black hover:bg-slate-100' %>">
 
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -143,6 +144,29 @@ overflow-y-auto">
 
 
    <ul class="space-y-2.5">
+
+    <!-- Live Test -->
+<li class="rounded-2xl transition-all duration-300
+    <%= (typeof isLiveTestPage !== 'undefined' && isLiveTestPage)
+        ? 'bg-indigo-600'
+        : 'bg-white border border-slate-100 hover:border-red-200 hover:shadow-sm' %>">
+    <a href="/series/<%= listing.slug %>/live-test" class="flex items-center gap-3 p-3">
+        <span class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="2.5" fill="#EF4444"/>
+                <path d="M8.5 8.5a5 5 0 0 0 0 7" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M15.5 8.5a5 5 0 0 1 0 7" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M5.5 5.5a9 9 0 0 0 0 13" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+                <path d="M18.5 5.5a9 9 0 0 1 0 13" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+            </svg>
+        </span>
+        <span class="font-bold text-sm flex-1 truncate
+            <%= (typeof isLiveTestPage !== 'undefined' && isLiveTestPage) ? 'text-white' : 'text-slate-900' %>">
+            Live Test
+        </span>
+    </a>
+</li>
+
 
     <!-- Daily Warmup (static, sections loop se pehle) -->
 <li class="rounded-2xl overflow-hidden transition-all duration-300 shadow-lg shadow-orange-200/60
@@ -315,6 +339,19 @@ overflow-y-auto">
         <i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i>
         Leaderboard
     </a> -->
+</div>
+<div class="shrink-0 border-t border-slate-100 p-6 pt-4">
+    <p class="text-xs uppercase tracking-widest text-slate-400 font-bold mb-3">More</p>
+    <div class="space-y-1">
+        <a href="/contactUs" class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+            <i data-lucide="headphones" class="w-[18px] h-[18px]"></i>
+            <span class="text-sm font-medium">Help &amp; Support</span>
+        </a>
+        <a href="/privacy-Policy" class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+            <i data-lucide="shield-check" class="w-[18px] h-[18px]"></i>
+            <span class="text-sm font-medium">Privacy Policy</span>
+        </a>
+    </div>
 </div>
      
 </aside>

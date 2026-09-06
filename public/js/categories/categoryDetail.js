@@ -184,11 +184,16 @@ grid.addEventListener('submit', (e) => {
             : `<span class="bg-amber-50 text-amber-600 border-amber-300 absolute top-3 right-3 text-xs font-bold px-3 py-1.5 rounded-full border shadow-[0_0_12px_rgba(251,146,60,0.8)]">PREMIUM</span>`;
 
         const priceHtml = test.type === 'Free'
-            ? `<div class="text-indigo-700 font-bold text-base sm:text-lg">FREE</div>`
-            : `<div class="flex items-baseline gap-2">
-                 <span class="text-xl sm:text-2xl font-bold text-gray-900">₹${test.price}</span>
-                 ${test.originalPrice > test.price ? `<span class="text-gray-400 line-through text-sm sm:text-base">${test.originalPrice}</span>` : ''}
-               </div>`;
+    ? `<div class="text-indigo-700 font-bold text-base sm:text-lg">FREE</div>`
+    : `<div class="flex flex-wrap items-center justify-between gap-2 w-full">
+         <div class="flex items-baseline gap-2">
+           <span class="text-xl sm:text-2xl font-bold text-gray-900">₹${test.price}</span>
+           ${test.originalPrice > test.price ? `<span class="text-gray-400 line-through text-sm sm:text-base">${test.originalPrice}</span>` : ''}
+         </div>
+         ${test.discountPercentage > 0 ? `<span class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] sm:text-xs font-semibold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full">
+             <i class="fa-solid fa-tag"></i> ${test.discountPercentage}% OFF
+           </span>` : ''}
+       </div>`;
 
         const ownerControlsHtml = test.isOwner ? `
             <div class="flex items-center gap-2 px-4 pt-4 pb-3">

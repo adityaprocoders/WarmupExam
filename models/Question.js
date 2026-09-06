@@ -51,7 +51,7 @@ const questionSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-questionSchema.index({ contentHash: 1 }); // fast lookup, unique NAHI
+questionSchema.index({ contentHash: 1 }, { unique: true, sparse: true });
 
 questionSchema.pre("validate", function () {
     if (this.languageMode === "multiple") {

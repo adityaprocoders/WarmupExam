@@ -9,19 +9,32 @@ import { copyNode } from "../utils/copyHelpers.js";
 export const searchSeries = async (req, res) => {
     const keyword = req.query.keyword?.trim();
 
-    if (!keyword) {
-        const recent = await Listing.find().select("title exam slug").sort({ createdAt: -1 }).limit(20);
-        return res.json(recent);
-    }
+    const series = keyword
+        ? await Listing.find({
+            $or: [
+                { title: { $regex: keyword, $options: "i" } },
+                { exam: { $regex: keyword, $options: "i" } }
+            ]
+        }).select("title exam slug").limit(10)
+        : await Listing.find().select("title exam slug").sort({ createdAt: -1 }).limit(20);
 
-    const series = await Listing.find({
-        $or: [
-            { title: { $regex: keyword, $options: "i" } },
-            { exam: { $regex: keyword, $options: "i" } }
-        ]
-    }).select("title exam slug").limit(10);
+    // 👇 NAYA — har listing ke andar jo bhi Tests hain, unki unique languages nikaalo
+    const listingIds = series.map(s => s._id);
+    const tests = await Test.find({ listing: { $in: listingIds } }).select("listing languages");
 
-    res.json(series);
+    const langMap = {};
+    tests.forEach(t => {
+        const key = t.listing.toString();
+        if (!langMap[key]) langMap[key] = new Set();
+        (t.languages || []).forEach(l => langMap[key].add(l));
+    });
+
+    const result = series.map(s => ({
+        ...s.toObject(),
+        languages: langMap[s._id.toString()] ? Array.from(langMap[s._id.toString()]) : []
+    }));
+
+    res.json(result);
 };
 
 export const getSeriesTree = async (req, res) => {
@@ -144,14 +157,19 @@ export const pasteItem = async (req, res) => {
         // "All" ya khaali/undefined ka matlab: original test ka showLanguage hi rahega
         const overrideLanguage = (selectedLanguage && selectedLanguage !== "All") ? selectedLanguage : null;
 
+        const fallbackLog = [];   // 👈 NAYA
+
         const newItem = await copyNode(
             sourceType, sourceId, destListingId,
             sourceType === "section" ? null : destSectionId,
             destParentType || "section", destParentId || null,
-            overrideLanguage   // 👈 copyNode ko pass
+            overrideLanguage,
+            "", fallbackLog
         );
 
-        res.json({ success: true, data: newItem });
+         const destListing = await Listing.findById(destListingId).select("slug");
+
+        res.json({ success: true, data: newItem, fallbacks: fallbackLog });
     } catch (err) {
         console.error("Paste item error:", err);
         if (err.code === 11000) {
@@ -175,11 +193,12 @@ export const bulkCopySections = async (req, res) => {
 
     let copied = 0;
     let failed = 0;
+    const fallbackLog = [];   // 👈 NAYA — jitne bhi "all" pe fallback huye, sab yahan collect honge
 
     for (const sectionId of sectionIds) {
         for (const listingId of destListingIds) {
             try {
-                await copyNode("section", sectionId, listingId, null, "section", null, overrideLanguage);
+                await copyNode("section", sectionId, listingId, null, "section", null, overrideLanguage, "", fallbackLog);
                 copied++;
             } catch (err) {
                 console.error("Bulk copy error:", err);
@@ -188,5 +207,5 @@ export const bulkCopySections = async (req, res) => {
         }
     }
 
-    res.json({ success: true, copied, failed });
+    res.json({ success: true, copied, failed, fallbacks: fallbackLog });
 };

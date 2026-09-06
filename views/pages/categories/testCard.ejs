@@ -35,7 +35,7 @@
     </div>
     <% } %>
     <div class="relative overflow-hidden">
-        <img src="<%= test.image %>" alt="<%= test.title %>" class="w-full h-36 sm:h-40 lg:h-44 object-cover group-hover:scale-105 transition-transform duration-300">
+        <img src="<%= test.image %>" alt="<%= test.title %>" loading="lazy" class="w-full h-36 sm:h-40 lg:h-44 object-cover group-hover:scale-105 transition-transform duration-300">
 
         <span class="<%= test.type === 'Free' 
             ? 'bg-green-50 text-green-600 border-green-300' 

@@ -46,6 +46,36 @@ function pickSingleSource(q) {
     return withContent || q.translations[0] || q;
 }
 
+async function getOrCreateQuestionId(questionPayload, hash, currentQuestionId = null) {
+    questionPayload.contentHash = hash;
+
+    if (currentQuestionId) {
+        const clash = await Question.findOne({ contentHash: hash, _id: { $ne: currentQuestionId } });
+        if (clash) {
+            return clash._id;
+        }
+        await Question.findByIdAndUpdate(currentQuestionId, questionPayload);
+        return currentQuestionId;
+    }
+
+    try {
+        const doc = await Question.findOneAndUpdate(
+            { contentHash: hash },
+            { $setOnInsert: questionPayload },
+            { upsert: true, new: true }
+        );
+        return doc._id;
+    } catch (err) {
+        if (err.code === 11000) {
+            const existing = await Question.findOne({ contentHash: hash });
+            return existing._id;
+        }
+        throw err;
+    }
+}
+
+
+
 export const renderTestBuilder = async (req, res) => {
     const { listingId, sectionId, parentType, parentId, returnUrl, editId } = req.query;
     if (!listingId) throw new ExpressError(400, "listingId query param zaroori hai");
@@ -222,18 +252,8 @@ if (testLanguageMode !== "multiple") {
                 questionPayload.translations = [];
             }
 
-            // 👇 NAYA: dedup check — globally (koi listing/subject filter nahi)
-            const hash = computeContentHash(questionPayload);
-            let questionId;
-
-            const existing = await Question.findOne({ contentHash: hash });
-            if (existing) {
-                questionId = existing._id;   // same content mila — reuse karo
-            } else {
-                questionPayload.contentHash = hash;
-                const newQ = await Question.create(questionPayload);
-                questionId = newQ._id;
-            }
+                        const hash = computeContentHash(questionPayload);
+            const questionId = await getOrCreateQuestionId(questionPayload, hash);
 
             mappingDocs.push({
                 test: savedTest._id, question: questionId,
@@ -475,26 +495,9 @@ if (qMode === "multiple") {
         questionPayload.translations = [];
     }
 
-    let questionId = (q._id && oldQuestionIds.includes(String(q._id))) ? q._id : null;
-
-    // 👇 NAYA: hash nikaalo, dedup + shared-edit logic
+      const linkedQuestionId = (q._id && oldQuestionIds.includes(String(q._id))) ? q._id : null;
     const hash = computeContentHash(questionPayload);
-    questionPayload.contentHash = hash;
-
-    if (questionId) {
-        // Existing question — content update karo. Ye document agar kisi
-        // aur test me bhi shared hai, to wahan bhi reflect hoga (jaisa chaha gaya).
-        await Question.findByIdAndUpdate(questionId, questionPayload);
-    } else {
-        // Naya question is test me add ho raha hai — pehle dedup check karo
-        const existing = await Question.findOne({ contentHash: hash });
-        if (existing) {
-            questionId = existing._id;
-        } else {
-            const newQ = await Question.create(questionPayload);
-            questionId = newQ._id;
-        }
-    }
+    const questionId = await getOrCreateQuestionId(questionPayload, hash, linkedQuestionId);
 
     mappingDocs.push({
         test: updatedTest._id, question: questionId,

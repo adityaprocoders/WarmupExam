@@ -46,3 +46,12 @@
     }
 }
  
+
+@keyframes liveBlink {
+    0%, 45% { opacity: 1; }
+    50%, 95% { opacity: 0; }
+    100% { opacity: 1; }
+}
+.live-blink-badge {
+    animation: liveBlink 2s infinite;
+}

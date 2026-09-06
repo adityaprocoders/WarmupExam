@@ -59,6 +59,8 @@ export const renderGeneratePaper = async (req, res) => {
         parentType: parentType || "section",
         parentId: parentId || "",
         returnUrl: returnUrl || "/",
+        selectedStatsSection: "all",     
+        statsFilterSections: sections,
         robots: "noindex, nofollow"
     });
 };

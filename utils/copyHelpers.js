@@ -21,16 +21,20 @@ async function copyQuestionMapping(oldTestId, newTestId, destListingId) {
     const destListing = await Listing.findById(destListingId).select("marks");
     const subjectsConfig = destListing?.marks || [];
 
-    const newMappings = oldMappings
+       const newMappings = oldMappings
         .filter(m => m.question)
         .map(m => {
-            const subjectName = m.question.subject;
+            const subjectName = m.subject || m.question.subject;
             const marks = getMarksForSubject(subjectsConfig, subjectName);
 
             return {
                 test: newTestId,
                 question: m.question._id,
                 order: m.order,
+                subject: subjectName,
+                topic: m.topic || m.question.topic,
+                subTopic: m.subTopic || m.question.subTopic,
+                section: m.section || m.question.section,
                 positiveMarks: marks.positiveMarks,
                 negativeMarks: marks.negativeMarks
             };
@@ -40,13 +44,33 @@ async function copyQuestionMapping(oldTestId, newTestId, destListingId) {
 }
 
 // overrideLanguage: null/undefined => keep original showLanguage as default
-export async function copyNode(sourceType, sourceId, destListingId, destSectionId, destParentType, destParentId, overrideLanguage = null) {
+export async function copyNode(sourceType, sourceId, destListingId, destSectionId, destParentType, destParentId, overrideLanguage = null, pathLabel = "", fallbackLog = []) {
 
-    if (sourceType === "test") {
+       if (sourceType === "test") {
         const oldTest = await Test.findById(sourceId);
         if (!oldTest) {
             console.warn(`⚠️ Test ${sourceId} not found — skip kar diya copy`);
             return null;
+        }
+
+        // 👇 NAYA — showLanguage ko is test ki apni languages/mode ke hisaab se safe banao
+        let safeShowLanguage = overrideLanguage || oldTest.showLanguage || "all";
+        let didFallback = false;
+
+        if (oldTest.languageMode !== "multiple") {
+            if (overrideLanguage && overrideLanguage !== "all") didFallback = true;
+            safeShowLanguage = "all";
+        } else if (safeShowLanguage !== "all" && !oldTest.languages.includes(safeShowLanguage)) {
+            didFallback = true;
+            safeShowLanguage = "all";
+        }
+
+        if (didFallback) {
+            fallbackLog.push({
+                testTitle: oldTest.title,
+                path: pathLabel ? `${pathLabel} > ${oldTest.title}` : oldTest.title,
+                requestedLanguage: overrideLanguage
+            });
         }
 
         const newTest = await Test.create({
@@ -62,8 +86,8 @@ export async function copyNode(sourceType, sourceId, destListingId, destSectionI
             totalMarks: oldTest.totalMarks,
             languageMode: oldTest.languageMode,
             languages: oldTest.languages,
-            // 👇 agar user ne language select ki hai to wahi, warna original test ka default
-            showLanguage: overrideLanguage || oldTest.showLanguage,
+            // 👇 CHANGED — ab safe/validated value use hogi, crash nahi hoga
+            showLanguage: safeShowLanguage,
             // 👇 public test copy/share hone ke baad bhi public hi rahega
             visibility: oldTest.visibility === "public" ? "public" : "private"
         });
@@ -96,7 +120,7 @@ export async function copyNode(sourceType, sourceId, destListingId, destSectionI
 
         const childTests = await Test.find({ parentType: "file", parentId: oldFile._id });
         for (const t of childTests) {
-            await copyNode("test", t._id, destListingId, destSectionId, "file", newFile._id, overrideLanguage);
+            await copyNode("test", t._id, destListingId, destSectionId, "file", newFile._id, overrideLanguage, `${pathLabel ? pathLabel + " > " : ""}${oldFile.title}`, fallbackLog);
         }
 
         return newFile;
@@ -116,19 +140,21 @@ export async function copyNode(sourceType, sourceId, destListingId, destSectionI
             parentId: destParentId
         });
 
+        const nextPath = `${pathLabel ? pathLabel + " > " : ""}${oldFolder.title}`;
+
         const childFolders = await Folder.find({ parentType: "folder", parentId: oldFolder._id });
         for (const f of childFolders) {
-            await copyNode("folder", f._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage);
+            await copyNode("folder", f._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage, nextPath, fallbackLog);
         }
 
         const childFiles = await File.find({ parentType: "folder", parentId: oldFolder._id });
         for (const f of childFiles) {
-            await copyNode("file", f._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage);
+            await copyNode("file", f._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage, nextPath, fallbackLog);
         }
 
         const childTests = await Test.find({ parentType: "folder", parentId: oldFolder._id });
         for (const t of childTests) {
-            await copyNode("test", t._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage);
+            await copyNode("test", t._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage, nextPath, fallbackLog);
         }
 
         return newFolder;
@@ -144,25 +170,27 @@ export async function copyNode(sourceType, sourceId, destListingId, destSectionI
             listing: destListingId
         });
 
+        const nextPath = `${pathLabel ? pathLabel + " > " : ""}${oldSection.title}`;
+
         const rootFolders = await Folder.find({
             listing: oldSection.listing, section: oldSection._id, parentType: "section", parentId: null
         });
         for (const f of rootFolders) {
-            await copyNode("folder", f._id, destListingId, newSection._id, "section", null, overrideLanguage);
+            await copyNode("folder", f._id, destListingId, newSection._id, "section", null, overrideLanguage, nextPath, fallbackLog);
         }
 
         const rootFiles = await File.find({
             listing: oldSection.listing, section: oldSection._id, parentType: "section", parentId: null
         });
         for (const f of rootFiles) {
-            await copyNode("file", f._id, destListingId, newSection._id, "section", null, overrideLanguage);
+            await copyNode("file", f._id, destListingId, newSection._id, "section", null, overrideLanguage, nextPath, fallbackLog);
         }
 
         const rootTests = await Test.find({
             listing: oldSection.listing, section: oldSection._id, parentType: "section", parentId: null
         });
         for (const t of rootTests) {
-            await copyNode("test", t._id, destListingId, newSection._id, "section", null, overrideLanguage);
+            await copyNode("test", t._id, destListingId, newSection._id, "section", null, overrideLanguage, nextPath, fallbackLog);
         }
 
         return newSection;

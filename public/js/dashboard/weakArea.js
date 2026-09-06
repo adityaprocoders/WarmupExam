@@ -261,7 +261,6 @@ let topics = (topicsBySubject[currentSubject] || []);
             <p class="text-xs font-semibold text-slate-700 truncate">${w.name}</p>
             <p class="text-[11px] text-slate-400">${w.subject || ''}</p>
           </div>
-          <button class="text-[11px] font-semibold text-indigo-600 border border-indigo-100 rounded-md px-2 py-1 hover:bg-indigo-50 transition shrink-0">${w.action}</button>
         </div>`;
     });
   }
