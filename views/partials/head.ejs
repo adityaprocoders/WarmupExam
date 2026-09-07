@@ -42,8 +42,10 @@
 
 <meta name="theme-color" content="#4F46E5">
 
+<% if (preloadHero) { %>
 <link rel="preload" as="image" href="/images/hero.png" fetchpriority="high">
-
+<% } %>
+ 
 <script type="application/ld+json" nonce="<%= cspNonce %>">
 {
   "@context": "https://schema.org",

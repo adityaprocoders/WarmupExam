@@ -50,6 +50,7 @@ categories.forEach(c => {
     enrolledIds,
     enrolledExpiryMap,
     isOwner,
+    preloadHero: true,
     title: "WarmupExam – India's Smartest Mock Test & Exam Practice Platform",
     description:
     "Practice mock tests, Attempt Live Tests with real exam pattern & instant rank, Daily Warmup, PYQs & get AI-powered performance analysis and rank prediction for SSC, NIMCET, Defence, JEE, NEET, UPSC & more on WarmupExam.",

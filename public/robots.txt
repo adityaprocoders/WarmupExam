@@ -22,6 +22,10 @@ Disallow: /apply-coupon
 Disallow: /create-order
 Disallow: /verify-payment 
 Disallow: /profile
+Disallow: /dashboard
+Disallow: /owner
+Disallow: /test-builder
+Disallow: /mock-test/
 Disallow: /api/
 Disallow: /test-error
 Disallow: /csp-violation-report

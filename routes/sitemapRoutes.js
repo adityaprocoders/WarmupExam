@@ -42,6 +42,7 @@ router.get("/sitemap.xml", async (req, res) => {
         urls.push(urlEntry(`${baseUrl}/skill-tests/data-entry-test`, { priority: "0.8" }));
         urls.push(urlEntry(`${baseUrl}/skill-tests/calculation-test`, { priority: "0.8" }));
         urls.push(urlEntry(`${baseUrl}/categories`, { priority: "0.8" }));
+        urls.push(urlEntry(`${baseUrl}/help`, { priority: "0.6" }));
 
         // ---------- Categories (dynamic) ----------
         const categories = await Category.find({}).select("slug updatedAt").lean();

@@ -123,6 +123,8 @@ seoKeywords = [
         canonicalUrl = "https://warmupexam.com/alltests";
     }
 
+    const robotsValue = search && !exam ? "noindex, follow" : "index, follow";
+
     res.render("test/alltest", {
         matchedListings,
         allListings,
@@ -139,7 +141,8 @@ seoKeywords = [
         title: seoTitle,
         description: seoDescription,
         keywords: seoKeywords,
-        canonicalUrl
+        canonicalUrl,
+        robots: robotsValue
     });
 };
 
@@ -165,18 +168,23 @@ export const searchTests = async (req, res) => {
 
 export const showTest = async (req, res) => {
     const { slug } = req.params;
-    let data = await Listing.findOne({ slug }).populate("contentBlocks");
+    const isOwner = req.user && req.user.role === "owner";
+
+    let query = { slug };
+    if (!isOwner) query.visibility = "public";
+    let data = await Listing.findOne(query).populate("contentBlocks");
 
     // Backward compatibility — agar purana ID-wala URL hit hua (Google index mein already hai)
     if (!data && mongoose.Types.ObjectId.isValid(slug)) {
-        data = await Listing.findById(slug).populate("contentBlocks");
+        let idQuery = { _id: slug };
+        if (!isOwner) idQuery.visibility = "public";
+        data = await Listing.findOne(idQuery).populate("contentBlocks");
         if (data) {
             return res.redirect(301, `/test/${data.slug}`);
         }
     }
 
     if (!data) throw new ExpressError(404, "Test Not Found");
-    const isOwner = req.user && req.user.role === "owner";
 
     const allBlocks = isOwner
         ? await ContentBlock.find().sort({ name: 1 })

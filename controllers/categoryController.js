@@ -2,7 +2,7 @@ import Category from "../models/Category.js";
 import Listing from "../models/listing.js";
 import Test from "../models/Test.js";
 import { getValidEnrollments } from "../utils/cleanupHelpers.js";
-
+import ExpressError from "../utils/ExpressError.js";
 
 // Helper: name se URL-friendly slug banata hai
 const generateSlug = (name) => {
@@ -88,9 +88,14 @@ export const editCategoryForm = async (req, res) => {
     const category = await Category.findById(req.params.id).lean();
 
     if (!category) {
-        req.flash && req.flash("error", "Category not found");
-        return res.redirect("/");
-    }
+    return res.status(404).render("pages/error", {
+        title: "Category Not Found | WarmupExam",
+        description: "The requested exam category could not be found.",
+        robots: "noindex, nofollow",
+        message: "Category not found",
+        layout: false,
+    });
+}
 
     res.render("pages/categories/editCategory", {
     category,
@@ -140,8 +145,7 @@ export const showCategory = async (req, res, next) => {
 
         const category = await Category.findOne({ slug }).lean();
         if (!category) {
-            req.flash && req.flash("error", "Category not found");
-            return res.redirect("/");
+        throw new ExpressError(404, "Category Not Found");
         }
 
         const isOwner = req.user && req.user.role === "owner";

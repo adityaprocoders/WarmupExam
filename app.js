@@ -223,24 +223,31 @@ app.use('/vendor/ckeditor5', express.static(path.join(__dirname, 'node_modules/c
 
 
 
-
 // ---------------- GLOBAL SEO ----------------
 app.use((req, res, next) => {
-    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+    const baseUrl = process.env.BASE_URL || "https://warmupexam.com";
+
+    const cleanPath = req.path === "/"
+        ? "/"
+        : req.path.replace(/\/+$/, "");
 
     res.locals.title = "WarmupExam";
     res.locals.description =
-        "Practice mock tests, PYQs and AI-powered exam preparation with WarmupExam. Attempt Live Tests with real exam pattern, timing & instant rank, plus Daily Warmup tests to strengthen your weak areas."
-    res.locals.currentPath = req.path;
+        "Practice mock tests, PYQs and AI-powered exam preparation with WarmupExam. Attempt Live Tests with real exam pattern, timing and instant rank, plus Daily Warmup tests to strengthen weak areas.";
+    
     res.locals.keywords =
          "WarmupExam, warmup exam, warmupexam, Warmup Exam, Free test Series,  Mock Test, Skill Test, BOARD EXAM, NIMCET, UPSC, SSC, Banking, Railway, JEE, NEET, live test, live mock test, daily warmup test";
 
+    res.locals.preloadHero = false;
+    
+    res.locals.currentPath = cleanPath;
+ 
     res.locals.ogImage = `${baseUrl}/images/og-banner.jpg`;
+  
+    res.locals.canonicalUrl = `${baseUrl}${cleanPath}`;
 
-    res.locals.canonicalUrl = `${baseUrl}${req.originalUrl}`;
-     
-     res.locals.safeJsonStringify = safeJsonStringify;
-     res.locals.adsensePublisherId = process.env.ADSENSE_PUBLISHER_ID;
+    res.locals.safeJsonStringify = safeJsonStringify;
+    res.locals.adsensePublisherId = process.env.ADSENSE_PUBLISHER_ID;
 
     next();
 });
