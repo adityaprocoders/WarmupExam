@@ -564,11 +564,15 @@ function closeSubmitModal() {
     document.getElementById('submitModal').classList.add('hidden');
 }
 
+let __submitInFlight = false; // ek time pe ek hi submit chale (double-click safety)
+
 async function doSubmitTest(submitType = "manual") {
-    if (testSubmitted) return;
-    testSubmitted = true;
+    if (testSubmitted || __submitInFlight) return;
+    __submitInFlight = true;
+
     clearInterval(timerInterval);
     document.getElementById('submitModal').classList.add('hidden');
+    document.getElementById('submitErrorModal').classList.add('hidden');
     if (document.fullscreenElement) document.exitFullscreen();
 
     const totalTimeSpent = HAS_SUBJECT_TABS
@@ -589,19 +593,54 @@ async function doSubmitTest(submitType = "manual") {
         sessionId: testData.sessionId
     };
 
+    // retry ke liye save kar lo taaki dobara sab kuch recompute na karna pade
+    window.__lastSubmitPayload = payload;
+    window.__lastSubmitType = submitType;
+
     try {
-        await fetch(`/api/attempt/${testData.id}/submit`, {
+        const res = await fetch(`/api/attempt/${testData.id}/submit`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
+
+        let result = {};
+        try { result = await res.json(); } catch (_) {}
+
+        if (!res.ok || !result.success) {
+            // Server ne bola "already submitted" -> ye actually safe case hai (pehla attempt already gaya tha)
+            if (res.status === 409) {
+                testSubmitted = true;
+                showSuccess();
+                return;
+            }
+            throw new Error(result.message || "Submit failed");
+        }
+
+        // ✅ Confirmed success — TABHI success dikhao
+        testSubmitted = true;
+        showSuccess();
+
     } catch (err) {
         console.error("Submit save error:", err);
+        __submitInFlight = false; // retry allow karo
+        document.getElementById('autoSubmitToast').classList.add('hidden');
+        document.getElementById('submitErrorModal').classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
     }
-    
+}
+
+function showSuccess() {
+    __submitInFlight = false;
     document.getElementById('autoSubmitToast').classList.add('hidden');
+    document.getElementById('submitErrorModal').classList.add('hidden');
     document.getElementById('successModal').classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
+}
+
+function retrySubmit() {
+    document.getElementById('submitErrorModal').classList.add('hidden');
+    doSubmitTest(window.__lastSubmitType || "manual");
 }
 
 function autoSubmit() {
@@ -690,6 +729,56 @@ document.addEventListener('click', function (e) {
         case 'close-success-modal':
             closeSuccessModal();
             break;
+        case 'retry-submit':
+    retrySubmit();
+    break;
+        case 'continue-test':
+    continueTest();
+    break;
+case 'exit-test':
+    exitTest();
+    break;
+    }
+});
+
+/* ================= BACK BUTTON TRAP (FIXED — history se real entry bhi hatata hai) ================= */
+let leavingIntentionally = false;
+
+function armGuard() {
+    history.pushState({ guard: true }, "", window.location.href);
+}
+
+armGuard(); // page load hote hi ek guard entry daal do
+
+window.addEventListener('popstate', function () {
+    if (testSubmitted || leavingIntentionally) return; // submit ya intentional exit -> normal jaane do
+
+    armGuard(); // turant re-arm karo taaki har back-press catch ho
+    document.getElementById('backConfirmModal').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+});
+
+function continueTest() {
+    document.getElementById('backConfirmModal').classList.add('hidden');
+    // guard already popstate handler me re-arm ho chuka, kuch aur nahi karna
+}
+
+function exitTest() {
+    document.getElementById('backConfirmModal').classList.add('hidden');
+    leavingIntentionally = true;
+
+    const landed = function () {
+        window.removeEventListener('popstate', landed);
+        window.location.replace(returnUrl);
+    };
+    window.addEventListener('popstate', landed);
+
+    history.go(-2); // guard entry + real AttemptPage entry, dono skip karo
+}
+
+window.addEventListener('pageshow', function (e) {
+    if (e.persisted && testSubmitted) {
+        window.location.replace(returnUrl);
     }
 });
 
@@ -700,3 +789,5 @@ document.addEventListener('input', function (e) {
         saveIntegerAnswer();
     }
 });
+
+

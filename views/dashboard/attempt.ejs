@@ -220,8 +220,7 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
     </div>
 
 </div>
-
-<!-- Submit Confirm Modal -->
+ 
 <!-- Submit Confirm Modal — sirf manual "Submit Test" click par khulta hai (auto-submit par nahi) -->
 <div id="submitModal" class="hidden fixed inset-0 bg-black/60 z-[90] flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-2xl">
@@ -257,6 +256,45 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
         <h3 class="font-bold text-lg mb-1">Test submitted successfully</h3>
         <p class="text-sm text-gray-500 mb-6">Your responses have been recorded.</p>
         <button data-action="close-success-modal" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold active:scale-95 transition">Close</button>
+    </div>
+</div>
+
+
+
+
+
+
+<div id="submitErrorModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
+    <h3 class="font-bold text-lg text-red-600 mb-2">Submit Failed</h3>
+    <p class="text-sm text-slate-600 mb-4">
+      Your answers are saved on this device. You're currently offline. We'll retry automatically when your connection is restored.
+    </p>
+    <button data-action="retry-submit" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-xl">
+      Retry Submit
+    </button>
+  </div>
+</div>
+
+
+<!-- Back Button Confirm Modal — jab candidate browser back button dabaye -->
+<div id="backConfirmModal" class="hidden fixed inset-0 bg-black/60 z-[95] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+        <div class="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="alert-triangle" class="w-8 h-8 text-amber-500"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-1">Leave the test?</h3>
+        <p class="text-sm text-gray-500 mb-6">
+            Your progress will not be saved if you exit now.
+        </p>
+        <div class="flex gap-3">
+            <button data-action="continue-test" class="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 font-bold text-sm active:scale-95 transition">
+                Continue Test
+            </button>
+            <button data-action="exit-test" class="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm active:scale-95 transition">
+                Exit Test
+            </button>
+        </div>
     </div>
 </div>
 

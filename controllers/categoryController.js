@@ -157,6 +157,8 @@ export const showCategory = async (req, res, next) => {
         const languages = await Listing.distinct("language", baseFilter);
         const exams = await Listing.distinct("exam", baseFilter);
 
+        const totalExamsCount = exams.filter(Boolean).length;
+
         const listings = await Listing.find(baseFilter)
             .sort({ createdAt: -1 })
             .limit(8)
@@ -195,6 +197,7 @@ export const showCategory = async (req, res, next) => {
             category,
             listings,
             totalListingsCount,
+            totalExamsCount,
             totalTestsCount,
             enrolledIds,
             enrolledExpiryMap,
