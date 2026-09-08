@@ -69,8 +69,8 @@ app.set('trust proxy', 1);
 // ---------------- FORCE HTTPS (production only) ----------------
 if (isProd) {
     app.use((req, res, next) => {
-        if (req.headers['x-forwarded-proto'] !== 'https') {
-            return res.redirect(`https://warmupexam.com${req.url}`);
+        if (!req.secure && req.headers['x-forwarded-proto'] !== 'https') {
+            return res.redirect(301, `https://warmupexam.com${req.url}`);
         }
         if (req.headers.host !== 'warmupexam.com') {
             return res.redirect(301, `https://warmupexam.com${req.url}`);

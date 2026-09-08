@@ -6,6 +6,7 @@ import slugify from "slugify";
 import { cascadeDeleteFolder, cascadeDeleteFile, cascadeDeleteTest } from "../utils/deleteHelpers.js";
 import Listing from "../models/listing.js";
 import User from "../models/usersShema.js";
+ 
 
 export const createItem = async (req, res) => {
     try {
@@ -57,28 +58,40 @@ export const getItem = async (req, res) => {
     res.json({ success: true, data: item });
 };
 
+
 export const updateItem = async (req, res) => {
     const { id } = req.params;
     const { type, title, icon, questions, marks, minutes } = req.body;
 
     let updatedItem;
 
-    if (type === "folder") {
-        const data = { title, icon: icon ? icon.trim() : "" };
-        updatedItem = await Folder.findByIdAndUpdate(id, data, { new: true });
+    try {
+        if (type === "folder") {
+            const data = { title, icon: icon ? icon.trim() : "" };
+            if (title) data.slug = slugify(title, { lower: true, strict: true });
+            updatedItem = await Folder.findByIdAndUpdate(id, data, { new: true });
 
-    } else if (type === "file") {
-        const data = { title };
-        if (icon && icon.trim() !== "") data.icon = icon.trim();
-        updatedItem = await File.findByIdAndUpdate(id, data, { new: true });
+        } else if (type === "file") {
+            const data = { title };
+            if (title) data.slug = slugify(title, { lower: true, strict: true });
+            if (icon && icon.trim() !== "") data.icon = icon.trim();
+            updatedItem = await File.findByIdAndUpdate(id, data, { new: true });
 
-    } else if (type === "test") {
-        updatedItem = await Test.findByIdAndUpdate(id, {
-            title, totalQuestions: questions, totalMarks: marks, duration: minutes
-        }, { new: true });
+        } else if (type === "test") {
+            updatedItem = await Test.findByIdAndUpdate(id, {
+                title, totalQuestions: questions, totalMarks: marks, duration: minutes
+            }, { new: true });
+        }
+
+        res.json({ success: true, data: updatedItem });
+
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(400).json({ success: false, message: "Is naam ka item is jagah pehle se maujood hai. Alag naam try karo." });
+        }
+        console.error("Update item error:", err);
+        res.status(500).json({ success: false, message: err.message || "Update karte waqt error aaya" });
     }
-
-    res.json({ success: true, data: updatedItem });
 };
 
 export const deleteItem = async (req, res) => {

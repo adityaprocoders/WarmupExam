@@ -230,7 +230,7 @@ if (isOwner) {
          aboutTestSeries,
         allListingsForCopy, // 👈 naya
         examGroups,         // 👈 naya
-        title: `${data.title} | WarmupExam`,
+        title: `${data.title}${data.language ? ` (${data.language})` : ''} | WarmupExam`,
         description: data.shortDescription
         ? `${data.shortDescription.replace(/\s+/g, ' ').trim()} Attempt Live Tests with real exam pattern & timing, Daily Warmup, PYQs and AIR Tests with instant rank & AI analysis.`
         : `Attempt ${data.title} Live Tests with real exam pattern, timing & marks distribution, instant leaderboard & rank, Daily Warmup, previous year questions and AIR tests on WarmupExam.`,
