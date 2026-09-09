@@ -442,9 +442,51 @@
 </section>
  
 
-<script src="/js/helpCenter.js" defer></script>
- 
 
+<script type="application/ld+json" nonce="<%= cspNonce %>">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Which payment methods do you accept?", "acceptedAnswer": { "@type": "Answer", "text": "We accept UPI, debit cards, and net banking/bank transfer through our secure payment gateway. All transactions are encrypted and processed instantly." } },
+    { "@type": "Question", "name": "I was charged but my plan isn't active. What do I do?", "acceptedAnswer": { "@type": "Answer", "text": "Contact our support team and share a screenshot of your payment confirmation. We'll verify the transaction and activate your plan promptly." } },
+    { "@type": "Question", "name": "Can I get a refund? What's the refund policy?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can apply for a refund within 7 days of purchase. Refunds are calculated on a pro-rata (day-wise) basis — the amount deducted depends on how many days you've used the plan out of its total validity. Reach out to support to start the process." } },
+    { "@type": "Question", "name": "Do you offer any discounts or coupon codes?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, prices and offers change periodically on a weekly/monthly and daily basis. New coupon codes are shared on our official Instagram account, @WarmupExam." } },
+    { "@type": "Question", "name": "Is my payment information secure?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, all your payment information is fully secure and processed through an encrypted payment gateway." } },
+    { "@type": "Question", "name": "How do I check my payment/transaction history?", "acceptedAnswer": { "@type": "Answer", "text": "Go to your Profile — your purchased test series and payment history are listed there." } },
+    { "@type": "Question", "name": "My payment failed but money got deducted from my account. What now?", "acceptedAnswer": { "@type": "Answer", "text": "Please wait 24 hours — if the payment went through successfully, your plan will activate automatically. If it doesn't, contact support and we'll resolve it based on your account details." } },
+    { "@type": "Question", "name": "Do you offer any free trial before purchasing?", "acceptedAnswer": { "@type": "Answer", "text": "There's no separate free trial, but we offer both free and paid test series, so you can try the free ones before deciding to purchase." } },
+    { "@type": "Question", "name": "Do prices differ for different exams (JEE, NEET, SSC, etc.)?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, pricing varies depending on the exam and test series you choose." } },
+    { "@type": "Question", "name": "Do mock tests have real negative marking?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, our mock tests follow the actual exam's negative marking pattern." } },
+    { "@type": "Question", "name": "Can I retake a test I've already attempted?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, you can attempt the same test multiple times." } },
+    { "@type": "Question", "name": "Are the mock tests based on the latest exam pattern?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, every test is designed according to the latest, real exam pattern." } },
+    { "@type": "Question", "name": "Can I switch between subjects/sections during a timed test?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, you can freely move between subjects and sections while the timer is running." } },
+    { "@type": "Question", "name": "Is there a practice mode without a timer?", "acceptedAnswer": { "@type": "Answer", "text": "No — every test on the platform runs within a fixed time period, similar to a real exam." } },
+    { "@type": "Question", "name": "How many mock tests are included in each exam category?", "acceptedAnswer": { "@type": "Answer", "text": "Free plans include around 10–30 tests, while paid plans include 100–300+ tests across topic-wise, subject-wise, section-wise, full-length, Daily Warm-Up, PYQ, and AI Rank tests." } },
+    { "@type": "Question", "name": "Can I take a test on mobile as well as desktop?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, you can take tests on both mobile and desktop." } },
+    { "@type": "Question", "name": "Are solutions/explanations provided after the test?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, detailed solutions and explanations are provided for both free and paid tests." } },
+    { "@type": "Question", "name": "How do I reset my password?", "acceptedAnswer": { "@type": "Answer", "text": "Go to the Login page and use the \"Forgot Password\" option to reset it." } },
+    { "@type": "Question", "name": "Can I use one account on multiple devices?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, your account works across multiple devices." } },
+    { "@type": "Question", "name": "How do I update my profile details (name, email, phone)?", "acceptedAnswer": { "@type": "Answer", "text": "Go to your Profile and use the Edit option to update your details." } },
+    { "@type": "Question", "name": "How do I delete my account permanently?", "acceptedAnswer": { "@type": "Answer", "text": "Go to your Profile, open Settings, and select \"Delete Account.\" Confirm via the popup notification to permanently delete your account." } },
+    { "@type": "Question", "name": "I'm not receiving OTP/verification emails. What do I do?", "acceptedAnswer": { "@type": "Answer", "text": "Please wait 5–10 minutes and try again. If you still don't receive it, check your spam folder or contact support." } },
+    { "@type": "Question", "name": "Can I change my registered email address?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, you can update your registered email from your Profile." } },
+    { "@type": "Question", "name": "Is there a mobile app, or is it website-only?", "acceptedAnswer": { "@type": "Answer", "text": "WarmupExam currently works as a website, optimized for both mobile and desktop browsers." } },
+    { "@type": "Question", "name": "How accurate is the Rank Predictor?", "acceptedAnswer": { "@type": "Answer", "text": "The Rank Predictor works only for full-length, PYQ, and AI Rank tests, and its estimate depends on the number of students who have attempted that test." } },
+    { "@type": "Question", "name": "Where can I download my Smart Performance Report?", "acceptedAnswer": { "@type": "Answer", "text": "Go to your Dashboard and use the \"Export\" option to download your report." } },
+    { "@type": "Question", "name": "What does the Weak Area Finder actually show?", "acceptedAnswer": { "@type": "Answer", "text": "Using AI, it analyzes all your attempted tests in depth and highlights exactly which topics and areas are weak, so you know what to focus on." } },
+    { "@type": "Question", "name": "How is my percentile/rank calculated?", "acceptedAnswer": { "@type": "Answer", "text": "Your rank and percentile are calculated based on the real exam pattern and how you performed relative to other students who attempted the same test." } },
+    { "@type": "Question", "name": "How often is my performance report updated?", "acceptedAnswer": { "@type": "Answer", "text": "Your report updates automatically right after every test you complete, and is available anytime from your Dashboard." } },
+    { "@type": "Question", "name": "Does the AI analysis track my improvement over time?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, the AI tracks your performance over time so you can see how you're improving test after test." } },
+    { "@type": "Question", "name": "Is WarmupExam free to use?", "acceptedAnswer": { "@type": "Answer", "text": "It's not entirely free — we offer both free and paid test series, so you can start for free and upgrade whenever you're ready." } },
+    { "@type": "Question", "name": "Which exams does WarmupExam currently support?", "acceptedAnswer": { "@type": "Answer", "text": "We support all major exam types, including defence, government, entrance, medical, engineering, and banking exams." } },
+    { "@type": "Question", "name": "What is \"Daily Warm-Up\"?", "acceptedAnswer": { "@type": "Answer", "text": "Daily Warm-Up is a short daily revision set of 20–30 questions, designed for quick practice — perfect for your morning routine." } },
+    { "@type": "Question", "name": "How can I contact support if my issue isn't listed here?", "acceptedAnswer": { "@type": "Answer", "text": "Write your issue under the relevant subject/topic in the Contact section, and our support team will get back to you." } }
+  ]
+}
+</script>
+
+<script src="/js/helpCenter.js" defer></script>
 
 
 

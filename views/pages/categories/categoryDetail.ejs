@@ -205,5 +205,17 @@
 </div>
  
 
+<script type="application/ld+json" nonce="<%= cspNonce %>">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://warmupexam.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Exam Categories", "item": "https://warmupexam.com/categories" },
+    { "@type": "ListItem", "position": 3, "name": <%- JSON.stringify(category.name) %>, "item": "https://warmupexam.com/categories/<%= category.slug %>" }
+  ]
+}
+</script>
+
 <script src="/js/categories/categoryDetail.js" defer></script>
 <script src="/js/enrollment.js" defer></script>

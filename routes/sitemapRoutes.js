@@ -1,7 +1,7 @@
 import express from "express";
 import Listing from "../models/listing.js";
 import Category from "../models/Category.js";
-import Ebook from "../models/Ebook.js";   // 👈 NAYA IMPORT
+import Ebook from "../models/Ebook.js";
 
 const router = express.Router();
 
@@ -14,22 +14,28 @@ function escapeXml(str) {
         .replace(/'/g, "&apos;");
 }
 
-function urlEntry(loc, { changefreq = "weekly", priority = "0.7", lastmod } = {}) {
+function urlEntry(loc, { changefreq = "weekly", priority = "0.7", lastmod, alternates = [] } = {}) {
+    const alternateLinks = alternates
+        .map(
+            (alt) =>
+                `\n<xhtml:link rel="alternate" hreflang="${escapeXml(alt.hreflang)}" href="${escapeXml(alt.href)}"/>`
+        )
+        .join("");
+
     return `<url>
 <loc>${escapeXml(loc)}</loc>${lastmod ? `\n<lastmod>${new Date(lastmod).toISOString().split("T")[0]}</lastmod>` : ""}
 <changefreq>${changefreq}</changefreq>
-<priority>${priority}</priority>
+<priority>${priority}</priority>${alternateLinks}
 </url>`;
 }
 
 router.get("/sitemap.xml", async (req, res) => {
     try {
-        res.set("Cache-Control", "public, max-age=3600");   // 👈 NAYA — 1 hour cache
+        res.set("Cache-Control", "public, max-age=3600");
 
         const baseUrl = "https://warmupexam.com";
         const urls = [];
 
-       
         urls.push(urlEntry(`${baseUrl}/`, { priority: "1.0" }));
         urls.push(urlEntry(`${baseUrl}/aboutUs`, { priority: "0.6" }));
         urls.push(urlEntry(`${baseUrl}/contactUs`, { priority: "0.6" }));
@@ -44,7 +50,6 @@ router.get("/sitemap.xml", async (req, res) => {
         urls.push(urlEntry(`${baseUrl}/categories`, { priority: "0.8" }));
         urls.push(urlEntry(`${baseUrl}/help`, { priority: "0.6" }));
 
-        // ---------- Categories (dynamic) ----------
         const categories = await Category.find({}).select("slug updatedAt").lean();
         categories.forEach((c) => {
             urls.push(
@@ -55,21 +60,56 @@ router.get("/sitemap.xml", async (req, res) => {
             );
         });
 
-        // ---------- Public listings (dynamic) ----------
-       const listings = await Listing.find({ visibility: "public" })
-    .select("slug updatedAt")
-    .lean();
-listings.forEach((l) => {
-    urls.push(
-        urlEntry(`${baseUrl}/test/${l.slug}`, {
-            priority: "0.8",
-            lastmod: l.updatedAt,
-        })
-    );
-});
+        const listings = await Listing.find({ visibility: "public" })
+            .select("slug updatedAt language exam title")
+            .lean();
 
-        // ---------- Public E-Books / Short Notes / PYQ / Handwritten Notes (dynamic) ----------
-        // 👇 POORA NAYA BLOCK
+        const listingsByExam = {};
+        listings.forEach((l) => {
+            if (!l.exam || !l.title) return;
+            const key = `${l.exam}||${l.title}`;
+            if (!listingsByExam[key]) listingsByExam[key] = [];
+            listingsByExam[key].push(l);
+        });
+
+        listings.forEach((l) => {
+            let alternates = [];
+            if (l.exam && l.title) {
+                const key = `${l.exam}||${l.title}`;
+                const group = listingsByExam[key] || [];
+
+                const pair = group.find(
+                    (other) =>
+                        other.slug !== l.slug &&
+                        other.language &&
+                        l.language &&
+                        other.language !== l.language
+                );
+
+                if (pair) {
+                    const hiListing = l.language === "Hindi" ? l : pair.language === "Hindi" ? pair : null;
+                    const enListing = l.language === "English" ? l : pair.language === "English" ? pair : null;
+
+                    if (hiListing) {
+                        alternates.push({ hreflang: "hi", href: `${baseUrl}/test/${hiListing.slug}` });
+                    }
+                    if (enListing) {
+                        alternates.push({ hreflang: "en", href: `${baseUrl}/test/${enListing.slug}` });
+                    }
+                    const defaultSlug = enListing ? enListing.slug : l.slug;
+                    alternates.push({ hreflang: "x-default", href: `${baseUrl}/test/${defaultSlug}` });
+                }
+            }
+
+            urls.push(
+                urlEntry(`${baseUrl}/test/${l.slug}`, {
+                    priority: "0.8",
+                    lastmod: l.updatedAt,
+                    alternates,
+                })
+            );
+        });
+
         const ebooks = await Ebook.find({ visibility: "public" })
             .select("slug updatedAt")
             .lean();
@@ -83,7 +123,7 @@ listings.forEach((l) => {
         });
 
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls.join("\n")}
 </urlset>`;
 

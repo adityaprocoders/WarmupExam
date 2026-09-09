@@ -196,35 +196,21 @@
 
 
 
-<script type="application/ld+json">
+
+<script type="application/ld+json" nonce="<%= cspNonce %>">
 {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Is WarmupExam free to use?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Start with a free mock test — no card required. Love the experience? Unlock unlimited Topic-wise, Section-wise, Full-Length, AIR, PYQ, and AI-powered mock tests with a premium plan."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Does the mock actually apply negative marking?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Yes, WarmupExam applies true negative marking exactly as per the actual exam pattern."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Can I attempt on my phone?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Yes, WarmupExam works smoothly on phone, tablet and laptop."
-      }
-    }
+    { "@type": "Question", "name": "Is WarmUpExam free to use?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Many mock tests are completely free. Premium plans unlock AI-powered analysis, custom mock generation and advanced reports." } },
+    { "@type": "Question", "name": "Does the mock actually apply negative marking?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — exactly as configured for each subject in that series. Positive and negative marks are set once per subject at series level and applied automatically to every question, so your score reflects the real exam's marking scheme, not a rough estimate." } },
+    { "@type": "Question", "name": "Can I attempt on my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, the exam interface — timer, OMR palette, fullscreen mode — works on phone, tablet and laptop. For a full-length mock we'd still recommend a laptop or tablet, purely for screen space, but nothing is phone-restricted." } },
+    { "@type": "Question", "name": "How does AI Analysis work?", "acceptedAnswer": { "@type": "Answer", "text": "After every mock, our AI analyzes your score, accuracy, speed, weak topics, strong topics, expected rank and gives personalized improvement suggestions." } },
+    { "@type": "Question", "name": "What happens if my internet drops mid-test?", "acceptedAnswer": { "@type": "Answer", "text": "Your responses are saved every time you hit Save & Next or Mark for Review, so a brief drop won't wipe your progress. We do recommend a stable connection for the full duration, since the timer keeps running server-side." } },
+    { "@type": "Question", "name": "How is the rank predicted?", "acceptedAnswer": { "@type": "Answer", "text": "It's based on your accuracy and speed trend across your last 5 mocks in that exam category, compared against the overall attempt pool. Treat it as a directional signal for where you stand, not a guaranteed outcome." } },
+    { "@type": "Question", "name": "Can I practice only weak topics?", "acceptedAnswer": { "@type": "Answer", "text": "Absolutely. WarmUpExam automatically identifies your weak areas and creates focused practice tests." } },
+    { "@type": "Question", "name": "Can I get a refund if it's not for me?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every paid batch carries a 7-day money-back guarantee from the date of purchase — no questions asked. Write to us from Contact Us and it's processed within 3–5 working days." } },
+    { "@type": "Question", "name": "Do batches expire?", "acceptedAnswer": { "@type": "Answer", "text": "A batch stays valid until the exam date it's built around, so you're not racing a subscription clock — just the actual exam." } }
   ]
 }
 </script>

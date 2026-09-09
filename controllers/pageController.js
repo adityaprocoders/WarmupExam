@@ -53,9 +53,9 @@ categories.forEach(c => {
     preloadHero: true,
     title: "WarmupExam – India's Smartest Mock Test & Exam Practice Platform",
     description:
-    "Practice mock tests, Attempt Live Tests with real exam pattern & instant rank, Daily Warmup, PYQs & get AI-powered performance analysis and rank prediction for SSC, NIMCET, Defence, JEE, NEET, UPSC & more on WarmupExam.",
+    "Practice mock tests, PYQs & Live Tests with real exam pattern, instant rank and AI-powered analysis for SSC, Defence, JEE, NEET, UPSC, CUET & more on WarmupExam.",
     keywords:
-        "WarmupExam, warmupexam, live test, live mock test, daily warmup test, mock test, AIR mock test, Skill test, AIR Rank, online mock test India, CUET mock test, UPSC mock test, JEE mock test, SSC mock test, GATE mock test, CAT mock test, NEET mock test, rank predictor, negative marking test series, AI performance analysis, previous year questions PYQ",
+        "WarmupExam, warmupexam, warmup exam, Warmup Exam live test, live mock test, daily warmup test, mock test, AIR mock test, Skill test, AIR Rank, online mock test India, Weak Area Finder, Rank Predictor, UG & PG Entrance Exams mock test, Civil services & PSC Exam mock test, SSC Exams mock test, negative marking test series,Smart Analysis Detailed Reports &  Weak Area Analysis, previous year questions PYQ",
     canonicalUrl: "https://warmupexam.com/"
 });
 };

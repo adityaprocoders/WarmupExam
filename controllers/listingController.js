@@ -186,6 +186,17 @@ export const showTest = async (req, res) => {
 
     if (!data) throw new ExpressError(404, "Test Not Found");
 
+
+        // 🔍 Automatic alternate-language detection — same title + same exam + different language
+    const alternateListing = await Listing.findOne({
+        _id: { $ne: data._id },
+        title: data.title,
+        exam: data.exam,
+        language: { $ne: data.language },
+        visibility: "public"
+    }).select("slug language").lean();
+
+
     const allBlocks = isOwner
         ? await ContentBlock.find().sort({ name: 1 })
         : [];
@@ -228,8 +239,9 @@ if (isOwner) {
         totalTestCount,
         allBlocks,
          aboutTestSeries,
-        allListingsForCopy, // 👈 naya
-        examGroups,         // 👈 naya
+        allListingsForCopy, 
+        examGroups,    
+        alternateListing,     
         title: `${data.title}${data.language ? ` (${data.language})` : ''} | WarmupExam`,
         description: data.shortDescription
         ? `${data.shortDescription.replace(/\s+/g, ' ').trim()} Attempt Live Tests with real exam pattern & timing, Daily Warmup, PYQs and AIR Tests with instant rank & AI analysis.`
