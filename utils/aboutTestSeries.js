@@ -5,12 +5,13 @@ const FIXED_TOP = [
         title: "Live Test",
         text: "Attempt tests based on the actual exam pattern with real timing and marks distribution, then get instant analysis with leaderboard and rank — available for 24 hours.",
     },
-    {
-        icon: "fa-solid fa-fire",
-        title: "Daily Warmup",
-        text: "Get 10 questions every day for 10 minutes, personalized based on your weak areas and previously wrong question topics.",
-    },
 ];
+
+const DAILY_WARMUP_ITEM = {
+    icon: "fa-solid fa-fire",
+    title: "Daily Warmup",
+    text: "Get 10 questions every day for 10 minutes, personalized based on your weak areas and previously wrong question topics.",
+};
 
 const FIXED_BOTTOM = [
     {
@@ -25,7 +26,7 @@ const FIXED_BOTTOM = [
     },
 ];
 
-export async function buildAboutTestSeries(listingId, Section, Test) {
+export async function buildAboutTestSeries(listingId, Section, Test, listingType) {
     const sections = await Section.find({ listing: listingId }).sort({ order: 1 });
 
     const testCounts = await Test.aggregate([
@@ -41,5 +42,9 @@ export async function buildAboutTestSeries(listingId, Section, Test) {
         text: `${countMap[String(sec._id)] || 0} ${sec.unit}`,
     }));
 
-    return [...FIXED_TOP, ...dynamicItems, ...FIXED_BOTTOM];
+    const topItems = listingType === "Paid"
+        ? [...FIXED_TOP, DAILY_WARMUP_ITEM]
+        : [...FIXED_TOP];
+
+    return [...topItems, ...dynamicItems, ...FIXED_BOTTOM];
 }

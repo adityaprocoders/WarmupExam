@@ -58,6 +58,10 @@ export async function getDashboardRedirectUrl(user) {
     return target && target.slug ? `/series/${target.slug}` : null;
 }
 
+export function isPaidListing(listing) {
+    return !!(listing && listing.type === "Paid");
+}
+
 export function isLoggedIn(req, res, next) {
     if (req.isAuthenticated()) {
         return next();

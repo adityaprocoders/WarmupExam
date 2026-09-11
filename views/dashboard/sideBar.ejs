@@ -143,6 +143,24 @@ overflow-y-auto">
 </div>
 
 
+<%
+const iconColorMap = {
+    "fa-solid fa-book": { bg: "bg-blue-50", text: "text-blue-600" },
+    "fa-solid fa-folder": { bg: "bg-amber-50", text: "text-amber-600" },
+    "fa-solid fa-code": { bg: "bg-purple-50", text: "text-purple-600" },
+    "fa-solid fa-brain": { bg: "bg-pink-50", text: "text-pink-600" },
+    "fa-solid fa-fire": { bg: "bg-red-50", text: "text-red-600" },
+    "fa-solid fa-bolt": { bg: "bg-orange-50", text: "text-orange-600" },
+    "fa-solid fa-star": { bg: "bg-yellow-50", text: "text-yellow-600" },
+    "fa-solid fa-graduation-cap": { bg: "bg-indigo-50", text: "text-indigo-600" },
+    "fa-solid fa-chart-line": { bg: "bg-emerald-50", text: "text-emerald-600" },
+    "fa-solid fa-laptop-code": { bg: "bg-cyan-50", text: "text-cyan-600" },
+    "fa-solid fa-file-lines": { bg: "bg-teal-50", text: "text-teal-600" },
+    "fa-solid fa-bullseye": { bg: "bg-rose-50", text: "text-rose-600" },
+    "fa-solid fa-trophy": { bg: "bg-amber-50", text: "text-amber-600" }
+};
+%>
+
    <ul class="space-y-2.5">
 
     <!-- Live Test -->
@@ -168,7 +186,8 @@ overflow-y-auto">
 </li>
 
 
-    <!-- Daily Warmup (static, sections loop se pehle) -->
+<% if (listing.type === "Paid") { %>
+<!-- Daily Warmup (static, sections loop se pehle) -->
 <li class="rounded-2xl overflow-hidden transition-all duration-300 shadow-lg shadow-orange-200/60
     <%= (typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)
         ? 'scale-[1.02] bg-indigo-600'
@@ -186,12 +205,14 @@ overflow-y-auto">
         </span>
     </a>
 </li>
+<% } %>
 
 <% sections.forEach(section => { %>
     <%
-        const isActive = (currentSection && currentSection._id.toString() === section._id.toString());
-        const isFeatured = section.featured; // future-proof: agar model me flag ho
-    %>
+    const isActive = (currentSection && currentSection._id.toString() === section._id.toString());
+    const isFeatured = section.featured;
+    const iconStyle = iconColorMap[section.icon] || { bg: "bg-indigo-50", text: "text-indigo-600" };
+%>
 
     <li
         id="section-item-<%= section._id %>"
@@ -212,16 +233,19 @@ overflow-y-auto">
 
             <!-- Clickable Section -->
             <a href="/series/<%= listing.slug %>?section=<%= section._id %>"
-               class="flex items-center gap-3 flex-1 min-w-0">
-                <i class="<%= section.icon %> text-lg shrink-0
-                    <%= isFeatured ? 'text-white' : (isActive ? 'text-white' : 'text-slate-500') %>"></i>
+   class="flex items-center gap-3 flex-1 min-w-0">
+    <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+        <%= (isFeatured || isActive) ? 'bg-white/20' : iconStyle.bg %>">
+        <i class="<%= section.icon %> text-sm
+            <%= isFeatured ? 'text-white' : (isActive ? 'text-white' : iconStyle.text) %>"></i>
+    </span>
 
-                <span id="title-text-<%= section._id %>"
-                      class="font-semibold text-sm truncate
-                      <%= isFeatured ? 'text-white' : (isActive ? 'text-white' : 'text-slate-700') %>">
-                    <%= section.title %>
-                </span>
-            </a>
+    <span id="title-text-<%= section._id %>"
+          class="font-semibold text-sm truncate
+          <%= isFeatured ? 'text-white' : (isActive ? 'text-white' : 'text-slate-700') %>">
+        <%= section.title %>
+    </span>
+</a>
 
             <!-- Hidden Edit Form -->
             <form

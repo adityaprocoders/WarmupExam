@@ -229,7 +229,7 @@ if (isOwner) {
     const { enrolledIds } = getValidEnrollments(req.user);
 
     const totalTestCount = await Test.countDocuments({ listing: data._id }); 
-    const aboutTestSeries = await buildAboutTestSeries(data._id, Section, Test); 
+    const aboutTestSeries = await buildAboutTestSeries(data._id, Section, Test, data.type); 
 
 
     res.render("test/show", {

@@ -1,7 +1,9 @@
+import Listing from "../models/listing.js";
 import Test from "../models/Test.js";
 import ExpressError from "../utils/ExpressError.js";
-import { checkEnrollment } from "../utils/authHelpers.js";
-import { cleanupExpiredBatchData } from "../utils/cleanupHelpers.js";   // 👈 NAYA
+import { checkEnrollment, isPaidListing } from "../utils/authHelpers.js";
+import { cleanupExpiredBatchData } from "../utils/cleanupHelpers.js";
+
 
 export const checkTestAccess = async (req, res, next) => {
     try {
@@ -12,6 +14,13 @@ export const checkTestAccess = async (req, res, next) => {
 
         // 👇 CHANGED: purana behaviour bilkul waisa hi — pehle enrollment check
         if (checkEnrollment(req, test.listing)) {
+            if (test.isDailyWarmup) {
+                const listing = await Listing.findById(test.listing).select("type slug");
+                if (!isPaidListing(listing)) {
+                    req.flash("error", "Daily Warmup is available only for paid batches.");
+                    return res.redirect(`/test/${test.listing}`);
+                }
+            }
             req.test = test;
             return next();
         }

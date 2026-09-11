@@ -2,7 +2,7 @@ import Listing from "../models/listing.js";
 import Section from "../models/Section.js";
 import Attempt from "../models/TestAttempt.js";
 import ExpressError from "../utils/ExpressError.js";
-import { checkEnrollment } from "../utils/authHelpers.js";
+import { checkEnrollment, isPaidListing } from "../utils/authHelpers.js";
 import { findOrCreateDailyWarmupTest } from "../utils/dailyWarmupGenerator.js";
 
 export const showDailyWarmupSummary = async (req, res) => {
@@ -13,6 +13,12 @@ export const showDailyWarmupSummary = async (req, res) => {
 
     if (!checkEnrollment(req, listing._id)) {
         req.flash("error", "You must be enrolled in this batch to access this page.");
+        return res.redirect(`/test/${listing._id}`);
+    }
+
+    // 🔒 Daily Warmup sirf Paid listing ke liye available hai
+    if (!isPaidListing(listing)) {
+        req.flash("error", "Daily Warmup is available only for paid batches.");
         return res.redirect(`/test/${listing._id}`);
     }
 
@@ -28,8 +34,6 @@ export const showDailyWarmupSummary = async (req, res) => {
         warmupTest,
         attempted: !!existingAttempt,
         attemptId: existingAttempt ? existingAttempt._id : null,
-
-        // SEO — ye private/user-specific page hai, isliye index nahi hona chahiye
         title: `Daily Warmup | ${listing.title} | WarmupExam`,
         description: `Attempt your personalized Daily Warmup — 10 AI-selected questions from your weak areas, refreshed every day.`,
         robots: "noindex, nofollow"

@@ -1,7 +1,7 @@
 import Test from "../models/Test.js";
 import TestQuestion from "../models/TestQuestion.js";
 import Attempt from "../models/TestAttempt.js";
-import Question from "../models/Question.js"; // apna actual path check kar lena
+import Question from "../models/Question.js";
 import Listing from "../models/listing.js";
 
 export function getWarmupDayKey(date = new Date()) {
@@ -57,10 +57,14 @@ export function evaluateAnswer(q, a) {
 async function computeWeakTopicsAndProblemQuestions(userId, listingId) {
     const allTests = await Test.find({ listing: listingId, isDailyWarmup: { $ne: true } }).select("_id");
     const testIds = allTests.map(t => t._id);
-    if (testIds.length === 0) return { weakTopics: [], wrongQuestionIds: [], skippedQuestionIds: [] };
+    if (testIds.length === 0) {
+        return { weakTopics: [], wrongQuestionIds: [], skippedQuestionIds: [], listingTestIds: testIds };
+    }
 
     const attempts = await Attempt.find({ test: { $in: testIds }, user: userId }).populate("answers.question");
-    if (attempts.length === 0) return { weakTopics: [], wrongQuestionIds: [], skippedQuestionIds: [] };
+    if (attempts.length === 0) {
+        return { weakTopics: [], wrongQuestionIds: [], skippedQuestionIds: [], listingTestIds: testIds };
+    }
 
     const attemptTestIds = [...new Set(attempts.map(a => String(a.test)))];
     const tqMappings = await TestQuestion.find({ test: { $in: attemptTestIds } });
@@ -107,7 +111,7 @@ async function computeWeakTopicsAndProblemQuestions(userId, listingId) {
     });
     weakTopics.sort((a, b) => a.pct - b.pct);
 
-    return { weakTopics, wrongQuestionIds: [...wrongQuestionIds], skippedQuestionIds: [...skippedQuestionIds] };
+    return { weakTopics, wrongQuestionIds: [...wrongQuestionIds], skippedQuestionIds: [...skippedQuestionIds], listingTestIds: testIds };
 }
 
 export async function findOrCreateDailyWarmupTest(userId, listingId) {
@@ -122,27 +126,53 @@ export async function findOrCreateDailyWarmupTest(userId, listingId) {
     const seed = seedToInt(`${userId}-${listingId}-${dayKey}`);
     const rng = mulberry32(seed);
     const listing = await Listing.findById(listingId).select("language").lean();
-const listingLanguage = listing?.language || "English";
+    const listingLanguage = listing?.language || "English";
 
-
-
-    const { weakTopics, wrongQuestionIds, skippedQuestionIds } =
+    const { weakTopics, wrongQuestionIds, skippedQuestionIds, listingTestIds } =
         await computeWeakTopicsAndProblemQuestions(userId, listingId);
 
     const priorityIds = [...new Set([...wrongQuestionIds, ...skippedQuestionIds])];
 
+    // ✅ CHANGED: ab Question collection seedha nahi, TestQuestion se hoke — isi listing ke
+    // tests me jo questions hain unhi me se milega, aur subject/topic bhi authoritative (TestQuestion wala) match hoga.
     let extraQuestions = [];
-    if (weakTopics.length > 0) {
+    if (weakTopics.length > 0 && listingTestIds.length > 0) {
         const topWeak = weakTopics.slice(0, 10);
-        extraQuestions = await Question.find({
+        const matchingTQ = await TestQuestion.find({
+            test: { $in: listingTestIds },
             $or: topWeak.map(w => ({ subject: w.subject, topic: w.topic })),
-            _id: { $nin: priorityIds }
-        }).select("_id subject topic subTopic").lean();
+            question: { $nin: priorityIds }
+        }).select("question subject topic subTopic").lean();
+
+        const seen = new Set();
+        extraQuestions = matchingTQ
+            .filter(tq => {
+                const key = String(tq.question);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            })
+            .map(tq => ({ _id: tq.question, subject: tq.subject, topic: tq.topic, subTopic: tq.subTopic }));
     }
 
     let pool = [...priorityIds.map(id => ({ _id: id })), ...extraQuestions];
-    if (pool.length === 0) {
-        pool = await Question.find({}).select("_id subject topic subTopic").limit(100).lean();
+
+    // ✅ CHANGED: fallback bhi ab isi listing ke tests tak scoped hai — poore DB se random nahi.
+    if (pool.length === 0 && listingTestIds.length > 0) {
+        const allListingTQ = await TestQuestion.find({ test: { $in: listingTestIds } })
+            .select("question subject topic subTopic")
+            .limit(100)
+            .lean();
+
+        const seenFallback = new Set();
+        pool = allListingTQ
+            .filter(tq => {
+                const key = String(tq.question);
+                if (seenFallback.has(key)) return false;
+                seenFallback.add(key);
+                return true;
+            })
+            .map(tq => ({ _id: tq.question, subject: tq.subject, topic: tq.topic, subTopic: tq.subTopic }));
     }
 
     const chosen = seededShuffle(pool, rng).slice(0, 10);
@@ -155,22 +185,22 @@ const listingLanguage = listing?.language || "English";
     const POSITIVE_MARKS = 4, NEGATIVE_MARKS = 1;
 
     test = await Test.create({
-    title: `Daily Warmup — ${dayKey}`,
-    listing: listingId,
-    parentType: "section",
-    visibility: "private",
-    timeStrategy: "total",
-    duration: 10,
-    totalQuestions: chosenIds.length,
-    totalMarks: chosenIds.length * POSITIVE_MARKS,
-    languageMode: "single",
-    languages: [listingLanguage],
-    showLanguage: "all",
-    isDailyWarmup: true,
-    dailyWarmupUser: userId,
-    dailyWarmupDayKey: dayKey,
-    dailyWarmupExpiresAt: getWarmupExpiryDate(dayKey)
-});
+        title: `Daily Warmup — ${dayKey}`,
+        listing: listingId,
+        parentType: "section",
+        visibility: "private",
+        timeStrategy: "total",
+        duration: 10,
+        totalQuestions: chosenIds.length,
+        totalMarks: chosenIds.length * POSITIVE_MARKS,
+        languageMode: "single",
+        languages: [listingLanguage],
+        showLanguage: "all",
+        isDailyWarmup: true,
+        dailyWarmupUser: userId,
+        dailyWarmupDayKey: dayKey,
+        dailyWarmupExpiresAt: getWarmupExpiryDate(dayKey)
+    });
 
     const tqDocs = chosenIds.map((qid, idx) => {
         const q = qMap[String(qid)];
