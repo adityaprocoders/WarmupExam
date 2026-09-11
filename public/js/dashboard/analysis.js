@@ -264,7 +264,7 @@ function buildSolutionCard(sol) {
                 ${buildDifficultyBadge(sol.difficulty)}
             </div>
 
-            ${sol.questionText ? `<p class="text-sm font-semibold text-gray-800 mb-3 katex-content">${escapeHtml(sol.questionText)}</p>` : ''}
+            ${sol.questionText ? `<p class="text-sm font-semibold text-gray-800 mb-3 katex-content" style="white-space: pre-wrap;">${escapeHtml(sol.questionText)}</p>` : ''}
             ${sol.questionImage ? `
                 <div class="mb-4 w-full flex justify-center bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
                     <img
@@ -281,7 +281,7 @@ function buildSolutionCard(sol) {
                 ${buildOptionsHtml(sol)}
             </div>
 
-            ${sol.solutionText ? `<div class="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg mt-3 katex-content"><strong class="text-gray-700">Solution:</strong> ${escapeHtml(sol.solutionText)}</div>` : ''}
+            ${sol.solutionText ? `<div class="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg mt-3 katex-content" style="white-space: pre-wrap;"><strong class="text-gray-700">Solution:</strong> ${escapeHtml(sol.solutionText)}</div>` : ''}
             ${sol.solutionImage ? `<img src="${escapeAttr(sol.solutionImage)}" alt="solution image" class="max-w-full rounded-lg mt-3 border border-gray-100" loading="lazy" />` : ''}
 
             <div class="flex justify-end mt-4">

@@ -1,4 +1,4 @@
-sitemap: https://warmupexam.com/sitemap.xml
+Sitemap: https://warmupexam.com/sitemap.xml
 
 User-agent: *
 Allow: /
