@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Listing from "../models/listing.js";
 import Section from "../models/Section.js";
 import Test from "../models/Test.js";
@@ -46,15 +47,15 @@ function pickSingleSource(q) {
     return withContent || q.translations[0] || q;
 }
 
-async function getOrCreateQuestionId(questionPayload, hash, currentQuestionId = null) {
+async function getOrCreateQuestionId(questionPayload, hash, currentQuestionId = null, session = null) {
     questionPayload.contentHash = hash;
 
     if (currentQuestionId) {
-        const clash = await Question.findOne({ contentHash: hash, _id: { $ne: currentQuestionId } });
+        const clash = await Question.findOne({ contentHash: hash, _id: { $ne: currentQuestionId } }).session(session);
         if (clash) {
             return clash._id;
         }
-        await Question.findByIdAndUpdate(currentQuestionId, questionPayload);
+        await Question.findByIdAndUpdate(currentQuestionId, questionPayload, { session });
         return currentQuestionId;
     }
 
@@ -62,12 +63,12 @@ async function getOrCreateQuestionId(questionPayload, hash, currentQuestionId = 
         const doc = await Question.findOneAndUpdate(
             { contentHash: hash },
             { $setOnInsert: questionPayload },
-            { upsert: true, new: true }
+            { upsert: true, new: true, session }
         );
         return doc._id;
     } catch (err) {
         if (err.code === 11000) {
-            const existing = await Question.findOne({ contentHash: hash });
+            const existing = await Question.findOne({ contentHash: hash }).session(session);
             return existing._id;
         }
         throw err;
@@ -207,66 +208,81 @@ if (testLanguageMode !== "multiple") {
         publishAt: visibility === "scheduled" ? new Date(body.publishAt) : null
     });
 
-    const savedTest = await testDoc.save();
+    const session = await mongoose.startSession();
+    let savedTest;
 
-    // 👇 CHANGED: poora block naya — dedup + mapping me subject/topic
-    if (Array.isArray(body.questions) && body.questions.length > 0) {
-        const mappingDocs = [];
+    try {
+        await session.withTransaction(async () => {
+            savedTest = (await testDoc.save({ session }));
 
-        for (let i = 0; i < body.questions.length; i++) {
-            const q = body.questions[i];
-            const marks = getMarksForSubject(subjectsConfig, q.subject);
-            const qLanguageMode = resolveQuestionLanguageMode(q, testLanguageMode);
+            if (Array.isArray(body.questions) && body.questions.length > 0) {
+                const mappingDocs = [];
+                const usedQuestionIds = new Set();
 
-            const questionPayload = {
-                listing: body.listingId,
-                subject: q.subject,
-                type: q.type || "mcq",
-                section: q.section || "",
-                topic: q.topic,
-                subTopic: q.subTopic || "",
-                difficulty: q.difficulty || "Medium",
-                languageMode: qLanguageMode,
-                correctAnswers: q.correctAnswers || [],
-                numericAnswer: q.numericAnswer ?? null
-            };
+                for (let i = 0; i < body.questions.length; i++) {
+                    const q = body.questions[i];
+                    const marks = getMarksForSubject(subjectsConfig, q.subject);
+                    const qLanguageMode = resolveQuestionLanguageMode(q, testLanguageMode);
 
-            if (qLanguageMode === "multiple") {
-                questionPayload.translations = (q.translations || []).map(t => ({
-                    lang: t.lang,
-                    question: t.question || "",
-                    questionImage: t.questionImage || null,
-                    options: normalizeOptions(t.options),
-                    solution: t.solution || { text: "", image: null }
-                }));
-                    questionPayload.question = "";
-    questionPayload.questionImage = q.questionImage || null;
-    questionPayload.options = normalizeOptions(q.options);
-    questionPayload.solution = { text: "", image: q.solution?.image || null };
-} else {
-                const singleSource = pickSingleSource(q);
-                questionPayload.question = singleSource.question || q.question || "";
-                questionPayload.questionImage = singleSource.questionImage || q.questionImage || null;
-                questionPayload.options = normalizeOptions(singleSource.options || q.options);
-                questionPayload.solution = singleSource.solution || q.solution || { text: "", image: null };
-                questionPayload.translations = [];
+                    const questionPayload = {
+                        listing: body.listingId,
+                        subject: q.subject,
+                        type: q.type || "mcq",
+                        section: q.section || "",
+                        topic: q.topic,
+                        subTopic: q.subTopic || "",
+                        difficulty: q.difficulty || "Medium",
+                        languageMode: qLanguageMode,
+                        correctAnswers: q.correctAnswers || [],
+                        numericAnswer: q.numericAnswer ?? null
+                    };
+
+                    if (qLanguageMode === "multiple") {
+                        questionPayload.translations = (q.translations || []).map(t => ({
+                            lang: t.lang,
+                            question: t.question || "",
+                            questionImage: t.questionImage || null,
+                            options: normalizeOptions(t.options),
+                            solution: t.solution || { text: "", image: null }
+                        }));
+                        questionPayload.question = "";
+                        questionPayload.questionImage = q.questionImage || null;
+                        questionPayload.options = normalizeOptions(q.options);
+                        questionPayload.solution = { text: "", image: q.solution?.image || null };
+                    } else {
+                        const singleSource = pickSingleSource(q);
+                        questionPayload.question = singleSource.question || q.question || "";
+                        questionPayload.questionImage = singleSource.questionImage || q.questionImage || null;
+                        questionPayload.options = normalizeOptions(singleSource.options || q.options);
+                        questionPayload.solution = singleSource.solution || q.solution || { text: "", image: null };
+                        questionPayload.translations = [];
+                    }
+
+                    const hash = computeContentHash(questionPayload);
+                    const questionId = await getOrCreateQuestionId(questionPayload, hash, null, session);
+
+                    const idStr = String(questionId);
+                    if (usedQuestionIds.has(idStr)) {
+                        throw new ExpressError(400, `Question ${i + 1} ka content kisi pehle wale question se hubahu (identical) match kar raha hai. Dono me thoda sa farak (text me change) karo taaki wo alag pehchane jaayein.`);
+                    }
+                    usedQuestionIds.add(idStr);
+
+                    mappingDocs.push({
+                        test: savedTest._id, question: questionId,
+                        order: i + 1,
+                        subject: q.subject,
+                        topic: q.topic,
+                        subTopic: q.subTopic || "",
+                        section: q.section || "",
+                        positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks
+                    });
+                }
+
+                await TestQuestion.insertMany(mappingDocs, { session });
             }
-
-                        const hash = computeContentHash(questionPayload);
-            const questionId = await getOrCreateQuestionId(questionPayload, hash);
-
-            mappingDocs.push({
-                test: savedTest._id, question: questionId,
-                order: i + 1,
-                subject: q.subject,             // 👈 NAYA
-                topic: q.topic,                 // 👈 NAYA
-                subTopic: q.subTopic || "",     // 👈 NAYA
-                section: q.section || "",       // 👈 NAYA
-                positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks
-            });
-        }
-
-        await TestQuestion.insertMany(mappingDocs);
+        });
+    } finally {
+        await session.endSession();
     }
 
     res.status(200).json({ success: true, message: "Test aur questions DB me save ho gaye", testId: savedTest._id });
@@ -366,22 +382,22 @@ export const updateTestBuilder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Multiple language mode me kam se kam do languages choose karo" });
         }
 
-let testShowLanguage = body.showLanguage && String(body.showLanguage).trim()
-    ? String(body.showLanguage).trim()
-    : (existingTest.showLanguage || "all");
+        let testShowLanguage = body.showLanguage && String(body.showLanguage).trim()
+            ? String(body.showLanguage).trim()
+            : (existingTest.showLanguage || "all");
 
-if (testLanguageMode !== "multiple") {
-    testShowLanguage = "all";
-} else if (testShowLanguage !== "all" && !testLanguages.includes(testShowLanguage)) {
-    testShowLanguage = "all";
-}
+        if (testLanguageMode !== "multiple") {
+            testShowLanguage = "all";
+        } else if (testShowLanguage !== "all" && !testLanguages.includes(testShowLanguage)) {
+            testShowLanguage = "all";
+        }
 
         if (Array.isArray(body.questions)) {
             for (let i = 0; i < body.questions.length; i++) {
                 const q = body.questions[i];
 
                 if (!q.subject || !q.subject.trim()) {
-                 return res.status(400).json({ success: false, message: `Question ${i + 1}: Subject choose karna zaroori hai` });
+                    return res.status(400).json({ success: false, message: `Question ${i + 1}: Subject choose karna zaroori hai` });
                 }
 
                 if (!q.topic || !q.topic.trim()) {
@@ -390,42 +406,34 @@ if (testLanguageMode !== "multiple") {
 
                 const qMode = resolveQuestionLanguageMode(q, testLanguageMode);
 
-if (qMode === "multiple") {
-
-    if (!Array.isArray(q.translations) || q.translations.length === 0) {
-        return res.status(400).json({
-            success: false,
-            message: `Question ${i + 1}: har language ka content dena zaroori hai`
-        });
-    }
-
-    for (const t of q.translations) {
-        const hasText = t.question && t.question.trim();
-        const hasImage = t.questionImage && t.questionImage.trim();
-
-        if (!hasText && !hasImage) {
-            return res.status(400).json({
-                success: false,
-                message: `Question ${i + 1} (${t.lang}): question text ya image zaroori hai`
-            });
-        }
-    }
-
-} else {
-
-    const source = pickSingleSource(q);
-
-    const hasText = source.question && source.question.trim();
-    const hasImage = source.questionImage && source.questionImage.trim();
-
-    if (!hasText && !hasImage) {
-        return res.status(400).json({
-            success: false,
-            message: `Question ${i + 1}: question text ya image me se kam se kam ek dena zaroori hai`
-        });
-    }
-
-}
+                if (qMode === "multiple") {
+                    if (!Array.isArray(q.translations) || q.translations.length === 0) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `Question ${i + 1}: har language ka content dena zaroori hai`
+                        });
+                    }
+                    for (const t of q.translations) {
+                        const hasText = t.question && t.question.trim();
+                        const hasImage = t.questionImage && t.questionImage.trim();
+                        if (!hasText && !hasImage) {
+                            return res.status(400).json({
+                                success: false,
+                                message: `Question ${i + 1} (${t.lang}): question text ya image zaroori hai`
+                            });
+                        }
+                    }
+                } else {
+                    const source = pickSingleSource(q);
+                    const hasText = source.question && source.question.trim();
+                    const hasImage = source.questionImage && source.questionImage.trim();
+                    if (!hasText && !hasImage) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `Question ${i + 1}: question text ya image me se kam se kam ek dena zaroori hai`
+                        });
+                    }
+                }
             }
         }
 
@@ -437,7 +445,7 @@ if (qMode === "multiple") {
         existingTest.title = body.title;
         existingTest.languageMode = testLanguageMode;
         existingTest.languages = testLanguages;
-        existingTest.showLanguage = testShowLanguage; 
+        existingTest.showLanguage = testShowLanguage;
         existingTest.timeStrategy = body.timeStrategy || "total";
         existingTest.duration = body.duration || 60;
         existingTest.subjectTime = body.subjectTime || [];
@@ -447,85 +455,101 @@ if (qMode === "multiple") {
         existingTest.publishAt = visibility === "scheduled" ? new Date(body.publishAt) : null;
 
         const oldMappings = await TestQuestion.find({ test: id }).sort({ order: 1 });
-        const oldQuestionIds = [...new Set(oldMappings.map(m => m.question.toString()))]; 
+        const oldQuestionIds = [...new Set(oldMappings.map(m => m.question.toString()))];
 
-        const updatedTest = await existingTest.save();
+        const session = await mongoose.startSession();
+        let updatedTest;
 
-        await TestQuestion.deleteMany({ test: id });
+        try {
+            await session.withTransaction(async () => {
+                updatedTest = await existingTest.save({ session });
 
-        if (Array.isArray(body.questions) && body.questions.length > 0) {
-            const mappingDocs = [];
+                await TestQuestion.deleteMany({ test: id }, { session });
 
-            for (let i = 0; i < body.questions.length; i++) {
-    const q = body.questions[i];
-    const marks = getMarksForSubject(subjectsConfig, q.subject);
-    const qLanguageMode = resolveQuestionLanguageMode(q, testLanguageMode);
+                if (Array.isArray(body.questions)) {
+                    const mappingDocs = [];
+                    const usedQuestionIds = new Set();
 
-    const questionPayload = {
-        listing: listingId,
-        subject: q.subject,
-        type: q.type || "mcq",
-        section: q.section || "",
-        topic: q.topic,
-        subTopic: q.subTopic || "",
-        difficulty: q.difficulty || "Medium",
-        languageMode: qLanguageMode,
-        correctAnswers: q.correctAnswers || [],
-        numericAnswer: q.numericAnswer ?? null
-    };
+                    for (let i = 0; i < body.questions.length; i++) {
+                        const q = body.questions[i];
+                        const marks = getMarksForSubject(subjectsConfig, q.subject);
+                        const qLanguageMode = resolveQuestionLanguageMode(q, testLanguageMode);
 
-    if (qLanguageMode === "multiple") {
-        questionPayload.translations = (q.translations || []).map(t => ({
-            lang: t.lang,
-            question: t.question || "",
-            questionImage: t.questionImage || null,
-            options: normalizeOptions(t.options),
-            solution: t.solution || { text: "", image: null }
-        }));
-               questionPayload.question = "";
-        questionPayload.questionImage = q.questionImage || null;
-        questionPayload.options = normalizeOptions(q.options);
-        questionPayload.solution = { text: "", image: q.solution?.image || null };
-    } else {
-        const singleSource = pickSingleSource(q);
-        questionPayload.question = singleSource.question || q.question || "";
-        questionPayload.questionImage = singleSource.questionImage || q.questionImage || null;
-        questionPayload.options = normalizeOptions(singleSource.options || q.options);
-        questionPayload.solution = singleSource.solution || q.solution || { text: "", image: null };
-        questionPayload.translations = [];
-    }
+                        const questionPayload = {
+                            listing: listingId,
+                            subject: q.subject,
+                            type: q.type || "mcq",
+                            section: q.section || "",
+                            topic: q.topic,
+                            subTopic: q.subTopic || "",
+                            difficulty: q.difficulty || "Medium",
+                            languageMode: qLanguageMode,
+                            correctAnswers: q.correctAnswers || [],
+                            numericAnswer: q.numericAnswer ?? null
+                        };
 
-      const linkedQuestionId = (q._id && oldQuestionIds.includes(String(q._id))) ? q._id : null;
-    const hash = computeContentHash(questionPayload);
-    const questionId = await getOrCreateQuestionId(questionPayload, hash, linkedQuestionId);
+                        if (qLanguageMode === "multiple") {
+                            questionPayload.translations = (q.translations || []).map(t => ({
+                                lang: t.lang,
+                                question: t.question || "",
+                                questionImage: t.questionImage || null,
+                                options: normalizeOptions(t.options),
+                                solution: t.solution || { text: "", image: null }
+                            }));
+                            questionPayload.question = "";
+                            questionPayload.questionImage = q.questionImage || null;
+                            questionPayload.options = normalizeOptions(q.options);
+                            questionPayload.solution = { text: "", image: q.solution?.image || null };
+                        } else {
+                            const singleSource = pickSingleSource(q);
+                            questionPayload.question = singleSource.question || q.question || "";
+                            questionPayload.questionImage = singleSource.questionImage || q.questionImage || null;
+                            questionPayload.options = normalizeOptions(singleSource.options || q.options);
+                            questionPayload.solution = singleSource.solution || q.solution || { text: "", image: null };
+                            questionPayload.translations = [];
+                        }
 
-    mappingDocs.push({
-        test: updatedTest._id, question: questionId,
-        order: i + 1,
-        subject: q.subject,             // 👈 NAYA
-        topic: q.topic,                 // 👈 NAYA
-        subTopic: q.subTopic || "",     // 👈 NAYA
-        section: q.section || "",       // 👈 NAYA
-        positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks
-    });
-}
+                        const linkedQuestionId = (q._id && oldQuestionIds.includes(String(q._id))) ? q._id : null;
+                        const hash = computeContentHash(questionPayload);
+                        const questionId = await getOrCreateQuestionId(questionPayload, hash, linkedQuestionId, session);
 
-            await TestQuestion.insertMany(mappingDocs);
-            
-            for (const qId of oldQuestionIds) {
-    const stillUsed = await TestQuestion.exists({ question: qId });
-    if (!stillUsed) {
-        await Question.findByIdAndDelete(qId);
-    }
-}
+                        const idStr = String(questionId);
+                        if (usedQuestionIds.has(idStr)) {
+                            throw new ExpressError(400, `Question ${i + 1} ka content kisi pehle wale question se hubahu (identical) match kar raha hai. Dono me thoda sa farak (text me change) karo taaki wo alag pehchane jaayein.`);
+                        }
+                        usedQuestionIds.add(idStr);
 
+                        mappingDocs.push({
+                            test: updatedTest._id, question: questionId,
+                            order: i + 1,
+                            subject: q.subject,
+                            topic: q.topic,
+                            subTopic: q.subTopic || "",
+                            section: q.section || "",
+                            positiveMarks: marks.positiveMarks, negativeMarks: marks.negativeMarks
+                        });
+                    }
 
+                    if (mappingDocs.length > 0) {
+                        await TestQuestion.insertMany(mappingDocs, { session });
+                    }
+
+                    for (const qId of oldQuestionIds) {
+                        const stillUsed = await TestQuestion.exists({ question: qId }).session(session);
+                        if (!stillUsed) {
+                            await Question.findByIdAndDelete(qId, { session });
+                        }
+                    }
+                }
+            });
+        } finally {
+            await session.endSession();
         }
 
         res.status(200).json({ success: true, message: "Test aur questions update ho gaye", testId: updatedTest._id });
 
     } catch (err) {
         console.error("Test update error:", err);
-        res.status(500).json({ success: false, message: err.message || "Test update karte waqt error aaya" });
+        res.status(err.statusCode || 500).json({ success: false, message: err.message || "Test update karte waqt error aaya" });
     }
 };

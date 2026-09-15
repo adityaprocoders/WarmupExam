@@ -160,8 +160,8 @@ export const searchTests = async (req, res) => {
     };
     if (!isOwner) filter.visibility = "public";
 
-    // 👇 CHANGED — Listing ka apna "language" field seedha select kar liya
-    const tests = await Listing.find(filter).select("title exam slug language").limit(8);
+    // 👇 CHANGED — type bhi add kiya taaki Free/Paid badge dikha sakein
+    const tests = await Listing.find(filter).select("title exam slug language type").limit(8);
 
     res.json(tests);
 };
@@ -363,8 +363,8 @@ export const getSeriesByExam = async (req, res) => {
     const filter = { exam };
     if (!isOwner) filter.visibility = "public";
 
-    // 👇 CHANGED — Listing ka apna "language" field seedha select kar liya
-    const series = await Listing.find(filter).select("title exam slug language").sort({ createdAt: -1 });
+    // 👇 CHANGED — type bhi add kiya taaki Free/Paid badge dikha sakein
+    const series = await Listing.find(filter).select("title exam slug language type").sort({ createdAt: -1 });
 
     res.json(series);
 };

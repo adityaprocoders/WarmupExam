@@ -33,6 +33,7 @@
 
             <!-- Overall Tab -->
             <div id="an-overall">
+                <h2 class="text-sm sm:text-base font-extrabold text-gray-700 uppercase tracking-wide mb-3">Top Performance</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
                     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
                         <p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">SCORE</p>
@@ -61,13 +62,60 @@
                     </div>
                 </div>
 
+                <!-- 👇 NAYA: Section-wise Summary -->
+                <h2 class="text-sm sm:text-base font-extrabold text-gray-700 uppercase tracking-wide mb-3 mt-2">Section-wise Performance</h2>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6 mb-6 overflow-x-auto">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase mb-4">SUMMARY</h4>
+                    <table class="w-full text-sm min-w-[640px]">
+                        <thead>
+                            <tr class="bg-[#4318FF] text-white">
+                                <th class="text-left px-4 py-3 rounded-l-xl font-bold text-xs">Section</th>
+                                <th class="text-center px-4 py-3 font-bold text-xs">Questions</th>
+                                <th class="text-center px-4 py-3 font-bold text-xs">Answered</th>
+                                <th class="text-center px-4 py-3 font-bold text-xs">Not Answered</th>
+                                <th class="text-center px-4 py-3 font-bold text-xs">Marked</th>
+                                <th class="text-center px-4 py-3 font-bold text-xs">Not Visited</th>
+                                <th class="text-center px-4 py-3 font-bold text-xs">Marks</th>
+                                <th class="text-center px-4 py-3 rounded-r-xl font-bold text-xs">Negative Marks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="section-summary-body">
+                            <tr><td colspan="8" class="text-center text-gray-400 py-6 text-xs">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase mb-4">MARKS DISTRIBUTION</h4>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl"><div class="flex items-center gap-4"><span class="text-lg">😃</span><span class="text-xs font-bold text-gray-500 uppercase tracking-wide">POSITIVE MARKS</span></div><div class="text-xl font-bold text-gray-800" id="dist-pos">+0</div></div>
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl"><div class="flex items-center gap-4"><span class="text-lg">😟</span><span class="text-xs font-bold text-gray-500 uppercase tracking-wide">NEGATIVE MARKS</span></div><div class="text-xl font-bold text-gray-800" id="dist-neg">0</div></div>
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl"><div class="flex items-center gap-4"><span class="text-lg">😐</span><span class="text-xs font-bold text-gray-500 uppercase tracking-wide">LEFT MARKS</span></div><div class="text-xl font-bold text-gray-800" id="dist-left">0</div></div>
+                        <h4 class="text-xs font-bold text-gray-400 uppercase mb-4">COMPARISON</h4>
+                        <div class="space-y-5">
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm font-semibold text-gray-600">Your Accuracy</span>
+                                    <span id="cmp-your" class="text-sm font-extrabold text-[#4318FF]">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                                    <div id="cmp-your-bar" class="h-full rounded-full bg-[#4318FF] transition-all duration-500" style="width:0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm font-semibold text-gray-600">Average Accuracy</span>
+                                    <span id="cmp-avg" class="text-sm font-extrabold text-gray-400">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                                    <div id="cmp-avg-bar" class="h-full rounded-full bg-gray-400 transition-all duration-500" style="width:0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm font-semibold text-gray-600">Top 10% Accuracy</span>
+                                    <span id="cmp-top10" class="text-sm font-extrabold text-indigo-400">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                                    <div id="cmp-top10-bar" class="h-full rounded-full bg-indigo-400 transition-all duration-500" style="width:0%"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col min-h-[300px]">
@@ -80,6 +128,39 @@
                         <h4 class="text-xs font-bold text-gray-400 uppercase mb-4">TOPIC STRENGTH</h4>
                         <div id="topic-strength-list" class="space-y-4 overflow-y-auto pr-2 flex-grow">
                             <p class="text-xs text-center text-gray-400 py-10">No data available. Complete a test first.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 👇 NAYA — Rank Predictor + Rank Range (sirf tab dikhega jab section ka showInStatsFilter ON ho) -->
+
+                                 <!-- 👇 CHANGED — h2 aur grid, dono ek wrapper ke andar aa gaye -->
+                <div id="rankPredictorSection" class="hidden">
+                    <h2 class="text-sm sm:text-base font-extrabold text-gray-700 uppercase tracking-wide mb-3 mt-6">Rank Prediction</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h4 class="text-xs font-bold text-gray-400 uppercase mb-4">MARKS VS PREDICTED RANK</h4>
+                            <div class="h-72">
+                                <canvas id="predictedRankChartAnalysis"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h4 class="text-xs font-bold text-gray-400 uppercase mb-4">RANK RANGE (EXPECTED)</h4>
+                            <div class="space-y-3">
+                                <div class="p-3 rounded-xl bg-green-50 border border-green-100">
+                                    <p class="text-xs font-bold text-green-700">BEST CASE</p>
+                                    <p id="rr-best" class="text-xl font-extrabold text-gray-800">--</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                                    <p class="text-xs font-bold text-indigo-700">MOST LIKELY</p>
+                                    <p id="rr-likely" class="text-xl font-extrabold text-gray-800">--</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-red-50 border border-red-100">
+                                    <p class="text-xs font-bold text-red-700">WORST CASE</p>
+                                    <p id="rr-worst" class="text-xl font-extrabold text-gray-800">--</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

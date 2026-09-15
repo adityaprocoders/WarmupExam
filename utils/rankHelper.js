@@ -30,3 +30,22 @@ export function calculateRankFromPredictor(score, rankPredictorData) {
 
     return { rank: "--", totalUsers };
 }
+
+// 👇 YE NAYA FUNCTION ADD KARO, existing calculateRankFromPredictor ke NEECHE
+
+// Best/Worst case — score me thoda margin (±3% of totalMarks) laga ke
+// wahi predictor curve pe dobara check karta hai.
+export function calculateRankRange(score, rankPredictorData, totalMarks) {
+    const { rank: likely, totalUsers } = calculateRankFromPredictor(score, rankPredictorData);
+
+    if (likely === "" || likely === "--" || !rankPredictorData?.length) {
+        return { best: likely, likely, worst: likely, totalUsers };
+    }
+
+    const margin = Math.max(1, Math.round((totalMarks || 100) * 0.03));
+
+    const { rank: bestRaw } = calculateRankFromPredictor(score + margin, rankPredictorData);
+    const { rank: worstRaw } = calculateRankFromPredictor(Math.max(0, score - margin), rankPredictorData);
+
+    return { best: bestRaw, likely, worst: worstRaw, totalUsers };
+}

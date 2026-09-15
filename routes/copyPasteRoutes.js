@@ -10,5 +10,5 @@ router.get("/api/series/:slug/tree", isLoggedIn, isOwner, wrapAsync(copyPasteCon
 router.get("/api/copy/languages", isLoggedIn, isOwner, wrapAsync(copyPasteController.getAvailableLanguages)); // 👈 naya
 router.post("/api/paste-item", isLoggedIn, isOwner, wrapAsync(copyPasteController.pasteItem));
 router.post("/api/bulk-copy-sections", isLoggedIn, isOwner, wrapAsync(copyPasteController.bulkCopySections));
-
+router.post("/api/bulk-copy-items", isLoggedIn, isOwner, wrapAsync(copyPasteController.bulkCopyItems));
 export default router;

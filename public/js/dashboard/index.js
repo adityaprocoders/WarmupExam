@@ -500,7 +500,8 @@ async function loadSeriesList(exam) {
        renderRows(seriesList.map(s => ({
         label: s.title,
         icon: "layers",
-        language: s.language || "",   // 👈 CHANGED — single field, array nahi
+        language: s.language || "",
+        type: s.type || "Free",   // 👈 NAYA
         onOpen: () => navigateSeries(s.slug, s._id, s.title),
         canPaste: canPasteRow,
         onPaste: () => doPaste(s._id, null, null, null)
@@ -603,7 +604,10 @@ function renderRows(rows, emptyMsg) {
                 <div class="min-w-0">
                     <span class="truncate text-sm font-medium text-slate-700 block">${r.label}</span>
                     ${r.language !== undefined ? `
-                        <div class="mt-1">
+                        <div class="mt-1 flex items-center gap-1.5">
+                            ${r.type !== undefined ? `
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${r.type === 'Paid' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'}">${r.type || 'Free'}</span>
+                            ` : ''}
                             <span class="text-[10px] ${r.language ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-400'} px-2 py-0.5 rounded-full font-medium">${r.language || 'No language set'}</span>
                         </div>` : ''}
                 </div>
@@ -704,7 +708,8 @@ function handleCopySearch(keyword) {
         renderRows(results.map(s => ({
             label: `${s.title} (${s.exam})`,
             icon: "layers",
-            language: s.language || "",   // 👈 CHANGED — single field, array nahi
+            language: s.language || "",
+            type: s.type || "Free",   // 👈 NAYA
             onOpen: () => {
                 copyNav.path = [{ label: s.exam, type: "exam", exam: s.exam }];
                 navigateSeries(s.slug, s._id, s.title);
@@ -729,151 +734,9 @@ if (perfData.length > 0) {
         .slice()
         .sort((a, b) => a.marks - b.marks);
 
-    if (document.getElementById('predictedRankChart') && rankCurveRaw.length > 0) {
-        const customRankMarker = {
-            id: 'customRankMarker',
-            afterDraw(chart) {
-                if (userRank === null) return;
-                const { ctx, chartArea: { bottom }, scales: { x, y } } = chart;
+ 
 
-                const xCoord = x.getPixelForValue(userScore);
-                const yCoord = y.getPixelForValue(userRank);
-
-                if (xCoord !== undefined && !isNaN(xCoord) && yCoord !== undefined && !isNaN(yCoord)) {
-                    ctx.save();
-
-                    ctx.beginPath();
-                    ctx.strokeStyle = '#8b5cf6';
-                    ctx.lineWidth = 1.5;
-                    ctx.setLineDash([4, 4]);
-                    ctx.moveTo(xCoord, yCoord);
-                    ctx.lineTo(xCoord, bottom);
-                    ctx.stroke();
-
-                    ctx.beginPath();
-                    ctx.fillStyle = 'rgba(139, 92, 246, 0.3)';
-                    ctx.arc(xCoord, yCoord, 9, 0, 2 * Math.PI);
-                    ctx.fill();
-
-                    ctx.beginPath();
-                    ctx.fillStyle = '#7c3aed';
-                    ctx.arc(xCoord, yCoord, 4.5, 0, 2 * Math.PI);
-                    ctx.fill();
-
-                    const boxWidth = 140;
-                    const boxHeight = 48;
-                    const boxX = Math.max(4, Math.min(chart.width - boxWidth - 4, xCoord - boxWidth / 2));
-                    const boxY = yCoord - boxHeight - 12;
-
-                    ctx.fillStyle = '#1e293b';
-                    ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6);
-                    ctx.fill();
-
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 11px sans-serif';
-                    ctx.fillText(`Marks: ${userScore}`, boxX + 12, boxY + 20);
-
-                    ctx.fillStyle = '#cbd5e1';
-                    ctx.font = '10px sans-serif';
-                    ctx.fillText(`Predicted Rank: ${userRank}`, boxX + 12, boxY + 36);
-
-                    ctx.restore();
-                }
-            }
-        };
-
-        const ctxRank = document.getElementById('predictedRankChart').getContext('2d');
-        new Chart(ctxRank, {
-            type: 'line',
-            data: {
-                datasets: [{
-                    data: rankCurveRaw.map(p => ({ x: p.marks, y: p.rank })),
-                    borderColor: '#7c3aed',
-                    backgroundColor: 'rgba(124, 58, 237, 0.08)',
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#7c3aed'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { type: 'linear', title: { display: true, text: 'Marks Scored' } },
-                    y: { type: 'logarithmic', title: { display: true, text: 'Predicted Rank (AIR)' }, reverse: true }
-                }
-            },
-            plugins: [customRankMarker]
-        });
-    }
-
-    const distBuckets = dashStats.scoreDistribution || [];
-
-    if (document.getElementById('scoreDistributionChart') && distBuckets.length > 0) {
-        const customDistMarker = {
-            id: 'customDistMarker',
-            afterDraw(chart) {
-                const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
-                const xCoord = x.getPixelForValue(userScore);
-
-                if (xCoord !== undefined && !isNaN(xCoord)) {
-                    ctx.save();
-
-                    ctx.beginPath();
-                    ctx.strokeStyle = '#8b5cf6';
-                    ctx.lineWidth = 1.5;
-                    ctx.setLineDash([4, 4]);
-                    ctx.moveTo(xCoord, top + 20);
-                    ctx.lineTo(xCoord, bottom);
-                    ctx.stroke();
-
-                    const badgeWidth = 45;
-                    const badgeHeight = 24;
-                    const badgeX = xCoord - badgeWidth / 2;
-                    const badgeY = top;
-
-                    ctx.fillStyle = '#7c3aed';
-                    ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4);
-                    ctx.fill();
-
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 11px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(userScore, xCoord, badgeY + 16);
-                    ctx.textAlign = 'start';
-
-                    ctx.restore();
-                }
-            }
-        };
-
-        const ctxDist = document.getElementById('scoreDistributionChart').getContext('2d');
-        new Chart(ctxDist, {
-            type: 'line',
-            data: {
-                datasets: [{
-                    data: distBuckets.map(b => ({ x: (b.rangeStart + b.rangeEnd) / 2, y: b.count })),
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { type: 'linear', title: { display: true, text: 'Marks Scored' } },
-                    y: { title: { display: true, text: 'No. of Students' }, beginAtZero: true, ticks: { precision: 0 } }
-                }
-            },
-            plugins: [customDistMarker]
-        });
-    }
+ 
 
     if (document.getElementById('rankProgressChart')) {
         const rankPoints = perfData

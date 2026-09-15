@@ -48,7 +48,13 @@ function renderBulkCopyList(series) {
             data-action="bulk-copy-select"
             data-listing-id="${s._id}"
             class="w-4 h-4 text-indigo-600">
-        <span class="text-sm font-medium text-slate-700">${s.title}</span>
+        <div class="min-w-0">
+            <span class="text-sm font-medium text-slate-700 block truncate">${s.title}</span>
+            <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${s.type === 'Paid' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'}">${s.type || 'Free'}</span>
+                <span class="text-[10px] font-medium text-slate-400">${s.language || 'No language'}</span>
+            </div>
+        </div>
     </label>
 `).join('');
 
@@ -71,23 +77,27 @@ function handleBulkCopySearch(keyword) {
 }
 
 async function confirmBulkCopy() {
-    const sectionIds = getSelectedSectionIds();
+    // 👇 NAYA — agar mixed items (folder/file/test) select kiye hain to unhe use karo, warna purana sections-only tarika
+    const items = pendingMixedBulkItems
+        ? pendingMixedBulkItems
+        : getSelectedSectionIds().map(id => ({ id, type: 'section' }));
+
     const destListingIds = Array.from(bulkCopySelectedListings);
 
-    if (sectionIds.length === 0 || destListingIds.length === 0) return;
+    if (items.length === 0 || destListingIds.length === 0) return;
 
     const btn = document.getElementById('bulkCopyConfirmBtn');
     btn.disabled = true;
     btn.textContent = 'Copying...';
 
     try {
-        const res = await fetch('/api/bulk-copy-sections', {
+        const res = await fetch('/api/bulk-copy-items', {   // 👈 URL badla
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                sectionIds,
+                items,   // 👈 sectionIds ki jagah items
                 destListingIds,
-                selectedLanguage: selectedShowLanguage   // 👈 sirf ye naya field add hua
+                selectedLanguage: selectedShowLanguage
             })
         });
         const data = await res.json();
@@ -105,6 +115,7 @@ async function confirmBulkCopy() {
             }
 
             alert(message);
+            pendingMixedBulkItems = null; 
             location.reload();
         } else {
             alert(data.message || 'Copy fail ho gaya');

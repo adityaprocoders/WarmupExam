@@ -4,9 +4,15 @@ import TestQuestion from "../models/TestQuestion.js";
 import Attempt from "../models/TestAttempt.js";
 import AttemptSession from "../models/AttemptSession.js";
 import ExpressError from "../utils/ExpressError.js";
-import { calculateRankFromPredictor } from "../utils/rankHelper.js";
+import Section from "../models/Section.js";
+import { calculateRankFromPredictor, calculateRankRange } from "../utils/rankHelper.js";
 import { getTestStatus, formatDateTime } from "../utils/testStatus.js";
- 
+import { getLiveTestRank } from "../utils/liveRankHelper.js";
+import { getAccuracyComparison } from "../utils/testStatsHelper.js";
+
+
+
+
 // Question document ko selected language ke hisaab se FLAT object me convert karta hai
 // (translations[] se ya single-mode field se) — attempt.ejs isi flat shape ko expect karta hai.
 function resolveQuestionForLanguage(qDoc, lang) {
@@ -329,6 +335,7 @@ export const showAnalysis = async (req, res) => {
     let positiveTotal = 0;
     let negativeTotal = 0;
     const subjectMap = {};
+    const sectionStatusMap = {};
     const solutions = [];
 
     attempt.answers.forEach((a, idx) => {
@@ -367,6 +374,30 @@ export const showAnalysis = async (req, res) => {
         if (status === "correct") subjectMap[subject].correct += 1;
         if (status === "wrong") subjectMap[subject].wrong += 1;
 
+        // 👇 NAYA — section-wise summary (Answered/Not Answered/Marked/Not Visited/Marks)
+        if (!sectionStatusMap[subject]) {
+            sectionStatusMap[subject] = {
+                section: subject, questions: 0,
+                answered: 0, notAnswered: 0, marked: 0, notVisited: 0,
+                marks: 0, negativeMarks: 0
+            };
+        }
+        const secStat = sectionStatusMap[subject];
+        secStat.questions += 1;
+
+        const rawStatus = String(a.status || "notVisited").toLowerCase();
+        if (rawStatus.includes("marked")) secStat.marked += 1;
+        else if (rawStatus.includes("notvisited")) secStat.notVisited += 1;
+        else if (rawStatus.includes("notanswered")) secStat.notAnswered += 1;
+        else if (rawStatus.includes("answered")) secStat.answered += 1;
+        else if (attempted) secStat.answered += 1;
+        else secStat.notVisited += 1;
+
+        if (!isQualifyingOnly) {
+            if (status === "correct") secStat.marks += marks.positiveMarks;
+            if (status === "wrong") secStat.negativeMarks += marks.negativeMarks;
+        }
+
         // ✅ Attempt ke waqt candidate ne jo language choose ki thi, wahi analysis me bhi dikhao
         const resolvedQ = resolveQuestionForLanguage(q, attempt.language || "English");
 
@@ -402,13 +433,42 @@ export const showAnalysis = async (req, res) => {
         };
     });
 
-    const { rank, totalUsers } = calculateRankFromPredictor(attempt.score, listing?.rankPredictorData);
+    const { rank: predictorRank } = calculateRankFromPredictor(attempt.score, listing?.rankPredictorData);
+const { rank: liveRank, totalUsers: liveTotalUsers } = await getLiveTestRank(attempt.test, attempt.score);
+
+     // 🆕 NAYA — Rank Predictor Card (gate + range)
+let rankPredictorCard = { show: false };
+
+// 🔧 CHANGED — ab do tarike se gate khul sakta hai:
+// 1) Live Test hai (isLiveTest true) → section-check ki zaroorat nahi, hamesha allow
+// 2) Normal test hai lekin uske section ka showInStatsFilter switch ON hai
+let sectionAllows = false;
+if (test.section) {
+    const section = await Section.findById(test.section).select("showInStatsFilter");
+    sectionAllows = !!section?.showInStatsFilter;
+}
+
+const isAllowed = test.isLiveTest || sectionAllows;
+
+if (isAllowed && listing?.rankPredictorData?.length > 0) {
+    const rankRange = calculateRankRange(attempt.score, listing.rankPredictorData, attempt.totalMarks);
+    rankPredictorCard = {
+        show: true,
+        rankPredictorData: listing.rankPredictorData,
+        userScore: attempt.score,
+        userRank: predictorRank,
+        rankRange
+    };
+}
 
     const totalQuestions = attempt.answers.length;
     const attemptedCount = attempt.correctCount + attempt.wrongCount;
+    
     const accuracy = attemptedCount > 0
         ? Math.round((attempt.correctCount / attemptedCount) * 1000) / 10
         : 0;
+
+    const comparisonData = await getAccuracyComparison(attempt.test, accuracy);
 
     const totalSeconds = attempt.timeTaken || 0;
     const hrs = Math.floor(totalSeconds / 3600);
@@ -416,19 +476,24 @@ export const showAnalysis = async (req, res) => {
     const secs = totalSeconds % 60;
     const timeFormatted = [hrs, mins, secs].map(v => String(v).padStart(2, "0")).join(":");
 
+    const sectionBreakdown = Object.values(sectionStatusMap);   // 👈 NAYA
+
     const analysisData = {
         score: attempt.score,
         totalMarks: attempt.totalMarks,
         attempted: attemptedCount,
         totalQuestions,
         timeTaken: timeFormatted,
-        rank,
-        totalUsers,
+        rank: liveRank,
+        totalUsers: liveTotalUsers,
+        rankPredictorCard,
         accuracy,
+        comparisonData,   // 👈 NAYI LINE ADD KARO
         positiveMarks: positiveTotal,
         negativeMarks: negativeTotal,
         skippedCount: attempt.skippedCount,
         topicBreakdown,
+        sectionBreakdown,   // 👈 NAYA
         solutions
     };
 

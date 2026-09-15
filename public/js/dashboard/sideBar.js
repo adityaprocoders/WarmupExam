@@ -73,7 +73,8 @@ function continueBatchSelection() {
 
 let selectModeOn = false;
 
-function toggleSelectMode() {
+// 👇 RENAMED — pehle "toggleSelectMode" tha, dusri (dashboard) file se clash ho raha tha
+function toggleSectionSelectMode() {
     selectModeOn = !selectModeOn;
     document.querySelectorAll('.section-select-checkbox').forEach(cb => {
         cb.classList.toggle('hidden', !selectModeOn);
@@ -110,15 +111,15 @@ document.addEventListener('click', function (e) {
     case 'toggle-batch-modal':
       toggleBatchModal();
       break;
-    case 'toggle-select-mode':
-      toggleSelectMode();
+    case 'toggle-section-select-mode':   // 👈 RENAMED (pehle 'toggle-select-mode' tha)
+      toggleSectionSelectMode();          // 👈 RENAMED call
       break;
     case 'section-checkbox':
       e.stopPropagation();
       updateSelectedCount();
       break;
    case 'open-copy-modal':
-  startSingleCopyWithLanguageCheck(el.dataset.copyType, el.dataset.copyId);   // ✅ CHANGED
+  startSingleCopyWithLanguageCheck(el.dataset.copyType, el.dataset.copyId);
   break;
     case 'toggle-edit':
       toggleEdit(el.dataset.id);
@@ -136,7 +137,7 @@ document.addEventListener('click', function (e) {
       toggleBulkCopyDropdown();
       break;
     case 'open-bulk-copy-modal':
-      startBulkCopyWithLanguageCheck(el.dataset.mode);   // ✅ CHANGED
+      startBulkCopyWithLanguageCheck(el.dataset.mode);
       break; 
   }
 });

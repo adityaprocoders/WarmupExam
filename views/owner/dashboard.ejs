@@ -181,7 +181,7 @@
                 <h3 class="font-bold text-gray-900 text-lg">Live Test Dashboard</h3>
 <p class="text-xs text-gray-500 mt-0.5">Overview of all exams and their live test status.</p>
             </div>
-            <button id="openAddLiveTestModalBtn" ...>
+            <button id="openAddLiveTestModalBtn" class="flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 rounded-lg">
     <i class="fa-solid fa-plus"></i> Add Live Test
 </button>
         </div>
@@ -715,7 +715,9 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Subject *</label>
-            <input type="text" id="qbFormSubject" class="w-full border rounded-xl px-3 py-2.5 text-sm">
+            <select id="qbFormSubject" class="w-full border rounded-xl px-3 py-2.5 text-sm">
+              <option value="">-- Select Listing first --</option>
+            </select>
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Topic *</label>
@@ -753,8 +755,10 @@
             <textarea id="qbFormQuestion" rows="3" class="w-full border rounded-xl px-3 py-2.5 text-sm"></textarea>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Question Image URL (optional)</label>
-            <input type="text" id="qbFormQuestionImage" class="w-full border rounded-xl px-3 py-2.5 text-sm">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Question Photo (optional)</label>
+            <input type="file" id="qbFormQuestionImageFile" accept="image/*" class="text-sm">
+            <img id="qbFormQuestionImagePreview" class="hidden mt-2 h-20 rounded border">
+            <input type="hidden" id="qbFormQuestionImage">
           </div>
 
           <div id="qbOptionsBlock">
@@ -762,7 +766,7 @@
               <label class="block text-xs font-bold text-gray-500 uppercase">Options</label>
               <button type="button" id="qbAddOptionBtn" class="text-xs font-semibold text-indigo-600">+ Add Option</button>
             </div>
-            <div id="qbOptionsList" class="space-y-2"></div>
+            <div id="qbOptionsList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
           </div>
 
           <div id="qbIntegerBlock" class="hidden">
@@ -775,8 +779,10 @@
             <textarea id="qbFormSolutionText" rows="2" class="w-full border rounded-xl px-3 py-2.5 text-sm"></textarea>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Solution Image URL (optional)</label>
-            <input type="text" id="qbFormSolutionImage" class="w-full border rounded-xl px-3 py-2.5 text-sm">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5">Solution Photo (optional)</label>
+            <input type="file" id="qbFormSolutionImageFile" accept="image/*" class="text-sm">
+            <img id="qbFormSolutionImagePreview" class="hidden mt-2 h-20 rounded border">
+            <input type="hidden" id="qbFormSolutionImage">
           </div>
         </div>
 
@@ -786,8 +792,43 @@
             <input type="text" id="qbNewLangInput" placeholder="e.g. Hindi" class="border rounded-xl px-3 py-2 text-sm flex-1">
             <button type="button" id="qbAddLangBtn" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-2 rounded-xl">+ Add Language</button>
           </div>
-          <div id="qbLangTabs" class="flex gap-2 flex-wrap"></div>
-          <div id="qbLangContentArea"></div>
+          <div id="qbLangTags" class="flex gap-2 flex-wrap"></div>
+
+          <div class="border-2 border-dashed rounded-xl p-4 text-center bg-gray-50">
+            <p class="text-xs font-bold text-indigo-700 mb-1">QUESTION PHOTO / DIAGRAM (SHARED)</p>
+            <input type="file" id="qbMultiQuestionImageFile" accept="image/*" class="text-sm">
+            <img id="qbMultiQuestionImagePreview" class="hidden mt-2 h-20 mx-auto rounded">
+            <input type="hidden" id="qbMultiQuestionImage">
+          </div>
+
+          <div id="qbMultiQuestionTexts" class="space-y-3"></div>
+
+          <div id="qbMultiOptionImagesBlock" class="p-4 border rounded-xl bg-gray-50">
+            <p class="text-xs font-bold text-indigo-700 uppercase mb-3">OPTION IMAGES (SHARED)</p>
+            <div id="qbMultiOptionImagesList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            <button type="button" id="qbMultiAddOptionBtn" class="w-full mt-3 py-2 border-2 border-dashed border-indigo-200 text-indigo-600 text-sm font-bold rounded-lg hover:bg-indigo-50">+ Add Option</button>
+          </div>
+
+          <div id="qbMultiOptionTexts" class="space-y-3"></div>
+
+          <div id="qbMultiCorrectAnswerBlock" class="p-4 border rounded-xl bg-gray-50">
+            <p class="text-xs font-bold text-gray-600 uppercase mb-2">Correct Answer (Option Index)</p>
+            <div id="qbMultiCorrectAnswerList" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+          </div>
+
+          <div id="qbMultiIntegerBlock" class="hidden p-6 border rounded-xl bg-gray-50">
+            <label class="block text-sm font-bold mb-2">Enter Numeric Answer:</label>
+            <input type="number" id="qbMultiNumericAnswer" class="w-full p-3 border rounded-lg">
+          </div>
+
+          <div class="border-2 border-dashed rounded-xl p-4 text-center bg-gray-50">
+            <p class="text-xs font-bold text-indigo-700 mb-1">SOLUTION PHOTO (SHARED)</p>
+            <input type="file" id="qbMultiSolutionImageFile" accept="image/*" class="text-sm">
+            <img id="qbMultiSolutionImagePreview" class="hidden mt-2 h-20 mx-auto rounded">
+            <input type="hidden" id="qbMultiSolutionImage">
+          </div>
+
+          <div id="qbMultiSolutionTexts" class="space-y-3"></div>
         </div>
 
       </div>

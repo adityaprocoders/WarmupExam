@@ -251,17 +251,14 @@ sections.forEach((sec, idx) => {
 
         // --- EXISTING CURRENT RANK LOGIC (UNCHANGED) ---
         let currentRank = "--";
-        let rankRange = { best: "--", likely: "--", worst: "--" };
+let rankRange = { best: "--", likely: "--", worst: "--" };
+let percentileData = { userPercentile: 0, avgPercentile: 0, topPercentile: 90 };
 
-        // Comparison card ke liye — ab real distribution se nikalta hai
-        let percentileData = { userPercentile: 0, avgPercentile: 0, topPercentile: 90 };
-
-        if (allAttempts.length > 0) {
-            // Latest attempt score
-            const latestAttempt = allAttempts[0];
-            const { rank } = calculateRankFromPredictor(latestAttempt.score, listing.rankPredictorData);
-            currentRank = rank;
-        }
+if (testsAttemptedCount > 0 && listing.rankPredictorData?.length) {
+    // Ab latest attempt ki jagah average score (isi section ke tests ka) se rank nikalega
+    const { rank } = calculateRankFromPredictor(avgScore, listing.rankPredictorData);
+    currentRank = rank;
+}
 
         if (testsAttemptedCount > 0 && totalStudentsCompared > 0) {
             // User apne average score pe kaha khada hai, baaki sab enrolled students ke against
@@ -278,11 +275,11 @@ sections.forEach((sec, idx) => {
 
             if (totalStudentsCompared >= 2) {
                 const stdDev = getStdDev(studentAvgScores);
-                const minScore = Math.min(...studentAvgScores);
-                const maxScore = Math.max(...studentAvgScores);
+        const minScore = Math.min(...studentAvgScores);
+        const maxScore = Math.max(...studentAvgScores);
 
-                const bestScore = Math.min(maxScore, avgScore + stdDev);
-                const worstScore = Math.max(minScore, avgScore - stdDev);
+        const bestScore = Math.min(maxScore, avgScore + stdDev);
+        const worstScore = Math.max(minScore, avgScore - stdDev);
 
                 const { rank: bestRankRaw } = calculateRankFromPredictor(bestScore, listing.rankPredictorData);
                 const { rank: worstRankRaw } = calculateRankFromPredictor(worstScore, listing.rankPredictorData);

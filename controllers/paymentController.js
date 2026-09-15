@@ -48,6 +48,12 @@ export const createOrder = async (req, res) => {
     const listing = await Listing.findById(listingId);
     if (!listing) throw new ExpressError(404, "Test Series Not Found");
 
+
+    if (listing.type === "Free") {
+        throw new ExpressError(400, "This test series is free. No payment is required to enroll.");
+    }
+
+
     const user = await User.findById(req.user._id);
     const alreadyEnrolled = user.enrolledListings.some(
         e => String(e.listing) === String(listingId)

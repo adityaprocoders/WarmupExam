@@ -1,5 +1,6 @@
 let selectedShowLanguage = null;
-let pendingBulkCopyMode = null; // language confirm hone ke baad kis mode se bulkCopyModal khulega
+let pendingBulkCopyMode = null;
+let pendingMixedBulkItems = null; // 👈 NAYA // language confirm hone ke baad kis mode se bulkCopyModal khulega
 
 async function fetchLanguagesForSections(sectionIds) {
     const langSet = new Set();
@@ -51,12 +52,15 @@ function closeShowLanguageModal() {
 function confirmLanguageNext() {
     closeShowLanguageModal();
 
-    if (pendingSingleCopySource) {
+    if (pendingMixedBulkItems) {
+        // 👈 NAYA — mixed folder/file/test bulk copy flow
+        openBulkCopyModal(pendingBulkCopyMode);
+    } else if (pendingSingleCopySource) {
         // single-item copy flow
         openCopyModal(pendingSingleCopySource.type, pendingSingleCopySource.id);
         pendingSingleCopySource = null;
     } else {
-        // bulk copy flow
+        // bulk copy flow (sections)
         openBulkCopyModal(pendingBulkCopyMode);
     }
 }
@@ -99,3 +103,36 @@ document.addEventListener('change', function (e) {
     selectedShowLanguage = el.value;
     document.getElementById('languageNextBtn').disabled = false;
 });
+
+
+
+
+
+
+async function fetchLanguagesForItems(items) {
+    const langSet = new Set();
+    for (const item of items) {
+        try {
+            const res = await fetch(`/api/copy/languages?sourceType=${item.type}&sourceId=${item.id}`);
+            const data = await res.json();
+            if (data.success) (data.languages || []).forEach(l => langSet.add(l));
+        } catch (err) {
+            console.error('Language fetch error:', err);
+        }
+    }
+    return Array.from(langSet);
+}
+
+async function startItemBulkCopyWithLanguageCheck() {
+    const items = getSelectedMixedItems();
+    if (items.length === 0) return;
+
+    pendingMixedBulkItems = items;
+    const languages = await fetchLanguagesForItems(items);
+
+    if (languages.length === 0) {
+        openBulkCopyModal('multiple');
+        return;
+    }
+    openShowLanguageModal(languages, 'multiple');
+}

@@ -10,13 +10,13 @@ export const searchSeries = async (req, res) => {
     const keyword = req.query.keyword?.trim();
 
     const series = keyword
-        ? await Listing.find({
-            $or: [
-                { title: { $regex: keyword, $options: "i" } },
-                { exam: { $regex: keyword, $options: "i" } }
-            ]
-        }).select("title exam slug").limit(10)
-        : await Listing.find().select("title exam slug").sort({ createdAt: -1 }).limit(20);
+    ? await Listing.find({
+        $or: [
+            { title: { $regex: keyword, $options: "i" } },
+            { exam: { $regex: keyword, $options: "i" } }
+        ]
+    }).select("title exam slug type language").limit(10)
+    : await Listing.find().select("title exam slug type language").sort({ createdAt: -1 }).limit(20);
 
     // 👇 NAYA — har listing ke andar jo bhi Tests hain, unki unique languages nikaalo
     const listingIds = series.map(s => s._id);
@@ -202,6 +202,38 @@ export const bulkCopySections = async (req, res) => {
                 copied++;
             } catch (err) {
                 console.error("Bulk copy error:", err);
+                failed++;
+            }
+        }
+    }
+
+    res.json({ success: true, copied, failed, fallbacks: fallbackLog });
+};
+
+
+export const bulkCopyItems = async (req, res) => {
+    const { items, destListingIds, selectedLanguage } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ success: false, message: "Koi item select nahi kiya" });
+    }
+    if (!Array.isArray(destListingIds) || destListingIds.length === 0) {
+        return res.status(400).json({ success: false, message: "Koi destination series select nahi ki" });
+    }
+
+    const overrideLanguage = (selectedLanguage && selectedLanguage !== "All") ? selectedLanguage : null;
+
+    let copied = 0;
+    let failed = 0;
+    const fallbackLog = [];
+
+    for (const item of items) {
+        for (const listingId of destListingIds) {
+            try {
+                await copyNode(item.type, item.id, listingId, null, "section", null, overrideLanguage, "", fallbackLog);
+                copied++;
+            } catch (err) {
+                console.error("Bulk copy item error:", err);
                 failed++;
             }
         }

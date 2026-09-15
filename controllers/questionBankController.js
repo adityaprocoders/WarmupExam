@@ -168,6 +168,33 @@ export const updateQuestion = async (req, res) => {
         if (!existing) return res.status(404).json({ success: false, message: "Question nahi mili" });
 
         const hash = computeContentHash(req.body);
+
+        // Agar naya content kisi doosre existing question se hubahu match kar gaya,
+        // to crash/block karne ke bajaye us existing question ko hi authoritative maan lo.
+        const clash = await Question.findOne({ contentHash: hash, _id: { $ne: id } });
+
+        if (clash) {
+            // Is question (jo edit kiya ja raha tha) ko jitne tests use kar rahe the,
+            // unko ab clash-wale (existing) question pe point kar do.
+            await TestQuestion.updateMany(
+                { question: id },
+                { $set: { question: clash._id } }
+            );
+
+            // Purana (ab orphan/duplicate) doc — agar kahin use nahi ho raha reh gaya, delete kar do.
+            const stillUsed = await TestQuestion.exists({ question: id });
+            if (!stillUsed) {
+                await Question.findByIdAndDelete(id);
+            }
+
+            return res.json({
+                success: true,
+                question: clash,
+                merged: true,
+                message: "Ye content kisi existing question se match kar gaya, isliye dono ko merge kar diya gaya hai."
+            });
+        }
+
         const updated = await Question.findByIdAndUpdate(id, { ...req.body, contentHash: hash }, { new: true, runValidators: true });
 
         res.json({ success: true, question: updated, message: "Question update ho gaya" });
