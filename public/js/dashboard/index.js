@@ -653,13 +653,61 @@ function updatePasteFooterBtn() {
     btn.onclick = () => doPaste(copyNav.listingId, copyNav.sectionId, copyNav.parentType, copyNav.parentId);
 }
 
+
 async function doPaste(destListingId, destSectionId, destParentType, destParentId) {
 
+    // 👇 NAYA — agar mixed bulk items pending hain, to unhe is destination pe bulk-copy karo
+    if (pendingMixedBulkItems) {
+        const res = await fetch("/api/bulk-copy-items", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                items: pendingMixedBulkItems,
+                destListingIds: [destListingId],
+                destSectionId,
+                destParentType: destParentType || "section",
+                destParentId: destParentId || null,
+                selectedLanguage: selectedShowLanguage || null
+            })
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            let message = `${result.copied} copy operations successful` + (result.failed ? `, ${result.failed} failed` : '');
+
+            if (result.fallbacks && result.fallbacks.length > 0) {
+                const fallbackDetails = result.fallbacks
+                    .map(f => `• ${f.path} (chuni gayi language "${f.requestedLanguage}" is test me available nahi thi, "All" set kar diya gaya)`)
+                    .join('\n');
+                message += `\n\nNote: ${result.fallbacks.length} test(s) me language "All" par set ho gayi:\n${fallbackDetails}`;
+            }
+
+            alert(message);
+            pendingMixedBulkItems = null;
+            closeCopyModal();
+
+            if (destParentType === 'folder') {
+                window.location.href = `/folder/${destParentId}`;
+            } else if (destParentType === 'file') {
+                window.location.href = `/file/${destParentId}`;
+            } else if (destSectionId) {
+                window.location.href = `/series/${copyNav.slug}?section=${destSectionId}`;
+            } else {
+                window.location.href = `/series/${copyNav.slug}`;
+            }
+        } else {
+            alert("Copy failed: " + (result.message || "Unknown error"));
+        }
+        return; // 👈 mixed flow yahin khatam, neeche wala single-item code na chale
+    }
+
+    // ---- purana single-item copy flow (unchanged) ----
     const body = {
         sourceType: copySource.type,
         sourceId: copySource.id,
         destListingId,
-        selectedLanguage: selectedShowLanguage || null   // 👈 sirf ye ek line add hui
+        selectedLanguage: selectedShowLanguage || null
     };
 
     if (copySource.type !== "section") {
@@ -680,7 +728,6 @@ async function doPaste(destListingId, destSectionId, destParentType, destParentI
         alert("Copied successfully!");
         closeCopyModal();
 
-        // Destination pe redirect karo, current page reload mat karo
         if (destParentType === 'folder') {
             window.location.href = `/folder/${destParentId}`;
         } else if (destParentType === 'file') {

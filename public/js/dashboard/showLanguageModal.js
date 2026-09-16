@@ -53,14 +53,12 @@ function confirmLanguageNext() {
     closeShowLanguageModal();
 
     if (pendingMixedBulkItems) {
-        // 👈 NAYA — mixed folder/file/test bulk copy flow
-        openBulkCopyModal(pendingBulkCopyMode);
+        // 👇 CHANGED — series+section navigate karne wala copyModal use karo, bulkCopyModal nahi
+        openCopyModal('mixed', null);
     } else if (pendingSingleCopySource) {
-        // single-item copy flow
         openCopyModal(pendingSingleCopySource.type, pendingSingleCopySource.id);
         pendingSingleCopySource = null;
     } else {
-        // bulk copy flow (sections)
         openBulkCopyModal(pendingBulkCopyMode);
     }
 }
@@ -131,8 +129,9 @@ async function startItemBulkCopyWithLanguageCheck() {
     const languages = await fetchLanguagesForItems(items);
 
     if (languages.length === 0) {
-        openBulkCopyModal('multiple');
+        // 👇 CHANGED — series+section navigate karne wala copyModal
+        openCopyModal('mixed', null);
         return;
     }
-    openShowLanguageModal(languages, 'multiple');
+    openShowLanguageModal(languages, 'mixed');
 }

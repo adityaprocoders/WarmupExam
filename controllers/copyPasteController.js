@@ -212,13 +212,20 @@ export const bulkCopySections = async (req, res) => {
 
 
 export const bulkCopyItems = async (req, res) => {
-    const { items, destListingIds, selectedLanguage } = req.body;
+    const { items, destListingIds, selectedLanguage, destSectionId, destParentType, destParentId } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ success: false, message: "Koi item select nahi kiya" });
     }
     if (!Array.isArray(destListingIds) || destListingIds.length === 0) {
         return res.status(400).json({ success: false, message: "Koi destination series select nahi ki" });
+    }
+
+    // 👇 FIXED — sirf tab section required hai jab koi non-section item ho
+    // (section apna khud ka naya Section banata hai, usko destSectionId ki zaroorat nahi)
+    const hasNonSectionItem = items.some(it => it.type !== 'section');
+    if (hasNonSectionItem && !destSectionId) {
+        return res.status(400).json({ success: false, message: "Destination section select karo" });
     }
 
     const overrideLanguage = (selectedLanguage && selectedLanguage !== "All") ? selectedLanguage : null;
@@ -230,7 +237,14 @@ export const bulkCopyItems = async (req, res) => {
     for (const item of items) {
         for (const listingId of destListingIds) {
             try {
-                await copyNode(item.type, item.id, listingId, null, "section", null, overrideLanguage, "", fallbackLog);
+                // section item ke liye destSectionId use hi nahi hota copyNode ke andar (ignore ho jata hai)
+                await copyNode(
+                    item.type, item.id, listingId,
+                    item.type === 'section' ? null : destSectionId,
+                    destParentType || "section",
+                    destParentId || null,
+                    overrideLanguage, "", fallbackLog
+                );
                 copied++;
             } catch (err) {
                 console.error("Bulk copy item error:", err);
