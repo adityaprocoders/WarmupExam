@@ -6,7 +6,7 @@ export const validateBody = (schema, key = null) => {
 
         if (error) {
             const message = error.details.map(d => d.message).join(", ");
-            if (req.xhr || req.headers.accept?.includes("json") || req.is("json")) {
+            if (req.originalUrl.startsWith("/api/") || req.xhr || req.headers.accept?.includes("json") || req.is("json")) {
                 return res.status(400).json({ success: false, message });
             }
             req.flash("error", message);

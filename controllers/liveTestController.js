@@ -217,7 +217,7 @@ if (Array.isArray(row.difficulty) && row.difficulty.length > 0) {
         config.subjectQuestionCounts.forEach(sq => {
     const idxs = subjectToRowIdx[sq.subject];
     if (!idxs || idxs.length === 0) {
-        console.warn(`[live-test] ${exam}: subjectQuestionCounts me "${sq.subject}" hai lekin criteria me koi matching row nahi mili — is subject ka count ignore ho gaya.`);
+        console.warn(`[live-test] ${exam}: subjectQuestionCounts contains "${sq.subject}" but no matching row was found in the criteria; the count for this subject was ignored.`);
         return;
     }
     const rowsForSubject = idxs.map(idx => config.criteria[idx]);
@@ -295,13 +295,13 @@ return selected.slice(0, needed);
         const needed = effectiveCounts[idx] || 0;
         const picked = pickRowQuestions(rp.pool, needed);
         if (picked.length < needed) {
-            shortfalls.push(`"${rp.row.subject}" row: ${needed} chahiye the, sirf ${picked.length} mile.`);
+            shortfalls.push(`${rp.row.subject}" row: needed ${needed}, but only ${picked.length} were found.`);
         }
         allSelected = allSelected.concat(picked);
     });
 
     if (allSelected.length === 0) {
-        console.log(`[live-test] ${exam}: koi question select nahi hua.`);
+        console.log(`[live-test] ${exam}: no questions were selected.`);
         return;
     }
     if (shortfalls.length > 0) {

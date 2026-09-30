@@ -38,8 +38,8 @@ export const getAllCategories = async (req, res, next) => {
         res.render("pages/categories/categories", {
             categories,
             isOwner,
-            title: "All Exam Categories - WarmupExam",
-            description: "Browse all exam categories available on WarmupExam.",
+            title: "All Exam Categories - Mock Test Series | WarmupExam",
+            description: "Browse all exam categories on WarmupExam: UPSC, SSC, Defence, JEE, NEET, GATE and more. Practice mock tests with real exam pattern and AI-powered analysis.",
             keywords: "exam categories, mock test categories",
             canonicalUrl: "https://warmupexam.com/categories",
         });
@@ -55,7 +55,7 @@ export const createCategory = async (req, res) => {
         const { name, icon, description } = req.body;
 
         if (!name || !icon || !description) {
-            req.flash && req.flash("error", "All fields are required");
+            req.flash("error", "All fields are required");
             return res.redirect("back");
         }
 
@@ -214,6 +214,7 @@ export const showCategory = async (req, res, next) => {
             description: seoDescription,
             keywords: seoKeywords,
             canonicalUrl,
+            robots: totalListingsCount === 0 ? "noindex, follow" : "index, follow",
         });
     } catch (err) {
         console.error("Show category error:", err);

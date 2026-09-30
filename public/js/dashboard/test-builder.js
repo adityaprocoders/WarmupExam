@@ -82,7 +82,7 @@ async function uploadAndStore(inputEl, kind, qId, optionIdx) {
     const result = await res.json();
 
     if (!result.success) {
-      alert("Image upload fail: " + (result.message || "Unknown error"));
+      showToast("Image upload failed: " + (result.message || "Unknown error"), "error");
       return;
     }
 
@@ -98,7 +98,7 @@ async function uploadAndStore(inputEl, kind, qId, optionIdx) {
     }
   } catch (err) {
     console.error("Image upload error:", err);
-    alert("Image upload me error aaya");
+    showToast("Image upload failed. Please try again.", "error");;
   }
 }
 
@@ -138,7 +138,7 @@ async function loadSubjects() {
 
         if (result.success) {
             subjectsList = result.data;
-            console.log("Subjects loaded from Listing:", subjectsList);
+             
         } else {
             console.error("Subjects load failed:", result.message);
             subjectsList = [];
@@ -556,7 +556,7 @@ function renderLanguageTags() {
 --------------------------------------------------------- */
 function addQuestion(existingMongoId, initialOptionCount) {
    if (!existingMongoId && subjectsList.length === 0) {
-    alert("Pehle Listing me subjects/marks configure karo, tabhi questions add ho sakte hain.");
+    showToast("Please configure subjects/marks in the listing first, then you can add questions.", "error");
     return;
   }
  
@@ -748,7 +748,7 @@ function addOption(qId) {
 function removeOption(qId, optIdx) {
   const count = getOptionCount(qId);
   if (count <= 2) {
-    alert("Kam se kam 2 options zaroori hain.");
+    showToast("At least 2 options are required.", "error");
     return;
   }
 
@@ -1052,9 +1052,7 @@ function calculateTotalMarks() {
     fullMarksInput.value = total;
   }
 
-  console.log("---- Total Marks Calculation ----");
-  console.table(breakdown);
-  console.log("Total Marks:", total);
+ 
 
   return total;
 }
@@ -1499,7 +1497,7 @@ async function loadExistingTest() {
         const result = await res.json();
 
         if (!result.success) {
-            alert("Test load nahi ho paya: " + (result.message || "Unknown error"));
+            showToast("Failed to load test: " + (result.message || "Unknown error"), "error");
             return;
         }
 
@@ -1545,7 +1543,7 @@ async function loadExistingTest() {
 
     } catch (err) {
         console.error("Load existing test error:", err);
-        alert("Test load karte waqt error aaya");
+        showToast("An error occurred while loading the test.", "error");
     }
 }
 
@@ -1602,7 +1600,7 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
       const qId = block.id.split('_')[1];
       const subjectEl = document.getElementById(`qSubject_${qId}`);
       if (subjectEl && !subjectEl.value.trim()) {
-        alert(`Question ${qId} me Subject choose karna zaroori hai. Save karne se pehle sabhi questions me subject select karo.`);
+        showToast(`Question ${qId} needs a subject selected. Please select a subject for all questions before saving.`, "error");
         return;
       }
     }
@@ -1612,7 +1610,7 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
   if (visibility === 'scheduled') {
     const publishAtVal = document.getElementById('publishAtInput')?.value;
     if (!publishAtVal) {
-      alert("Schedule ke liye Publish Date & Time zaroor daalo");
+      showToast("Please enter a Publish Date & Time to schedule this.", "error");
       return;
     }
   }
@@ -1629,11 +1627,11 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
       questionsArray = Array.isArray(parsed) ? parsed : parsed.questions;
 
       if (!Array.isArray(questionsArray)) {
-        alert("JSON ek questions array hona chahiye, jaise: [ {...}, {...} ]");
+        showToast("JSON must be an array of questions, e.g. [ {...}, {...} ]", "error");
         return;
       }
     } catch (err) {
-      alert("Invalid JSON: " + err.message);
+      showToast("Invalid JSON: " + err.message, "error");
       console.error("JSON parse error:", err);
       return;
     }
@@ -1676,7 +1674,7 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
       ? document.getElementById('publishAtInput')?.value || null
       : null;
 
-  console.log("Frontend se ja raha payload:", payload);
+   
 
   try {
     const url = isEditMode
@@ -1692,10 +1690,10 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
     });
 
     const result = await res.json();
-    console.log("Server response:", result);
+     
 
     if (!result.success) {
-        alert("Issue: " + (result.message || "Unknown error"));
+        showToast("Issue: " + (result.message || "Unknown error"), "error");
     } else {
          window.location.replace(contextData.returnUrl);
     }

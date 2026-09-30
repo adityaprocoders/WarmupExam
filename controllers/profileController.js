@@ -3,6 +3,8 @@ import cloudinary from "../config/cloudinary.js";
 import { getPublicIdFromUrl } from "../utils/cloudinaryHelper.js";
 import Attempt from "../models/TestAttempt.js"; 
 import AttemptSession from "../models/AttemptSession.js"; 
+import CustomPaperAttempt from "../models/CustomPaperAttempt.js";
+import AIUsage from "../models/AIUsage.js";
 
 export const getProfile = async (req, res) => {
     try {
@@ -265,6 +267,8 @@ export const deleteAccount = async (req, res) => {
         // ---------- Attempts + User delete ----------
         await Attempt.deleteMany({ user: userId });
         await AttemptSession.deleteMany({ user: userId });
+        await CustomPaperAttempt.deleteMany({ user: userId });
+        await AIUsage.deleteMany({ user: userId });
         await User.findByIdAndDelete(userId);
 
         // ---------- Session/login clear karke logout ----------

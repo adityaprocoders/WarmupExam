@@ -1,63 +1,72 @@
-<footer class="bg-[#111827] text-slate-300 border-t border-slate-700" id="dynamic-footer">
+<footer class="relative isolate overflow-hidden bg-[#111827] text-slate-300 border-t border-slate-700" id="dynamic-footer">
+
+    <!-- Subtle background depth (base colour same rehta hai) -->
+    <div aria-hidden="true" class="pointer-events-none absolute -top-24 -left-24 -z-10 h-72 w-72 sm:h-96 sm:w-96 rounded-full bg-indigo-500/10 blur-3xl"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute -bottom-24 -right-24 -z-10 h-72 w-72 sm:h-96 sm:w-96 rounded-full bg-violet-500/10 blur-3xl"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(148,163,184,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.06)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_70%_at_50%_0%,#000_30%,transparent_100%)]"></div>
 
     <!-- Top -->
-    <div class="max-w-7xl mx-auto px-6 py-12">
-        <div class="grid lg:grid-cols-2 gap-12">
+    <div class="max-w-7xl mx-auto px-5 sm:px-6 pt-12 sm:pt-16 pb-8 sm:pb-10">
+        <div class="grid lg:grid-cols-2 gap-10 sm:gap-12">
             <!-- Left -->
-            <div>
+            <div class="min-w-0">
                 <div class="flex items-center gap-3 mb-5">
-                     <div class="w-10 h-10 bg-white rounded-lg shadow-sm flex items-center justify-center p-1">
-                        <img src="/images/logo.png" alt="WarmupExam Logo" class="w-full h-full object-contain">
+                    <div class="w-11 h-11 shrink-0 bg-white rounded-xl shadow-lg shadow-black/30 ring-1 ring-white/20 flex items-center justify-center p-1.5">
+                        <img src="/images/logo.svg" alt="WarmupExam Logo" class="w-full h-full object-contain">
                     </div>
-                    <h2 class="text-3xl font-bold text-white">
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
                         WarmupExam
                     </h2>
                 </div>
-                <p class="text-slate-400 leading-8 max-w-lg">
-                    WarmupExam empowers students to excel in Entrance,
-                    Competitive, Government Recruitment, University Admission,
-                    Professional Certification and Academic Examinations through
-                    AI-powered mock tests, real exam simulations,
-                    personalized practice, rank prediction and
-                    in-depth performance analytics.
+                <p class="text-slate-400 leading-7 sm:leading-8 max-w-lg text-sm sm:text-base">
+                    WarmupExam helps students prepare for Entrance, Competitive, Government Recruitment, University Admission, Professional Certification and Academic Exams with realistic mock tests, PYQs, personalized practice, rank prediction and detailed performance analysis.
                 </p>
-                <div class="mt-6 space-y-3 text-slate-400">
-    <div class="flex items-center gap-3">
-        <i class="fa-solid fa-location-dot w-5 text-indigo-400"></i>
-        <span>India, Bihar</span>
-    </div>
-    <div class="flex items-center gap-3">
-    <i class="fa-solid fa-envelope w-5 text-indigo-400"></i>
-    <a href="#" class="footer-email hover:text-white transition" data-user="support" data-domain="warmupexam.com">Contact via email</a>
-</div>
-    <div class="flex items-center gap-3">
-        <i class="fa-solid fa-clock w-5 text-indigo-400"></i>
-        <span>Support Hours: 10:00 AM – 7:00 PM IST</span>
-    </div>
-</div>
-                <div class="flex gap-4 mt-8">
-                    <a href="https://www.instagram.com/warmupexam/" class="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-indigo-600 duration-300">
+                <div class="mt-6 space-y-3 text-sm sm:text-base text-slate-400">
+                    <div class="flex items-center gap-3">
+                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-800 ring-1 ring-slate-700">
+                            <i class="fa-solid fa-location-dot text-indigo-400"></i>
+                        </span>
+                        <span>India, Bihar</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-800 ring-1 ring-slate-700">
+                            <i class="fa-solid fa-envelope text-indigo-400"></i>
+                        </span>
+                        <a href="#" class="footer-email min-w-0 break-all hover:text-white transition" data-user="support" data-domain="warmupexam.com">Contact via email</a>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-800 ring-1 ring-slate-700">
+                            <i class="fa-solid fa-clock text-indigo-400"></i>
+                        </span>
+                        <span>Support Hours: 10:00 AM – 7:00 PM IST</span>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-8">
+                    <a href="https://www.instagram.com/warmupexam/" aria-label="Instagram" class="grid h-11 w-11 place-items-center rounded-full bg-slate-800 ring-1 ring-slate-700 text-white transition duration-300 hover:-translate-y-1 hover:bg-indigo-600 hover:ring-indigo-400 hover:shadow-lg hover:shadow-indigo-500/30">
                         <i class="fa-brands fa-instagram"></i>
                     </a>
-                    <a href="https://www.youtube.com/@adityaprocoders" class="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-600 duration-300">
+                    <a href="https://www.youtube.com/@WarmupExam" aria-label="YouTube" class="grid h-11 w-11 place-items-center rounded-full bg-slate-800 ring-1 ring-slate-700 text-white transition duration-300 hover:-translate-y-1 hover:bg-red-600 hover:ring-red-400 hover:shadow-lg hover:shadow-red-500/30">
                         <i class="fa-brands fa-youtube"></i>
                     </a>
                 </div>
             </div>
 
             <!-- Company -->
-            <div class="lg:ml-auto">
-                <h3 class="text-white text-xl font-semibold mb-5">
+            <div class="lg:ml-auto lg:min-w-[220px]">
+                <h3 class="flex items-center gap-2.5 text-white text-lg sm:text-xl font-bold mb-5">
+                    <span class="h-5 w-1 rounded-full bg-gradient-to-b from-indigo-400 to-violet-500"></span>
                     Company
                 </h3>
-                <ul class="space-y-4">
+                <ul class="space-y-3.5">
                     <li>
-                        <a href="/aboutUs" class="hover:text-white transition">
+                        <a href="/aboutUs" class="group inline-flex items-center gap-2 transition hover:text-white">
+                            <i class="fa-solid fa-chevron-right text-[10px] text-indigo-400 transition group-hover:translate-x-1"></i>
                             About Us
                         </a>
                     </li>
                     <li>
-                        <a href="/contactUs" class="hover:text-white transition">
+                        <a href="/contactUs" class="group inline-flex items-center gap-2 transition hover:text-white">
+                            <i class="fa-solid fa-chevron-right text-[10px] text-indigo-400 transition group-hover:translate-x-1"></i>
                             Contact Us
                         </a>
                     </li>
@@ -67,63 +76,77 @@
     </div>
 
     <!-- Exams -->
-    <div class="max-w-7xl mx-auto px-6 py-8">
-        <div class="grid lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-2">
-                <h3 class="text-white font-bold mb-5">
-                    Exams
-                </h3>
-                <!-- Left side top exams list -->
-                <ul class="space-y-3" id="footer-exams-list">
-                    <!-- Dynamically populated -->
-                </ul>
-            </div>
+    <div class="max-w-7xl mx-auto px-5 sm:px-6 py-3 sm:py-4">
+        <div class="rounded-3xl border border-slate-700 bg-slate-800/40 p-5 sm:p-8 shadow-xl shadow-black/20">
 
-            <div class="lg:col-span-10">
-                <!-- Main grid matching original styling -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm text-slate-400" id="footer-exams-grid">
-                    <!-- Dynamically populated -->
+            <!-- Heading row -->
+            <h3 class="flex items-center gap-2.5 text-white font-bold mb-6 pb-4">
+                <span class="h-5 w-1 rounded-full bg-gradient-to-b from-indigo-400 to-violet-500"></span>
+                Exams
+            </h3>
+
+            <!-- Data row (heading ke neeche) -->
+            <div class="grid lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-2 min-w-0">
+                    <!-- Left side top exams list -->
+                    <ul class="space-y-3 text-sm text-slate-400" id="footer-exams-list">
+                        <!-- Dynamically populated -->
+                    </ul>
+                </div>
+
+                <div class="lg:col-span-10 min-w-0">
+                    <!-- Main grid matching original styling -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm text-slate-400" id="footer-exams-grid">
+                        <!-- Dynamically populated -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Test Series -->
-    <div class="max-w-7xl mx-auto px-6 py-8">
-        <div class="grid lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-2">
-                <h3 class="text-white font-bold mb-5">
-                    Test Series
-                </h3>
-                <!-- Left side top test series list -->
-                <ul class="space-y-3" id="footer-series-list">
-                    <!-- Dynamically populated -->
-                </ul>
-            </div>
+    <div class="max-w-7xl mx-auto px-5 sm:px-6 py-3 sm:py-4 pb-10 sm:pb-12">
+        <div class="rounded-3xl border border-slate-700 bg-slate-800/40 p-5 sm:p-8 shadow-xl shadow-black/20">
 
-            <div class="lg:col-span-10">
-                <!-- Main grid matching original styling -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm text-slate-400" id="footer-series-grid">
-                    <!-- Dynamically populated -->
+            <!-- Heading row -->
+            <h3 class="flex items-center gap-2.5 text-white font-bold mb-6 pb-4 ">
+                <span class="h-5 w-1 rounded-full bg-gradient-to-b from-indigo-400 to-violet-500"></span>
+                Test Series
+            </h3>
+
+            <!-- Data row (heading ke neeche) -->
+            <div class="grid lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-2 min-w-0">
+                    <!-- Left side top test series list -->
+                    <ul class="space-y-3 text-sm text-slate-400" id="footer-series-list">
+                        <!-- Dynamically populated -->
+                    </ul>
+                </div>
+
+                <div class="lg:col-span-10 min-w-0">
+                    <!-- Main grid matching original styling -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm text-slate-400" id="footer-series-grid">
+                        <!-- Dynamically populated -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Bottom -->
-    <div class="border-t border-slate-700">
-        <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between text-sm text-slate-500">
-            <p>
+    <div class="border-t border-slate-700 bg-black/20">
+        <div class="max-w-7xl mx-auto px-5 sm:px-6 py-5 sm:py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+            <p class="text-center md:text-left">
                 © 2026 WarmupExam. All rights reserved.
             </p>
-            <div class="flex gap-8 mt-4 md:mt-0">
-                <a href="/Terms-&-Conditions" class="hover:text-white">
+            <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 sm:gap-x-8">
+                <a href="/Terms-&-Conditions" class="transition hover:text-white">
                     Terms & Conditions
                 </a>
-                <a href="/privacy-Policy" class="hover:text-white">
+                <a href="/privacy-Policy" class="transition hover:text-white">
                     Privacy Policy
                 </a>
-                <a href="/help" class="hover:text-white">
+                <a href="/help" class="transition hover:text-white">
                     Help Center
                 </a>
             </div>
@@ -145,7 +168,3 @@ document.querySelectorAll('.footer-email').forEach(function(el) {
 </script>
 
 <script src="/js/home/footer.js" defer></script>
-
-
-
-

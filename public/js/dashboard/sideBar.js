@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
         form.addEventListener("submit", () => {
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
-            console.log(data);
+             
         });
     }
 

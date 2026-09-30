@@ -144,9 +144,38 @@ const userSchema = new mongoose.Schema({
         default: null
     },
 
-    banned: {
+        banned: {
         type: Boolean,
         default: false
+    },
+    banReason: {
+        type: String,
+        enum: [
+            "CHEATING", "QUESTION_ANSWER_SHARING", "TEST_RESULT_MANIPULATION",
+            "LEADERBOARD_MANIPULATION", "UNAUTHORIZED_TEST_ASSISTANCE",
+            "ACCOUNT_SHARING", "MULTIPLE_ACCOUNT_ABUSE", "UNAUTHORIZED_ACCESS",
+            "PAID_CONTENT_ABUSE", "COUPON_OFFER_ABUSE", "PAYMENT_REFUND_ABUSE",
+            "BOT_AUTOMATION", "API_ABUSE", "DATA_SCRAPING",
+            "VULNERABILITY_EXPLOITATION", "RESTRICTION_BYPASS",
+            "SPAM", "HARASSMENT", "THREATENING_BEHAVIOR",
+            "FRAUDULENT_ACTIVITY", "IMPERSONATION",
+            "SUSPICIOUS_ACTIVITY", "COMPROMISED_ACCOUNT", "SECURITY_VIOLATION",
+            "REPEATED_POLICY_VIOLATION", "TERMS_VIOLATION", "OTHER"
+        ],
+        default: null
+    },
+    banType: {
+        type: String,
+        enum: ["permanent", "temporary"],
+        default: null
+    },
+    bannedAt: {
+        type: Date,
+        default: null
+    },
+    banExpiresAt: {
+        type: Date,
+        default: null
     },
 
     activeSessionId: {
@@ -158,7 +187,18 @@ const userSchema = new mongoose.Schema({
     permissions: {
         type: [String],
         default: []
-    }
+    },
+
+    customTestTier: {
+        type: String,
+        enum: ["free", "pro", "promax"],
+        default: "free"
+    },
+
+    customTestExpiresAt: {
+        type: Date,
+        default: null
+    },
 
 }, { timestamps: true });
 

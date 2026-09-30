@@ -1,104 +1,254 @@
-<div class="max-w-6xl mx-auto px-4 py-8 pb-24"> <!-- Extra padding-bottom for mobile footer -->
+
+<% const ld = (v) => JSON.stringify(v == null ? '' : v).replace(/</g, '\\u003c');
+   const validityAnswer = 'You get ' + (listing.validityDays || 365) + ' days of access after enrollment, giving you ample time to complete all tests and revise thoroughly.';
+   const languageAnswer = 'This test series is available in ' + (listing.language || 'English') + ', ensuring clarity and ease of understanding for all aspirants.';
+   const ldImage = (listing.image && !listing.image.startsWith('data:')) ? listing.image : 'https://warmupexam.com/images/og-banner.jpg'; %>
+
+
+<div class="relative overflow-hidden w-full bg-gradient-to-br from-indigo-80 via-indigo-50 to-indigo-100 pt-[125px] sm:pt-[135px] pb-6 sm:pb-8 px-4 border-b border-indigo-100">
+    <div class="max-w-6xl mx-auto">
+
+
+<div class="mb-3 -ml-2 sm:-ml-3">
+    <a href="#" id="backBtn"
+       class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-1.5 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 backdrop-blur transition hover:text-indigo-600 hover:ring-indigo-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+        <i class="fa-solid fa-arrow-left text-xs"></i> Back
+    </a>
+</div>
+
+    <h1 class="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-snug sm:leading-tight">
+        <%= listing.title %>
+    </h1>
+
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-6 mt-3 sm:mt-4">
+
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 text-[10px] sm:text-xs shrink-0">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </span>
+            <span class="text-slate-600 text-[11px] sm:text-sm font-medium">
+                For <%= listing.exam %> Aspirants
+            </span>
+        </div>
+
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 text-[10px] sm:text-xs shrink-0">
+                <i class="fa-regular fa-clock"></i>
+            </span>
+            <span class="text-slate-600 text-[11px] sm:text-sm font-medium">
+                <%= listing.validityDays %> days access after enrollment
+            </span>
+        </div>
+
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 text-[10px] sm:text-xs shrink-0">
+                <i class="fa-solid fa-file-lines"></i>
+            </span>
+            <span class="text-slate-600 text-[11px] sm:text-sm font-medium">
+                <%= totalTestCount %> Total Tests
+            </span>
+        </div>
+
+    </div>
+
+     <div class="hidden lg:block absolute -right-4 -bottom-4 opacity-[0.07] text-[16rem] text-indigo-900 pointer-events-none">
+        <i class="<%= category.icon %>"></i>
+    </div>
+
+</div>
+</div>
+
+<div class="max-w-6xl mx-auto px-4 pt-6 sm:pt-8 pb-24">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <!-- Left Side: Main Content -->
-        <div class="lg:col-span-2 space-y-8">
-            <h1 class="text-3xl font-bold text-gray-900"><%= listing.title %></h1>
+       <div class="lg:col-span-2 space-y-6 sm:space-y-8">
 
-            <!-- Exam + Validity + Total Tests row -->
-            <div class="flex flex-wrap items-center gap-3">
-                <p class="text-gray-700 font-medium">Exam: <%= listing.exam %></p>
-
-                <span class="inline-flex items-center gap-1.5 bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1.5 rounded-full">
-                    <i class="fa-regular fa-clock"></i>
-                    <%= listing.validityDays %> days access after enrollment
-                </span>
-
-                <span class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full">
-                    <i class="fa-solid fa-file-lines"></i>
-                    <%= totalTestCount %> Total Tests
-                </span>
-            </div>
-            
-            <div class="border p-6 rounded-xl bg-gray-50">
-    <h2 class="text-3xl font-bold text-gray-900 mb-4">About the Test Series</h2>
-    <ul class="space-y-4">
-        <% aboutTestSeries.forEach(item => { %>
-            <li class="flex items-start gap-3">
-                <span class="w-9 h-9 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 shrink-0">
-                    <i class="<%= item.icon %>"></i>
-                </span>
-                <p class="text-gray-700">
-                    <span class="font-semibold text-gray-900"><%= item.title %>:</span>
-                    <%= item.text %>
-                </p>
-            </li>
-        <% }) %>
-    </ul>
-</div>
- 
-<%- include('../owner/contentBlocks', { listing, isOwner, allBlocks }) %>
  
 
-            <!-- FAQ Section -->
-            <div class="max-w-4xl mx-auto mt-12 mb-20 px-4">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-    
-    <div class="space-y-3">
-        <details class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-indigo-300 transition-colors">
-            <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-5 text-gray-800 hover:text-indigo-600 transition-colors">
-                <span>Who can take this Mock Test?</span>
-                <span class="transition group-open:rotate-180">
-                    <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
-                </span>
-            </summary>
-            <p class="text-gray-600 px-5 pb-5 pt-0">
-               This mock test platform is designed for students, learners, and aspirants preparing for various competitive, entrance, recruitment, and academic examinations. It provides realistic practice, detailed performance analysis, and AI-powered insights to help improve speed, accuracy, and overall performance.
-            </p>
-        </details>
-
-        <details class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-indigo-300 transition-colors">
-            <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-5 text-gray-800 hover:text-indigo-600 transition-colors">
-                <span>Are the Mock Tests based on the latest exam pattern?</span>
-                <span class="transition group-open:rotate-180">
-                    <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
-                </span>
-            </summary>
-            <p class="text-gray-600 px-5 pb-5 pt-0">
-                Yes. Every mock test is prepared according to the latest syllabus, exam pattern, and difficulty level.
-            </p>
-        </details>
-
-        <details class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-indigo-300 transition-colors">
-            <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-5 text-gray-800 hover:text-indigo-600 transition-colors">
-                <span>Will I receive AI Performance Analysis?</span>
-                <span class="transition group-open:rotate-180">
-                    <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
-                </span>
-            </summary>
-            <p class="text-gray-600 px-5 pb-5 pt-0">
-                Yes. After completing the test, you'll receive an AI-powered performance report showing your strengths, weaknesses, accuracy, speed, and topic-wise analysis.
-            </p>
-        </details>
-
-        <details class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-indigo-300 transition-colors">
-            <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-5 text-gray-800 hover:text-indigo-600 transition-colors">
-                <span>Will I get an All India Rank (AIR)?</span>
-                <span class="transition group-open:rotate-180">
-                    <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
-                </span>
-            </summary>
-            <p class="text-gray-600 px-5 pb-5 pt-0">
-                Yes. For supported tests, you'll receive an estimated All India Rank along with percentile and performance comparison.
-            </p>
-        </details>
+    <div class="border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-6 rounded-xl bg-white">
+        <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">About the Test Series</h2>
+        <ul class="space-y-3 sm:space-y-4">
+            <% aboutTestSeries.forEach(item => { %>
+                <li class="flex items-start gap-2.5 sm:gap-3">
+                    <span class="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 shrink-0 text-sm sm:text-base">
+                        <i class="<%= item.icon %>"></i>
+                    </span>
+                    <p class="text-sm sm:text-base text-gray-700">
+                        <span class="font-semibold text-gray-900"><%= item.title %>:</span>
+                        <%= item.text %>
+                    </p>
+                </li>
+            <% }) %>
+        </ul>
     </div>
-</div>
+
+    <%- include('../owner/contentBlocks', { listing, isOwner, allBlocks }) %>
+
+    <% if (examPattern && examPattern.rows && examPattern.rows.length) { %>
+    <div class="border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-6 rounded-xl bg-white">
+        <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Marks Configuration</h2>
+
+        <div class="overflow-x-auto rounded-xl border border-gray-200 -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table class="w-full text-xs sm:text-sm min-w-[500px] sm:min-w-0">
+                <thead>
+                    <tr class="bg-indigo-50 text-gray-700">
+                        <th class="text-left font-bold py-2.5 sm:py-3 px-3 sm:px-4">Subject</th>
+                        <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Questions</th>
+                        <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Positive</th>
+                        <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Negative</th>
+                        <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <%
+                        const totalQ = examPattern.rows.reduce((s, r) => s + (r.questions || 0), 0);
+                        const totalPos = examPattern.rows.reduce((s, r) => s + (r.positiveMarks || 0) * (r.questions || 0), 0);
+                        const isSectional = examPattern.timeStrategy === "sectional" && examPattern.sectionTime && examPattern.sectionTime.length;
+
+                        const totalTime = isSectional
+                            ? examPattern.sectionTime.reduce((s, st) => s + (Number(st.duration) || 0), 0)
+                            : (examPattern.totalDuration || 0);
+
+                        function findGroupIndex(subject) {
+                            if (!isSectional) return -1;
+                            return examPattern.sectionTime.findIndex(st => (st.subjects || []).includes(subject));
+                        }
+
+                        const renderedGroups = new Set();
+                    %>
+                    <% examPattern.rows.forEach(r => {
+                        const groupIdx = findGroupIndex(r.subject);
+                        const isFirstInGroup = groupIdx === -1 || !renderedGroups.has(groupIdx);
+                        if (groupIdx !== -1) renderedGroups.add(groupIdx);
+                        const groupSize = groupIdx !== -1 ? examPattern.sectionTime[groupIdx].subjects.length : 1;
+                    %>
+                        <tr class="border-t border-gray-100">
+                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 font-semibold text-gray-800 whitespace-nowrap"><%= r.subject %></td>
+                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-700"><%= r.questions %></td>
+                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-green-600 font-semibold">+<%= r.positiveMarks %></td>
+                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-red-600 font-semibold">-<%= r.negativeMarks %></td>
+                            <% if (isSectional) { %>
+                                <% if (isFirstInGroup) { %>
+                                    <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-500" rowspan="<%= groupSize %>">
+                                        <%= examPattern.sectionTime[groupIdx].duration %> min
+                                    </td>
+                                <% } %>
+                            <% } else { %>
+                                <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-500"></td>
+                            <% } %>
+                        </tr>
+                    <% }) %>
+                    <tr class="border-t border-gray-200 bg-gray-100 font-bold">
+                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-gray-900">Total</td>
+                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-900"><%= totalQ %></td>
+                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-green-700">+<%= totalPos %></td>
+                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center">—</td>
+                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-900 whitespace-nowrap">
+                            <%= totalTime %> Minutes
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <% } %>
+
+    <!-- FAQ Section -->
+ 
+<div class="max-w-4xl mx-auto mt-8 sm:mt-12 mb-16 sm:mb-20 px-0 sm:px-4">
+    <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Frequently Asked Questions</h2>
+
+    <div class="space-y-4" id="faqList">
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Who Can Take This Mock Test?</span>
+                <i class="fa-solid fa-chevron-down text-sm text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">This mock test platform is designed for students, learners, and aspirants preparing for various competitive, entrance, recruitment, and academic examinations. It provides realistic practice, detailed performance analysis, and AI-powered insights to help improve speed, accuracy, and overall performance.</p>
+            </div>
         </div>
 
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">What is the Validity of This Test Series?</span>
+                <i class="fa-solid fa-chevron-down text-sm text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed"><%= validityAnswer %></p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">In Which Language Are the Tests Available?</span>
+                <i class="fa-solid fa-chevron-down text-sm text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed"><%= languageAnswer %></p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Can I Reattempt a Test After Completing It?</span>
+                <i class="fa-solid fa-chevron-down text-sm text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, you can reattempt any test as many times as you like within your access period to track your improvement over time.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Will I Get Detailed Solutions After Each Test?</span>
+                <i class="fa-solid fa-chevron-down text-sm text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes, detailed solutions and explanations are provided for every question after test submission to help you understand your mistakes.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Are the Mock Tests Based on the Latest Exam Pattern?</span>
+                <i class="fa-solid fa-chevron-down text-sm text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes. Every mock test is prepared according to the latest syllabus, exam pattern, and difficulty level.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Will I Receive AI Performance Analysis?</span>
+                <i class="fa-solid fa-chevron-down text-sm text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes. After completing the test, you'll receive an AI-powered performance report showing your strengths, weaknesses, accuracy, speed, and topic-wise analysis.</p>
+            </div>
+        </div>
+
+        <div class="faq-item bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <button class="faq-question w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                <span class="font-bold text-slate-800 text-sm sm:text-base">Will I Get an All India Rank (AIR)?</span>
+                <i class="fa-solid fa-chevron-down text-sm text-indigo-600 shrink-0 transition-transform duration-300 faq-icon"></i>
+            </button>
+            <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300">
+                <p class="px-5 sm:px-6 pb-5 sm:pb-6 text-sm text-slate-500 leading-relaxed">Yes. For supported tests, you'll receive an estimated All India Rank along with percentile and performance comparison.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</div>
+
         <!-- Desktop: Sticky Sidebar -->
-<div class="hidden lg:block lg:col-span-1">
-    <div class="sticky top-24 bg-white border border-gray-200 rounded-xl shadow-lg p-5">
+<div class="hidden lg:block lg:col-span-1 -mt-[108px] relative z-20 pb-10">
+    <div class="sticky top-28 bg-white border border-gray-200 rounded-xl shadow-lg p-5">
 
         <!-- Image + Badge overlay -->
         <div class="relative mb-4">
@@ -114,7 +264,7 @@
 
         <!-- Title + language badge -->
         <div class="flex items-start justify-between gap-3 mb-4">
-            <h4 class="text-lg font-bold text-gray-900"><%= listing.title %></h4>
+            <p class="text-lg font-bold text-gray-900"><%= listing.title %></p>
             <% if (listing.language) { %>
                 <span class="shrink-0 text-xs font-semibold text-indigo-600 border border-indigo-300 px-3 py-1 rounded-full whitespace-nowrap">
                     <%= listing.language %>
@@ -209,8 +359,10 @@
 {
   "@context": "https://schema.org",
   "@type": "Course",
-  "name": <%- JSON.stringify(listing.title) %>,
-  "description": <%- JSON.stringify(listing.shortDescription || listing.description || '') %>,
+  "name": <%- ld(listing.title) %>,
+  "description": <%- ld(listing.shortDescription || listing.description || (listing.title + ' - mock test series for ' + listing.exam + ' aspirants')) %>,
+  "image": <%- ld(ldImage) %>,
+  "url": "https://warmupexam.com/test/<%= listing.slug %>",
   "provider": {
     "@type": "Organization",
     "name": "WarmupExam",
@@ -251,8 +403,8 @@
   "@type": "BreadcrumbList",
   "itemListElement": [
     { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://warmupexam.com/" },
-    { "@type": "ListItem", "position": 2, "name": <%- JSON.stringify(listing.exam) %>, "item": "https://warmupexam.com/alltests?exam=<%= encodeURIComponent(listing.exam) %>" },
-    { "@type": "ListItem", "position": 3, "name": <%- JSON.stringify(listing.title) %>, "item": "https://warmupexam.com/test/<%= listing.slug %>" }
+    { "@type": "ListItem", "position": 2, "name": <%- ld(listing.exam) %>, "item": "https://warmupexam.com/alltests?exam=<%= encodeURIComponent(listing.exam) %>" },
+    { "@type": "ListItem", "position": 3, "name": <%- ld(listing.title) %>, "item": "https://warmupexam.com/test/<%= listing.slug %>" }
   ]
 }
 </script>
@@ -266,31 +418,53 @@
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "Who can take this Mock Test?",
+      "name": "Who Can Take This Mock Test?",
       "acceptedAnswer": { "@type": "Answer", "text": "This mock test platform is designed for students, learners, and aspirants preparing for various competitive, entrance, recruitment, and academic examinations. It provides realistic practice, detailed performance analysis, and AI-powered insights to help improve speed, accuracy, and overall performance." }
     },
     {
       "@type": "Question",
-      "name": "Are the Mock Tests based on the latest exam pattern?",
+      "name": "Are the Mock Tests Based on the Latest Exam Pattern?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every mock test is prepared according to the latest syllabus, exam pattern, and difficulty level." }
     },
     {
       "@type": "Question",
-      "name": "Will I receive AI Performance Analysis?",
+      "name": "Will I Receive AI Performance Analysis?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. After completing the test, you'll receive an AI-powered performance report showing your strengths, weaknesses, accuracy, speed, and topic-wise analysis." }
     },
     {
       "@type": "Question",
-      "name": "Will I get an All India Rank (AIR)?",
+      "name": "Will I Get an All India Rank (AIR)?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. For supported tests, you'll receive an estimated All India Rank along with percentile and performance comparison." }
     }
+    ,{
+  "@type": "Question",
+  "name": "What is the Validity of This Test Series?",
+  "acceptedAnswer": { "@type": "Answer", "text": <%- ld(validityAnswer) %> }
+},
+{
+  "@type": "Question",
+  "name": "In Which Language Are the Tests Available?",
+  "acceptedAnswer": { "@type": "Answer", "text": <%- ld(languageAnswer) %> }
+},
+{
+  "@type": "Question",
+  "name": "Can I Reattempt a Test After Completing It?",
+  "acceptedAnswer": { "@type": "Answer", "text": "Yes, you can reattempt any test as many times as you like within your access period to track your improvement over time." }
+},
+{
+  "@type": "Question",
+  "name": "Will I Get Detailed Solutions After Each Test?",
+  "acceptedAnswer": { "@type": "Answer", "text": "Yes, detailed solutions and explanations are provided for every question after test submission to help you understand your mistakes." }
+}
   ]
 }
  
 </script>
 
+ 
 
 
+<script src="/js/testShow.js" defer></script>
 <script src="/js/enrollment.js" defer></script>
 
 

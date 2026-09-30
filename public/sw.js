@@ -1,7 +1,7 @@
 const CACHE_NAME = "warmupexam-v2";
 const urlsToCache = [
   "/css/output.css",
-  "/images/logo.png",
+  "/images/logo.svg",
   "/offline.html"
 ];
 

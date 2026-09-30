@@ -34,9 +34,9 @@
                 <h2 class="text-base font-bold text-slate-800 mb-1">No Data Yet</h2>
                 <p class="text-sm text-slate-400 max-w-md mx-auto px-2">
                     <% if (mockTests && mockTests.length === 0) { %>
-                        Is series me abhi koi test nahi hai.
+                        No tests are available in this series yet.
                     <% } else { %>
-                        Aapne abhi tak koi test attempt nahi kiya. Ek test attempt karne ke baad yaha aapka weak-area analysis dikhega.
+                        You haven't attempted any tests yet. Your weak-area analysis will appear here after you complete a test..
                     <% } %>
                 </p>
             </div>
@@ -62,19 +62,34 @@
                         <div class="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 mb-3">
                             <h2 class="text-sm font-bold text-slate-800">Topic Wise Breakdown</h2>
                             <div class="flex items-center gap-2">
-                                <div class="relative shrink-0">
-                                    <select id="subjectFilterSelect" class="appearance-none bg-white border border-slate-200 text-slate-600 text-xs font-medium pl-3 pr-7 py-1.5 rounded-md cursor-pointer focus:outline-none max-w-[110px] xs:max-w-none">
-                                        <!-- JS se dynamically fill hoga -->
-                                    </select>
-                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                                </div>
-                                <div class="relative shrink-0">
-                                    <select id="topicSortSelect" class="appearance-none bg-white border border-slate-200 text-slate-600 text-xs font-medium pl-3 pr-7 py-1.5 rounded-md cursor-pointer focus:outline-none">
-                                        <option value="weakest">Sort by: Weakest</option>
-                                        <option value="strongest">Sort by: Strongest</option>
-                                    </select>
-                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                                </div>
+                                <!-- Subject Filter -->
+<div class="wa-dropdown relative z-10 shrink-0" data-select="subjectFilterSelect">
+    <select id="subjectFilterSelect" class="hidden">
+        <!-- JS se dynamically fill hoga -->
+    </select>
+    <div class="relative">
+        <button type="button" class="wa-trigger bg-white border border-slate-200 text-slate-600 text-xs font-medium pl-3 pr-7 py-1.5 rounded-md cursor-pointer focus:outline-none flex items-center gap-1.5 max-w-[110px] xs:max-w-none whitespace-nowrap" aria-haspopup="listbox" aria-label="Filter by subject">
+            <span class="wa-trigger-label truncate">All Subjects</span>
+        </button>
+        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none wa-chevron"></i>
+        <div class="wa-menu hidden absolute left-0 mt-1.5 min-w-[160px] bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/60 py-1.5 z-50 overflow-hidden max-h-64 overflow-y-auto"></div>
+    </div>
+</div>
+
+<!-- Sort By -->
+<div class="wa-dropdown relative z-10 shrink-0" data-select="topicSortSelect">
+    <select id="topicSortSelect" class="hidden">
+        <option value="weakest">Sort by: Weakest</option>
+        <option value="strongest">Sort by: Strongest</option>
+    </select>
+    <div class="relative">
+        <button type="button" class="wa-trigger bg-white border border-slate-200 text-slate-600 text-xs font-medium pl-3 pr-7 py-1.5 rounded-md cursor-pointer focus:outline-none flex items-center gap-1.5 whitespace-nowrap" aria-haspopup="listbox" aria-label="Sort topics">
+            <span class="wa-trigger-label truncate">Sort by: Weakest</span>
+        </button>
+        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none wa-chevron"></i>
+        <div class="wa-menu hidden absolute left-0 mt-1.5 min-w-[160px] bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/60 py-1.5 z-50 overflow-hidden"></div>
+    </div>
+</div>
                             </div>
                         </div>
                         <div class="overflow-x-auto scrollbar-thin -mx-1">
@@ -92,7 +107,7 @@
                             </table>
                         </div>
                         <% if (weakAreaData.topics.length === 0) { %>
-                            <p class="text-center text-xs text-slate-400 py-6">Is subject ke liye koi topic data nahi mila.</p>
+                            <p class="text-center text-xs text-slate-400 py-6">No topic data is available for this subject.</p>
                         <% } %>
                         <button data-action="open-all-topics" class="mt-3 w-full text-center text-sm font-medium text-indigo-600 border border-slate-100 rounded-lg py-2.5 hover:bg-slate-50 transition">View All Topics</button>
                     </div>
@@ -119,7 +134,7 @@
                             </table>
                         </div>
                         <% if (weakAreaData.subtopics.length === 0) { %>
-                            <p class="text-center text-xs text-slate-400 py-6">Is topic ke liye koi subtopic data nahi mila.</p>
+                            <p class="text-center text-xs text-slate-400 py-6">No subtopic data is available for this topic.</p>
                         <% } %>
                         <button data-action="open-all-subtopics" class="mt-3 w-full text-center text-sm font-medium text-indigo-600 border border-slate-100 rounded-lg py-2.5 hover:bg-slate-50 transition">View All Subtopics</button>
                     </div>
@@ -161,7 +176,7 @@
                     <h2 class="text-sm font-bold text-slate-800 mb-4">Top Weak Areas</h2>
                     <div id="weak-area-list" class="space-y-4"></div>
                     <% if (weakAreaData.weakAreas.length === 0) { %>
-                        <p class="text-center text-xs text-slate-400 py-4">Koi weak area detect nahi hui.</p>
+                        <p class="text-center text-xs text-slate-400 py-4">No weak areas have been detected yet.</p>
                     <% } %>
                     <button data-action="open-all-weak-areas" class="mt-4 w-full text-center text-sm font-medium text-indigo-600 border border-slate-100 rounded-lg py-2.5 hover:bg-slate-50 transition">View All Weak Areas</button>
                 </div>
@@ -177,7 +192,7 @@
                         You are losing most marks in <%= weakAreaData.aiRecommendation.weakTopicsText %> topics.
                     </p>
                     <div class="bg-white rounded-xl border border-slate-100 p-3 mb-3">
-                        <p class="text-[11px] text-slate-400 mb-1">Estimated Marks Losing</p>
+                        <p class="text-[11px] text-slate-400 mb-1">Estimated Marks at Risk</p>
                         <p class="text-xl sm:text-2xl font-bold text-red-500">
                             <%= weakAreaData.aiRecommendation.estimatedMarksLosing %>
                             <span class="text-sm text-slate-400 font-medium">/ <%= weakAreaData.aiRecommendation.totalMarksReference %></span>

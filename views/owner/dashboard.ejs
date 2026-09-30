@@ -1,13 +1,13 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-<div class="flex h-screen overflow-hidden bg-gray-50 text-gray-800" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;">
+<div class="flex overflow-hidden mt-[88px] sm:mt-[96px] md:mt-[104px] lg:mt-[112px] h-[calc(100vh-88px)] sm:h-[calc(100vh-96px)] md:h-[calc(100vh-104px)] lg:h-[calc(100vh-112px)] bg-gray-50 text-gray-800" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;">
 
   <!-- Mobile overlay -->
   <div id="overlay" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"></div>
 
   <!-- Sidebar -->
   <aside id="sidebar"
-    class="fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+    class="fixed lg:static top-[88px] sm:top-[96px] md:top-[104px] bottom-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
 
     <div class="h-16 flex items-center gap-2.5 px-5 border-b border-gray-100 shrink-0">
       <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center">
@@ -41,6 +41,10 @@
 </a>
       <a href="#" data-target="livetest" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
     <i class="fa-solid fa-bolt w-4 text-gray-400"></i> Live Test
+</a>
+
+<a href="#" data-target="customtest" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+  <i class="fa-solid fa-crown w-4 text-gray-400"></i> Custom Test
 </a>
       <a href="#" data-target="users" class="side-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
         <i class="fa-solid fa-users w-4 text-gray-400"></i> Users
@@ -159,6 +163,7 @@
     <h3 class="font-bold text-gray-900">All Test Series</h3>
     
   </div>
+ 
 
   <!-- 👇 NAYA -->
   <div class="relative">
@@ -354,7 +359,7 @@
                 <!-- Max Repeat -->
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                     <h4 class="text-sm font-bold text-gray-800 mb-3"><span class="inline-flex w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] items-center justify-center mr-1.5">4</span>Max Repeat</h4>
-                    <label class="block text-xs text-gray-500 mb-1">Ek question max kitni baar dobara aa sakta hai (overall history me)</label>
+                    <label class="block text-xs text-gray-500 mb-1">Maximum number of times a question can be repeated across the overall history</label>
                     <input type="number" id="ltMaxRepeat" min="1" value="2" class="w-full border rounded-lg px-3 py-2 text-sm">
                 </div>
 
@@ -410,7 +415,7 @@
                     <label class="block text-xs text-gray-500 mb-1">Start Time</label>
                     <input type="time" id="ltStartTime" value="06:00" class="w-full border rounded-lg px-3 py-2 text-sm">
                     <p class="text-xs text-gray-500 mt-1">Selected time: <span id="ltStartTimeDisplay" class="font-semibold text-indigo-600">6:00 AM</span></p>
-                    <p class="text-xs text-indigo-500 bg-indigo-50 rounded-lg p-2 mt-3">Live Test auto-generate hoga selected days pe, is time par, aur 24 ghante active rahega.</p>
+                    <p class="text-xs text-indigo-500 bg-indigo-50 rounded-lg p-2 mt-3">The Live Test will be generated automatically on the selected days at the specified time and remain active for 24 hours.</p>
                 </div>
 
             </div>
@@ -421,7 +426,7 @@
             <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <div>
                     <h4 class="text-sm font-bold text-gray-800">Question Filter Builder</h4>
-                    <p class="text-xs text-gray-400 mt-0.5">Har row = ek Subject + (optional) Section/Topic/SubTopic/Difficulty filter, apne Min/Max Q ke saath.</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Each row = one subject + optional section/topic/sub-topic/difficulty filter, with its own Min/Max Q.</p>
                 </div>
                 <button type="button" id="ltAddCriteriaRowBtn" class="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-lg">
                     <i class="fa-solid fa-plus mr-1"></i> Add Row
@@ -479,6 +484,7 @@
         <th class="text-center py-3 pr-3 font-semibold">Enrolled Series</th>
         <th class="text-left py-3 pr-3 font-semibold">Joined On</th>
         <th class="text-left py-3 pr-3 font-semibold">Status</th>
+        <th class="text-left py-3 pr-3 font-semibold">Custom Test</th>
         <th class="text-left py-3 pr-3 font-semibold">Subscription</th>
         <th class="text-right py-3 font-semibold">Delete Account</th>
       </tr>
@@ -527,7 +533,7 @@
                 class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Max Discount (₹) <span class="text-gray-400">(sirf % type ke liye)</span></label>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Max Discount (₹) <span class="text-gray-400">(for percentage-based coupons only)</span></label>
               <input type="number" name="maxDiscount" min="0" placeholder="e.g. 200"
                 class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
@@ -541,7 +547,7 @@
               <input type="date" name="expiryDate" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">Total Usage Limit <span class="text-gray-400">(khaali = unlimited)</span></label>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Total Usage Limit <span class="text-gray-400">(leave blank for unlimited)</span></label>
               <input type="number" name="usageLimit" min="1" placeholder="e.g. 100"
                 class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
@@ -835,7 +841,7 @@
 
       <!-- JSON TAB -->
       <div id="qbTabJson" class="hidden">
-        <p class="text-xs text-gray-500 mb-2">Question object JSON edit karo (schema ke exact fields ke sath).</p>
+        <p class="text-xs text-gray-500 mb-2">Edit the question object using the exact fields defined in the schema.</p>
         <textarea id="qbJsonTextarea" rows="18" class="w-full border rounded-xl px-3 py-2.5 text-xs font-mono"></textarea>
         <p id="qbJsonError" class="hidden text-xs text-red-500 mt-2"></p>
       </div>
@@ -849,6 +855,71 @@
 
   </div>
 </div>
+
+
+
+<!-- CUSTOM TEST PRICING -->
+<section id="content-customtest" class="content-section hidden space-y-5">
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+        <h3 class="font-bold text-gray-900 text-lg">Custom Test — Pro / Pro+ Pricing</h3>
+        <p class="text-xs text-gray-500 mt-0.5">Set the price for each duration. The discount percentage will be calculated automatically.</p>
+    </div>
+    <div class="flex gap-2">
+        <button id="openManageExamPatternBtn" type="button"
+            class="flex items-center gap-2 text-sm font-semibold text-indigo-600 bg-white border-2 border-indigo-200 hover:bg-indigo-50 px-4 py-2.5 rounded-lg">
+            <i class="fa-solid fa-list"></i> Manage Exam Pattern
+        </button>
+        <button id="openExamPatternModalBtn" type="button"
+            class="flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 rounded-lg">
+            <i class="fa-solid fa-plus"></i> Add Exam Pattern
+        </button>
+    </div>
+</div>
+
+  <div id="ctPricingLoading" class="text-center text-gray-400 py-8">Loading pricing...</div>
+
+  <div id="ctPricingGrid" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <!-- PRO CARD -->
+    <div class="bg-white rounded-2xl border-2 border-indigo-100 shadow-sm p-5 sm:p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center"><i class="fa-solid fa-star text-sm"></i></span>
+        <h4 class="font-bold text-gray-900">Pro Plan</h4>
+      </div>
+      <div id="ctProRows" class="space-y-3"></div>
+    
+      <!-- PRO card ke andar, ctProRows ke baad -->
+<button type="button" data-plan="pro" class="ct-add-duration-btn w-full mt-3 py-2 border-2 border-dashed border-indigo-200 text-indigo-600 text-sm font-bold rounded-lg hover:bg-indigo-50">
+  <i class="fa-solid fa-plus mr-1"></i> Add Duration
+</button>
+    </div>
+
+    <!-- PRO MAX CARD -->
+    <div class="bg-white rounded-2xl border-2 border-purple-100 shadow-sm p-5 sm:p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fa-solid fa-crown text-sm"></i></span>
+        <h4 class="font-bold text-gray-900">Pro Max Plan</h4>
+      </div>
+      <div id="ctPromaxRows" class="space-y-3"></div>
+     
+      <!-- PRO MAX card ke andar, ctPromaxRows ke baad -->
+<button type="button" data-plan="promax" class="ct-add-duration-btn w-full mt-3 py-2 border-2 border-dashed border-purple-200 text-purple-600 text-sm font-bold rounded-lg hover:bg-purple-50">
+  <i class="fa-solid fa-plus mr-1"></i> Add Duration
+</button>
+    
+    </div>
+  </div>
+
+  <div id="ctPricingGridFooter" class="hidden flex justify-end">
+    <button id="ctSavePricingBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-6 py-2.5 rounded-lg">
+      <i class="fa-solid fa-floppy-disk mr-1.5"></i> Save Pricing
+    </button>
+  </div>
+  <p id="ctPricingMsg" class="text-sm hidden"></p>
+</section>
+
+
+
 
       <!-- PAYMENTS (ab real data se) -->
       <section id="content-payments" class="content-section hidden space-y-4">
@@ -883,7 +954,7 @@
         </div>
       </section>
 
-      <section id="content-reports" class="content-section hidden"><div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-gray-500 text-sm">Reports & Analytics abhi is dashboard ke Charts section me hi available hain (Dashboard tab dekho). Dedicated report-builder yahan aage add hoga.</div></section>
+      <section id="content-reports" class="content-section hidden"><div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-gray-500 text-sm">Reports & Analytics are currently available in the Charts section of the Dashboard. A dedicated report builder will be added here in a future update.</div></section>
        
     
       <!-- NOTIFICATIONS -->
@@ -894,7 +965,7 @@
         <div class="flex items-center justify-between flex-wrap gap-3">
             <div>
                 <h3 class="font-bold text-gray-900 text-lg">Notifications</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Students ko push notification bhejo. Har notification 24 ghante tak active rehta hai.</p>
+                <p class="text-xs text-gray-500 mt-0.5">Send push notifications to students. Each notification stays active for 24 hours.</p>
             </div>
             <button id="openNotifCreateBtn" class="flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 rounded-lg">
                 <i class="fa-solid fa-plus"></i> New Notification
@@ -1048,7 +1119,7 @@
 
 
 
-      <section id="content-settings" class="content-section hidden"><div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-gray-500 text-sm">Settings abhi backend me nahi bane — jaise hi finalize hon, yahan wire kar denge.</div></section>
+      <section id="content-settings" class="content-section hidden"><div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-gray-500 text-sm">Settings are not yet available in the backend. They will be connected here once the configuration is finalized.</div></section>
          
       <section id="content-loginhistory" class="content-section hidden space-y-4">
   <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
@@ -1081,6 +1152,107 @@
   </div>
 </div>
 
+
+<!-- Add Exam Pattern Modal -->
+<div id="examPatternModalOverlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full h-full sm:h-auto sm:rounded-2xl sm:w-full sm:max-w-3xl sm:max-h-[90vh] overflow-y-auto shadow-2xl">
+
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 sticky top-0 bg-white z-10">
+            <h2 class="text-lg font-bold text-gray-900">Add Exam Pattern</h2>
+            <button id="epCloseBtn" type="button" class="text-gray-400 hover:text-gray-700 text-xl leading-none p-1">✕</button>
+        </div>
+
+        <div class="px-6 py-5 space-y-6">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Category</label>
+                    <select id="epCategorySelect" class="w-full p-3 border rounded-xl bg-gray-50 font-bold">
+                        <option value="">Select category...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Exam</label>
+                    <select id="epExamSelect" disabled class="w-full p-3 border rounded-xl bg-gray-50 font-bold disabled:opacity-60">
+                        <option value="">Select category first...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Marks Configuration — auto-filled after exam select -->
+            <div id="epMarksSection" class="hidden">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Marks Configuration</label>
+                <p class="text-xs text-gray-400 mb-3">Subjects and marks have been detected automatically from the listing. Enter only the number of questions.</p>
+                <div class="overflow-x-auto border rounded-xl">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                            <tr>
+                                <th class="text-left px-4 py-2.5 font-semibold">Subject</th>
+                                <th class="text-center px-4 py-2.5 font-semibold">Questions</th>
+                                <th class="text-center px-4 py-2.5 font-semibold">Positive</th>
+                                <th class="text-center px-4 py-2.5 font-semibold">Negative</th>
+                            </tr>
+                        </thead>
+                        <tbody id="epMarksTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Time Strategy — bilkul Test Builder jaisa -->
+            <div id="epTimeSection" class="hidden">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Time Strategy</label>
+                <select id="epTimeStrategy" class="w-full md:w-1/3 p-3 border rounded-xl bg-gray-50 font-bold mb-4">
+                    <option value="total">Total Time</option>
+                    <option value="subject">Subject Wise</option>
+                </select>
+
+                <div id="epTimeDynamicContainer"></div>
+            </div>
+
+        </div>
+
+        <div class="flex gap-3 px-6 py-4 border-t border-gray-100 sticky bottom-0 bg-white">
+            <button type="button" id="epCancelBtn"
+                class="flex-1 py-2.5 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50">
+                Cancel
+            </button>
+            <button type="button" id="epSaveBtn"
+                class="flex-1 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">
+                Save
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- Manage Exam Pattern Modal -->
+<div id="examPatternManageModalOverlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full h-full sm:h-auto sm:rounded-2xl sm:w-full sm:max-w-5xl sm:max-h-[90vh] overflow-y-auto shadow-2xl">
+
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 sticky top-0 bg-white z-10">
+            <h2 class="text-lg font-bold text-gray-900">Manage Exam Patterns</h2>
+            <button id="epmCloseBtn" type="button" class="text-gray-400 hover:text-gray-700 text-xl leading-none p-1">✕</button>
+        </div>
+
+        <div class="px-6 py-5">
+
+            <div class="mb-5 max-w-xs">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Filter by Category</label>
+                <select id="epmCategoryFilter" class="w-full p-3 border rounded-xl bg-gray-50 font-bold">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+
+            <div id="epmGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <p class="text-gray-400 text-sm col-span-full text-center py-8">Loading...</p>
+            </div>
+
+            <p id="epmEmptyMsg" class="hidden text-gray-400 text-sm text-center py-8">No exam pattern found.</p>
+
+        </div>
+
+    </div>
+</div>
 
 <!-- Add  Live test Modal -->
 <div id="addLiveTestModalOverlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center px-4">
@@ -1148,6 +1320,7 @@
 
 <script src="/js/owner/owner-dashboard.js" defer></script>
 <script src="/js/owner/questionBank.js" defer></script>
+<script src="/js/owner/examPattern.js" defer></script>
 <script src="/js/owner/liveTest.js" defer></script>
 <script src="/js/owner/notifications.js" defer></script>
 

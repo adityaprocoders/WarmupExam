@@ -1,7 +1,10 @@
   
+<link rel="stylesheet" href="/css/features.css">
+
+
 
 <!-- ============ HERO ============ -->
-<section class="relative pt-16 pb-20 sm:pt-20 sm:pb-28 overflow-hidden">
+<section class="relative pt-[120px] pb-20 sm:pt-[136px] sm:pb-28 overflow-hidden">
 
   <!-- ambient backdrop -->
   <div class="absolute inset-0 -z-10">
@@ -33,11 +36,7 @@
           <a href="/alltests" class="inline-flex items-center justify-center gap-2 bg-ink hover:bg-black text-white font-bold px-7 py-4 rounded-2xl transition-all active:scale-95 focus-ring">
             Start your free mock
             <i data-lucide="arrow-right" class="w-4 h-4"></i>
-          </a>
-          <a href="#journey" class="inline-flex items-center justify-center gap-2 bg-white border border-ink/10 hover:border-ink/25 font-bold px-7 py-4 rounded-2xl transition-all active:scale-95 focus-ring">
-            <i data-lucide="play-circle" class="w-4 h-4"></i>
-            See how it works
-          </a>
+          </a> 
         </div>
 
         <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-slate2">
@@ -48,7 +47,7 @@
       </div>
 
       <!-- Signature element: live OMR palette mock window -->
-      <div class="reveal" style="transition-delay:.12s">
+      <div class="reveal delay-120">
         <div class="relative mx-auto max-w-md">
           <div class="absolute -inset-4 bg-gradient-to-br from-brand/15 to-transparent rounded-[2rem] blur-2xl"></div>
 
@@ -184,12 +183,12 @@
       <p class="mt-4 text-slate2 text-lg leading-relaxed">Every serious aspirant goes through the same three passes. WarmupExam keeps everything connected in one continuous workflow — not three disconnected tools.</p>
     </div>
 
-    <div class="grid lg:grid-cols-3 gap-6">
+    <div class="max-w-4xl mx-auto space-y-[30vh]">
 
       <!-- Pass 1: Discover -->
-      <div class="reveal group bg-white rounded-3xl border border-ink/6 p-8 shadow-card hover:shadow-cardHover transition-shadow duration-300">
+      <div class="journey-card group bg-white rounded-3xl border border-ink/6 p-6 sm:p-8 !sticky top-24 w-[92%] mx-auto shadow-[0_-6px_18px_rgba(0,0,0,0.18)]" data-accent="blue">
         <div class="flex items-center justify-between mb-6">
-          <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+          <div class="icon-box w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
             <i data-lucide="compass" class="w-5.5 h-5.5 text-blue-600"></i>
           </div>
           <span class="font-mono-tab text-xs font-bold text-ink/25">01 / DISCOVER</span>
@@ -206,9 +205,9 @@
       </div>
 
       <!-- Pass 2: Improve -->
-      <div class="reveal group bg-ink rounded-3xl p-8 shadow-card hover:shadow-cardHover transition-shadow duration-300" style="transition-delay:.08s">
+      <div class="journey-card journey-card-dark group bg-ink rounded-3xl p-6 sm:p-8 !sticky top-[6.5rem] w-[96%] mx-auto shadow-[0_-6px_18px_rgba(0,0,0,0.18)]" data-accent="orange">
         <div class="flex items-center justify-between mb-6">
-          <div class="w-12 h-12 rounded-2xl bg-orange-500/15 flex items-center justify-center">
+          <div class="icon-box w-12 h-12 rounded-2xl bg-orange-500/15 flex items-center justify-center">
             <i data-lucide="flame" class="w-5.5 h-5.5 text-orange-400"></i>
           </div>
           <span class="font-mono-tab text-xs font-bold text-white/25">02 / IMPROVE</span>
@@ -225,9 +224,9 @@
       </div>
 
       <!-- Pass 3: Master -->
-      <div class="reveal group bg-white rounded-3xl border border-ink/6 p-8 shadow-card hover:shadow-cardHover transition-shadow duration-300" style="transition-delay:.16s">
+      <div class="journey-card group bg-white rounded-3xl border border-ink/6 p-6 sm:p-8 !sticky top-28 w-full shadow-[0_-6px_18px_rgba(0,0,0,0.18)]" data-accent="green">
         <div class="flex items-center justify-between mb-6">
-          <div class="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center">
+          <div class="icon-box w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center">
             <i data-lucide="trophy" class="w-5.5 h-5.5 text-green-600"></i>
           </div>
           <span class="font-mono-tab text-xs font-bold text-ink/25">03 / MASTER</span>
@@ -279,6 +278,15 @@
 
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
+
+      <!-- Daily Warmup -->
+<div class="reveal tone-orange rounded-3xl p-8 border border-ink/6">
+        <i data-lucide="flame" class="w-9 h-9 text-orange-500 mb-5"></i>
+        <span class="inline-flex items-center text-[10px] font-bold tracking-widest uppercase text-orange-500 mb-2">Daily</span>
+        <h3 class="font-display font-700 text-xl mb-2.5">Daily Warmup</h3>
+        <p class="text-slate2 text-sm leading-relaxed">A short daily warmup, personalized based on your weak areas and previously wrong question topics.</p>
+      </div>
+
       <!-- True negative marking -->
       <div class="reveal bg-brand rounded-3xl p-8 text-white">
         <i data-lucide="scale" class="w-9 h-9 mb-6 text-white"></i>
@@ -307,11 +315,26 @@
         <p class="text-slate2 text-sm leading-relaxed">Thousands of verified questions with topic, difficulty and exam-wise categorization.</p>
       </div>
 
+            <!-- Custom Paper Builder -->
+      <div class="reveal tone-indigo rounded-3xl p-8 border border-ink/6">
+        <i data-lucide="sparkles" class="w-9 h-9 text-indigo-600 mb-5"></i>
+        <h3 class="font-display font-700 text-xl mb-2.5">Custom Paper Generator</h3>
+        <p class="text-slate2 text-sm leading-relaxed">Build your own paper free — pick exam, subject, topic and difficulty. Unlock Exam Pattern mode on Pro for official section-wise marks distribution.</p>
+      </div>
+
       <!-- Deep Performance Analytics -->
       <div class="reveal bg-paper rounded-3xl p-8 border border-ink/6">
         <i data-lucide="bar-chart-3" class="w-9 h-9 text-blue-600 mb-6"></i>
         <h3 class="font-display font-700 text-xl mb-2.5">Deep performance analytics</h3>
         <p class="text-slate2 text-sm leading-relaxed">Track accuracy, speed, score trends, rank, time spent and subject-wise performance after every test.</p>
+      </div>
+
+
+      <!-- Real Exam Simulation -->
+      <div class="reveal bg-ink rounded-3xl p-8 text-white">
+        <i data-lucide="trophy" class="w-9 h-9 text-yellow-400 mb-6"></i>
+        <h3 class="font-display font-700 text-xl mb-2.5">Real exam simulation</h3>
+        <p class="text-white/70 text-sm leading-relaxed">Experience the actual exam environment with timer, marking scheme, instructions and ranking.</p>
       </div>
 
       <!-- Smart Revision -->
@@ -321,26 +344,19 @@
         <p class="text-slate2 text-sm leading-relaxed">Automatically generate revision tests from incorrect, skipped or marked questions.</p>
       </div>
 
-      <!-- Real Exam Simulation -->
-      <div class="reveal bg-ink rounded-3xl p-8 text-white">
-        <i data-lucide="trophy" class="w-9 h-9 text-yellow-400 mb-6"></i>
-        <h3 class="font-display font-700 text-xl mb-2.5">Real exam simulation</h3>
-        <p class="text-white/70 text-sm leading-relaxed">Experience the actual exam environment with timer, marking scheme, instructions and ranking.</p>
-      </div>
+      
 
       <!-- Live Test -->
-<div class="reveal bg-paper rounded-3xl p-8 border border-ink/6">
-  <i data-lucide="radio" class="w-9 h-9 text-red-500 mb-6"></i>
-  <h3 class="font-display font-700 text-xl mb-2.5">Live Test</h3>
-  <p class="text-slate2 text-sm leading-relaxed">Attempt tests based on the actual exam pattern with real timing and marks distribution — get instant analysis, leaderboard and rank, available for 24 hours.</p>
-</div>
+ <div class="reveal tone-red rounded-3xl p-8 border border-ink/6">
+        <i data-lucide="radio" class="w-9 h-9 text-red-500 mb-5"></i>
+        <span class="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-red-500 mb-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> Live
+        </span>
+        <h3 class="font-display font-700 text-xl mb-2.5">Live Test</h3>
+        <p class="text-slate2 text-sm leading-relaxed">Attempt tests based on the actual exam pattern with real timing and marks distribution — get instant analysis, leaderboard and rank, available for 24 hours.</p>
+      </div>
 
-<!-- Daily Warmup -->
-<div class="reveal bg-paper rounded-3xl p-8 border border-ink/6">
-  <i data-lucide="flame" class="w-9 h-9 text-orange-500 mb-6"></i>
-  <h3 class="font-display font-700 text-xl mb-2.5">Daily Warmup</h3>
-  <p class="text-slate2 text-sm leading-relaxed">A short daily warmup, personalized based on your weak areas and previously wrong question topics.</p>
-</div>
+
 
       <div class="reveal bg-paper rounded-3xl p-8 border border-ink/6">
         <i data-lucide="trending-up" class="w-9 h-9 text-emerald-600 mb-6"></i>
@@ -388,8 +404,8 @@
       <h2 class="font-display font-800 text-4xl sm:text-5xl tracking-tight text-ink">A PDF test series can't do this.</h2>
     </div>
 
-    <div class="reveal bg-white rounded-3xl border border-ink/6 shadow-card overflow-hidden">
-      <div class="grid grid-cols-3 text-sm">
+    <div id="compareTable" class="cmp-card bg-white rounded-3xl border border-ink/6 shadow-card overflow-hidden">
+      <div class="cmp-grid grid grid-cols-3 text-sm">
         <div class="p-5 sm:p-6 font-display font-700 text-ink/40">&nbsp;</div>
         <div class="p-5 sm:p-6 text-center font-display font-700 text-slate2 border-l border-ink/6">PDF / paper series</div>
         <div class="p-5 sm:p-6 text-center font-display font-700 text-brand bg-brandSoft border-l border-ink/6">WarmupExam</div>
@@ -404,6 +420,10 @@
         <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6 bg-brandSoft/60"><i data-lucide="check" class="w-4 h-4 text-good inline-block"></i></div>
 
         <div class="p-5 sm:p-6 font-semibold text-ink border-t border-ink/6">Daily personalized warmup</div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6"><i data-lucide="x" class="w-4 h-4 text-bad/60 inline-block"></i></div>
+        <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6 bg-brandSoft/60"><i data-lucide="check" class="w-4 h-4 text-good inline-block"></i></div>
+
+        <div class="p-5 sm:p-6 font-semibold text-ink border-t border-ink/6">Custom Paper Generator</div>
         <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6"><i data-lucide="x" class="w-4 h-4 text-bad/60 inline-block"></i></div>
         <div class="p-5 sm:p-6 text-center border-t border-l border-ink/6 bg-brandSoft/60"><i data-lucide="check" class="w-4 h-4 text-good inline-block"></i></div>
 
@@ -446,9 +466,12 @@
 </section>
 
 
-
+ 
  
 
 
 
 
+
+
+<script src="/js/features.js" defer></script>

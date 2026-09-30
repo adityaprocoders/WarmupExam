@@ -1,0 +1,467 @@
+
+<link rel="stylesheet" href="/css/aiPaper.css?v=1">
+
+<% if (typeof isPaidPage !== 'undefined' && isPaidPage) { %>
+<%- include("../../dashboard/sideBar.ejs") %>
+<div id="mainContent" class="md:ml-72 pt-16 min-h-screen bg-gray-100">
+<% } %>
+
+<script nonce="<%= cspNonce %>">
+    window.CUSTOM_TEST_TIER = "<%= typeof tier !== 'undefined' ? tier : 'free' %>";
+</script>
+
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-[100px] sm:pt-[120px] lg:pt-[136px] pb-6 sm:pb-10">
+
+    <!-- ===================== HEADER ===================== -->
+    <div class="relative isolate mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-700 to-violet-700 p-6 text-white shadow-[0_24px_60px_-24px_rgba(67,56,202,0.6)] sm:p-8">
+        <div aria-hidden="true" class="pointer-events-none absolute -right-20 -top-24 -z-10 h-72 w-72 rounded-full bg-violet-400/40 blur-3xl"></div>
+        <div aria-hidden="true" class="pointer-events-none absolute -bottom-28 -left-16 -z-10 h-64 w-64 rounded-full bg-sky-400/25 blur-3xl"></div>
+        <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_70%_90%_at_25%_10%,#000_30%,transparent_100%)]"></div>
+
+        <a href="<%= typeof isPaidPage !== 'undefined' && isPaidPage ? '/dashboard/custom-test' : '/custom-test' %>"
+            class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-indigo-50 ring-1 ring-white/20 backdrop-blur transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+            <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i> Back to Custom Test
+        </a>
+        <h1 class="mt-4 flex items-center gap-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
+                <i data-lucide="sparkles" class="h-5 w-5"></i>
+            </span>
+            AI Question Import
+        </h1>
+        <p class="mt-2.5 max-w-md text-sm leading-relaxed text-indigo-100/90 sm:text-base">Upload images, PDF, or paste text — AI will build your paper.</p>
+    </div>
+
+
+  <div class="relative mb-6 overflow-hidden rounded-3xl border border-slate-200/70 bg-white p-4 shadow-[0_20px_50px_-30px_rgba(30,27,75,0.35)] sm:p-6">
+    <div aria-hidden="true" class="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-fuchsia-300/20 blur-3xl"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-indigo-300/20 blur-3xl"></div>
+
+    <div class="relative">
+        <p class="text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">How do you want to create your questions?</p>
+        <p class="mb-5 mt-0.5 text-xs text-slate-500">Choose a mode based on the content you provide.</p>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+            <!-- ================= EXTRACT ================= -->
+            <button type="button" data-mode-card="extract"
+                class="group relative flex rounded-[1.4rem] bg-slate-200 p-[1.5px] text-left transition-all duration-300 hover:-translate-y-1 hover:bg-gradient-to-br hover:from-indigo-300 hover:to-sky-300 [&.is-active]:-translate-y-1 [&.is-active]:bg-gradient-to-br [&.is-active]:from-indigo-500 [&.is-active]:via-blue-500 [&.is-active]:to-sky-400 [&.is-active]:shadow-[0_22px_44px_-16px_rgba(59,91,219,0.6)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+                <span class="relative flex w-full items-start gap-4 overflow-hidden rounded-[1.3rem] bg-white p-4 transition-colors duration-300 group-[.is-active]:bg-gradient-to-br group-[.is-active]:from-indigo-50 group-[.is-active]:via-white group-[.is-active]:to-sky-50 sm:p-5">
+
+                    <span class="absolute right-3 top-3 grid h-6 w-6 scale-50 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 text-white opacity-0 shadow-lg shadow-indigo-500/40 transition-all duration-300 group-[.is-active]:scale-100 group-[.is-active]:opacity-100">
+                        <i data-lucide="check" class="h-3.5 w-3.5"></i>
+                    </span>
+
+                    <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-sky-500 text-white shadow-lg shadow-indigo-500/40 ring-4 ring-indigo-100 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
+                        <i data-lucide="file-text" class="h-6 w-6"></i>
+                    </span>
+
+                    <span class="min-w-0 pr-6">
+                        <span class="block text-base font-extrabold tracking-tight text-slate-900">Extract Questions</span>
+                        <span class="mt-1.5 inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700 ring-1 ring-indigo-200">
+                            <i data-lucide="lock" class="h-2.5 w-2.5"></i> Keep questions unchanged
+                        </span>
+                        <span class="mt-2 block text-xs leading-relaxed text-slate-500">Import questions exactly as provided in your PDF, image or text.</span>
+                    </span>
+                </span>
+            </button>
+
+            <!-- ================= GENERATE (PREMIUM) ================= -->
+            <button type="button" data-mode-card="generate"
+                class="group relative flex rounded-[1.4rem] bg-slate-200 p-[1.5px] text-left transition-all duration-300 hover:-translate-y-1 hover:bg-gradient-to-br hover:from-violet-300 hover:to-fuchsia-300 [&.is-active]:-translate-y-1 [&.is-active]:bg-gradient-to-br [&.is-active]:from-violet-600 [&.is-active]:via-fuchsia-500 [&.is-active]:to-pink-500 [&.is-active]:shadow-[0_22px_48px_-14px_rgba(192,38,211,0.65)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-500">
+                <span class="relative flex w-full items-start gap-4 overflow-hidden rounded-[1.3rem] bg-white p-4 transition-colors duration-300 group-[.is-active]:bg-gradient-to-br group-[.is-active]:from-violet-50 group-[.is-active]:via-white group-[.is-active]:to-pink-50 sm:p-5">
+
+                    <!-- shine sweep (sirf active pe) -->
+                    <span aria-hidden="true" class="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-transparent via-white/80 to-transparent group-[.is-active]:block group-[.is-active]:animate-[ai-sweep_3s_ease-in-out_infinite] motion-reduce:animate-none"></span>
+                    <!-- corner glow -->
+                    <span aria-hidden="true" class="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-fuchsia-400/0 blur-2xl transition-all duration-500 group-hover:bg-fuchsia-400/25 group-[.is-active]:bg-fuchsia-400/30"></span>
+
+                    <span class="absolute right-3 top-3 grid h-6 w-6 scale-50 place-items-center rounded-full bg-gradient-to-br from-violet-600 to-pink-500 text-white opacity-0 shadow-lg shadow-fuchsia-500/50 transition-all duration-300 group-[.is-active]:scale-100 group-[.is-active]:opacity-100">
+                        <i data-lucide="check" class="h-3.5 w-3.5"></i>
+                    </span>
+
+                    <span class="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 text-white shadow-lg shadow-fuchsia-500/50 ring-4 ring-fuchsia-100 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                        <i data-lucide="sparkles" class="h-6 w-6"></i>
+                    </span>
+
+                    <span class="relative min-w-0 pr-6">
+                        <span class="flex items-center gap-2 text-base font-extrabold tracking-tight text-slate-900">
+                            Generate Questions
+                            <span class="rounded-md bg-gradient-to-r from-amber-300 to-amber-500 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-amber-950 shadow-sm">AI</span>
+                        </span>
+                        <span class="mt-1.5 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md shadow-fuchsia-500/30">
+                            <i data-lucide="wand-2" class="h-2.5 w-2.5"></i> Create new exam-style questions
+                        </span>
+                        <span class="mt-2 block text-xs leading-relaxed text-slate-500">AI understands your chapter and creates new exam-style questions.</span>
+                    </span>
+                </span>
+            </button>
+
+        </div>
+    </div>
+</div>
+
+    <div class="wiz-card">
+        <!-- ===================== STEP INDICATOR ===================== -->
+        <div class="mb-6 flex items-center gap-1 overflow-x-auto border-b border-slate-100 pb-5 no-scrollbar">
+            <div class="ai-step-pill flex shrink-0 items-center gap-2" data-step="1">
+                <span class="ai-step-num flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold">1</span>
+                <span class="whitespace-nowrap text-xs font-medium">Choose Source</span>
+            </div>
+            <div class="h-0.5 w-6 shrink-0 rounded-full bg-slate-200 sm:w-10"></div>
+            <div class="ai-step-pill flex shrink-0 items-center gap-2" data-step="2">
+                <span class="ai-step-num flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold">2</span>
+                <span class="whitespace-nowrap text-xs font-medium">Paper Setup</span>
+            </div>
+            <div class="h-0.5 w-6 shrink-0 rounded-full bg-slate-200 sm:w-10"></div>
+            <div class="ai-step-pill flex shrink-0 items-center gap-2" data-step="3">
+                <span class="ai-step-num flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold">3</span>
+                <span class="whitespace-nowrap text-xs font-medium">Generate</span>
+            </div>
+        </div>
+
+        <!-- ===== STEP 1: CHOOSE SOURCE ===== -->
+        <div id="ai-step-1" class="ai-step-panel">
+            <p class="mb-1 text-lg font-bold tracking-tight text-slate-900">Choose Your Source</p>
+            <p id="ai-src-sub" class="mb-5 text-sm text-slate-500">Select how you want to import your questions.</p>
+
+            <div class="space-y-3">
+
+                <!-- ---------- Upload Images ---------- -->
+                <div class="ai-source-card" data-card="images">
+                    <button type="button" data-source="images" class="ai-source-btn group flex w-full items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/10 sm:p-5">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
+                            <i data-lucide="image" class="h-5 w-5"></i>
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-bold text-slate-900">Upload Images</span>
+                            <span id="ai-src-images-desc" class="mt-0.5 block text-xs leading-snug text-slate-500">Clear images of your questions (JPG, PNG, WEBP).</span>
+                        </span>
+                        <span class="ai-chev grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-500 transition-transform duration-300">
+                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                        </span>
+                    </button>
+
+                    <div class="ai-source-slot">
+                        <div id="ai-file-block" class="hidden px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
+                            <input type="file" id="ai-file-input" class="hidden" />
+                            <button type="button" id="ai-file-trigger"
+                                class="group flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-indigo-200 bg-gradient-to-b from-indigo-50/60 to-white px-4 py-8 text-sm font-medium text-slate-500 transition-colors hover:border-indigo-400 hover:text-indigo-600">
+                                <span class="grid h-12 w-12 place-items-center rounded-2xl bg-white text-indigo-600 shadow-md shadow-indigo-500/10 ring-1 ring-indigo-100 transition group-hover:-translate-y-0.5">
+                                    <i data-lucide="upload" class="h-5 w-5"></i>
+                                </span>
+                                <span id="ai-file-label">Click to choose file(s)</span>
+                            </button>
+                            <div id="ai-file-chosen" class="hidden mt-3">
+    <div class="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 ring-1 ring-emerald-100">
+        <i data-lucide="check-circle" class="h-4 w-4 shrink-0 text-emerald-500"></i> <span class="min-w-0 break-words"></span>
+    </div>
+</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ---------- Upload PDF ---------- -->
+                <div class="ai-source-card" data-card="pdf">
+                    <button type="button" data-source="pdf" id="ai-pdf-source-btn"
+                        class="ai-source-btn group flex w-full items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/10 sm:p-5">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-100 to-rose-50 text-rose-600 ring-1 ring-rose-100">
+                            <i data-lucide="file-text" class="h-5 w-5"></i>
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="flex items-center gap-2">
+                                <span class="text-sm font-bold text-slate-900">Upload PDF</span>
+                                <span id="ai-pdf-lock-badge" class="hidden">
+    <span class="inline-flex items-center gap-1 rounded-full bg-gradient-to-br from-amber-200 to-amber-400 px-2 py-0.5 text-[10px] font-bold text-amber-950 shadow-sm">
+        <i data-lucide="lock" class="h-2.5 w-2.5"></i> PRO
+    </span>
+</span>
+                            </span>
+                            <span class="mt-0.5 block text-xs leading-snug text-slate-500">Text-based PDF files.</span>
+                        </span>
+                        <span class="ai-chev grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-500 transition-transform duration-300">
+                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                        </span>
+                    </button>
+
+                    <div class="ai-source-slot"></div>
+                </div>
+
+                <!-- ---------- Paste Text ---------- -->
+                <div class="ai-source-card" data-card="text">
+                    <button type="button" data-source="text" class="ai-source-btn group flex w-full items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/10 sm:p-5">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-sky-50 text-sky-600 ring-1 ring-sky-100">
+                            <i data-lucide="clipboard-list" class="h-5 w-5"></i>
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-bold text-slate-900">Paste Text</span>
+                            <span id="ai-src-text-desc" class="mt-0.5 block text-xs leading-snug text-slate-500">Paste your questions directly.</span>
+                        </span>
+                        <span class="ai-chev grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-500 transition-transform duration-300">
+                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                        </span>
+                    </button>
+
+                    <div class="ai-source-slot">
+                        <div id="ai-text-block" class="hidden px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
+                            <textarea id="ai-text-input" rows="8" placeholder="Paste your questions here..."
+                                class="w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-800 placeholder:text-slate-400 transition focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/15"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ai-tip-box" class="mt-5 flex items-start gap-3 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-4 text-xs text-indigo-800">
+                <span class="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-indigo-100 text-indigo-600">
+                    <i data-lucide="lightbulb" class="h-4 w-4"></i>
+                </span>
+                <span class="min-w-0 leading-relaxed">
+                    <b>Pro Tip:</b> For faster results, paste each question using this format:<br class="hidden sm:block" />
+                    <code class="mt-2 block overflow-x-auto rounded-xl bg-slate-900 px-3.5 py-3 font-mono text-[11px] leading-relaxed text-slate-100">
+                        1. Question text?<br>
+                        A) option one<br>
+                        B) option two<br>
+                        C) option three<br>
+                        D) option four<br>
+                        Answer: B
+                    </code>
+                    <span class="mt-2 block text-indigo-800/80">This structured format reduces ambiguity for the AI, resulting in faster processing and lower token usage.</span>
+                </span>
+            </div>
+
+            <div id="ai-tip-box-generate" class="mt-5 hidden items-start gap-3 rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-4 text-xs text-violet-800">
+    <span class="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-violet-100 text-violet-600">
+        <i data-lucide="lightbulb" class="h-4 w-4"></i>
+    </span>
+    <span class="min-w-0 leading-relaxed">
+        <b>Pro Tip:</b> For better questions, give a complete chapter or clear notes.
+        <ul class="mt-2 list-disc space-y-1 pl-4 text-violet-800/90">
+            <li>Keep <b>one chapter / topic</b> per request.</li>
+            <li>Include headings, definitions, formulas and examples.</li>
+            <li>Use clear, straight photos and clean text.</li>
+            <li>Very short content gives fewer and weaker questions.</li>
+        </ul>
+    </span>
+</div>
+        </div>
+
+        <!-- ===== STEP 2: PAPER SETUP ===== -->
+        <div id="ai-step-2" class="ai-step-panel hidden">
+            <p class="mb-1 text-lg font-bold tracking-tight text-slate-900">Paper Setup</p>
+            <p class="mb-5 text-sm text-slate-500">Set the number of questions and the time limit.</p>
+
+            <% const sel = '[&.bg-indigo-50]:border-indigo-600 [&.bg-indigo-50]:bg-indigo-600 [&.bg-indigo-50]:text-white [&.bg-indigo-50]:shadow-lg [&.bg-indigo-50]:shadow-indigo-500/30'; %>
+
+            <div class="wiz-field rounded-2xl border border-slate-100 bg-slate-50/60 p-4 sm:p-5">
+                <label class="mb-2 block text-sm font-semibold text-slate-700">Paper name <span class="font-normal text-slate-400">(optional)</span></label>
+                <input type="text" id="ai-paper-name" placeholder="e.g. Physics Chapter 5 Practice"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 transition focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/15" />
+            </div>
+
+            <div class="wiz-field rounded-2xl border border-slate-100 bg-slate-50/60 p-4 sm:p-5">
+                <label class="mb-3 block text-sm font-semibold text-slate-700">Number of questions</label>
+                <div class="flex flex-wrap gap-2">
+                    <% [10,20,30,50].forEach(n => { %>
+                        <button type="button" data-count="<%= n %>" class="ai-count-btn min-w-[3.5rem] rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm hover:border-indigo-300 transition-all <%= sel %>"><%= n %></button>
+                    <% }) %>
+                    <button type="button" data-count="custom" class="ai-count-btn rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm hover:border-indigo-300 transition-all <%= sel %>">Custom</button>
+                    <input id="ai-custom-count" type="number" min="1" max="100" placeholder="e.g. 15"
+                        class="hidden w-28 rounded-xl border border-indigo-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/15" />
+                </div>
+                <p id="ai-count-hint" class="mt-2.5 text-[11px] text-slate-400">Max questions depend on how many your source contains.</p>
+            </div>
+
+
+<div id="ai-difficulty-block" class="wiz-field hidden rounded-2xl border border-slate-100 bg-slate-50/60 p-4 sm:p-5">
+    <div class="mb-4 flex items-center gap-3">
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+            <i data-lucide="bar-chart-3" class="h-4 w-4"></i>
+        </span>
+        <div>
+            <p class="text-sm font-semibold text-slate-900">Difficulty</p>
+            <p class="text-xs text-slate-500">Choose the difficulty level for your paper</p>
+        </div>
+    </div>
+
+    <div class="mb-5 inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
+        <button type="button" id="ai-diff-tab-quick" class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors">
+            <i data-lucide="layout-grid" class="h-3.5 w-3.5"></i> Quick Select
+        </button>
+        <button type="button" id="ai-diff-tab-custom" class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors">
+            <i data-lucide="sliders-horizontal" class="h-3.5 w-3.5"></i> Custom Ratio
+            <% if (typeof tier === 'undefined' || tier === 'free') { %>
+                <span class="ml-0.5 inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
+                    <i data-lucide="lock" class="h-2 w-2"></i> PRO
+                </span>
+            <% } %>
+        </button>
+    </div>
+
+    <!-- Quick Select -->
+    <div id="ai-diff-quick" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <% [['easy','Easy','bg-emerald-500','Mostly easy questions'],['medium','Medium','bg-amber-500','Mostly medium questions'],['hard','Hard','bg-rose-500','Mostly hard questions'],['mixed','Mixed','bg-indigo-500','Balanced mix of all levels']].forEach(d => { %>
+            <button type="button" data-quick="<%= d[0] %>" class="ai-diff-quick-btn relative rounded-xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-indigo-300 hover:shadow-sm">
+                <span class="ai-diff-quick-check absolute right-3 top-3 hidden h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white">
+                    <i data-lucide="check" class="h-3 w-3"></i>
+                </span>
+                <span class="mb-1 flex items-center gap-2">
+                    <span class="h-2.5 w-2.5 shrink-0 rounded-full <%= d[2] %>"></span>
+                    <span class="text-sm font-semibold text-slate-900"><%= d[1] %></span>
+                </span>
+                <p class="text-xs leading-snug text-slate-500"><%= d[3] %></p>
+            </button>
+        <% }) %>
+    </div>
+
+    <!-- Custom Ratio -->
+    <div id="ai-diff-custom" class="hidden">
+        <div class="mb-5 flex flex-wrap gap-2">
+            <button type="button" class="ai-preset-btn rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-indigo-300 hover:text-indigo-600" data-preset="balanced">Balanced</button>
+            <button type="button" class="ai-preset-btn rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-indigo-300 hover:text-indigo-600" data-preset="easy">Beginner</button>
+            <button type="button" class="ai-preset-btn rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-indigo-300 hover:text-indigo-600" data-preset="hard">Advanced</button>
+        </div>
+
+        <div class="space-y-4">
+            <% [{k:'easy',l:'Easy',dot:'bg-emerald-500',bar:'accent-emerald-500'},{k:'medium',l:'Medium',dot:'bg-amber-500',bar:'accent-amber-500'},{k:'hard',l:'Hard',dot:'bg-rose-500',bar:'accent-rose-500'}].forEach(l => { %>
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    <span class="flex w-20 shrink-0 items-center gap-2">
+                        <span class="h-2 w-2 shrink-0 rounded-full <%= l.dot %>"></span>
+                        <span class="text-sm text-slate-700"><%= l.l %></span>
+                    </span>
+                    <input type="range" min="0" max="100" step="5" value="<%= l.k === 'medium' ? 50 : 25 %>"
+                        class="ai-diff-slider h-1.5 min-w-[100px] flex-1 cursor-pointer <%= l.bar %>" data-level="<%= l.k %>" />
+                    <span class="w-10 shrink-0 text-right text-sm font-semibold text-slate-900" data-ai-pct="<%= l.k %>"><%= l.k === 'medium' ? 50 : 25 %>%</span>
+                </div>
+            <% }) %>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between border-t border-slate-200 pt-3">
+            <p class="text-xs text-slate-500">Total distribution</p>
+            <p id="ai-diff-total" class="text-xs font-semibold text-slate-900">100%</p>
+        </div>
+        <p id="ai-diff-warn" class="mt-2 hidden text-xs text-rose-600">The three values must add up to 100%.</p>
+    </div>
+</div>
+
+            <div class="wiz-field rounded-2xl border border-slate-100 bg-slate-50/60 p-4 sm:p-5">
+                <label class="mb-3 block text-sm font-semibold text-slate-700">Time limit</label>
+                <div class="flex flex-wrap gap-2">
+                    <% [10,20,30,50].forEach(t => { %>
+                        <button type="button" data-time="<%= t %>" class="ai-time-btn rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm hover:border-indigo-300 transition-all <%= sel %>"><%= t %> min</button>
+                    <% }) %>
+                    <button type="button" data-time="custom" class="ai-time-btn rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm hover:border-indigo-300 transition-all <%= sel %>">Custom</button>
+                    <input id="ai-custom-time" type="number" min="1" placeholder="e.g. 45"
+                        class="hidden w-28 rounded-xl border border-indigo-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/15" />
+                </div>
+            </div>
+
+            <div class="mt-4 flex items-center gap-2.5 rounded-2xl bg-emerald-50 p-3.5 text-xs text-emerald-800 ring-1 ring-emerald-100">
+                <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-emerald-100 text-emerald-600">
+                    <i data-lucide="info" class="h-3.5 w-3.5"></i>
+                </span>
+                <span>Marking scheme fixed: <b>+1</b> for correct, <b>−1</b> for wrong answer.</span>
+            </div>
+        </div>
+
+        <!-- ===== STEP 3: PROCESSING / GENERATE ===== -->
+        <div id="ai-step-3" class="ai-step-panel hidden">
+            <div id="ai-pre-generate" class="py-8 text-center sm:py-10">
+                <span class="relative mx-auto mb-5 grid h-16 w-16 place-items-center rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-xl shadow-indigo-500/30">
+                    <i data-lucide="sparkles" class="h-7 w-7"></i>
+                </span>
+                <p id="ai-gen-title" class="mb-1.5 text-lg font-bold tracking-tight text-slate-900">Ready to generate your paper</p>
+                <p id="ai-gen-desc" class="mx-auto mb-6 max-w-sm text-sm leading-relaxed text-slate-500">The AI will extract questions from your source, identify the answers, and generate solutions.</p>
+                <button type="button" id="ai-generate-trigger"
+                    class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/40 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                    <i data-lucide="wand-2" class="h-4 w-4"></i> Generate Paper
+                </button>
+            </div>
+
+           <div id="ai-processing" class="hidden py-2">
+
+    <div class="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-800 to-violet-700 p-6 text-white shadow-[0_24px_60px_-24px_rgba(67,56,202,0.7)] sm:p-8">
+        <div aria-hidden="true" class="pointer-events-none absolute -right-16 -top-20 -z-10 h-64 w-64 animate-[ai-float_7s_ease-in-out_infinite] rounded-full bg-violet-400/40 blur-3xl motion-reduce:animate-none"></div>
+        <div aria-hidden="true" class="pointer-events-none absolute -bottom-24 -left-10 -z-10 h-56 w-56 animate-[ai-float_9s_ease-in-out_infinite] rounded-full bg-sky-400/25 blur-3xl motion-reduce:animate-none"></div>
+        <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_70%_90%_at_25%_10%,#000_30%,transparent_100%)]"></div>
+        <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 animate-[ai-sweep_3.2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent motion-reduce:animate-none"></div>
+
+        <div class="flex flex-col items-center gap-6 text-center sm:flex-row sm:gap-8 sm:text-left">
+
+            <div class="relative grid h-36 w-36 shrink-0 place-items-center sm:h-40 sm:w-40">
+                <span aria-hidden="true" class="absolute inset-3 animate-pulse rounded-full bg-violet-400/30 blur-2xl motion-reduce:animate-none"></span>
+
+                <span aria-hidden="true" class="absolute inset-0 animate-[ai-orbit_14s_linear_infinite] rounded-full border border-dashed border-white/25 motion-reduce:animate-none">
+                    <i class="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-white shadow-[0_0_10px_2px_rgba(255,255,255,0.8)]"></i>
+                </span>
+                <span aria-hidden="true" class="absolute inset-2.5 animate-[ai-orbit_9s_linear_infinite_reverse] rounded-full border border-white/10 motion-reduce:animate-none">
+                    <i class="absolute -bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-sky-300 shadow-[0_0_8px_2px_rgba(125,211,252,0.8)]"></i>
+                </span>
+
+                <svg class="relative h-28 w-28 -rotate-90 drop-shadow-[0_0_14px_rgba(196,181,253,0.7)] sm:h-32 sm:w-32" viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="aiRingGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0" stop-color="#e0e7ff"/>
+                            <stop offset="1" stop-color="#f0abfc"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="42" fill="none" class="stroke-white/15" stroke-width="8"/>
+                    <circle id="ai-progress-ring" cx="50" cy="50" r="42" fill="none" stroke="url(#aiRingGrad)" stroke-width="8"
+                        stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264"/>
+                </svg>
+
+                <div class="absolute inset-0 grid place-items-center">
+                    <div class="text-center leading-none">
+                        <span id="ai-percent" class="block text-2xl font-extrabold tabular-nums sm:text-3xl">0%</span>
+                        <span class="mt-1 block text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-200">AI</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="min-w-0 flex-1">
+                <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-100 ring-1 ring-white/20 backdrop-blur">
+                    <span class="relative flex h-2 w-2">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75 motion-reduce:animate-none"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+                    </span>
+                    AI engine active
+                </span>
+                <p class="mt-3 text-xl font-extrabold tracking-tight sm:text-2xl">AI is Working...</p>
+                <p id="ai-status-msg" class="mt-1.5 min-h-[2.5rem] text-sm leading-relaxed text-indigo-100/90 transition-opacity duration-200">Please wait while we extract and analyze your questions.</p>
+
+                <div class="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/15">
+                    <div id="ai-bar" class="relative h-full w-0 overflow-hidden rounded-full bg-gradient-to-r from-sky-300 via-white to-fuchsia-300 transition-[width] duration-500 ease-out">
+                        <span class="absolute inset-0 animate-[ai-sweep_1.6s_linear_infinite] bg-gradient-to-r from-transparent via-white/70 to-transparent motion-reduce:animate-none"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="mb-2 mt-5 px-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Live pipeline</p>
+    <div id="ai-checklist" class="w-full space-y-2.5 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5"></div>
+
+    <p class="mt-4 flex items-center gap-2 text-[11px] text-slate-400">
+        <i data-lucide="clock" class="h-3.5 w-3.5"></i> This may take a few moments depending on source size.
+    </p>
+</div>
+        </div>
+
+        <!-- ===================== FOOTER NAV ===================== -->
+        <div class="mt-7 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
+            <button type="button" id="ai-back-btn" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50 invisible">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i> Back
+            </button>
+            <button type="button" id="ai-next-btn" disabled
+                class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 opacity-50 cursor-not-allowed transition-all">
+                Next <i data-lucide="arrow-right" class="h-4 w-4"></i>
+            </button>
+        </div>
+    </div>
+</section>
+
+<% if (typeof isPaidPage !== 'undefined' && isPaidPage) { %>
+</div>
+<% } %>
+ 
+
+<script src="/js/customTest/aiPaperUi.js?v=1" defer></script>
+<script src="/js/customTest/aiPaperGenerator.js?v=5" defer></script>

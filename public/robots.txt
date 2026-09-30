@@ -1,8 +1,5 @@
-Sitemap: https://warmupexam.com/sitemap.xml
-
 User-agent: *
 Allow: /
-
 
 Disallow: /login
 Disallow: /register
@@ -11,7 +8,7 @@ Disallow: /auth/google
 Disallow: /api/auth/
 Disallow: /mock-test/*/instructions
 Disallow: /attempt/
-Disallow: /api/attempt/ 
+Disallow: /api/attempt/
 Disallow: /series/
 Disallow: /section/
 Disallow: /folder/
@@ -20,17 +17,26 @@ Disallow: /enroll/
 Disallow: /order-summary/
 Disallow: /apply-coupon
 Disallow: /create-order
-Disallow: /verify-payment 
+Disallow: /verify-payment
 Disallow: /profile
 Disallow: /dashboard
 Disallow: /owner
 Disallow: /test-builder
 Disallow: /mock-test/
 Disallow: /api/
+Allow: /api/footer-data
 Disallow: /test-error
 Disallow: /csp-violation-report
 
+# Custom test (private pages)
+Disallow: /custom-test/upgrade
+Disallow: /custom-test/manage
+Disallow: /custom-test/attempt/
+Disallow: /custom-test/analysis/
 
-Disallow: /*?*utm_source=
-Disallow: /*?*utm_medium=
-Disallow: /*?*utm_campaign=
+
+# Tracking params
+Disallow: /*?utm_
+Disallow: /*&utm_
+
+Sitemap: https://warmupexam.com/sitemap.xml

@@ -124,7 +124,7 @@ export const getAvailableLanguages = async (req, res) => {
         const { sourceType, sourceId } = req.query;
 
         if (!sourceType || !sourceId) {
-            return res.status(400).json({ success: false, message: "sourceType/sourceId missing hai" });
+            return res.status(400).json({ success: false, message: "Source type or source ID is missing." });
         }
 
         const testIds = await collectTestIdsUnderNode(sourceType, sourceId);
@@ -142,7 +142,7 @@ export const getAvailableLanguages = async (req, res) => {
         res.json({ success: true, languages: Array.from(langSet) }); // frontend "All" khud add karega
     } catch (err) {
         console.error("Get available languages error:", err);
-        res.status(500).json({ success: false, message: "Languages fetch karte waqt error aaya" });
+        res.status(500).json({ success: false, message: "Unable to load available languages." });
     }
 };
 
@@ -173,9 +173,9 @@ export const pasteItem = async (req, res) => {
     } catch (err) {
         console.error("Paste item error:", err);
         if (err.code === 11000) {
-            return res.status(400).json({ success: false, message: "Naam clash ho gaya, dobara try karo." });
+            return res.status(400).json({ success: false, message: "An item with this name already exists. Please use a different name." });
         }
-        res.status(500).json({ success: false, message: err.message || "Copy karte waqt error aaya" });
+        res.status(500).json({ success: false, message: err.message || "Unable to copy the item. Please try again." });
     }
 };
 
@@ -183,10 +183,10 @@ export const bulkCopySections = async (req, res) => {
     const { sectionIds, destListingIds, selectedLanguage } = req.body;
 
     if (!Array.isArray(sectionIds) || sectionIds.length === 0) {
-        return res.status(400).json({ success: false, message: "Koi section select nahi kiya" });
+        return res.status(400).json({ success: false, message: "No section selected." });
     }
     if (!Array.isArray(destListingIds) || destListingIds.length === 0) {
-        return res.status(400).json({ success: false, message: "Koi destination series select nahi ki" });
+        return res.status(400).json({ success: false, message: "No destination test series selected." });
     }
 
     const overrideLanguage = (selectedLanguage && selectedLanguage !== "All") ? selectedLanguage : null;
@@ -215,17 +215,17 @@ export const bulkCopyItems = async (req, res) => {
     const { items, destListingIds, selectedLanguage, destSectionId, destParentType, destParentId } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({ success: false, message: "Koi item select nahi kiya" });
+        return res.status(400).json({ success: false, message: "No item selected." });
     }
     if (!Array.isArray(destListingIds) || destListingIds.length === 0) {
-        return res.status(400).json({ success: false, message: "Koi destination series select nahi ki" });
+        return res.status(400).json({ success: false, message: "No destination test series selected." });
     }
 
     // 👇 FIXED — sirf tab section required hai jab koi non-section item ho
     // (section apna khud ka naya Section banata hai, usko destSectionId ki zaroorat nahi)
     const hasNonSectionItem = items.some(it => it.type !== 'section');
     if (hasNonSectionItem && !destSectionId) {
-        return res.status(400).json({ success: false, message: "Destination section select karo" });
+        return res.status(400).json({ success: false, message: "Please select a destination section." });
     }
 
     const overrideLanguage = (selectedLanguage && selectedLanguage !== "All") ? selectedLanguage : null;

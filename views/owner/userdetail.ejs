@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 p-4 sm:p-6" id="userDetailPage" data-user-id="<%= userDetail._id %>" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;">
+<div class="min-h-screen bg-gray-50 p-4 sm:p-6 mt-[88px] sm:mt-[96px] md:mt-[104px] lg:mt-[112px]" id="userDetailPage" data-user-id="<%= userDetail._id %>" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;">
 <div class="max-w-7xl mx-auto space-y-6">
 
   <!-- ============ TOP PROFILE + QUICK ACTIONS ============ -->
@@ -65,9 +65,12 @@
         <button id="resetPassBtn" class="w-full bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2">
           <i class="fa-solid fa-key"></i> Reset Password
         </button>
-        <button id="banUserBtn" class="w-full border-2 border-red-200 hover:bg-red-50 text-red-600 text-sm font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2">
-          <i class="fa-solid fa-ban"></i> Ban User
-        </button>
+        <button id="banUserBtn" type="button"
+  data-banned="<%= userDetail.banInfo.banned %>"
+  class="w-full border-2 <%= userDetail.banInfo.banned ? 'border-green-200 hover:bg-green-50 text-green-600' : 'border-red-200 hover:bg-red-50 text-red-600' %> text-sm font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2">
+  <i class="fa-solid <%= userDetail.banInfo.banned ? 'fa-circle-check' : 'fa-ban' %>"></i>
+  <%= userDetail.banInfo.banned ? 'Unban User' : 'Ban User' %>
+</button>
         <button id="deleteAccBtn" class="w-full bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2">
           <i class="fa-solid fa-trash"></i> Delete Account
         </button>
@@ -243,6 +246,67 @@
     </div>
   </div>
 
+
+    <!-- ============ CUSTOM TEST ACCESS ============ -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
+    <h3 class="font-bold text-gray-900 mb-5 flex items-center gap-2">
+      <i class="fa-solid fa-crown text-purple-500"></i> Custom Test Access
+    </h3>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Current status -->
+      <div class="space-y-3">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Current Status</p>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-500">Plan</span>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full <%= customTestInfo.tier === 'promax' ? 'bg-purple-50 text-purple-600' : (customTestInfo.tier === 'pro' ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-500') %>">
+              <%= customTestInfo.tierLabel %>
+            </span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Status</span>
+            <span class="font-semibold <%= customTestInfo.active ? 'text-green-600' : (customTestInfo.expired ? 'text-red-500' : 'text-gray-500') %>">
+              <%= customTestInfo.active ? 'Active' : (customTestInfo.expired ? 'Expired' : 'No Access') %>
+            </span>
+          </div>
+          <div class="flex justify-between"><span class="text-gray-500">Valid Till</span><span class="font-semibold text-gray-900"><%= customTestInfo.expiresOn %></span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Days Remaining</span><span class="font-semibold text-gray-900"><%= customTestInfo.daysRemaining %></span></div>
+        </div>
+
+        <button id="revokeCustomTestBtn" type="button"
+          class="w-full mt-2 border-2 border-red-200 hover:bg-red-50 text-red-600 text-sm font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 <%= (customTestInfo.active || customTestInfo.expired) ? '' : 'hidden' %>">
+          <i class="fa-solid fa-ban"></i> Remove Custom Test Access
+        </button>
+      </div>
+
+      <!-- Grant form -->
+      <div class="space-y-3">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Grant Access <span class="text-gray-300">(Admin Only)</span></p>
+        <form id="customTestGrantForm" class="space-y-2.5" data-current-tier="<%= customTestInfo.tier %>">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Plan</label>
+            <select name="plan" id="ctPlanSelect" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option value="pro">Pro</option>
+              <option value="promax">Pro Max</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Duration</label>
+            <select name="months" id="ctMonthsSelect" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></select>
+          </div>
+          <p class="text-xs text-gray-400">If the same plan is active, the duration is added to the existing expiry. If it is a different plan, the new plan starts today. (1 month = 30 days)</p>
+          <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2">
+            <i class="fa-solid fa-plus"></i> Grant Custom Test Access
+          </button>
+        </form>
+        <script type="application/json" id="ctPricingData"><%- customTestPricingJson %></script>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ============ PAYMENT HISTORY + ACTIVITY LOG + RANKINGS ============ -->
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
@@ -338,6 +402,107 @@
 </div>
 </div>
 
+
+
+<!-- Ban User Modal -->
+<div id="banUserModalOverlay" class="hidden fixed inset-0 z-[80] bg-black/40 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <h2 class="text-lg font-bold text-gray-900">Ban User</h2>
+      <button id="banModalCloseBtn" type="button" class="text-gray-400 hover:text-gray-700">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form id="banUserForm" class="px-6 py-5 space-y-4">
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Reason *</label>
+        <select name="banReason" required class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none">
+          <option value="">-- Select reason --</option>
+
+          <optgroup label="Academic Integrity">
+            <option value="CHEATING">Cheating during a test</option>
+            <option value="QUESTION_ANSWER_SHARING">Sharing question/answer content</option>
+            <option value="TEST_RESULT_MANIPULATION">Manipulating test results</option>
+            <option value="LEADERBOARD_MANIPULATION">Manipulating leaderboard rankings</option>
+            <option value="UNAUTHORIZED_TEST_ASSISTANCE">Unauthorized test assistance</option>
+          </optgroup>
+
+          <optgroup label="Account & Payment Abuse">
+            <option value="ACCOUNT_SHARING">Account sharing</option>
+            <option value="MULTIPLE_ACCOUNT_ABUSE">Multiple account abuse</option>
+            <option value="UNAUTHORIZED_ACCESS">Unauthorized access</option>
+            <option value="PAID_CONTENT_ABUSE">Paid content abuse</option>
+            <option value="COUPON_OFFER_ABUSE">Coupon/offer abuse</option>
+            <option value="PAYMENT_REFUND_ABUSE">Payment/refund abuse</option>
+          </optgroup>
+
+          <optgroup label="Technical Abuse">
+            <option value="BOT_AUTOMATION">Bot / automation usage</option>
+            <option value="API_ABUSE">API abuse</option>
+            <option value="DATA_SCRAPING">Data scraping</option>
+            <option value="VULNERABILITY_EXPLOITATION">Exploiting a vulnerability</option>
+            <option value="RESTRICTION_BYPASS">Bypassing platform restrictions</option>
+          </optgroup>
+
+          <optgroup label="Conduct Violations">
+            <option value="SPAM">Spam</option>
+            <option value="HARASSMENT">Harassment</option>
+            <option value="THREATENING_BEHAVIOR">Threatening behavior</option>
+            <option value="FRAUDULENT_ACTIVITY">Fraudulent activity</option>
+            <option value="IMPERSONATION">Impersonation</option>
+          </optgroup>
+
+          <optgroup label="Security">
+            <option value="SUSPICIOUS_ACTIVITY">Suspicious activity</option>
+            <option value="COMPROMISED_ACCOUNT">Compromised account</option>
+            <option value="SECURITY_VIOLATION">Security violation</option>
+          </optgroup>
+
+          <optgroup label="General">
+            <option value="REPEATED_POLICY_VIOLATION">Repeated policy violations</option>
+            <option value="TERMS_VIOLATION">Violation of platform policies</option>
+            <option value="OTHER">Other</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Ban Type *</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2.5 text-sm cursor-pointer has-[:checked]:border-red-400 has-[:checked]:bg-red-50">
+            <input type="radio" name="banType" value="permanent" checked class="w-4 h-4"> Permanent
+          </label>
+          <label class="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2.5 text-sm cursor-pointer has-[:checked]:border-red-400 has-[:checked]:bg-red-50">
+            <input type="radio" name="banType" value="temporary" class="w-4 h-4"> Temporary
+          </label>
+        </div>
+      </div>
+
+      <div id="banDurationBox" class="hidden">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Duration</label>
+        <select name="durationDays" class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm">
+          <option value="1">1 Day</option>
+          <option value="3">3 Days</option>
+          <option value="7" selected>7 Days</option>
+          <option value="15">15 Days</option>
+          <option value="30">30 Days</option>
+          <option value="90">90 Days</option>
+        </select>
+      </div>
+
+      <p id="banFormMsg" class="text-sm hidden"></p>
+
+      <div class="flex gap-3 pt-2">
+        <button type="button" id="banModalCancelBtn" class="flex-1 py-2.5 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50">Cancel</button>
+        <button type="submit" class="flex-1 py-2.5 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700">Confirm Ban</button>
+      </div>
+    </form>
+
+  </div>
+</div>
 
 
 <script src="/js/owner/userdetail.js" defer></script>

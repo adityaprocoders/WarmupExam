@@ -8,6 +8,12 @@ import cloudinary from "../config/cloudinary.js";
 import { getPublicIdFromUrl } from "../utils/cloudinaryHelper.js";
 import LoginHistory from "../models/LoginHistory.js";
 import Notification from "../models/Notification.js";
+import CustomTestPricing from "../models/customTestPricing.js";
+import ExamPatternSummary from "../models/ExamPatternSummary.js";
+import Category from "../models/Category.js";
+import CustomTestPayment from "../models/customTestPayment.js";
+
+
 
 // ---------------- DASHBOARD STATS ----------------
 export const getDashboardStats = async (req, res) => {
@@ -52,7 +58,7 @@ export const getDashboardStats = async (req, res) => {
         });
     } catch (err) {
         console.error("Dashboard stats error:", err);
-        res.status(500).json({ success: false, message: "Stats load nahi ho payi" });
+        res.status(500).json({ success: false, message: "Failed to load stats." });
     }
 };
 
@@ -125,11 +131,11 @@ export const getChartData = async (req, res) => {
         });
     } catch (err) {
         console.error("Chart data error:", err);
-        res.status(500).json({ success: false, message: "Chart data load nahi ho payi" });
+        res.status(500).json({ success: false, message: "Failed to load chart data." });
     }
 };
 
-// ---------------- ALL TEST SERIES (public + private) ----------------
+ 
 // ---------------- ALL TEST SERIES (public + private) ----------------
 export const getAllTestSeriesOwner = async (req, res) => {
     try {
@@ -168,20 +174,21 @@ export const getAllTestSeriesOwner = async (req, res) => {
                 _id: l._id,
                 title: l.title,
                 slug: l.slug,
-                exam: l.exam || "",              // 👈 NAYA: search ke liye
+                exam: l.exam || "", 
+                category: l.category || "",             
                 price: l.price,
                 type: l.type,
                 visibility: l.visibility,
                 image: l.image,
                 validityDays: l.validityDays,
                 createdAt: l.createdAt,
-                enrolledCount: enrolledMap.get(String(l._id)) || 0,    // 👈 NAYA
-                purchasedCount: purchasedMap.get(String(l._id)) || 0  // 👈 NAYA
+                enrolledCount: enrolledMap.get(String(l._id)) || 0,    
+                purchasedCount: purchasedMap.get(String(l._id)) || 0   
             }))
         });
     } catch (err) {
         console.error("Get all test series error:", err);
-        res.status(500).json({ success: false, message: "Test series load nahi ho payi" });
+        res.status(500).json({ success: false, message: "Failed to load test series." });
     }
 };
 
@@ -194,13 +201,13 @@ export const deleteTestSeries = async (req, res) => {
         // Ab agar listing already nahi hai to clear 404 milega, frontend confuse nahi hoga.
         const deleted = await Listing.findByIdAndDelete(id);
         if (!deleted) {
-            return res.status(404).json({ success: false, message: "Test series nahi mili" });
+            return res.status(404).json({ success: false, message: "Test series not found." });
         }
 
-        res.json({ success: true, message: "Test series delete ho gayi" });
+        res.json({ success: true, message: "Test series deleted successfully." });
     } catch (err) {
         console.error("Delete test series error:", err);
-        res.status(500).json({ success: false, message: "Delete nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to delete." });
     }
 };
 
@@ -252,19 +259,27 @@ if (u.enrolledListings.length === 0) {
 
                  
                  
+                              const ctActive = u.customTestTier && u.customTestTier !== "free" &&
+                    (!u.customTestExpiresAt || u.customTestExpiresAt > now);
+                const customTestTier = ctActive ? u.customTestTier : "free";
+                const customTestLabel = customTestTier === "promax" ? "Pro Max" : (customTestTier === "pro" ? "Pro" : "Free");
 
                 return {
                     _id: u._id,
                     name: u.name,
                     username: u.username,
                     email: u.email,
-                    avatar: u.avatar || null,                // 👈 NAYA
+                    avatar: u.avatar || null,
                     hasActiveSub,
-                    plan,                                    // 👈 NAYA
-                    enrolledCount: u.enrolledListings.length, // 👈 NAYA
-                    status,                                  // 👈 NAYA
-                    joinedOn: u.createdAt                    // 👈 NAYA
+                    plan,
+                    enrolledCount: u.enrolledListings.length,
+                    status,
+                    joinedOn: u.createdAt,
+                    customTestTier,
+                    customTestLabel,
+                    customTestExpiresAt: ctActive ? u.customTestExpiresAt : null
                 };
+                
             })
         });
     } catch (err) {
@@ -278,7 +293,7 @@ export const toggleUserSubscription = async (req, res) => {
     try {
         const { id } = req.params;
         const user = await User.findById(id);
-        if (!user) return res.status(404).json({ success: false, message: "User nahi mila" });
+        if (!user) return res.status(404).json({ success: false, message: "User not found." });
 
         const now = new Date();
         const hasActiveSub = user.enrolledListings.some(e =>
@@ -305,7 +320,7 @@ export const toggleUserSubscription = async (req, res) => {
             if (!restored) {
                 return res.json({
                     success: false,
-                    message: "Is user ka koi valid (non-expired) subscription nahi hai jise restore kiya ja sake. User detail page se naya subscription grant karo."
+                    message: "This user has no valid (non-expired) subscription to restore. Grant a new subscription from the user detail page."
                 });
             }
         }
@@ -319,7 +334,7 @@ export const toggleUserSubscription = async (req, res) => {
         res.json({ success: true, hasActiveSub: newStatus });
     } catch (err) {
         console.error("Toggle subscription error:", err);
-        res.status(500).json({ success: false, message: "Update nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to update." });
     }
 };
 
@@ -330,7 +345,7 @@ export const deleteUser = async (req, res) => {
 
         const user = await User.findById(id);
         if (!user) {
-            return res.status(404).json({ success: false, message: "User nahi mila" });
+            return res.status(404).json({ success: false, message: "User not found." });
         }
 
         // ---------- Avatar cloudinary se hatao ----------
@@ -344,10 +359,10 @@ export const deleteUser = async (req, res) => {
         await AttemptSession.deleteMany({ user: id });
         await User.findByIdAndDelete(id);
 
-        res.json({ success: true, message: "User delete ho gaya" });
+        res.json({ success: true, message: "User deleted successfully." });
     } catch (err) {
         console.error("Delete user error:", err);
-        res.status(500).json({ success: false, message: "Delete nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to delete." });
     }
 };
 // ---------------- USER DETAIL PAGE ----------------
@@ -357,7 +372,7 @@ export const renderUserDetailPage = async (req, res) => {
         const targetUser = await User.findById(id).populate("enrolledListings.listing");
 
         if (!targetUser) {
-            req.flash("error", "User nahi mila");
+            req.flash("error", "User not found.");
             return res.redirect("/owner-dashboard");
         }
 
@@ -395,12 +410,51 @@ export const renderUserDetailPage = async (req, res) => {
             };
         });
 
-        const paymentHistory = targetUser.enrolledListings.map(e => ({
+        const testSeriesPayments = targetUser.enrolledListings.map(e => ({
             invoiceId: e.orderId || e.paymentId || "FREE-" + e._id.toString().slice(-6).toUpperCase(),
             amount: e.amountPaid || 0,
             date: e.enrolledAt.toDateString(),
-            status: e.amountPaid > 0 ? "Paid" : "Free"
+            status: e.amountPaid > 0 ? "Paid" : "Free",
+            sortDate: e.enrolledAt
         }));
+
+        const customPayments = await CustomTestPayment.find({ user: targetUser._id, status: "paid" }).lean();
+        const customTestPayments = customPayments.map(p => ({
+            invoiceId: p.razorpayOrderId.startsWith("owner_grant_")
+                ? `CT-GRANT-${String(p._id).slice(-6).toUpperCase()}`
+                : p.razorpayOrderId,
+            amount: p.amount || 0,
+            date: new Date(p.createdAt).toDateString(),
+            status: p.amount > 0 ? "Paid" : "Free",
+            sortDate: p.createdAt
+        }));
+
+        const paymentHistory = [...testSeriesPayments, ...customTestPayments]
+            .sort((a, b) => new Date(b.sortDate) - new Date(a.sortDate));
+
+        // ---------- CUSTOM TEST INFO ----------
+        const ctTier = targetUser.customTestTier || "free";
+        const ctExpiresAt = targetUser.customTestExpiresAt;
+        const ctActive = ctTier !== "free" && (!ctExpiresAt || ctExpiresAt > now);
+        const ctExpired = ctTier !== "free" && !!ctExpiresAt && ctExpiresAt <= now;
+
+        const customTestInfo = {
+            tier: ctActive ? ctTier : "free",
+            tierLabel: !ctActive ? "Free" : (ctTier === "promax" ? "Pro Max" : "Pro"),
+            active: ctActive,
+            expired: ctExpired,
+            expiresOn: ctExpiresAt ? ctExpiresAt.toDateString() : "-",
+            daysRemaining: ctActive && ctExpiresAt
+                ? Math.max(0, Math.ceil((ctExpiresAt - now) / (1000 * 60 * 60 * 24)))
+                : 0
+        };
+
+        const pricingDoc = await CustomTestPricing.findOne({ key: "default" }).lean();
+        const customTestPricing = {
+            pro: (pricingDoc?.pro || []).sort((a, b) => a.months - b.months),
+            promax: (pricingDoc?.promax || []).sort((a, b) => a.months - b.months)
+        };
+        const customTestPricingJson = JSON.stringify(customTestPricing).replace(/</g, "\\u003c");
 
         const userDetail = {
             _id: targetUser._id,
@@ -409,11 +463,20 @@ export const renderUserDetailPage = async (req, res) => {
             mobile: targetUser.mobile || "-",
             avatar: targetUser.avatar,
             status: targetUser.banned ? "Banned" : "Active",
+            banInfo: {
+                banned: targetUser.banned,
+                banReason: targetUser.banReason,
+                banType: targetUser.banType,
+                bannedAt: targetUser.bannedAt ? targetUser.bannedAt.toDateString() : null,
+                banExpiresAt: targetUser.banExpiresAt ? targetUser.banExpiresAt.toDateString() : null
+            },
             registrationDate: targetUser.createdAt.toDateString(),
             lastLogin: targetUser.updatedAt.toDateString(),
             emailVerified: targetUser.isVerified,
             mobileVerified: !!targetUser.mobile,
             permissions: targetUser.permissions || [],
+
+
 
             ...subscriptionInfo,
             grantedSubscriptions,
@@ -435,10 +498,13 @@ export const renderUserDetailPage = async (req, res) => {
 
         const availableListings = await Listing.find({});
 
-        res.render("owner/userDetail", { userDetail, availableListings, user: req.user });
+        res.render("owner/userDetail", {
+            userDetail, availableListings, user: req.user,
+            customTestInfo, customTestPricing, customTestPricingJson
+        });
     } catch (err) {
         console.error("User detail page error:", err);
-        req.flash("error", "Kuch galat ho gaya");
+        req.flash("error", "Something went wrong. Please try again.");
         res.redirect("/owner-dashboard");
     }
 };
@@ -451,11 +517,11 @@ export const grantSubscription = async (req, res) => {
 
         // 🔧 FIX: listingId required validation missing thi
         if (!listingId) {
-            return res.status(400).json({ success: false, message: "Test series select karo" });
+            return res.status(400).json({ success: false, message: "Please select a test series." });
         }
 
         const targetUser = await User.findById(id);
-        if (!targetUser) return res.status(404).json({ success: false, message: "User nahi mila" });
+        if (!targetUser) return res.status(404).json({ success: false, message: "User not found." });
 
         const start = startDate ? new Date(startDate) : new Date();
         const days = Number(duration) || 30;
@@ -468,7 +534,7 @@ export const grantSubscription = async (req, res) => {
             listingsToGrant = await Listing.find({});
         } else {
             const singleListing = await Listing.findById(listingId);
-            if (!singleListing) return res.status(404).json({ success: false, message: "Test series nahi mili" });
+            if (!singleListing) return res.status(404).json({ success: false, message: "Test series not found." });
             listingsToGrant = [singleListing];
         }
 
@@ -500,12 +566,12 @@ export const grantSubscription = async (req, res) => {
         res.json({
             success: true,
             message: listingId === "ALL"
-                ? `Sabhi ${listingsToGrant.length} test series free mein grant ho gayi`
-                : "Subscription grant ho gaya"
+                ? `All ${listingsToGrant.length} test series were granted for free.`
+                : "Subscription granted successfully."
         });
     } catch (err) {
         console.error("Grant subscription error:", err);
-        res.status(500).json({ success: false, message: "Grant nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to grant access." });
     }
 };
 
@@ -516,29 +582,75 @@ export const saveUserPermissions = async (req, res) => {
         const { permissions } = req.body;
 
         const updated = await User.findByIdAndUpdate(id, { permissions: permissions || [] }, { new: true });
-        if (!updated) return res.status(404).json({ success: false, message: "User nahi mila" }); // 🔧 FIX
+        if (!updated) return res.status(404).json({ success: false, message: "User not found." }); // 🔧 FIX
 
-        res.json({ success: true, message: "Permissions save ho gayi" });
+        res.json({ success: true, message: "Permissions saved successfully." });
     } catch (err) {
         console.error("Save permissions error:", err);
-        res.status(500).json({ success: false, message: "Save nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to save." });
     }
 };
 
 // ---------------- BAN / UNBAN USER ----------------
-export const toggleBanUser = async (req, res) => {
+export const banUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { banReason, banType, durationDays, customExpiryDate } = req.body;
+
+        if (!banReason) {
+            return res.status(400).json({ success: false, message: "Please select a reason." });
+        }
+        if (!["permanent", "temporary"].includes(banType)) {
+            return res.status(400).json({ success: false, message: "Please select a ban type." });
+        }
+
+        const targetUser = await User.findById(id);
+        if (!targetUser) return res.status(404).json({ success: false, message: "User not found." });
+        if (targetUser.role === "owner") {
+            return res.status(400).json({ success: false, message: "The owner account cannot be banned." });
+        }
+
+        let banExpiresAt = null;
+        if (banType === "temporary") {
+            if (customExpiryDate) {
+                banExpiresAt = new Date(customExpiryDate);
+            } else {
+                banExpiresAt = new Date();
+                banExpiresAt.setDate(banExpiresAt.getDate() + (Number(durationDays) || 7));
+            }
+        }
+
+        targetUser.banned = true;
+        targetUser.banReason = banReason;
+        targetUser.banType = banType;
+        targetUser.bannedAt = new Date();
+        targetUser.banExpiresAt = banExpiresAt;
+        await targetUser.save();
+
+        res.json({ success: true, message: "User banned successfully." });
+    } catch (err) {
+        console.error("Ban user error:", err);
+        res.status(500).json({ success: false, message: "Failed to ban user." });
+    }
+};
+
+export const unbanUser = async (req, res) => {
     try {
         const { id } = req.params;
         const targetUser = await User.findById(id);
-        if (!targetUser) return res.status(404).json({ success: false, message: "User nahi mila" });
+        if (!targetUser) return res.status(404).json({ success: false, message: "User not found." });
 
-        targetUser.banned = !targetUser.banned;
+        targetUser.banned = false;
+        targetUser.banReason = null;
+        targetUser.banType = null;
+        targetUser.bannedAt = null;
+        targetUser.banExpiresAt = null;
         await targetUser.save();
 
-        res.json({ success: true, banned: targetUser.banned });
+        res.json({ success: true, message: "User unbanned successfully." });
     } catch (err) {
-        console.error("Toggle ban error:", err);
-        res.status(500).json({ success: false, message: "Update nahi ho paya" });
+        console.error("Unban user error:", err);
+        res.status(500).json({ success: false, message: "Failed to unban user." });
     }
 };
 
@@ -547,7 +659,7 @@ export const ownerResetUserPassword = async (req, res) => {
     try {
         const { id } = req.params;
         const targetUser = await User.findById(id);
-        if (!targetUser) return res.status(404).json({ success: false, message: "User nahi mila" });
+        if (!targetUser) return res.status(404).json({ success: false, message: "User not found." });
 
         const tempPassword = Math.random().toString(36).slice(-8);
         targetUser.password = tempPassword; // pre('save') hook hash kar dega
@@ -557,14 +669,14 @@ export const ownerResetUserPassword = async (req, res) => {
             from: `WarmupExam <${process.env.CONTACT_SENDER_EMAIL}>`,
             to: targetUser.email,
             subject: "Your Password Has Been Reset",
-            html: `<p>Aapka password owner ne reset kiya hai. Naya temporary password: <b>${tempPassword}</b></p>
-                   <p>Login karne ke baad ise turant badal lein.</p>`
+            html: `<p>Your password has been reset by the administrator. Your new temporary password is: <b>${tempPassword}</b></p>
+                   <p>Please change it immediately after logging in.</p>`
         });
 
-        res.json({ success: true, message: "Naya password email pe bhej diya gaya" });
+        res.json({ success: true, message: "A new password has been emailed to the user." });
     } catch (err) {
         console.error("Owner reset password error:", err);
-        res.status(500).json({ success: false, message: "Reset nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to reset password." });
     }
 };
 
@@ -610,7 +722,7 @@ export const getAllPaymentsOwner = async (req, res) => {
         res.json({ success: true, payments: paymentsAgg, totalRevenue, count: paymentsAgg.length });
     } catch (err) {
         console.error("Get payments error:", err);
-        res.status(500).json({ success: false, message: "Payments load nahi ho paye" });
+        res.status(500).json({ success: false, message: "Failed to load payments." });
     }
 };
 
@@ -625,7 +737,7 @@ export const getLoginHistory = async (req, res) => {
         res.json({ success: true, history });
     } catch (err) {
         console.error("Get login history error:", err);
-        res.status(500).json({ success: false, message: "Login history load nahi ho payi" });
+        res.status(500).json({ success: false, message: "Failed to load login history." });
     }
 };
 
@@ -639,23 +751,23 @@ export const deleteLoginHistory = async (req, res) => {
         });
 
         if (!deleted) {
-            return res.status(404).json({ success: false, message: "Entry nahi mili" });
+            return res.status(404).json({ success: false, message: "Entry not found." });
         }
 
-        res.json({ success: true, message: "Entry delete ho gayi" });
+        res.json({ success: true, message: "Entry deleted successfully." });
     } catch (err) {
         console.error("Delete login history error:", err);
-        res.status(500).json({ success: false, message: "Delete nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to delete." });
     }
 };
 
 export const deleteAllLoginHistory = async (req, res) => {
     try {
         await LoginHistory.deleteMany({ ownerEmail: req.user.email });
-        res.json({ success: true, message: "Poori login history delete ho gayi" });
+        res.json({ success: true, message: "Login history cleared successfully." });
     } catch (err) {
         console.error("Delete all login history error:", err);
-        res.status(500).json({ success: false, message: "Delete nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to delete." });
     }
 };
 
@@ -675,7 +787,7 @@ export const getAllNotificationsOwner = async (req, res) => {
         res.json({ success: true, notifications });
     } catch (err) {
         console.error("Get notifications error:", err);
-        res.status(500).json({ success: false, message: "Notifications load nahi ho payi" });
+        res.status(500).json({ success: false, message: "Failed to load notifications." });
     }
 };
 
@@ -701,11 +813,11 @@ export const getNotificationReach = async (req, res) => {
         res.json({ success: true, count });
     } catch (err) {
         console.error("Get reach error:", err);
-        res.status(500).json({ success: false, message: "Reach calculate nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to calculate reach." });
     }
 };
 
-// ---------------- SEARCH USERS (custom audience picker ke liye) ----------------
+ 
 // ---------------- SEARCH USERS (custom audience picker + edit prefill ke liye) ----------------
 export const searchUsersForNotification = async (req, res) => {
     try {
@@ -724,7 +836,7 @@ export const searchUsersForNotification = async (req, res) => {
         res.json({ success: true, users });
     } catch (err) {
         console.error("Search users error:", err);
-        res.status(500).json({ success: false, message: "User search nahi ho payi" });
+        res.status(500).json({ success: false, message: "Failed to search users." });
     }
 };
 
@@ -734,7 +846,7 @@ export const createNotification = async (req, res) => {
         const { title, message, audienceType, customUserIds, scheduleType, scheduledAt } = req.body;
 
         if (!title || !message || !audienceType) {
-            return res.status(400).json({ success: false, message: "Title, message aur audience zaroori hain" });
+            return res.status(400).json({ success: false, message: "Title, message, and audience are required." });
         }
 
         const doc = new Notification({
@@ -755,7 +867,7 @@ export const createNotification = async (req, res) => {
         }
 
         await doc.save();
-        res.json({ success: true, notification: doc, message: "Notification bhej di gayi" });
+        res.json({ success: true, notification: doc, message: "Notification sent successfully." });
     } catch (err) {
         console.error("Create notification error:", err);
         res.status(500).json({ success: false, message: "Notification bhej nahi payi" });
@@ -767,11 +879,11 @@ export const deleteNotification = async (req, res) => {
     try {
         const { id } = req.params;
         const deleted = await Notification.findByIdAndDelete(id);   // 👈 hamesha poora delete — already sahi hai
-        if (!deleted) return res.status(404).json({ success: false, message: "Notification nahi mili" });
-        res.json({ success: true, message: "Notification delete ho gayi" });
+        if (!deleted) return res.status(404).json({ success: false, message: "Notification not found." });
+        res.json({ success: true, message: "Notification deleted successfully." });
     } catch (err) {
         console.error("Delete notification error:", err);
-        res.status(500).json({ success: false, message: "Delete nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to delete." });
     }
 };
 
@@ -781,10 +893,10 @@ export const updateNotification = async (req, res) => {
         const { title, message, audienceType, customUserIds, scheduleType, scheduledAt } = req.body;
 
         const notif = await Notification.findById(id);
-        if (!notif) return res.status(404).json({ success: false, message: "Notification nahi mili" });
+        if (!notif) return res.status(404).json({ success: false, message: "Notification not found." });
 
         if (notif.status === "sent") {
-            return res.status(400).json({ success: false, message: "Already sent notification edit nahi ho sakti — sirf delete karo" });
+            return res.status(400).json({ success: false, message: "A notification that has already been sent cannot be edited. You can only delete it." });
         }
 
         notif.title = title;
@@ -802,12 +914,307 @@ export const updateNotification = async (req, res) => {
         }
 
         await notif.save();
-        res.json({ success: true, notification: notif, message: "Notification update ho gayi" });
+        res.json({ success: true, notification: notif, message: "Notification updated successfully." });
     } catch (err) {
         console.error("Update notification error:", err);
-        res.status(500).json({ success: false, message: "Update nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to update." });
+    }
+};
+
+
+// ---------------- CUSTOM TEST PRICING (owner-editable Pro/Pro+ pricing) ----------------
+export const getCustomTestPricingOwner = async (req, res) => {
+    try {
+        let doc = await CustomTestPricing.findOne({ key: "default" });
+        if (!doc) {
+            // Pehli baar hai to defaults bana do (image 2 wale numbers)
+            doc = await CustomTestPricing.create({
+                key: "default",
+                pro: [
+                    { months: 1, originalPrice: 199, price: 199 },
+                    { months: 3, originalPrice: 597, price: 499 },
+                    { months: 6, originalPrice: 1194, price: 899 },
+                    { months: 12, originalPrice: 2388, price: 1499 },
+                ],
+                promax: [
+                    { months: 1, originalPrice: 499, price: 499 },
+                    { months: 3, originalPrice: 1497, price: 1299 },
+                    { months: 6, originalPrice: 2994, price: 2299 },
+                    { months: 12, originalPrice: 5988, price: 3999 },
+                ],
+            });
+        }
+        res.json({ success: true, pricing: doc });
+    } catch (err) {
+        console.error("Get custom test pricing error:", err);
+        res.status(500).json({ success: false, message: "Failed to load pricing." });
+    }
+};
+
+export const updateCustomTestPricingOwner = async (req, res) => {
+    try {
+        const { pro, promax } = req.body;
+        const REQUIRED_MONTHS = [1, 3, 6, 12];
+
+        function validatePlan(rows, label) {
+    if (!Array.isArray(rows) || rows.length < 1) {
+        throw new Error(`${label} requires at least one duration.`);
+    }
+    const monthsSeen = new Set();
+    for (const r of rows) {
+        const m = Number(r.months);
+        if (!Number.isInteger(m) || m < 1 || m > 36) {
+            throw new Error(`${label}: the month value must be between 1 and 36.`);
+        }
+        if (monthsSeen.has(m)) {
+            throw new Error(`${label}: ${m} month is duplicated. Each duration can only be added once.`);
+        }
+        monthsSeen.add(m);
+        if (Number(r.price) > Number(r.originalPrice)) {
+            throw new Error(`${label} ${m} month: price cannot be greater than the original price.`);
+        }
+        if (Number(r.price) < 0 || Number(r.originalPrice) < 0) {
+            throw new Error(`${label} ${m} month: price cannot be negative.`);
+        }
+    }
+}
+
+        validatePlan(pro, "Pro");
+        validatePlan(promax, "Pro Max");
+
+        const updated = await CustomTestPricing.findOneAndUpdate(
+            { key: "default" },
+            { pro, promax, updatedBy: req.user._id },
+            { new: true, upsert: true }
+        );
+
+        res.json({ success: true, pricing: updated, message: "Pricing updated successfully." });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message || "Failed to update." });
     }
 };
 
 
 
+// ---------------- GET EXAM PATTERN SUMMARY (modal prefill ke liye) ----------------
+export const getExamPatternSummary = async (req, res) => {
+    try {
+        const { category, exam } = req.query;
+        if (!category || !exam) {
+            return res.status(400).json({ success: false, message: "Category and exam are required." });
+        }
+
+        const doc = await ExamPatternSummary.findOne({ category, exam }).lean();
+        res.json({ success: true, data: doc || null });
+    } catch (err) {
+        console.error("Get exam pattern summary error:", err);
+        res.status(500).json({ success: false, message: "Failed to load." });
+    }
+};
+
+export const getCategoriesOwner = async (req, res) => {
+    try {
+        const categories = await Category.find({}).select("name").sort({ name: 1 }).lean();
+        res.json({ success: true, categories });
+    } catch (err) {
+        console.error("Get categories error:", err);
+        res.status(500).json({ success: false, message: "Failed to load categories." });
+    }
+};
+
+// ---------------- GET SUBJECTS+MARKS for a category+exam (Listing.marks se) ----------------
+export const getListingMarksForExam = async (req, res) => {
+    try {
+        const { category, exam } = req.query;
+        if (!category || !exam) {
+            return res.status(400).json({ success: false, message: "Category and exam are required." });
+        }
+
+        // Isi category+exam ki koi bhi listing dhoondo jiske paas marks config ho
+        const listing = await Listing.findOne({ category, exam, "marks.0": { $exists: true } })
+            .select("marks")
+            .lean();
+
+        if (!listing) {
+            return res.json({ success: true, marks: [] });
+        }
+
+        res.json({ success: true, marks: listing.marks || [] });
+    } catch (err) {
+        console.error("Get listing marks for exam error:", err);
+        res.status(500).json({ success: false, message: "Failed to load marks." });
+    }
+};
+
+// ---------------- SAVE EXAM PATTERN SUMMARY (upsert on category+exam) ----------------
+export const saveExamPatternSummary = async (req, res) => {
+    try {
+        const { category, exam, rows, timeStrategy, totalDuration, sectionTime } = req.body;
+
+        if (!category || !exam) {
+            return res.status(400).json({ success: false, message: "Category and exam are required." });
+        }
+        if (!Array.isArray(rows) || rows.length === 0) {
+            return res.status(400).json({ success: false, message: "At least one subject row is required." });
+        }
+
+        for (const r of rows) {
+            if (!r.subject || !r.subject.trim()) {
+                return res.status(400).json({ success: false, message: "Each row must have a subject." });
+            }
+            if (r.questions === undefined || Number(r.questions) < 0) {
+                return res.status(400).json({ success: false, message: `${r.subject}: the question count is invalid.` });
+            }
+        }
+
+        const finalTimeStrategy = timeStrategy === "sectional" ? "sectional" : "total";
+
+        const updateData = {
+            category,
+            exam,
+            rows: rows.map(r => ({
+                subject: r.subject.trim(),
+                questions: Number(r.questions) || 0,
+                positiveMarks: Number(r.positiveMarks) || 0,
+                negativeMarks: Number(r.negativeMarks) || 0
+            })),
+            timeStrategy: finalTimeStrategy,
+            totalDuration: finalTimeStrategy === "total" ? (Number(totalDuration) || 60) : 60,
+            sectionTime: finalTimeStrategy === "sectional"
+                ? (Array.isArray(sectionTime) ? sectionTime.map(st => ({
+                    subjects: Array.isArray(st.subjects) ? st.subjects : [],
+                    duration: Number(st.duration) || 0
+                })) : [])
+                : []
+        };
+
+        const doc = await ExamPatternSummary.findOneAndUpdate(
+            { category, exam },
+            updateData,
+            { new: true, upsert: true, runValidators: true }
+        );
+
+        res.json({ success: true, message: "Exam pattern saved successfully.", data: doc });
+    } catch (err) {
+        console.error("Save exam pattern summary error:", err);
+        res.status(500).json({ success: false, message: err.message || "Failed to save." });
+    }
+};
+
+
+// ---------------- GET ALL EXAM PATTERN SUMMARIES (list, optional category filter) ----------------
+export const getAllExamPatternSummaries = async (req, res) => {
+    try {
+        const { category } = req.query;
+        const filter = {};
+        if (category) filter.category = category;
+
+        const docs = await ExamPatternSummary.find(filter)
+            .populate("category", "name")
+            .sort({ updatedAt: -1 })
+            .limit(10)
+            .lean();
+
+        res.json({ success: true, patterns: docs });
+    } catch (err) {
+        console.error("Get all exam pattern summaries error:", err);
+        res.status(500).json({ success: false, message: "Failed to load." });
+    }
+};
+
+// ---------------- DELETE EXAM PATTERN SUMMARY ----------------
+export const deleteExamPatternSummary = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await ExamPatternSummary.findByIdAndDelete(id);
+        if (!deleted) return res.status(404).json({ success: false, message: "Not found." });
+        res.json({ success: true, message: "Deleted successfully." });
+    } catch (err) {
+        console.error("Delete exam pattern summary error:", err);
+        res.status(500).json({ success: false, message: "Failed to delete." });
+    }
+};
+
+
+
+
+
+
+// ---------------- GRANT CUSTOM TEST ACCESS (Pro / Pro Max) ----------------
+export const grantCustomTestAccess = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { plan } = req.body;
+        const months = Number(req.body.months);
+
+        if (!["pro", "promax"].includes(plan)) {
+            return res.status(400).json({ success: false, message: "Please select a plan (Pro or Pro Max)." });
+        }
+
+        const pricingDoc = await CustomTestPricing.findOne({ key: "default" }).lean();
+        const row = (pricingDoc?.[plan] || []).find(r => r.months === months);
+        if (!row) {
+            return res.status(400).json({ success: false, message: "This duration is not available in the pricing configuration." });
+        }
+
+        const targetUser = await User.findById(id);
+        if (!targetUser) return res.status(404).json({ success: false, message: "User not found." });
+        if (targetUser.role === "owner") {
+            return res.status(400).json({ success: false, message: "The owner already has Pro Max access." });
+        }
+
+        const now = new Date();
+        const isSameTierActive =
+            targetUser.customTestTier === plan &&
+            targetUser.customTestExpiresAt &&
+            targetUser.customTestExpiresAt > now;
+        const base = isSameTierActive ? targetUser.customTestExpiresAt : now;
+        const newExpiresAt = new Date(base);
+        newExpiresAt.setDate(newExpiresAt.getDate() + months * 30);
+
+        targetUser.customTestTier = plan;
+        targetUser.customTestExpiresAt = newExpiresAt;
+        await targetUser.save();
+
+        try {
+            await CustomTestPayment.create({
+                user: targetUser._id,
+                plan,
+                months,
+                amount: 0,
+                razorpayOrderId: `owner_grant_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                razorpayPaymentId: "owner_grant",
+                status: "paid",
+                source: "owner"
+            });
+        } catch (recErr) {
+            console.error("Custom test grant record save failed (non-fatal):", recErr);
+        }
+
+        res.json({
+            success: true,
+            message: `${plan === "promax" ? "Pro Max" : "Pro"} access granted for ${months} month(s).`
+        });
+    } catch (err) {
+        console.error("Grant custom test access error:", err);
+        res.status(500).json({ success: false, message: "Failed to grant access." });
+    }
+};
+
+// ---------------- REVOKE CUSTOM TEST ACCESS ----------------
+export const revokeCustomTestAccess = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const targetUser = await User.findById(id);
+        if (!targetUser) return res.status(404).json({ success: false, message: "User not found." });
+
+        targetUser.customTestTier = "free";
+        targetUser.customTestExpiresAt = null;
+        await targetUser.save();
+
+        res.json({ success: true, message: "Custom Test access removed successfully." });
+    } catch (err) {
+        console.error("Revoke custom test access error:", err);
+        res.status(500).json({ success: false, message: "Failed to remove access." });
+    }
+};

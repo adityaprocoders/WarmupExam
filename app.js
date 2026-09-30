@@ -7,9 +7,7 @@ import dotenv from "dotenv";
 dotenv.config(); 
 
 import sanitizeMiddleware from "./middleware/sanitize.js";
-import cookieParser from "cookie-parser";
-import { doubleCsrf } from "csrf-csrf";
-import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser"; 
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -26,6 +24,7 @@ import connectDB from "./config/Db.js";
 import passport from "./config/passport.js";
 import ExpressError from "./utils/ExpressError.js";
 import errorHandler from "./middleware/errorHandler.js";
+import { checkBanned } from "./middleware/checkBanned.js";
 import ownerRoutes from "./routes/ownerRoutes.js";
 import { doubleCsrfProtection, generateCsrfToken } from "./config/csrf.js";
 import { safeJsonStringify } from "./utils/safeJson.js";
@@ -35,7 +34,8 @@ import { checkSingleSession } from "./middleware/checkSingleSession.js";
 import sitemapRoutes from "./routes/sitemapRoutes.js";
 import pageRoutes from "./routes/pageRoutes.js";
 import skillTestRoutes from "./routes/skillTestRoutes.js";
-import categoryRoutes from "./routes/categoryRoutes.js";
+import customTestPageRoutes from "./routes/customTestRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";   
 import authRoutes from "./routes/authRoutes.js";
 import listingRoutes from "./routes/listingRoutes.js";
 import ebookRoutes from "./routes/ebookRoutes.js";
@@ -44,7 +44,8 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js";
 import testBuilderRoutes from "./routes/testBuilderRoutes.js";
 import ownerLiveTestRoutes from "./routes/ownerLiveTestRoutes.js";
-import liveTestRoutes from "./routes/liveTestRoutes.js";import generatePaperRoutes from "./routes/generatePaperRoutes.js";
+import liveTestRoutes from "./routes/liveTestRoutes.js";
+import generatePaperRoutes from "./routes/generatePaperRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import attemptRoutes from "./routes/attemptRoutes.js";
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
@@ -89,10 +90,9 @@ app.use((req, res, next) => {
     next();
 });
  
-app.use((req, res, next) => {
-    helmet({
+app.use(helmet({
         contentSecurityPolicy: isProd ? {
-            directives: {
+    directives: {
                 defaultSrc: ["'self'"],
                  scriptSrc: [
                      "'self'",
@@ -110,7 +110,9 @@ app.use((req, res, next) => {
                      "https://www.googletagservices.com",
                      "https://adservice.google.com",
                      "https://*.adtrafficquality.google",
-                     "https://www.googletagmanager.com"
+                     "https://www.googletagmanager.com",
+                     "https://tpc.googlesyndication.com",
+                     "https://partner.googleadservices.com"
                  ],
                 styleSrc: [
                     "'self'",
@@ -126,23 +128,40 @@ app.use((req, res, next) => {
                     "https://fonts.gstatic.com",
                     "data:"
                 ],
-                imgSrc: ["'self'", "data:", "https:"],
+               imgSrc: [
+    "'self'",
+    "data:",
+    "https://res.cloudinary.com",
+    "https://pagead2.googlesyndication.com",
+    "https://*.adtrafficquality.google",
+    "https://googleads.g.doubleclick.net",
+    "https://tpc.googlesyndication.com",
+    "https://www.google.com",
+    "https://www.google-analytics.com",
+    "https://www.googletagmanager.com"
+],
                 connectSrc: [
-                    "'self'",
-                    "https://unpkg.com",
-                    "https://cdnjs.cloudflare.com",
-                    "https://cdn.jsdelivr.net",
-                    "https://api.razorpay.com",
-                    "https://lumberjack.razorpay.com",
-                    "https://api.sardine.ai",
-                    "https://pagead2.googlesyndication.com",
-                    "https://googleads.g.doubleclick.net",
-                    "https://ep1.adtrafficquality.google",
-                    "https://*.adtrafficquality.google",
-                    "https://csi.gstatic.com",
-                    "https://www.google-analytics.com",
-                    "https://analytics.google.com"
-                    ],
+    "'self'",
+    "https://unpkg.com",
+    "https://cdnjs.cloudflare.com",
+    "https://cdn.jsdelivr.net",
+    "https://api.razorpay.com",
+    "https://lumberjack.razorpay.com",
+    "https://api.sardine.ai",
+    "https://pagead2.googlesyndication.com",
+    "https://googleads.g.doubleclick.net",
+    "https://ep1.adtrafficquality.google",
+    "https://*.adtrafficquality.google",
+    "https://csi.gstatic.com",
+    "https://www.google.com",
+    "https://www.google-analytics.com",
+    "https://*.google-analytics.com",
+    "https://analytics.google.com",
+    "https://*.analytics.google.com",
+    "https://stats.g.doubleclick.net",
+    "https://www.googletagmanager.com",
+    "https://*.ingest.sentry.io"
+],
                 frameSrc: [
                     "https://api.razorpay.com",
                     "https://checkout.razorpay.com",
@@ -157,20 +176,23 @@ app.use((req, res, next) => {
                 baseUri: ["'self'"],
                 formAction: ["'self'", "https://checkout.razorpay.com"],
                 frameAncestors: ["'self'"],
-                upgradeInsecureRequests: [],
-                reportUri: ['/csp-violation-report'],
+                upgradeInsecureRequests: [], 
             },
         } : false,
         crossOriginEmbedderPolicy: false,
         crossOriginResourcePolicy: { policy: "cross-origin" },
-    })(req, res, next);
-});
+}));
 
 
 
 
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({
+    limit: "5mb",
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use(methodOverride('_method'));
 app.use(cookieParser());
 
@@ -217,6 +239,8 @@ app.get("/sw.js", (req, res) => {
 app.use(express.static(path.join(__dirname, "public"), {
     maxAge: process.env.NODE_ENV === "production" ? "7d" : 0,
 }));
+
+app.use(sitemapRoutes);
 
 
 app.use('/vendor/ckeditor5', express.static(path.join(__dirname, 'node_modules/ckeditor5/dist')));
@@ -291,9 +315,11 @@ app.use((req, res, next) => {
         "/test",
         "/attempt",    
         "/api/attempt",
+        "/api/custom-test/attempt",
         "/content-blocks",
         "/owner/content-library",
         "/api/questions",
+        "/api/custom-test/payment/webhook",
         
     ];
 
@@ -320,13 +346,18 @@ app.use((req, res, next) => {
 
 
 app.use((req, res, next) => {
-    const noCachePaths = ['/login', '/register', '/profile', '/dashboard', '/attempt', '/series', '/api', '/folder', '/file', '/order-summary', '/test-builder','/owner','/mock-test'];
-    const shouldNoCache = noCachePaths.some(p => req.path.startsWith(p));
+    const noCachePaths = ['/login', '/register', '/profile', '/dashboard', '/attempt', '/series', '/api', '/folder', '/file', '/order-summary', '/test-builder', '/owner', '/mock-test', '/custom-test'];
+    const noIndexPaths = ['/login', '/register', '/profile', '/dashboard', '/attempt', '/series', '/api', '/folder', '/file', '/order-summary', '/test-builder', '/owner', '/mock-test', '/custom-test/upgrade'];
 
-    if (shouldNoCache) {
+    if (noCachePaths.some(p => req.path.startsWith(p))) {
         res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    } else if (req.user) {
+        res.set('Cache-Control', 'private, no-cache');
     } else {
         res.set('Cache-Control', 'public, max-age=60');
+    }
+    if (noIndexPaths.some(p => req.path.startsWith(p))) {
+        res.set('X-Robots-Tag', 'noindex, nofollow');
     }
     next();
 });
@@ -360,7 +391,10 @@ app.use(async (req, res, next) => {
 });
 
 
-  
+ 
+
+app.use(checkBanned);
+
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -368,8 +402,7 @@ app.set("view engine", "ejs");
 app.use(expressLayouts);
 app.set("layout", "layouts/main");
 
-
-app.use(sitemapRoutes);
+ 
 
 // ---------------- ROUTES ----------------
 
@@ -397,6 +430,7 @@ app.use(authRoutes);
 app.use("/", ownerRoutes);
 app.use(questionBankRoutes);
 app.use(listingRoutes);
+app.use(customTestPageRoutes);
 app.use(ebookRoutes);
 app.use(contentBlockRoutes);
 app.use(enrollRoutes);
@@ -426,15 +460,6 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 
-
-app.post(
-    '/csp-violation-report',
-    express.json({ type: ['application/json', 'application/csp-report'] }),
-    (req, res) => {
-        console.warn('🚨 CSP Violation:', JSON.stringify(req.body, null, 2));
-        res.status(204).end();
-    }
-);
 
  
 

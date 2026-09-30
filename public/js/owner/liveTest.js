@@ -403,7 +403,7 @@ function handleTimeStrategyUI(prefillTotal) {
         container.innerHTML = `
             <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Choose Subject(s)</label>
             <div id="ltTimeSubjectCheckboxes" class="flex flex-wrap gap-2 mb-2 max-h-32 overflow-y-auto border rounded-lg p-2"></div>
-            <input type="number" id="ltTimeMinutesInput" min="1" placeholder="Minutes (same value un sab subjects ko milegi)" class="w-full border rounded-lg px-3 py-2 text-sm mb-2">
+            <input type="number" id="ltTimeMinutesInput" min="1" placeholder="Minutes (the same value applies to all subjects)" class="w-full border rounded-lg px-3 py-2 text-sm mb-2">
             <button type="button" id="ltAddTimeBtn" data-action="lt-add-subject-time" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold py-2 rounded-lg text-sm mb-2">Add</button>
             <div id="ltTimeList" class="space-y-1.5"></div>
         `;
@@ -569,7 +569,7 @@ function removeSubjectTime(index) {
                             <input type="checkbox" data-action="row-difficulty-checkbox" data-row-id="${rowId}" value="Hard" class="w-3 h-3" ${criteriaRowState[rowId].difficulty.has('Hard') ? 'checked' : ''}> Hard
                         </label>
                     </div>
-                    <p class="text-[9px] text-gray-400 mt-1">Khali chhodo = koi bhi difficulty chalegi</p>
+                    <p class="text-[9px] text-gray-400 mt-1">Leave blank to allow any difficulty</p>
                 </div>
 
                 <div class="md:col-span-2">
@@ -832,27 +832,27 @@ $('#ltPreviewDays').textContent = daysArr.length === 0 ? '⚠️ No Days Selecte
             return;
         }
         if (selectedListingIds.size === 0) {
-            alert('Please select at least one question source.');
+            showToast('Please select at least one question source.', 'error');
             return;
         }
 
         const criteria = collectCriteriaRows();
         if (criteria.length === 0) {
-            alert('Kam se kam ek Filter Row add karo.');
+           showToast('Please add at least one Filter Row.', 'error');
             return;
         }
         if (selectedDays.size === 0) {
-    alert('Kam se kam ek Day select karo.');
+   showToast('Please select at least one Day.', 'error');
     return;
 }
         for (const row of criteria) {
     if (!row.subject) {
-        alert('Har row me Subject choose karna zaroori hai.');
+        showToast('Please choose a Subject for every row.', 'error');
         return;
     }
     if (row.countMode !== 'subject') {
         if (!row.minCount || !row.maxCount || row.minCount < 1 || row.maxCount < row.minCount) {
-            alert(`"${row.subject}" row ka Min/Max Q sahi nahi hai.`);
+            showToast(`"${row.subject}" row's Min/Max Q is invalid.`, 'error');
             return;
         }
     }
@@ -862,20 +862,20 @@ $('#ltPreviewDays').textContent = daysArr.length === 0 ? '⚠️ No Days Selecte
         if (questionCountStrategy === 'all') {
             questionCount = Number($('#ltTotalQuestionCount')?.value) || 0;
             if (!questionCount || questionCount < 5) {
-                alert('Total No of Questions kam se kam 5 honi chahiye.');
+                showToast('Total number of questions must be at least 5.', 'error');
                 return;
             }
         } else {
             if (subjectQuestionCountList.length === 0) {
-                alert('Subject-wise question count add karo.');
+               showToast('Please add subject-wise question count.', 'error');
                 return;
             }
         }
 if (timeStrategy === 'total') {
     const d = parseInt($('#ltTotalDuration')?.value, 10);
-    if (!d || d < 1) { alert('Total Duration sahi bharo.'); return; }
+    if (!d || d < 1) { showToast('Please enter a valid Total Duration.', 'error'); return; }
 } else {
-    if (subjectTimeList.length === 0) { alert('Subject-wise time add karo.'); return; }
+     if (subjectTimeList.length === 0) { showToast('Please add subject-wise time.', 'error'); return; }
 }
         btn.disabled = true;
         btn.textContent = 'Saving...';
@@ -902,7 +902,7 @@ subjectTimes: timeStrategy === 'subject' ? subjectTimeList : [],
         btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save Configuration`;
 
         if (!ok) {
-            alert(data.message || 'Could not save configuration.');
+            showToast(data.message || 'Could not save configuration.', 'error');
             return;
         }
 
@@ -920,7 +920,7 @@ subjectTimes: timeStrategy === 'subject' ? subjectTimeList : [],
         const data = await res.json();
 
         if (!res.ok || !data.success) {
-            alert(data.message || 'Could not delete.');
+            showToast(data.message || 'Could not delete.', 'error');
             return;
         }
 

@@ -43,7 +43,7 @@ export const getQuestionBankStats = async (req, res) => {
         res.json({ success: true, stats: { totalQuestions, active, reported, disabled } });
     } catch (err) {
         console.error("QB stats error:", err);
-        res.status(500).json({ success: false, message: "Stats load nahi ho payi" });
+        res.status(500).json({ success: false, message: "Failed to load stats." });
     }
 };
 
@@ -60,7 +60,7 @@ export const getFilterOptions = async (req, res) => {
         res.json({ success: true, listings, subjects, topics });
     } catch (err) {
         console.error("Filter options error:", err);
-        res.status(500).json({ success: false, message: "Filters load nahi ho paye" });
+        res.status(500).json({ success: false, message: "Failed to load filters." });
     }
 };
 
@@ -109,7 +109,7 @@ export const getQuestions = async (req, res) => {
         });
     } catch (err) {
         console.error("Get questions error:", err);
-        res.status(500).json({ success: false, message: "Questions load nahi ho paye" });
+        res.status(500).json({ success: false, message: "Failed to load questions." });
     }
 };
 
@@ -118,7 +118,7 @@ export const getQuestionDetail = async (req, res) => {
     try {
         const { id } = req.params;
         const q = await Question.findById(id).populate("listing", "title").lean();
-        if (!q) return res.status(404).json({ success: false, message: "Question nahi mili" });
+        if (!q) return res.status(404).json({ success: false, message: "Question not found." });
 
         const [withMeta] = await attachUsedInAndReports([q]);
 
@@ -137,7 +137,7 @@ export const getQuestionDetail = async (req, res) => {
         res.json({ success: true, question: { ...withMeta, reportInfo } });
     } catch (err) {
         console.error("Get question detail error:", err);
-        res.status(500).json({ success: false, message: "Question load nahi ho payi" });
+        res.status(500).json({ success: false, message: "Failed to load question." });
     }
 };
 
@@ -145,18 +145,18 @@ export const getQuestionDetail = async (req, res) => {
 export const createQuestion = async (req, res) => {
     try {
         const body = req.body;
-        if (!body.listing) return res.status(400).json({ success: false, message: "Listing zaroori hai" });
-        if (!body.subject || !body.topic) return res.status(400).json({ success: false, message: "Subject aur topic zaroori hain" });
+        if (!body.listing) return res.status(400).json({ success: false, message: "Listing is required." });
+        if (!body.subject || !body.topic) return res.status(400).json({ success: false, message: "Subject and topic are required." });
 
         const hash = computeContentHash(body);
         const existing = await Question.findOne({ contentHash: hash });
-        if (existing) return res.status(409).json({ success: false, message: "Ye question already maujood hai (duplicate content)" });
+        if (existing) return res.status(409).json({ success: false, message: "This question already exists (duplicate content)." });
 
         const newQ = await Question.create({ ...body, contentHash: hash });
-        res.json({ success: true, question: newQ, message: "Question create ho gaya" });
+        res.json({ success: true, question: newQ, message: "Question created successfully." });
     } catch (err) {
         console.error("Create question error:", err);
-        res.status(500).json({ success: false, message: err.message || "Create nahi ho paya" });
+        res.status(500).json({ success: false, message: err.message || "Failed to create question." });
     }
 };
 
@@ -165,7 +165,7 @@ export const updateQuestion = async (req, res) => {
     try {
         const { id } = req.params;
         const existing = await Question.findById(id);
-        if (!existing) return res.status(404).json({ success: false, message: "Question nahi mili" });
+        if (!existing) return res.status(404).json({ success: false, message: "Question not found." });
 
         const hash = computeContentHash(req.body);
 
@@ -191,16 +191,16 @@ export const updateQuestion = async (req, res) => {
                 success: true,
                 question: clash,
                 merged: true,
-                message: "Ye content kisi existing question se match kar gaya, isliye dono ko merge kar diya gaya hai."
+                message: "This content matched an existing question, so the two have been merged."
             });
         }
 
         const updated = await Question.findByIdAndUpdate(id, { ...req.body, contentHash: hash }, { new: true, runValidators: true });
 
-        res.json({ success: true, question: updated, message: "Question update ho gaya" });
+        res.json({ success: true, question: updated, message: "Question updated successfully." });
     } catch (err) {
         console.error("Update question error:", err);
-        res.status(500).json({ success: false, message: err.message || "Update nahi ho paya" });
+        res.status(500).json({ success: false, message: err.message || "Failed to update." });
     }
 };
 
@@ -209,16 +209,16 @@ export const resolveQuestion = async (req, res) => {
     try {
         const { id } = req.params;
         const question = await Question.findById(id);
-        if (!question) return res.status(404).json({ success: false, message: "Question nahi mili" });
+        if (!question) return res.status(404).json({ success: false, message: "Question not found." });
 
         await QuestionReport.deleteOne({ question: id });
         question.status = "Active";
         await question.save();
 
-        res.json({ success: true, message: "Question resolve ho gaya, status Active kar diya" });
+        res.json({ success: true, message: "Question resolved and its status has been set to Active." });
     } catch (err) {
         console.error("Resolve error:", err);
-        res.status(500).json({ success: false, message: "Resolve nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to resolve question." });
     }
 };
 
@@ -227,16 +227,16 @@ export const disableQuestion = async (req, res) => {
     try {
         const { id } = req.params;
         const question = await Question.findById(id);
-        if (!question) return res.status(404).json({ success: false, message: "Question nahi mili" });
+        if (!question) return res.status(404).json({ success: false, message: "Question not found." });
 
         await QuestionReport.deleteOne({ question: id });
         question.status = "Disabled";
         await question.save();
 
-        res.json({ success: true, message: "Question disable kar diya" });
+        res.json({ success: true, message: "Question disabled successfully." });
     } catch (err) {
         console.error("Disable error:", err);
-        res.status(500).json({ success: false, message: "Disable nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to disable question." });
     }
 };
 
@@ -245,15 +245,15 @@ export const enableQuestion = async (req, res) => {
     try {
         const { id } = req.params;
         const question = await Question.findById(id);
-        if (!question) return res.status(404).json({ success: false, message: "Question nahi mili" });
+        if (!question) return res.status(404).json({ success: false, message: "Question not found." });
 
         question.status = "Active";
         await question.save();
 
-        res.json({ success: true, message: "Question enable kar diya" });
+        res.json({ success: true, message: "Question enabled successfully." });
     } catch (err) {
         console.error("Enable error:", err);
-        res.status(500).json({ success: false, message: "Enable nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to enable question." });
     }
 };
 
@@ -270,7 +270,7 @@ export const deleteQuestion = async (req, res) => {
                 success: false,
                 requiresForce: true,
                 usedInCount: usedInTests.length,
-                message: `Ye question ${usedInTests.length} test(s) me use ho raha hai. Delete karne se un tests me ye question tootegi.`
+                message: `This question is used in ${usedInTests.length} test(s). Deleting it will break the question in those tests.`
             });
         }
 
@@ -278,10 +278,10 @@ export const deleteQuestion = async (req, res) => {
         await QuestionReport.deleteOne({ question: id });
         await Question.findByIdAndDelete(id);
 
-        res.json({ success: true, message: "Question permanently delete ho gaya" });
+        res.json({ success: true, message: "Question permanently deleted." });
     } catch (err) {
         console.error("Delete question error:", err);
-        res.status(500).json({ success: false, message: "Delete nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to delete." });
     }
 };
 
@@ -290,7 +290,7 @@ export const duplicateQuestion = async (req, res) => {
     try {
         const { id } = req.params;
         const original = await Question.findById(id).lean();
-        if (!original) return res.status(404).json({ success: false, message: "Question nahi mili" });
+        if (!original) return res.status(404).json({ success: false, message: "Question not found." });
 
         const copy = { ...original };
         delete copy._id; delete copy.createdAt; delete copy.updatedAt; delete copy.contentHash;
@@ -299,9 +299,9 @@ export const duplicateQuestion = async (req, res) => {
         copy.contentHash = computeContentHash(copy);
 
         const created = await Question.create(copy);
-        res.json({ success: true, question: created, message: "Question duplicate ho gaya" });
+        res.json({ success: true, question: created, message: "Question duplicated successfully." });
     } catch (err) {
         console.error("Duplicate question error:", err);
-        res.status(500).json({ success: false, message: "Duplicate nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to duplicate question." });
     }
 };

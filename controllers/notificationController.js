@@ -26,7 +26,7 @@ export const getMyNotifications = async (req, res) => {
         res.json({ success: true, notifications, unseenCount: unseen.length });
     } catch (err) {
         console.error("Get my notifications error:", err);
-        res.status(500).json({ success: false, message: "Notifications load nahi ho payi" });
+        res.status(500).json({ success: false, message: "Failed to load notifications." });
     }
 };
 
@@ -44,7 +44,7 @@ export const markNotificationsSeen = async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error("Mark seen error:", err);
-        res.status(500).json({ success: false, message: "Update nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to update." });
     }
 };
 
@@ -88,9 +88,9 @@ export const clearMyNotifications = async (req, res) => {
             );
         }
 
-        res.json({ success: true, message: "Notifications clear ho gayi" });
+        res.json({ success: true, message: "Notifications cleared successfully." });
     } catch (err) {
         console.error("Clear notifications error:", err);
-        res.status(500).json({ success: false, message: "Clear nahi ho paya" });
+        res.status(500).json({ success: false, message: "Failed to clear notifications." });
     }
 };

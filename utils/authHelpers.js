@@ -14,7 +14,7 @@ export function checkEnrollment(req, listingId) {
         const matchesListing = String(id) === String(listingId);
         if (!matchesListing) return false;
 
-        if (e.expiresAt && new Date(e.expiresAt) < new Date()) {
+        if (e.expiresAt && new Date(e.expiresAt) <= new Date()) {
             return false;
         }
 

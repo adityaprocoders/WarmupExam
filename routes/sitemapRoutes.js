@@ -44,6 +44,10 @@ router.get("/sitemap.xml", async (req, res) => {
         urls.push(urlEntry(`${baseUrl}/Terms-&-Conditions`, { priority: "0.3" }));
         urls.push(urlEntry(`${baseUrl}/ebooks`, { priority: "0.7" }));
         urls.push(urlEntry(`${baseUrl}/alltests`, { priority: "0.9" }));
+        urls.push(urlEntry(`${baseUrl}/custom-test`, { priority: "0.8" }));
+        urls.push(urlEntry(`${baseUrl}/custom-test/create`, { priority: "0.8" }));
+        urls.push(urlEntry(`${baseUrl}/custom-test/ai-generate`, { priority: "0.8" }));
+        urls.push(urlEntry(`${baseUrl}/pricing`, { priority: "0.7" }));
         urls.push(urlEntry(`${baseUrl}/skill-tests/typing-test`, { priority: "0.8" }));
         urls.push(urlEntry(`${baseUrl}/skill-tests/data-entry-test`, { priority: "0.8" }));
         urls.push(urlEntry(`${baseUrl}/skill-tests/calculation-test`, { priority: "0.8" }));
@@ -53,7 +57,7 @@ router.get("/sitemap.xml", async (req, res) => {
         const categories = await Category.find({}).select("slug updatedAt").lean();
         categories.forEach((c) => {
             urls.push(
-                urlEntry(`${baseUrl}/categories/${c.slug}`, {
+                urlEntry(`${baseUrl}/categories/${encodeURIComponent(c.slug)}`, {
                     priority: "0.8",
                     lastmod: c.updatedAt,
                 })
@@ -91,18 +95,18 @@ router.get("/sitemap.xml", async (req, res) => {
                     const enListing = l.language === "English" ? l : pair.language === "English" ? pair : null;
 
                     if (hiListing) {
-                        alternates.push({ hreflang: "hi", href: `${baseUrl}/test/${hiListing.slug}` });
+                        alternates.push({ hreflang: "hi", href: `${baseUrl}/test/${encodeURIComponent(hiListing.slug)}` });
                     }
                     if (enListing) {
-                        alternates.push({ hreflang: "en", href: `${baseUrl}/test/${enListing.slug}` });
+                        alternates.push({ hreflang: "en", href: `${baseUrl}/test/${encodeURIComponent(enListing.slug)}` });
                     }
                     const defaultSlug = enListing ? enListing.slug : l.slug;
-                    alternates.push({ hreflang: "x-default", href: `${baseUrl}/test/${defaultSlug}` });
+                    alternates.push({ hreflang: "x-default", href: `${baseUrl}/test/${encodeURIComponent(defaultSlug)}` });
                 }
             }
 
             urls.push(
-                urlEntry(`${baseUrl}/test/${l.slug}`, {
+                urlEntry(`${baseUrl}/test/${encodeURIComponent(l.slug)}`, {
                     priority: "0.8",
                     lastmod: l.updatedAt,
                     alternates,
@@ -115,7 +119,7 @@ router.get("/sitemap.xml", async (req, res) => {
             .lean();
         ebooks.forEach((e) => {
             urls.push(
-                urlEntry(`${baseUrl}/ebooks/${e.slug}`, {
+                urlEntry(`${baseUrl}/ebooks/${encodeURIComponent(e.slug)}`, {
                     priority: "0.7",
                     lastmod: e.updatedAt,
                 })
@@ -131,8 +135,8 @@ ${urls.join("\n")}
         res.send(xml);
     } catch (err) {
         console.error("Sitemap generation error:", err);
-        res.header("Content-Type", "application/xml");
-        res.status(500).send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`);
+        res.set("Cache-Control", "no-store");
+        res.status(500).type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`);
     }
 });
 

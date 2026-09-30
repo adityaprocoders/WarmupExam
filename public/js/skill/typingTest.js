@@ -1,4 +1,66 @@
 (function () {
+     function initCustomDropdowns() {
+        document.querySelectorAll('.tt-dropdown').forEach(function (wrapper) {
+            const selectEl = wrapper.querySelector('select');
+            const trigger = wrapper.querySelector('.tt-trigger');
+            const label = wrapper.querySelector('.tt-trigger-label');
+            const menu = wrapper.querySelector('.tt-menu');
+            const chevron = wrapper.querySelector('.tt-chevron');
+            const options = wrapper.querySelectorAll('.tt-option');
+
+            const initialValue = selectEl.value;
+            options.forEach(function (opt) {
+                if (opt.getAttribute('data-value') === initialValue) {
+                    opt.classList.add('bg-indigo-50', 'text-indigo-600');
+                    opt.querySelector('.tt-check').style.display = 'inline-block';
+                } else {
+                    opt.querySelector('.tt-check').style.display = 'none';
+                }
+            });
+
+            function closeMenu() {
+                menu.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+            }
+
+            function openMenu() {
+                document.querySelectorAll('.tt-menu').forEach(m => m.classList.add('hidden'));
+                document.querySelectorAll('.tt-dropdown').forEach(d => d.classList.remove('z-40'));
+                wrapper.classList.add('z-40');
+                menu.classList.remove('hidden');
+                chevron.classList.add('rotate-180');
+            }
+
+            trigger.addEventListener('click', function (e) {
+                e.stopPropagation();
+                menu.classList.contains('hidden') ? openMenu() : closeMenu();
+            });
+
+            options.forEach(function (opt) {
+                opt.addEventListener('click', function () {
+                    const value = opt.getAttribute('data-value');
+                    selectEl.value = value;
+                    label.textContent = opt.childNodes[0].textContent.trim();
+
+                    options.forEach(o => {
+                        o.classList.remove('bg-indigo-50', 'text-indigo-600');
+                        o.querySelector('.tt-check').style.display = 'none';
+                    });
+                    opt.classList.add('bg-indigo-50', 'text-indigo-600');
+                    opt.querySelector('.tt-check').style.display = 'inline-block';
+
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    closeMenu();
+                });
+            });
+        });
+
+        document.addEventListener('click', function () {
+            document.querySelectorAll('.tt-menu').forEach(m => m.classList.add('hidden'));
+        });
+    }
+
+    initCustomDropdowns();
     // ============= DOM REFERENCES =============
     const el = {
         language: document.getElementById('ttLanguage'),
@@ -500,3 +562,4 @@
     generateTest();
 
 })();
+ 

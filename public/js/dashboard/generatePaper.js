@@ -68,7 +68,7 @@ function renderGlobalSectionDropdown() {
     if (!dropdown) return;
     const remaining = globalSectionsList.filter(s => !selectedGlobalSections.has(s.sectionId));
     if (remaining.length === 0) {
-        dropdown.innerHTML = `<option value="" disabled selected>${globalSectionsList.length === 0 ? 'No section found' : 'Sab section select ho gaye'}</option>`;
+        dropdown.innerHTML = `<option value="" disabled selected>${globalSectionsList.length === 0 ? 'No section found' : 'All sections selected'}</option>`;
         return;
     }
     dropdown.innerHTML = `<option value="" disabled selected>Choose section</option>` +
@@ -606,7 +606,7 @@ async function generateTest() {
     const criteria = collectCriteriaRows();
 
     if (criteria.length === 0) {
-        alert("Kam se kam ek criteria row add karo (Subject/Topic/Min-Max Question)");
+        showToast("Please add at least one criteria row (Subject/Topic/Min-Max Question).", "error");
         return;
     }
 
@@ -638,7 +638,7 @@ async function generateTest() {
         parentId: contextData.parentId
     };
 
-    console.log("Generate Paper payload:", payload);
+     
     window.debugPayload = payload;
 
     try {
@@ -650,16 +650,15 @@ async function generateTest() {
         const result = await res.json();
 
         if (!result.success) {
-            alert("Issue: " + (result.message || "Unknown error"));
+            showToast("Issue: " + (result.message || "Unknown error"), "error");
         } else {
             if (result.warnings && result.warnings.length > 0) {
-                alert("Papers ban gaye, lekin kuch warnings hain:\n\n" + result.warnings.join('\n'));
+                showToast("Papers generated, but with some warnings:\n\n" + result.warnings.join('\n'), "error");
             }
             window.location.href = contextData.returnUrl;
         }
-    } catch (err) {
-        console.error("Generate paper error:", err);
-        alert("Paper generate karte waqt error aaya");
+    } catch (err) { 
+        showToast("An error occurred while generating the paper.", "error");
     }
 }
 

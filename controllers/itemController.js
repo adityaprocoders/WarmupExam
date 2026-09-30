@@ -38,10 +38,10 @@ export const createItem = async (req, res) => {
 
     } catch (err) {
         if (err.code === 11000) {
-            return res.status(400).json({ success: false, message: "Is naam ka item is jagah pehle se maujood hai. Alag naam try karo." });
+            return res.status(400).json({ success: false, message: "An item with this name already exists here. Please choose a different name." });
         }
         console.error("Create item error:", err);
-        res.status(500).json({ success: false, message: err.message || "Item create karte waqt error aaya" });
+        res.status(500).json({ success: false, message: err.message || "Unable to create the item. Please try again." });
     }
 };
 
@@ -87,10 +87,10 @@ export const updateItem = async (req, res) => {
 
     } catch (err) {
         if (err.code === 11000) {
-            return res.status(400).json({ success: false, message: "Is naam ka item is jagah pehle se maujood hai. Alag naam try karo." });
+            return res.status(400).json({ success: false, message: "An item with this name already exists here. Please choose a different name." });
         }
         console.error("Update item error:", err);
-        res.status(500).json({ success: false, message: err.message || "Update karte waqt error aaya" });
+        res.status(500).json({ success: false, message: err.message || "Unable to update the item. Please try again." });
     }
 };
 
@@ -113,6 +113,6 @@ export const deleteItem = async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error("Delete error:", err);
-        res.status(500).json({ success: false, message: err.message || "Delete karte waqt error aaya" });
+        res.status(500).json({ success: false, message: err.message || "Unable to delete the item. Please try again." });
     }
 };

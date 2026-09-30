@@ -109,21 +109,21 @@ async function confirmBulkCopy() {
             // to uska path dikhao taaki pata chale kaha aisa hua
             if (data.fallbacks && data.fallbacks.length > 0) {
                 const fallbackDetails = data.fallbacks
-                    .map(f => `• ${f.path} (chuni gayi language "${f.requestedLanguage}" is test me available nahi thi, "All" set kar diya gaya)`)
+                    .map(f => `• ${f.path} (the selected language "${f.requestedLanguage}" was not available in this test, so it was set to "All")`)
                     .join('\n');
                 message += `\n\nNote: ${data.fallbacks.length} test(s) me language "All" par set ho gayi:\n${fallbackDetails}`;
             }
 
-            alert(message);
+            showToast(message, "error");
             pendingMixedBulkItems = null; 
             location.reload();
         } else {
-            alert(data.message || 'Copy fail ho gaya');
+            showToast(data.message || 'Failed to copy.', 'error');
             btn.disabled = false;
             btn.textContent = 'Copy Now';
         }
     } catch (err) {
-        alert('Something went wrong');
+        showToast('Something went wrong.', 'error');
         btn.disabled = false;
         btn.textContent = 'Copy Now';
     }

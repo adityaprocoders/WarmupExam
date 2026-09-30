@@ -1,5 +1,10 @@
 <meta charset="UTF-8">
 
+
+<!-- Critical third-party connection hints -->
+<link rel="preconnect" href="https://pagead2.googlesyndication.com">
+<link rel="preconnect" href="https://www.googletagmanager.com">
+
 <!-- Google AdSense verification (all pages) -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<%= adsensePublisherId %>"
      crossorigin="anonymous">
@@ -17,6 +22,17 @@
 
 <link rel="canonical" href="<%= typeof canonicalUrl !== 'undefined' ? canonicalUrl : ('https://warmupexam.com' + (typeof originalUrlPath !== 'undefined' ? originalUrlPath : '')) %>">
 
+<% if (typeof alternateListing !== 'undefined' && alternateListing && typeof listing !== 'undefined' && listing && listing.slug) {
+     const langCode = (l) => l === 'Hindi' ? 'hi' : (l === 'English' ? 'en' : null);
+     const selfCode = langCode(listing.language);
+     const altCode = langCode(alternateListing.language);
+     if (selfCode && altCode) {
+       const enSlug = selfCode === 'en' ? listing.slug : alternateListing.slug; %>
+<link rel="alternate" hreflang="<%= selfCode %>" href="https://warmupexam.com/test/<%= encodeURIComponent(listing.slug) %>">
+<link rel="alternate" hreflang="<%= altCode %>" href="https://warmupexam.com/test/<%= encodeURIComponent(alternateListing.slug) %>">
+<link rel="alternate" hreflang="x-default" href="https://warmupexam.com/test/<%= encodeURIComponent(enSlug) %>">
+<% } } %>
+
 <!-- Favicons -->
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -29,6 +45,8 @@
 <meta property="og:title" content="<%= typeof title !== 'undefined' ? title : 'WarmupExam' %>">
 <meta property="og:description" content="<%= typeof description !== 'undefined' ? description : 'Realistic mock tests, AI performance analysis & AIR rank prediction for every competitive exam.' %>">
 <meta property="og:image" content="<%= typeof ogImage !== 'undefined' ? ogImage : 'https://warmupexam.com/images/og-banner.jpg' %>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:url" content="<%= typeof canonicalUrl !== 'undefined' ? canonicalUrl : ('https://warmupexam.com' + (typeof originalUrlPath !== 'undefined' ? originalUrlPath : '')) %>">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WarmupExam">
@@ -36,6 +54,7 @@
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@warmupexam">
 <meta name="twitter:title" content="<%= typeof title !== 'undefined' ? title : 'WarmupExam' %>">
 <meta name="twitter:description" content="<%= typeof description !== 'undefined' ? description : 'Prepare smarter with WarmupExam.' %>">
 <meta name="twitter:image" content="<%= typeof ogImage !== 'undefined' ? ogImage : 'https://warmupexam.com/images/og-banner.jpg' %>">
@@ -43,7 +62,7 @@
 <meta name="theme-color" content="#4F46E5">
 
 <% if (preloadHero) { %>
-<link rel="preload" as="image" href="/images/hero.png" fetchpriority="high">
+<link rel="preload" as="image" href="/images/hero.webp" fetchpriority="high">
 <% } %>
  
 <script type="application/ld+json" nonce="<%= cspNonce %>">
@@ -67,7 +86,7 @@
   "@type": "Organization",
   "name": "WarmupExam",
   "url": "https://warmupexam.com",
-  "logo": "https://warmupexam.com/images/logo.png",
+  "logo": "https://warmupexam.com/images/logo.svg",
   "sameAs": [
     "https://www.instagram.com/warmupexam/",
     "https://www.youtube.com/@adityaprocoders"
@@ -88,10 +107,11 @@
 {
   "@context": "https://schema.org",
   "@type": "SiteNavigationElement",
-  "name": ["Home", "Test Series", "E-Books", "About Us", "Contact Us"],
+  "name": ["Home", "Test Series", "Custom Test", "E-Books", "About Us", "Contact Us"],
   "url": [
     "https://warmupexam.com/",
     "https://warmupexam.com/alltests",
+    "https://warmupexam.com/custom-test",
     "https://warmupexam.com/ebooks",
     "https://warmupexam.com/aboutUs",
     "https://warmupexam.com/contactUs"

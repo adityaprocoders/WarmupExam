@@ -212,19 +212,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const msgEl = document.getElementById("notifFormMsg");
 
         if (!title || !message) {
-            msgEl.textContent = "Title aur message dono zaroori hain";
+            msgEl.textContent = "Both title and message are required.";
             msgEl.className = "text-sm text-red-600";
             msgEl.classList.remove("hidden");
             return;
         }
         if (audienceType === "custom" && selectedUsers.length === 0) {
-            msgEl.textContent = "Kam se kam ek student select karo";
+            msgEl.textContent = "Select at least one student.";
             msgEl.className = "text-sm text-red-600";
             msgEl.classList.remove("hidden");
             return;
         }
         if (scheduleType === "later" && !scheduledAt) {
-            msgEl.textContent = "Schedule date/time select karo";
+            msgEl.textContent = "Select a schedule date and time.";
             msgEl.className = "text-sm text-red-600";
             msgEl.classList.remove("hidden");
             return;
@@ -253,18 +253,18 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await res.json();
 
             if (data.success) {
-                msgEl.textContent = data.message || "Ho gaya";
+                msgEl.textContent = data.message || "Done";
                 msgEl.className = "text-sm text-green-600";
                 msgEl.classList.remove("hidden");
                 setTimeout(backToList, 900);
             } else {
-                msgEl.textContent = data.message || "Kuch galat ho gaya";
+                msgEl.textContent = data.message || "Something went wrong.";
                 msgEl.className = "text-sm text-red-600";
                 msgEl.classList.remove("hidden");
             }
         } catch (err) {
             console.error("Send/update notification error:", err);
-            msgEl.textContent = "Server error — dobara try karo";
+            msgEl.textContent = "Server error. Please try again.";
             msgEl.className = "text-sm text-red-600";
             msgEl.classList.remove("hidden");
         } finally {
@@ -316,18 +316,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ---------- Delete ----------
     async function deleteNotif(id) {
-        if (!confirm("Ye notification permanently delete karni hai?")) return;
+        if (!confirm("Permanently delete this notification?")) return;
         try {
             const res = await fetch(`/api/owner/notifications/${id}`, { method: "DELETE" });
             const data = await res.json();
             if (data.success) {
                 loadNotifications();
             } else {
-                alert(data.message || "Delete nahi ho paya");
+                showToast(data.message || "Failed to delete.", "error");
             }
         } catch (err) {
             console.error("Delete error:", err);
-            alert("Server error — dobara try karo");
+            showToast("Server error — please try again.", "error");
         }
     }
 
@@ -338,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const res = await fetch("/api/owner/notifications");
             const data = await res.json();
             if (!data.success || !data.notifications.length) {
-                tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400 py-8">Koi notification nahi bheja gaya abhi tak</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400 py-8">No notifications have been sent yet.</td></tr>`;
                 return;
             }
 
@@ -395,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (err) {
             console.error("Load notifications error:", err);
-            tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-400 py-8">Load nahi ho paya</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-400 py-8">Failed to load.</td></tr>`;
         }
     }
 

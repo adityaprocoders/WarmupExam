@@ -102,7 +102,18 @@ export const register = async (req, res, next) => {
     req.session.currentSessionId = newSessionId;
 
     req.flash("success", "Account created successfully!");
-    const redirectUrl = (req.body.returnTo && req.body.returnTo.startsWith('/')) ? req.body.returnTo : "/";
+    const sessionReturnTo = req.session.returnTo;
+const hasSessionReturnTo = sessionReturnTo
+    && sessionReturnTo.startsWith('/')
+    && sessionReturnTo !== '/';
+
+const redirectUrl = (req.body.returnTo && req.body.returnTo.startsWith('/'))
+    ? req.body.returnTo
+    : hasSessionReturnTo
+    ? sessionReturnTo
+    : "/";
+
+delete req.session.returnTo;
     req.session.save(() => {
         res.redirect(redirectUrl);
     });
@@ -138,16 +149,25 @@ export const login = (req, res, next) => {
     const dashboardUrl = await getDashboardRedirectUrl(user);
 
     const hasSpecificReturnTo = req.body.returnTo
-        && req.body.returnTo.startsWith('/')
-        && req.body.returnTo !== '/';
+    && req.body.returnTo.startsWith('/')
+    && req.body.returnTo !== '/';
 
-    const redirectUrl = hasSpecificReturnTo
-        ? req.body.returnTo
-        : (dashboardUrl || "/");
+const sessionReturnTo = req.session.returnTo;
+const hasSessionReturnTo = sessionReturnTo
+    && sessionReturnTo.startsWith('/')
+    && sessionReturnTo !== '/';
 
-    req.session.save(() => {
-        res.redirect(redirectUrl);
-    });
+const redirectUrl = hasSpecificReturnTo
+    ? req.body.returnTo
+    : hasSessionReturnTo
+    ? sessionReturnTo
+    : (dashboardUrl || "/");
+
+delete req.session.returnTo; 
+
+req.session.save(() => {
+    res.redirect(redirectUrl);
+});
 });
          
     })(req, res, next);
@@ -176,7 +196,16 @@ export const googleCallback = (req, res, next) => {
 
             req.flash("success", "Successfully signed in with Google.");
 
-            const redirectUrl = (await getDashboardRedirectUrl(user)) || "/";
+            const sessionReturnTo = req.session.returnTo;
+const hasSessionReturnTo = sessionReturnTo
+    && sessionReturnTo.startsWith('/')
+    && sessionReturnTo !== '/';
+
+const redirectUrl = hasSessionReturnTo
+    ? sessionReturnTo
+    : (await getDashboardRedirectUrl(user)) || "/";
+
+delete req.session.returnTo;
 
             req.session.save(() => res.redirect(redirectUrl));
         });
@@ -208,14 +237,14 @@ export const forgotPassword = async (req, res) => {
         const { email } = req.body;
 
         if (!email) {
-            return res.status(400).json({ success: false, message: "Email zaroori hai" });
+            return res.status(400).json({ success: false, message: "Email address is required." });
         }
 
         const cleaned = email.trim().toLowerCase();
         const user = await User.findOne({ email: cleaned, authProvider: "local" });
 
         if (!user) {
-            return res.json({ success: true, message: "Agar ye email registered hai, to OTP bhej diya gaya hai" });
+            return res.json({ success: true, message: "If an account exists for this email address, an OTP has been sent." });
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -259,13 +288,13 @@ export const forgotPassword = async (req, res) => {
 
         if (error) {
             console.error("❌ OTP mail error:", error);
-            return res.status(500).json({ success: false, message: "OTP email nahi bhej paye, dobara try karo" });
+            return res.status(500).json({ success: false, message: "We couldn't send the OTP email. Please try again." });
         }
 
         res.json({ success: true, message: "OTP sent to your email", expiresIn: 300 });
     } catch (err) {
         console.error("❌ Forgot password error:", err.message);
-        res.status(500).json({ success: false, message: "Kuch galat ho gaya" });
+        res.status(500).json({ success: false, message: "Something went wrong. Please try again." });
     }
 };
 
@@ -302,7 +331,7 @@ export const verifyResetToken = async (req, res) => {
         res.json({ success: true, message: "Token verified", email: cleaned });
     } catch (err) {
         console.error("❌ Verify reset token error:", err.message);
-        res.status(500).json({ success: false, message: "Kuch galat ho gaya" });
+        res.status(500).json({ success: false, message: "Something went wrong. Please try again." });
     }
 };
 
@@ -313,24 +342,24 @@ export const resetPassword = async (req, res) => {
     const { email, otp, resetToken, newPassword } = req.body;
 
     if (!email || !newPassword || (!otp && !resetToken)) {
-        return res.status(400).json({ success: false, message: "Sabhi fields zaroori hain" });
+        return res.status(400).json({ success: false, message: "All fields are required." });
     }
 
     if (newPassword.length < 6) {
-        return res.status(400).json({ success: false, message: "Password kam se kam 6 characters ka hona chahiye" });
+        return res.status(400).json({ success: false, message: "Password must be at least 6 characters long." });
     }
 
     const cleaned = email.trim().toLowerCase();
     const user = await User.findOne({ email: cleaned, authProvider: "local" });
 
     if (!user) {
-        return res.status(400).json({ success: false, message: "Invalid request, dobara try karo" });
+        return res.status(400).json({ success: false, message: "Invalid request. Please try again." });
     }
 
     if (otp) {
         // ----- Path A: Manual OTP flow (jaisa pehle tha) -----
         if (!user.resetOtp || !user.resetOtpExpiry) {
-            return res.status(400).json({ success: false, message: "Invalid request, dobara OTP mangwao" });
+            return res.status(400).json({ success: false, message: "Invalid request. Please request a new OTP." });
         }
         if (user.resetOtp !== otp) {
             return res.status(400).json({ success: false, message: "Incorrect OTP" });
@@ -339,7 +368,7 @@ export const resetPassword = async (req, res) => {
             user.resetOtp = null;
             user.resetOtpExpiry = null;
             await user.save();
-            return res.status(400).json({ success: false, message: "OTP expire ho gaya, naya mangwao" });
+            return res.status(400).json({ success: false, message: "The OTP has expired. Please request a new one." });
         }
     } else {
         // ----- Path B: Email-link token flow (naya) -----

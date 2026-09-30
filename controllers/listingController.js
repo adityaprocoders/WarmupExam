@@ -17,8 +17,9 @@ import mongoose from "mongoose";
 import { getValidEnrollments } from "../utils/cleanupHelpers.js";
 import { buildAboutTestSeries } from "../utils/aboutTestSeries.js";
 import { cascadeDeleteListing } from "../utils/deleteHelpers.js";
+import ExamPatternSummary from "../models/ExamPatternSummary.js";
 
-
+const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const allTests = async (req, res) => {
     const { exam, search, language, filter: filterTab } = req.query;
@@ -51,9 +52,9 @@ export const allTests = async (req, res) => {
         if (exam) {
             searchFilter.exam = exam;
         } else if (search) {
-            searchFilter.$or = [
-                { exam: { $regex: search, $options: "i" } },
-                { title: { $regex: search, $options: "i" } }
+             searchFilter.$or = [
+                { exam: { $regex: escapeRegex(search), $options: "i" } },
+                { title: { $regex: escapeRegex(search), $options: "i" } }
             ];
         }
         matchedListings = await Listing.find(searchFilter).lean();
@@ -123,7 +124,9 @@ seoKeywords = [
         canonicalUrl = "https://warmupexam.com/alltests";
     }
 
-    const robotsValue = search && !exam ? "noindex, follow" : "index, follow";
+    const robotsValue = (search && !exam) || (hasSearched && matchedListings.length === 0)
+        ? "noindex, follow"
+        : "index, follow";
 
     res.render("test/alltest", {
         matchedListings,
@@ -154,8 +157,8 @@ export const searchTests = async (req, res) => {
     const isOwner = req.user && req.user.role === "owner";
     const filter = {
         $or: [
-            { exam: { $regex: keyword, $options: "i" } },
-            { title: { $regex: keyword, $options: "i" } }
+            { exam: { $regex: escapeRegex(keyword), $options: "i" } },
+            { title: { $regex: escapeRegex(keyword), $options: "i" } }
         ]
     };
     if (!isOwner) filter.visibility = "public";
@@ -228,9 +231,23 @@ if (isOwner) {
 
     const { enrolledIds } = getValidEnrollments(req.user);
 
-    const totalTestCount = await Test.countDocuments({ listing: data._id }); 
-    const aboutTestSeries = await buildAboutTestSeries(data._id, Section, Test, data.type); 
+const totalTestCount = await Test.countDocuments({ listing: data._id }); 
+const aboutTestSeries = await buildAboutTestSeries(data._id, Section, Test, data.type); 
+const examPattern = await ExamPatternSummary.findOne({ category: data.category, exam: data.exam }).lean();
+const category = data.category ? await Category.findById(data.category).lean() : null;
 
+    const isPublic = data.visibility === "public";
+    const ogImg = data.image && !data.image.startsWith("data:")
+        ? data.image
+        : "https://warmupexam.com/images/og-banner.jpg";
+
+    const shortDescText = (data.shortDescription || "").replace(/\s+/g, " ").trim();
+    let metaDesc = shortDescText
+        ? `${shortDescText} Attempt Live Tests, Daily Warmup, PYQs & instant rank on WarmupExam.`
+        : `Attempt ${data.title} Live Tests with real exam pattern, timing & marks distribution, instant leaderboard & rank, Daily Warmup and PYQs on WarmupExam.`;
+    if (metaDesc.length > 160) {
+        metaDesc = metaDesc.slice(0, 157).replace(/\s+\S*$/, "") + "...";
+    }
 
     res.render("test/show", {
         listing: data,
@@ -239,16 +256,17 @@ if (isOwner) {
         totalTestCount,
         allBlocks,
          aboutTestSeries,
+          examPattern,  
+        category,
         allListingsForCopy, 
         examGroups,    
-        alternateListing,     
+        alternateListing,  
         title: `${data.title}${data.language ? ` (${data.language})` : ''} | WarmupExam`,
-        description: data.shortDescription
-        ? `${data.shortDescription.replace(/\s+/g, ' ').trim()} Attempt Live Tests with real exam pattern & timing, Daily Warmup, PYQs and AIR Tests with instant rank & AI analysis.`
-        : `Attempt ${data.title} Live Tests with real exam pattern, timing & marks distribution, instant leaderboard & rank, Daily Warmup, previous year questions and AIR tests on WarmupExam.`,
-    keywords: `${data.title} live test, ${data.title} mock test, ${data.title} PYQ, ${data.title} AIR test, ${data.title} daily warmup, ${data.exam} live test series`,
-    canonicalUrl: `https://warmupexam.com/test/${data.slug}`,
-    ogImage: data.image   
+        description: metaDesc,
+        keywords: `${data.title} live test, ${data.title} mock test, ${data.title} PYQ, ${data.title} AIR test, ${data.title} daily warmup, ${data.exam} live test series`,
+        canonicalUrl: `https://warmupexam.com/test/${data.slug}`,
+        ogImage: ogImg,
+        robots: isPublic ? "index, follow" : "noindex, nofollow"
     });
 };
 
@@ -299,7 +317,7 @@ export const createTest = async (req, res) => {
         res.redirect("/alltests");
     } catch (err) {
         if (err.code === 11000) {
-            req.flash?.("error", "A test with this title already exists. Please use a different title.");
+            req.flash("error", "A test with this title already exists. Please use a different title.");
             return res.redirect("/test/new"); // or wherever your create form lives
         }
         throw err; // let your global error handler / catchAsync deal with anything else

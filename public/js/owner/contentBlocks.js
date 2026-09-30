@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ---------- Delete permanently: confirm dialog ----------
 document.querySelectorAll('.delete-permanent-form').forEach(form => {
     form.addEventListener('submit', function (e) {
-        if (!confirm('Ye block sab listings se hamesha ke liye delete ho jayega. Sure?')) {
+        if (!confirm('This block will be permanently deleted from all listings. Are you sure?')) {
             e.preventDefault();
         }
     });
@@ -186,7 +186,7 @@ document.querySelectorAll('.delete-permanent-form').forEach(form => {
             const checkedCount = copyForm.querySelectorAll('input[type="checkbox"]:checked').length;
             if (checkedCount === 0) {
                 e.preventDefault();
-                alert("Kam se kam ek exam ya test series select karo.");
+                showToast("Please select at least one exam or test series.", "error");
             }
         });
     }

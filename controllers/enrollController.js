@@ -10,7 +10,7 @@ export const enrollListing = async (req, res) => {
 
 
     if (listing.type !== "Free") {
-        throw new ExpressError(400, "⚠️This is a paid batch. Please complete the payment to enroll.");
+        throw new ExpressError(400, "This is a paid batch. Please complete the payment to enroll.");
     }
 
     const user = await User.findById(req.user._id);

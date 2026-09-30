@@ -5,6 +5,26 @@ export function isLoggedIn(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
+
+    const isApiRequest = req.originalUrl.startsWith("/api/") || req.xhr;
+
+    if (isApiRequest) {
+        let returnTo = "/";
+        if (req.headers.referer) {
+            try {
+                const refUrl = new URL(req.headers.referer);
+                returnTo = refUrl.pathname + refUrl.search;
+            } catch (_) {}
+        }
+        req.session.returnTo = returnTo;
+        return res.status(401).json({
+            success: false,
+            error: "LOGIN_REQUIRED",
+            message: "Please login to continue.",
+            returnTo,
+        });
+    }
+
     req.session.returnTo = req.originalUrl;
     req.flash("error", "Please login to continue");
     return res.redirect("/?showLogin=true");

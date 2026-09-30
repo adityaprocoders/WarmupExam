@@ -27,7 +27,7 @@ function addSubject() {
 function removeSubject(button) {
     const container = document.getElementById("subjectsContainer");
     if (container.children.length === 1) {
-        alert("At least one subject is required.");
+        showToast("At least one subject is required.", "error");
         return;
     }
     button.closest('.subject-row').remove();
@@ -51,7 +51,7 @@ function addRankRow() {
 function removeRankRow(button) {
     const container = document.getElementById("rankPredictorContainer");
     if (container.children.length === 1) {
-        alert("At least one rank entry is required, ya isko khali chhod do.");
+        showToast("At least one rank entry is required, or leave it empty.", "error");
         return;
     }
     button.closest('.rank-row').remove();

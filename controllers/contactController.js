@@ -4,7 +4,7 @@ export const sendContactMessage = async (req, res) => {
     const { name, email, subject, message } = req.body;
 
     if (!name || !email || !message) {
-        return res.status(400).json({ success: false, message: "Name, email aur message zaroori hai" });
+        return res.status(400).json({ success: false, message: "Name, email, and message are required." });
     }
 
     const subjectMap = {
@@ -45,14 +45,12 @@ export const sendContactMessage = async (req, res) => {
             `
         });
 
-        if (error) {
-            console.error("❌ Resend error:", error);
-            return res.status(500).json({ success: false, message: "Email bhejne mein error aa gaya, dobara try karo" });
+        if (error) { 
+            return res.status(500).json({ success: false, message: "Unable to send your message. Please try again." });
         }
 
         res.json({ success: true, message: "Message sent successfully!" });
     } catch (err) {
-        console.error("❌ Contact mail error:", err.message);
-        res.status(500).json({ success: false, message: "Kuch galat ho gaya, dobara try karo" });
+        res.status(500).json({ success: false, message: "Something went wrong. Please try again." });
     }
 };

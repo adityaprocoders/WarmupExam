@@ -79,7 +79,7 @@ async function getOrCreateQuestionId(questionPayload, hash, currentQuestionId = 
 
 export const renderTestBuilder = async (req, res) => {
     const { listingId, sectionId, parentType, parentId, returnUrl, editId } = req.query;
-    if (!listingId) throw new ExpressError(400, "listingId query param zaroori hai");
+    if (!listingId) throw new ExpressError(400, "The listingId query parameter is required.");
 
     const listing = await Listing.findById(listingId);
     if (!listing) throw new ExpressError(404, "Listing Not Found");
@@ -114,8 +114,8 @@ export const createTestBuilder = async (req, res) => {
    try {
     const body = req.body;
 
-    if (!body.title) return res.status(400).json({ success: false, message: "Test title zaroori hai" });
-    if (!body.listingId) return res.status(400).json({ success: false, message: "listingId missing hai" });
+    if (!body.title) return res.status(400).json({ success: false, message: "Test title is required." });
+    if (!body.listingId) return res.status(400).json({ success: false, message: "listingId is missing." });
 
     const listingDoc = await Listing.findById(body.listingId).select("marks");
     const subjectsConfig = listingDoc?.marks || [];
@@ -124,7 +124,7 @@ export const createTestBuilder = async (req, res) => {
     const visibility = allowedVisibility.includes(body.visibility) ? body.visibility : "private";
 
     if (visibility === "scheduled" && !body.publishAt) {
-        return res.status(400).json({ success: false, message: "Schedule ke liye publish date/time zaroori hai" });
+        return res.status(400).json({ success: false, message: "A publish date and time is required for scheduling." });
     }
 
     const testLanguageMode = body.languageMode === "multiple" ? "multiple" : "single";
@@ -357,7 +357,7 @@ export const updateTestBuilder = async (req, res) => {
 
         const existingTest = await Test.findById(id);
         if (!existingTest) return res.status(404).json({ success: false, message: "Test not found" });
-        if (!body.title) return res.status(400).json({ success: false, message: "Test title zaroori hai" });
+        if (!body.title) return res.status(400).json({ success: false, message: "Test title is required." });
 
         const listingId = body.listingId || existingTest.listing;
         const listingDoc = await Listing.findById(listingId).select("marks");
@@ -367,7 +367,7 @@ export const updateTestBuilder = async (req, res) => {
         const visibility = allowedVisibility.includes(body.visibility) ? body.visibility : existingTest.visibility;
 
         if (visibility === "scheduled" && !body.publishAt) {
-            return res.status(400).json({ success: false, message: "Schedule ke liye publish date/time zaroori hai" });
+            return res.status(400).json({ success: false, message: "A publish date and time is required for scheduling." });
         }
 
         const testLanguageMode = body.languageMode === "multiple" ? "multiple" : "single";

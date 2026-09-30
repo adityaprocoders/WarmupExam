@@ -53,9 +53,9 @@ categories.forEach(c => {
     preloadHero: true,
     title: "WarmupExam – India's Smartest Mock Test & Exam Practice Platform",
     description:
-    "Practice mock tests, PYQs & Live Tests with real exam pattern, instant rank and AI-powered analysis for SSC, Defence, JEE, NEET, UPSC, CUET & more on WarmupExam.",
+   "Prepare smarter with WarmupExam — Mock Tests, Live Tests, PYQs and an AI Custom Paper Generator with real exam timing, accurate marking and smart analysis.",
     keywords:
-        "WarmupExam, warmupexam, warmup exam, Warmup Exam live test, live mock test, daily warmup test, mock test, AIR mock test, Skill test, AIR Rank, online mock test India, Weak Area Finder, Rank Predictor, UG & PG Entrance Exams mock test, Civil services & PSC Exam mock test, SSC Exams mock test, negative marking test series,Smart Analysis Detailed Reports &  Weak Area Analysis, previous year questions PYQ",
+        "WarmupExam, warmupexam, warmup exam, Warmup Exam live test, live mock test, custom mock test, custom test, Custom Paper Generator, Ai mock test generator, ai paper builder, daily warmup test, mock test, AIR mock test, Skill test, AIR Rank, online mock test India, Weak Area Finder, Rank Predictor, UG & PG Entrance Exams mock test, Civil services & PSC Exam mock test, SSC Exams mock test, negative marking test series,Smart Analysis Detailed Reports &  Weak Area Analysis, previous year questions PYQ",
     canonicalUrl: "https://warmupexam.com/"
 });
 };
@@ -63,7 +63,7 @@ categories.forEach(c => {
 export const aboutUs = (req, res) => res.render("pages/UI/AboutUs", {
     title: "About Us - Built by Aspirants Who Sat These Exams",
     description:
-        "WarmupExam was built by aspirants frustrated with PDF test series that didn't match the real exam. Learn our mission to give every serious aspirant an honest practice environment.",
+         "WarmupExam was built by aspirants frustrated with PDF test series that didn't match the real exam pattern. Here's our mission.",
     keywords:
         "about WarmupExam, mock test platform India, exam preparation startup, rank predictor, weak area analysis",
     canonicalUrl: "https://warmupexam.com/aboutUs"
@@ -79,7 +79,7 @@ export const contactUs = (req, res) => res.render("pages/UI/contactUs", {
 });
 
  export const privacyPolicy = (req, res) => res.render("pages/UI/privacyPolicy", {
-    title: "Privacy Policy",
+    title: "Privacy Policy | WarmupExam",
     description:
         "Learn how WarmupExam collects, uses and protects your personal information, payment data and mock test performance history.",
     keywords: "WarmupExam privacy policy, data protection, student data security",
@@ -87,7 +87,7 @@ export const contactUs = (req, res) => res.render("pages/UI/contactUs", {
 });
 
 export const termsOfUse = (req, res) => res.render("pages/UI/termsOfUse", {
-    title: "Terms & Conditions",
+    title: "Terms & Conditions | WarmupExam",
     description:
         "Read WarmupExam's Terms & Conditions covering account registration, subscription and payment terms, refund policy, and platform usage rules.",
     keywords: "WarmupExam terms and conditions, refund policy, subscription terms",
@@ -97,16 +97,16 @@ export const termsOfUse = (req, res) => res.render("pages/UI/termsOfUse", {
 export const features = (req, res) => res.render("pages/UI/features", {
     title: "Features - Real Exam Simulation, AI Analysis & Rank Prediction",
     description:
-        "Explore WarmupExam's features: true negative marking, subject-wise timers, weak-area finder, rank prediction, previous year questions and deep performance analytics.",
+        "Explore WarmupExam's features — Live Tests, Custom Papers, accurate negative marking, rank prediction, weak-area finder and Smart performance analysis.",
     keywords:
-        "mock test features, negative marking, rank predictor, weak area finder, AI performance analysis, previous year questions",
+        "mock test features,Realistic Mock Tests, Live Tests, Custom Paper Builder, Accurate Negative Marking, Rank Prediction, Weak Area Finder, AI-Powered Performance Analysis, and Previous Year Questions",
     canonicalUrl: "https://warmupexam.com/features"
 });
 
 export const help = (req, res) => res.render("pages/UI/help-center", {
     title: "Help Center - FAQs on Payments, Tests, Account & AI Reports",
     description:
-        "Find quick answers about WarmupExam mock tests, payments, account settings, Rank Predictor, Weak Area Finder, and Smart Performance Reports. Get help fast.",
+       "Quick answers on WarmupExam mock tests, payments, account settings, Rank Predictor and Weak Area Finder.",
     keywords:
         "warmupexam help center, mock test faq, payment issues, rank predictor faq, weak area finder, smart performance report, account support",
     canonicalUrl: "https://warmupexam.com/help"

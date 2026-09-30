@@ -1,50 +1,38 @@
-<link rel="stylesheet" href="/css/index.css">
-
-
+ <link rel="stylesheet" href="/css/index.css">
 
 <%- include("./sideBar.ejs") %>
- 
 
-<div  id="mainContent" class="md:ml-72 pt-16 min-h-screen bg-gray-100">
+<div id="mainContent" class="md:ml-72 pt-16 min-h-screen bg-gray-100">
 
     <!-- Top Header -->
-
     <%- include("./header.ejs") %>
 
     <!-- Main -->
+    <%- include("./main.ejs") %>
 
-     <%- include("./main.ejs") %>
+    <!-- Scroll to Top/Bottom Button -->
+    <button
+        id="scrollTopBtn"
+        data-action="scroll-btn"
+        class="hidden fixed bottom-8 right-8 z-[999] w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl hover:shadow-2xl flex items-center justify-center transition-all pointer-events-auto">
+        <i id="scrollBtnIcon" data-lucide="arrow-up" class="w-6 h-6 pointer-events-none"></i>
+    </button>
 
-
-<!-- Scroll to Top/Bottom Button -->
-<button
-    id="scrollTopBtn"
-    data-action="scroll-btn"
-    class="hidden fixed bottom-8 right-8 z-[999] w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl hover:shadow-2xl flex items-center justify-center transition-all pointer-events-auto">
-    <i id="scrollBtnIcon" data-lucide="arrow-up" class="w-6 h-6 pointer-events-none"></i>
-</button>
-
- 
 </div>
 
 <!-- Copy & Past -->
 <%- include("./copyAndPast.ejs") %>
 
-
-
 <!-- Create/Edit Modal -->
-   
 <%- include("./createdModal.ejs") %>
 
 <%- include("./bulkCopyModal.ejs") %>
 
- 
- <div id="instructionsModalContainer"></div>
+<div id="instructionsModalContainer"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 
 <script type="application/json" id="dashboardPageData">
 {
@@ -61,6 +49,3 @@
 
 <script src="/js/dashboard/index.js" defer></script>
 <script src="/js/dashboard/itemSelectionMode.js" defer></script>
-
- 
-

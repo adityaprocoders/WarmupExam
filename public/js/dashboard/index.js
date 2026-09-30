@@ -16,9 +16,9 @@ document.addEventListener('click', function () {
 });
 
 const modalCopy = {
-    folder: { title: 'Create Folder', sub: 'Naya folder is section me banega.', placeholder: 'e.g. Physics' },
-    file: { title: 'Create File', sub: 'Nayi file is folder me add hogi.', placeholder: 'e.g. Chapter Notes.pdf' },
-    test: { title: 'Create Test', sub: 'Naya mock test is section me add hoga.', placeholder: 'e.g. Mock Test - 7' }
+    folder: { title: 'Create Folder', sub: 'A new folder will be created in this section.', placeholder: 'e.g. Physics' },
+    file: { title: 'Create File', sub: 'A new file will be added to this folder.', placeholder: 'e.g. Chapter Notes.pdf' },
+    test: { title: 'Create Test', sub: 'A new mock test will be added to this section.', placeholder: 'e.g. Mock Test - 7' }
 };
 
 function openCreateModal(type) {
@@ -68,7 +68,7 @@ async function submitCreateForm(e) {
         payload.minutes = document.getElementById('testMinutes').value;
     }
 
-    console.log("Form Data Submitted:", payload);
+   
 
     try {
         const url = isEditMode
@@ -84,10 +84,9 @@ async function submitCreateForm(e) {
         });
 
         const result = await res.json();
-        console.log("Server response:", result);
-
+         
         if (!result.success) {
-            alert("Issue: " + (result.message || "Unknown error"));
+            showToast("Issue: " + (result.message || "Unknown error"), "error");
         } else {
             window.location.href = payload.currentUrl;
         }
@@ -140,8 +139,7 @@ async function editItem(type, id) {
     }
 
     catch (err) {
-
-        console.log(err);
+ 
 
     }
 
@@ -273,7 +271,7 @@ async function openInstructionsModal(testId) {
         if (window.lucide) lucide.createIcons();
     } catch (err) {
         console.error("Instructions load error:", err);
-        alert("Instructions load nahi ho paye");
+        showToast("Failed to load instructions.", "error");
     }
 }
 
@@ -293,7 +291,7 @@ function handleUpcomingClick(btn) {
     const mins = totalMins % 60;
 
     let timeLeftText = "";
-    if (hrs > 0) timeLeftText += `${hrs} ghante `;
+    if (hrs > 0) timeLeftText += `${hrs} hour(s)  `;
     timeLeftText += `${mins} minute`;
 
     const formatted = publishAt.toLocaleString("en-IN", {
@@ -678,12 +676,12 @@ async function doPaste(destListingId, destSectionId, destParentType, destParentI
 
             if (result.fallbacks && result.fallbacks.length > 0) {
                 const fallbackDetails = result.fallbacks
-                    .map(f => `• ${f.path} (chuni gayi language "${f.requestedLanguage}" is test me available nahi thi, "All" set kar diya gaya)`)
+                    .map(f => `• ${f.path} (the selected language "${f.requestedLanguage}" was not available in this test, so it was set to "All")`)
                     .join('\n');
                 message += `\n\nNote: ${result.fallbacks.length} test(s) me language "All" par set ho gayi:\n${fallbackDetails}`;
             }
 
-            alert(message);
+            showToast(message, "error");
             pendingMixedBulkItems = null;
             closeCopyModal();
 
@@ -697,7 +695,7 @@ async function doPaste(destListingId, destSectionId, destParentType, destParentI
                 window.location.href = `/series/${copyNav.slug}`;
             }
         } else {
-            alert("Copy failed: " + (result.message || "Unknown error"));
+            showToast("Copy failed: " + (result.message || "Unknown error"), "error");
         }
         return; // 👈 mixed flow yahin khatam, neeche wala single-item code na chale
     }
@@ -725,7 +723,7 @@ async function doPaste(destListingId, destSectionId, destParentType, destParentI
     const result = await res.json();
 
     if (result.success) {
-        alert("Copied successfully!");
+        showToast("Copied successfully!", "success");
         closeCopyModal();
 
         if (destParentType === 'folder') {
@@ -738,7 +736,7 @@ async function doPaste(destListingId, destSectionId, destParentType, destParentI
             window.location.href = `/series/${copyNav.slug}`;
         }
     } else {
-        alert("Copy failed: " + (result.message || "Unknown error"));
+        showToast("Copy failed: " + (result.message || "Unknown error"), "error");
     }
 }
 
@@ -1011,11 +1009,11 @@ async function saveStatsFilter(slug) {
         if (result.success) {
             window.location.reload(true);
         } else {
-            alert('Update fail ho gaya');
+            showToast('Failed to update.', 'error');
         }
     } catch (err) {
         console.error(err);
-        alert('Kuch galat ho gaya');
+        showToast('Something went wrong.', 'error');
     }
 }
 

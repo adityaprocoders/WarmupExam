@@ -33,7 +33,7 @@ overflow-y-auto">
     <!-- Logo -->
     <div class="w-10 h-10 bg-white rounded-lg shadow-sm flex items-center justify-center p-1">
         <img
-            src="/images/logo.png"
+            src="/images/logo.svg"
             alt="WarmupExam Logo"
             class="w-full h-full object-contain">
     </div>
@@ -89,44 +89,99 @@ overflow-y-auto">
 </button>
 
     
-    
+ <div class="space-y-2">
 
-     <!-- Test Series -->
-<a href="/alltests" class="hover:text-indigo-600 flex items-center gap-3 text-black p-3 font-semibold">
-    <i class="fa-solid fa-file-lines icon-premium"></i>
-    Test Series
+    <!-- Test Series -->
+    <a href="/alltests"
+       class="group flex items-center gap-3 rounded-xl p-3 font-semibold text-slate-800
+              transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-600">
+
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50
+                     transition-colors duration-200 group-hover:bg-indigo-100">
+            <i class="fa-solid fa-file-lines text-sm text-blue-600 group-hover:text-indigo-600"></i>
+        </span>
+
+        <span class="truncate">Test Series</span>
+    </a>
+
+
+<!-- Custom Test -->
+<a href="/dashboard/custom-test"
+   class="group flex items-center gap-3 rounded-xl p-3 font-semibold transition-all duration-200
+   <%= (typeof isCustomTestPage !== 'undefined' && isCustomTestPage)
+       ? 'bg-indigo-600 text-white shadow-sm'
+       : 'text-slate-800 hover:bg-violet-50 hover:text-violet-700' %>">
+
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg
+                     transition-colors duration-200
+                     <%= (typeof isCustomTestPage !== 'undefined' && isCustomTestPage)
+                         ? 'bg-white/15'
+                         : 'bg-violet-50 group-hover:bg-violet-100' %>">
+            <i class="fa-solid fa-file-pen text-sm
+                <%= (typeof isCustomTestPage !== 'undefined' && isCustomTestPage) ? 'text-white' : 'text-violet-600' %>"></i>
+        </span>
+
+        <span class="truncate">Custom Test</span>
 </a>
 
- 
 
     <!-- Dashboard -->
+    <a href="/series/<%= listing.slug %>" 
+       class="group flex items-center gap-3 rounded-xl p-3 font-semibold transition-all duration-200
+           <%= ((typeof currentSection === 'undefined' || !currentSection) 
+         && !(typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)
+         && !(typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)
+         && !(typeof isLiveTestPage !== 'undefined' && isLiveTestPage)
+         && !(typeof isCustomTestPage !== 'undefined' && isCustomTestPage)) 
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'text-slate-800 hover:bg-slate-100 hover:text-indigo-600' %>">
 
-<a href="/series/<%= listing.slug %>" 
-   class="flex items-center gap-3 rounded-xl p-3 font-semibold transition
-   <%= ((typeof currentSection === 'undefined' || !currentSection) 
-        && !(typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)
-        && !(typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)
-        && !(typeof isLiveTestPage !== 'undefined' && isLiveTestPage)) 
-        ? 'bg-indigo-600 text-white' : 'text-black hover:bg-slate-100' %>">
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg
+            <%= ((typeof currentSection === 'undefined' || !currentSection) 
+                && !(typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)
+                && !(typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)
+                && !(typeof isLiveTestPage !== 'undefined' && isLiveTestPage)
+                && !(typeof isCustomTestPage !== 'undefined' && isCustomTestPage))
+                ? 'bg-white/15'
+                : 'bg-indigo-50 group-hover:bg-indigo-100' %>">
 
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="3" width="8" height="8" rx="2" fill="#6366f1"/>
-        <rect x="13" y="3" width="8" height="8" rx="2" fill="#f59e0b"/>
-        <rect x="3" y="13" width="8" height="8" rx="2" fill="#10b981"/>
-        <rect x="13" y="13" width="8" height="8" rx="2" fill="#ec4899"/>
-    </svg>
-    Dashboard
-</a>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="3" width="8" height="8" rx="2" fill="#6366f1"/>
+                <rect x="13" y="3" width="8" height="8" rx="2" fill="#f59e0b"/>
+                <rect x="3" y="13" width="8" height="8" rx="2" fill="#10b981"/>
+                <rect x="13" y="13" width="8" height="8" rx="2" fill="#ec4899"/>
+            </svg>
+        </span>
 
- <a href="/series/<%= listing.slug %>/weak-areas" 
-   class="flex items-center gap-3 rounded-xl p-3 font-semibold transition
-   <%= (typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage) ? 'bg-indigo-600 text-white' : 'text-black hover:bg-slate-100' %>">
-    <i data-lucide="target" style="color:#f50b0b;"></i>
-    Weak Area
-</a>
+        <span class="truncate">Dashboard</span>
+    </a>
 
 
-     
+    <!-- Weak Area -->
+    <a href="/series/<%= listing.slug %>/weak-areas" 
+       class="group flex items-center gap-3 rounded-xl p-3 font-semibold transition-all duration-200
+       <%= (typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)
+           ? 'bg-indigo-600 text-white shadow-sm'
+           : 'text-slate-800 hover:bg-slate-100 hover:text-indigo-600' %>">
+
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg
+            <%= (typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)
+                ? 'bg-white/15'
+                : 'bg-rose-50 group-hover:bg-rose-100' %>">
+
+            <i data-lucide="target"
+               class="h-[18px] w-[18px]
+               <%= (typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)
+                   ? 'text-white'
+                   : 'text-rose-600 group-hover:text-rose-700' %>">
+            </i>
+        </span>
+
+        <span class="truncate">Weak Area</span>
+    </a>
+
+</div>
 
     <!-- Practice Zones -->
 
@@ -367,14 +422,35 @@ const iconColorMap = {
 <div class="shrink-0 border-t border-slate-100 p-6 pt-4">
     <p class="text-xs uppercase tracking-widest text-slate-400 font-bold mb-3">More</p>
     <div class="space-y-1">
-        <a href="/contactUs" class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
-            <i data-lucide="headphones" class="w-[18px] h-[18px]"></i>
-            <span class="text-sm font-medium">Help &amp; Support</span>
-        </a>
-        <a href="/privacy-Policy" class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
-            <i data-lucide="shield-check" class="w-[18px] h-[18px]"></i>
-            <span class="text-sm font-medium">Privacy Policy</span>
-        </a>
+        <a href="/profile"
+   class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+    <i data-lucide="user" class="w-[18px] h-[18px]"></i>
+    <span class="text-sm font-medium">My Profile</span>
+</a>
+
+<a href="/contactUs"
+   class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+    <i data-lucide="headphones" class="w-[18px] h-[18px]"></i>
+    <span class="text-sm font-medium">Help &amp; Support</span>
+</a>
+
+<a href="/privacy-Policy"
+   class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+    <i data-lucide="shield-check" class="w-[18px] h-[18px]"></i>
+    <span class="text-sm font-medium">Privacy Policy</span>
+</a>
+
+<form action="/logout" method="POST" class="logout-form w-full">
+    
+     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <button type="submit"
+            class="w-full flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition text-left">
+        <i data-lucide="log-out" class="w-[18px] h-[18px] shrink-0"></i>
+        <span class="text-sm font-medium">Log out</span>
+    </button>
+</form>
+        
     </div>
 </div>
      

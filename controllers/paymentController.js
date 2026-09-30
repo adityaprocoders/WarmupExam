@@ -12,11 +12,22 @@ export const showOrderSummary = async (req, res) => {
     if (!listing) throw new ExpressError(404, "Test Series Not Found");
 
     if (listing.type === "Free") {
-        req.flash("error", "Ye test series free hai, seedha enroll kar sakte ho.");
+        req.flash("error", "This test series is free — you can enroll directly.");
         return res.redirect(`/test/${listing._id}`);
     }
 
-    res.render("order/summary", { listing, robots: "noindex, nofollow" });
+    const baseUrl = process.env.BASE_URL || "https://warmupexam.com";
+let backUrl = req.query.from;
+if (!backUrl) {
+    const referer = req.get("referer");
+    if (referer && referer.startsWith(baseUrl)) backUrl = referer.replace(baseUrl, "");
+}
+// sirf apna internal path allow karo (open redirect se bachav), aur order page khud na ho
+if (!backUrl || !backUrl.startsWith("/") || backUrl.startsWith("//") || backUrl.startsWith("/order-summary")) {
+    backUrl = "/alltests";
+}
+
+res.render("order/summary", { listing, backUrl, robots: "noindex, nofollow" });
 };
 
 // Coupon apply/validate (sirf calculate karta hai, order nahi banata)
@@ -59,7 +70,7 @@ export const createOrder = async (req, res) => {
         e => String(e.listing) === String(listingId)
     );
     if (alreadyEnrolled) {
-        return res.status(400).json({ error: "Aap already enrolled ho is test series me" });
+        return res.status(400).json({ error: "You are already enrolled in this test series." });
     }
 
     const safeDonation = Math.max(0, Math.floor(Number(donationAmount) || 0));

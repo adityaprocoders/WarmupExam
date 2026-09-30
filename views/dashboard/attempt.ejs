@@ -8,14 +8,14 @@
 <script src="https://unpkg.com/lucide@latest"></script>
  <link rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-<link rel="icon" href="/images/logo.png" type="image/WarmupExam">
+<link rel="icon" href="/images/logo.svg" type="image/WarmupExam">
 
 <!-- KaTeX for Math/LaTeX rendering (so questions with $...$ / $$...$$ show as real math, not raw text) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-<style>
+<style nonce="<%= cspNonce %>">
   html, body { height: 100%; margin: 0; overflow: hidden; }
   .palette-btn { transition: all .15s; touch-action: manipulation; }
   button { touch-action: manipulation; }

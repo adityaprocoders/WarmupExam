@@ -1,0 +1,78 @@
+/* ===== Pricing page: sirf effects jo Tailwind classes se nahi ban sakte ===== */
+
+@property --pc-ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+
+/* Hero: page load par ek hi orchestrated entrance */
+.pc-hero { animation: pc-rise .8s cubic-bezier(.16,.84,.44,1) both; }
+p.pc-hero { animation-delay: .12s; }
+
+/* Ambient blobs */
+.pc-float { animation: pc-float 9s ease-in-out infinite; }
+.pc-float-b { animation-duration: 12s; animation-direction: reverse; }
+
+/* Pro card: rotating conic border (memorable moment) */
+.pc-border {
+    padding: 2px;
+    background: conic-gradient(from var(--pc-ang), #6366f1, #a78bfa, #22d3ee, #6366f1);
+    animation: pc-spin 7s linear infinite;
+    box-shadow: 0 30px 70px -30px rgba(79, 70, 229, .55);
+}
+.pc-border > .pc-card { border-radius: calc(1.75rem - 2px); }
+
+/* Card: mouse ke saath chalti spotlight */
+.pc-card { isolation: isolate; transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s; }
+.pc-card::before {
+    content: "";
+    position: absolute; inset: 0; z-index: -1;
+    border-radius: inherit; pointer-events: none;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(99, 102, 241, .13), transparent 60%);
+    opacity: 0; transition: opacity .3s;
+}
+.pc-dark::before { background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgba(167, 139, 250, .22), transparent 60%); }
+.pc-card:hover::before { opacity: 1; }
+
+/* Pro Max: halka glow orb */
+.pc-dark::after {
+    content: "";
+    position: absolute; right: -60px; top: -60px; z-index: -1;
+    width: 220px; height: 220px; border-radius: 9999px;
+    background: radial-gradient(circle, rgba(139, 92, 246, .45), transparent 70%);
+    filter: blur(20px); pointer-events: none;
+    animation: pc-float 8s ease-in-out infinite;
+}
+
+/* Scroll reveal (stagger delay JS se aata hai) */
+.pc-reveal {
+    opacity: 0; transform: translateY(36px) scale(.97);
+    transition: opacity .7s ease var(--d, 0s), transform .9s cubic-bezier(.22,1,.36,1) var(--d, 0s);
+}
+.pc-reveal.in { opacity: 1; transform: none; }
+.pc-reveal.ready { transition: transform .35s cubic-bezier(.22,1,.36,1); }
+@media (hover: hover) and (pointer: fine) {
+    .pc-reveal.ready:hover { transform: translateY(-8px); }
+}
+
+/* Features: card visible hone par ek-ek karke aate hain */
+.pc-feat { opacity: 0; transform: translateX(-10px); transition: opacity .45s ease, transform .45s cubic-bezier(.22,1,.36,1); transition-delay: calc(var(--d, 0s) + var(--fi, 0) * 45ms + .25s); }
+.pc-reveal.in .pc-feat { opacity: 1; transform: none; }
+
+/* Button / badge shine sweep */
+.pc-shine { position: relative; overflow: hidden; }
+.pc-shine::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, .55) 50%, transparent 65%);
+    transform: translateX(-120%);
+}
+span.pc-shine::after { animation: pc-sweep 3.6s ease-in-out 1.2s infinite; }
+a.pc-shine:hover::after { animation: pc-sweep .9s ease; }
+
+@keyframes pc-spin { to { --pc-ang: 360deg; } }
+@keyframes pc-sweep { to { transform: translateX(120%); } }
+@keyframes pc-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+@keyframes pc-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .pc-hero, .pc-float, .pc-border, .pc-dark::after, span.pc-shine::after { animation: none; }
+    .pc-reveal, .pc-feat { opacity: 1; transform: none; transition: none; }
+    .pc-reveal.ready:hover { transform: none; }
+}

@@ -286,11 +286,11 @@ async function resendOtp() {
             saveResetState(email, data.expiresIn || 300);
             startOtpCountdown(data.expiresIn || 300);
         } else {
-            alert(data.message || "Failed to resend OTP");
+            showToast(data.message || "Failed to resend OTP.", "error");
             btn.disabled = false;
         }
     } catch (err) {
-        alert("Network error");
+        showToast("Network error. Please try again.", "error");
         btn.disabled = false;
     }
 }
@@ -318,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (!data.success) {
-                    alert(data.message || "This reset link is invalid or has expired. Please request a new one.");
+                   showToast(data.message || "This reset link is invalid or has expired. Please request a new one.", "error");
                     return;
                 }
 
@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 enterTokenMode(resetEmail, resetTokenFromUrl);
                 switchAuthPanel('reset');
             } catch (err) {
-                alert("Network error, please try again.");
+                showToast("Network error, please try again.", "error");
             }
         })();
     }

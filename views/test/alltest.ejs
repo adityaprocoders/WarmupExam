@@ -1,7 +1,7 @@
 <link rel="stylesheet" href="/css/alltests.css">
 
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[104px] sm:pt-[120px] lg:pt-[136px] pb-10">
 
     <!-- Heading + Search -->
 
@@ -93,13 +93,13 @@
 
     </div>
 
-    <!-- Search Result -->
+    <!-- Search Results -->
     <% if (hasSearched) { %>
 
         <% if (matchedListings && matchedListings.length > 0) { %>
 
             <div class="mb-10">
-                <h4 class="text-sm font-bold text-gray-500 uppercase mb-3">Search Result</h4>
+                <h4 class="text-sm font-bold text-gray-500 uppercase mb-3">Search Results</h4>
 
                 <div id="searchResultGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 
@@ -147,7 +147,7 @@
 <%- include("../pages/categories/categories.ejs") %>
 
 
-<style>
+ <style nonce="<%= cspNonce %>">
     .active-filter { background: #4f46e5; color: white; }
     .rotate-180 { transform: rotate(180deg); }
     .no-scrollbar::-webkit-scrollbar { display: none; }

@@ -75,8 +75,8 @@
                 document.getElementById('analysis-root').innerHTML = `
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
                         <i class="fas fa-triangle-exclamation text-3xl text-gray-300 mb-4"></i>
-                        <p class="text-sm font-semibold text-gray-600">Analysis load nahi ho payi.</p>
-                        <p class="text-xs text-gray-400 mt-1">Page refresh karke dobara try karo, ya support se contact karo.</p>
+                        <p class="text-sm font-semibold text-gray-600">Failed to load analysis.</p>
+                        <p class="text-xs text-gray-400 mt-1">Please refresh the page and try again, or contact support.</p>
                     </div>`;
                 return;
             }
@@ -488,7 +488,7 @@ async function submitReportRequest() {
         closeReportModal();
 
         if (!result.success) {
-            showFlashMessage(result.message || "Report submit nahi ho paya", true);
+            showFlashMessage(result.message || "Failed to submit report.", true);
         } else if (result.alreadyReported) {
             showFlashMessage("You already reported this question.");
         } else {
@@ -497,7 +497,7 @@ async function submitReportRequest() {
         }
     } catch (err) {
         console.error("Report submit error:", err);
-        showFlashMessage("Report submit nahi ho paya", true);
+        showFlashMessage("Failed to submit report.", true);
         closeReportModal();
     } finally {
         btn.innerText = originalText;

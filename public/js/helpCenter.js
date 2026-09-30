@@ -1,6 +1,7 @@
  
 document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) lucide.createIcons();
+    document.querySelectorAll('#faqList > *').forEach(el => el.classList.add('in-view'));
 
     const ALL_LIMIT = 10;
     const CATEGORY_LABELS = { payments: 'Payments', tests: 'Tests', account: 'Account', reports: 'AI Reports' };

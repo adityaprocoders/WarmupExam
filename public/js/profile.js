@@ -528,7 +528,7 @@
                 if (data.success) {
                     window.location.href = "/";
                 } else {
-                    deleteAccountMsg.textContent = data.message || "Account delete nahi ho paya.";
+                    deleteAccountMsg.textContent = data.message || "Failed to delete account.";
                     deleteAccountMsg.classList.remove("hidden");
                     deleteAccountMsg.classList.add("bg-red-50", "text-red-700");
                     deleteConfirmBtn.disabled = false;

@@ -1,11 +1,15 @@
 const errorHandler = (err, req, res, next) => {
   if (err.code === "EBADCSRFTOKEN" || err.message === "invalid csrf token") {
-    req.flash("error", "Form session expire ho gaya, dobara try karein.");
+     req.flash("error", "Your session has expired. Please try again.");
     return res.redirect(req.get("Referer") || "/");
   }
 
   const statusCode = err.statusCode || 500;
   const message = err.message || "Something went wrong";
+
+  if (statusCode >= 400) {
+    res.set("X-Robots-Tag", "noindex, nofollow");
+  }
  
   
   if (statusCode >= 500) {
@@ -17,8 +21,7 @@ const errorHandler = (err, req, res, next) => {
     : message;
 
   // Agar request AJAX/API hai to JSON bhejo
-  if (req.xhr || req.headers.accept?.includes("application/json")) {
-    return res.status(statusCode).json({ success: false, message: safeMessage });
+  if (req.originalUrl.startsWith("/api/") || req.xhr || req.headers.accept?.includes("application/json")) {    return res.status(statusCode).json({ success: false, message: safeMessage });
   }
 
   // 404 (Not Found) ke liye alag page — behtar UX

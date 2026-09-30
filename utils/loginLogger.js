@@ -48,12 +48,12 @@ export async function logOwnerLogin(req, owner) {
       subject: "New Owner Login Detected",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px;">
-          <h2 style="color:#4f46e5;">Naya Login Detected</h2>
+          <h2 style="color:#4f46e5;">New Login Detected</h2>
           <p><b>Time:</b> ${new Date().toLocaleString()}</p>
           <p><b>IP:</b> ${ip}</p>
           <p><b>Location:</b> ${location}</p>
           <p><b>Device:</b> ${device}</p>
-          <p style="color:#94a3b8; font-size: 12px;">Agar ye login aapne nahi kiya, turant password change karein.</p>
+          <p style="color:#94a3b8; font-size: 12px;">If this was not you, please change your password immediately.</p>
         </div>
       `,
     });

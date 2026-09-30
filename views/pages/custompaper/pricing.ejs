@@ -1,0 +1,151 @@
+<link rel="stylesheet" href="/css/pricing.css?v=1">
+<%
+const chk = (c) => `<svg class="h-3 w-3" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+const fmt = (n) => Number(n).toLocaleString('en-US');
+const limitTiles = (L) => [[L.questionsPerDay, 'Questions / day'], [L.questionsPerRequest, 'Per request'], [L.apiCallsPerDay, 'Requests / day']];
+const limitRows = (L) => [
+  ['Text / request', fmt(L.textCharsPerRequest) + ' chars'],
+  ['Text / day', fmt(L.textCharsPerDay) + ' chars'],
+  ['Images / day', L.imagesPerDay + ' (max ' + L.imageMaxSizeMB + ' MB each)'],
+  L.pdfAllowed ? ['PDF / day', L.pdfMBPerDay + ' MB (max ' + L.pdfMaxPages + ' pages/file)'] : ['PDF upload', 'Not available', true]
+];
+
+
+const plans = [
+  {
+    id: 'free', name: 'Free', price: '0', href: '/custom-test', cta: 'Continue with Free',
+    desc: 'Start practicing with essential features.',
+    banner: { icon: 'fa-bullhorn', text: 'Ads supported', cls: 'bg-amber-50 text-amber-700 ring-amber-100' },
+    incTitle: 'Includes',
+    features: [
+      ['Exam Selection — Multiple Exams'],
+      ['Custom Practice Mode', 'subject, topic, difficulty & language'],
+      ['Weak Area Practice', 'from your enrolled Test Series'],
+      ['Basic Performance Analysis'],
+      ['AI Question Import', 'Images & Text']
+    ],
+    tiles: limitTiles(AL.free),
+    rows: limitRows(AL.free),
+    t: { wrap: '', card: 'border border-slate-200 bg-white shadow-sm', title: 'text-slate-900', muted: 'text-slate-500', price: 'text-slate-900',
+      cta: 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50', chk: 'bg-emerald-50 text-emerald-600', note: 'text-slate-400', text: 'text-slate-600',
+      line: 'border-slate-100', box: 'border-slate-200 bg-slate-50/70', tile: 'bg-white ring-slate-200 text-slate-900', lbl: 'text-slate-500', val: 'text-slate-700', off: 'text-slate-400' }
+  },
+  {
+    id: 'pro', name: 'Pro', price: proPrice, href: '/custom-test/upgrade?plan=pro&returnTo=' + encodeURIComponent('/pricing'), cta: 'Continue with Pro',
+    badge: 'Recommended',
+    desc: 'Advanced practice and personalized preparation.',
+    banner: { icon: 'fa-circle-check', text: 'Completely Ad-Free', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-100' },
+    incTitle: 'Everything in Free, plus',
+    features: [
+      ['Data After Reload'], ['Exam Pattern Mode'], ['Custom Difficulty Distribution'],
+      ['Instant Paper Preview'], ['Instant Test Generation'], ['Detailed Performance Analysis'], ['Difficulty-wise Performance'],
+      ['Answer Key'], ['Print / Download Paper'], ['AI Question Import', 'PDF Upload']
+    ],
+    tiles: limitTiles(AL.pro),
+    rows: limitRows(AL.pro),
+    t: { wrap: 'pc-border', card: 'bg-white', title: 'text-slate-900', muted: 'text-slate-500', price: 'text-slate-900',
+      cta: 'pc-shine bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40', chk: 'bg-indigo-100 text-indigo-600', note: 'text-indigo-400', text: 'text-slate-600',
+      line: 'border-indigo-100', box: 'border-indigo-100 bg-indigo-50/60', tile: 'bg-white ring-indigo-100 text-indigo-700', lbl: 'text-indigo-500/80', val: 'text-indigo-700', off: 'text-slate-400' }
+  },
+  {
+    id: 'promax', name: 'Pro Max', price: promaxPrice, href: '/custom-test/upgrade?plan=promax&returnTo=' + encodeURIComponent('/pricing'), cta: 'Continue with Pro Max',
+    desc: 'Maximum personalization for serious preparation.',
+    banner: { icon: 'fa-circle-check', text: 'Completely Ad-Free', cls: 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/20' },
+    incTitle: 'Everything in Pro, plus',
+    features: [
+      ['AI Weak-Topic Custom Papers'], ['Smart Personalized Paper'], ['Weak-topic Priority'], ['Previous Performance Based Paper'],
+      ['Practice Wrong Questions'], ['Advanced Performance Insights'], ['Adaptive Difficulty'],
+      ['Personalized Weakness Tracking'], ['Smart Revision Suggestions'], ['AI Question Import', 'Maximum Quota']
+    ],
+    tiles: limitTiles(AL.promax),
+    rows: limitRows(AL.promax),
+    t: { wrap: '', card: 'pc-dark border border-white/10 bg-gradient-to-b from-slate-900 via-indigo-950 to-violet-950 shadow-2xl shadow-indigo-900/30', title: 'text-white', muted: 'text-indigo-200/70', price: 'text-white',
+      cta: 'pc-shine bg-white text-indigo-950 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-violet-500/30', chk: 'bg-violet-400/20 text-violet-300', note: 'text-violet-300/70', text: 'text-indigo-100/85',
+      line: 'border-white/10', box: 'border-white/10 bg-white/5', tile: 'bg-white/5 ring-white/10 text-white', lbl: 'text-indigo-200/70', val: 'text-white', off: 'text-indigo-200/40' }
+  }
+];
+%>
+
+<div class="relative isolate overflow-hidden">
+  <!-- ambient background -->
+  <div aria-hidden="true" class="pointer-events-none absolute -left-24 -top-10 -z-10 h-80 w-80 rounded-full bg-indigo-300/40 blur-3xl pc-float"></div>
+  <div aria-hidden="true" class="pointer-events-none absolute -right-24 top-40 -z-10 h-96 w-96 rounded-full bg-violet-300/30 blur-3xl pc-float pc-float-b"></div>
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(15,23,42,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(15,23,42,0.045)_1px,transparent_1px)] bg-[size:36px_36px] [mask-image:radial-gradient(ellipse_70%_55%_at_50%_0%,#000_35%,transparent_100%)]"></div>
+
+  <div class="mx-auto max-w-6xl px-4 pb-14 pt-[104px] sm:px-6 sm:pb-20 sm:pt-[128px] lg:px-8">
+
+    <a href="<%= backUrl %>" class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-1.5 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 backdrop-blur transition hover:text-indigo-600 hover:ring-indigo-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+      <i class="fa-solid fa-arrow-left text-xs"></i> Back
+    </a>
+
+    <div class="mx-auto mb-10 mt-8 max-w-2xl text-center sm:mb-14">
+      <h1 class="pc-hero text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl lg:leading-[1.08]">Practice smarter.<br class="hidden sm:block"> Prepare better.</h1>
+      <p class="pc-hero mx-auto mt-4 max-w-md text-sm leading-relaxed text-slate-500 sm:text-base">Pick the plan that fits your preparation. Upgrade or stay free, your practice history stays with you.</p>
+    </div>
+
+    <div class="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3 lg:gap-7">
+      <% plans.forEach((p, idx) => { const t = p.t; %>
+      <div class="pc-reveal <%= p.id === 'pro' ? 'order-first md:order-none md:-mt-4 md:mb-4' : '' %>" data-delay="<%= idx * 120 %>">
+        <div class="<%= t.wrap %> h-full rounded-[1.75rem]">
+          <article class="pc-card <%= t.card %> relative flex h-full flex-col rounded-[1.75rem] p-5 sm:p-6 <%= p.badge ? 'pt-9' : '' %>" data-plan="<%= p.id %>">
+
+            <% if (p.badge) { %>
+            <span class="pc-shine absolute -top-3.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-1.5 text-xs font-bold text-white shadow-lg shadow-indigo-500/40"><%= p.badge %></span>
+            <% } %>
+
+            <h2 class="text-lg font-bold sm:text-xl <%= t.title %>"><%= p.name %></h2>
+            <p class="mt-2 min-h-[40px] text-xs leading-5 sm:text-sm <%= t.muted %>"><%= p.desc %></p>
+
+            <div class="mt-4 flex items-end gap-1">
+              <span class="text-4xl font-extrabold tracking-tight tabular-nums <%= t.price %>">₹<%= p.price %></span>
+              <span class="mb-1.5 text-sm <%= t.muted %>">/month</span>
+            </div>
+
+            <a href="<%= p.href %>" class="<%= t.cta %> relative mt-6 block w-full overflow-hidden rounded-xl px-4 py-3 text-center text-sm font-semibold transition duration-300 hover:-translate-y-0.5 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+              <%= p.cta %>
+            </a>
+
+            <div class="mt-4 flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium ring-1 <%= p.banner.cls %>">
+              <i class="fa-solid <%= p.banner.icon %>"></i><span><%= p.banner.text %></span>
+            </div>
+
+            <div class="mt-6 flex-1 border-t pt-5 <%= t.line %>">
+              <p class="mb-3 text-sm font-semibold <%= t.title %>"><%= p.incTitle %></p>
+              <ul class="space-y-2.5 text-xs sm:text-sm <%= t.text %>">
+                <% p.features.forEach((f, i) => { %>
+                <li class="pc-feat flex items-start gap-2.5" data-i="<%= i %>">
+                  <span class="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full <%= t.chk %>"><%- chk() %></span>
+                  <span><%= f[0] %><% if (f[1]) { %> <span class="text-xs <%= t.note %>">(<%= f[1] %>)</span><% } %></span>
+                </li>
+                <% }) %>
+              </ul>
+            </div>
+
+            <div class="mt-5 rounded-2xl border p-3.5 <%= t.box %>">
+              <p class="mb-3 flex items-center gap-1.5 text-xs font-semibold <%= t.title %>"><i class="fa-solid fa-wand-magic-sparkles text-[11px]"></i> AI Import limits</p>
+              <div class="grid grid-cols-3 gap-2">
+                <% p.tiles.forEach(tl => { %>
+                <div class="rounded-xl px-2 py-2.5 text-center ring-1 <%= t.tile %>">
+                  <div class="text-lg font-extrabold leading-none tabular-nums sm:text-xl" data-count="<%= tl[0] %>"><%= tl[0] %></div>
+                  <div class="mt-1.5 text-[10px] leading-tight <%= t.lbl %>"><%= tl[1] %></div>
+                </div>
+                <% }) %>
+              </div>
+              <ul class="mt-3 space-y-1.5 text-[11px]">
+                <% p.rows.forEach(r => { %>
+                <li class="flex justify-between gap-3"><span class="<%= t.lbl %>"><%= r[0] %></span><span class="text-right font-semibold <%= r[2] ? t.off : t.val %>"><%= r[1] %></span></li>
+                <% }) %>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+
+    <p class="mt-10 text-center text-xs text-slate-400">Free plan includes ads. All paid plans are completely ad-free.</p>
+  </div>
+</div>
+
+<script src="/js/pricing.js?v=1" defer></script>

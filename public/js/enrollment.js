@@ -13,11 +13,11 @@ async function enrollNow(listingId, isLoggedIn) {
             window.location.reload();
         } else {
              hideLoader(); 
-            alert(data.message || "Enroll nahi ho paya");
+            showToast(data.message || "Enrollment failed.", "error");
         }
     } catch (err) {
          hideLoader(); 
-        alert("Kuch galat ho gaya, dobara try karo");
+        showToast("Something went wrong, please try again.", "error");
     }
 }
  
@@ -27,7 +27,8 @@ function buyNow(listingId, isLoggedIn) {
         openAuthModal('login');
         return;
     }
-    window.location.href = `/order-summary/${listingId}`;
+    const from = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/order-summary/${listingId}?from=${from}`;
 }
 
 

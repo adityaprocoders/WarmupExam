@@ -71,7 +71,7 @@
             <label class="block text-sm font-semibold text-gray-700">Cover Image</label>
             <input type="file" name="coverImage" accept="image/*" required
                 class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
-            <p class="text-xs text-gray-500 mt-1">JPG, PNG ya WEBP — max 5MB.</p>
+            <p class="text-xs text-gray-500 mt-1">JPG, PNG, or WEBP, max 5 MB.</p>
         </div>
 
         <!-- PDF file -->
@@ -79,7 +79,7 @@
             <label class="block text-sm font-semibold text-gray-700">E-Book PDF File</label>
             <input type="file" name="ebookFile" accept="application/pdf" required
                 class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
-            <p class="text-xs text-gray-500 mt-1">Sirf PDF — max 25MB.</p>
+            <p class="text-xs text-gray-500 mt-1">PDF files only — maximum size: 25 MB.</p>
         </div>
 
         <!-- Type / Price / Discount -->
@@ -118,7 +118,7 @@
                 placeholder="e.g. 365"
                 class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
             <p class="text-xs text-gray-500 mt-1">
-                Purchase karne ke baad user ka access kitne din tak valid rahega. Free e-book ke liye ye field ignore ho jaayega.
+                The number of days the user keeps access after purchase. This field is ignored for free e-books.
             </p>
         </div>
 
@@ -135,7 +135,7 @@
                     Public
                 </label>
             </div>
-            <p class="text-xs text-gray-500 mt-1">Public e-book hi students ko store mein dikhegi, Private sirf owner ko.</p>
+            <p class="text-xs text-gray-500 mt-1">Public e-books are visible to students in the store, while private e-books are visible only to the owner.</p>
         </div>
 
         <button type="submit"

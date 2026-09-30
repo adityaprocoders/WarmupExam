@@ -1,16 +1,17 @@
-<div class="max-w-7xl mx-auto pt-16 px-4 mb-2">
+<div class="max-w-7xl mx-auto pt-[104px] sm:pt-[120px] lg:pt-[136px] px-4 mb-2">
 
-    <div class="flex flex-col items-center gap-4 mb-10">
-        <div class="text-center px-8 py-5">
-            <h2 class="text-3xl font-bold text-indigo-700">Explore Exams</h2>
-            <p class="mx-auto mt-3 max-w-4xl px-4 text-center text-sm font-medium leading-7 text-slate-500 sm:text-base md:text-lg lg:text-xl">
+    <div class="flex flex-col items-center gap-4 mb-8 sm:mb-12">
+        <div class="text-center px-2 sm:px-8 py-3 sm:py-5">
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 bg-clip-text text-transparent">Explore Exams</h2>
+            <div aria-hidden="true" class="mx-auto mt-4 h-1 w-16 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"></div>
+            <p class="mx-auto mt-4 max-w-4xl px-2 sm:px-4 text-center text-sm font-medium leading-7 text-slate-500 sm:text-base md:text-lg lg:text-xl">
                 Find your target exam and start practicing with expertly crafted mock tests.
             </p>
         </div>
 
         <% if (isOwner) { %>
         <button id="openCategoryModalBtn"
-        class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition duration-200 shadow-sm">
+        class="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-sm px-5 py-2.5 rounded-2xl transition-all duration-300 shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/40 active:scale-95">
             <i class="fa-solid fa-plus"></i> Add Category
         </button>
         <% } %>

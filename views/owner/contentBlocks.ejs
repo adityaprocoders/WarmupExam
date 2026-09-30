@@ -30,21 +30,22 @@
                         </button>
                         <div class="delete-dropdown hidden absolute right-0 mt-2 w-48 sm:w-56 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-20">
                             <form action="/tests/<%= listing._id %>/detach-block/<%= block._id %>?_method=PUT" method="POST">
-                                <button type="submit" class="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm hover:bg-gray-50">
-                                    Detach from this listing
-                                </button>
-                            </form>
-                            <form action="/owner/content-library/<%= block._id %>?_method=DELETE" method="POST"
-                                 class="delete-permanent-form">
-                                <input type="hidden" name="listingId" value="<%= listing._id %>">
-                                <button type="submit" class="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-red-600 hover:bg-red-50 border-t">
-                                    Delete permanently (from library too)
-                                </button>
-                            </form>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit" class="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm hover:bg-gray-50">
+        Detach from this listing
+    </button>
+</form>
+<form action="/owner/content-library/<%= block._id %>?_method=DELETE" method="POST" class="delete-permanent-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="listingId" value="<%= listing._id %>">
+    <button type="submit" class="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-red-600 hover:bg-red-50 border-t">
+        Delete permanently (from library too)
+    </button>
+</form>
                         </div>
                     </div>
                 </div>
-                <!-- Owner ke liye icons overlap na karein isliye top pe thoda space -->
+                <!-- Add extra top spacing to prevent icon overlap for the owner -->
                 <div class="h-6 sm:h-0"></div>
             <% } %>
 
@@ -91,7 +92,7 @@
                     </label>
                 <% }) %>
                 <% if (allBlocks.length === 0) { %>
-                    <p class="text-gray-500 text-sm">Koi block library me nahi hai abhi. "+ New Block" tab se pehla block banao.</p>
+                    <p class="text-gray-500 text-sm">No content blocks are available in the library yet. Create your first block from the "+ New Block" tab.</p>
                 <% } %>
                 <button type="submit" class="w-full mt-3 bg-indigo-600 text-white font-bold py-2.5 sm:py-3 rounded-lg hover:bg-indigo-700 text-sm sm:text-base">
                     Save Attached Blocks
@@ -181,7 +182,7 @@
                         </label>
                     <% }) %>
                 </div>
-                <p id="noResultsMsg" class="hidden text-center text-sm text-gray-400 py-4">Koi match nahi mila</p>
+                <p id="noResultsMsg" class="hidden text-center text-sm text-gray-400 py-4">No matching results found</p>
             </div>
         </form>
 

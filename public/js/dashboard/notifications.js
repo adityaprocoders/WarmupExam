@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const res = await fetch("/api/notifications/clear-all", { method: "POST" });
             const data = await res.json();
             if (data.success) {
-                listBox.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">Koi notification nahi hai</p>`;
+                listBox.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">No notifications.</p>`;
                 redDot.classList.add("hidden");
                 unseenCount = 0;
                 clearAllBtn.classList.add("hidden");   // 🆕 clear hote hi button khud hide

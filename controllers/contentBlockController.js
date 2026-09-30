@@ -146,7 +146,7 @@ export const copyBlockToTargets = async (req, res) => {
     targetIds = [...new Set(targetIds.map(String))];
 
     if (targetIds.length === 0) {
-        req.flash("error", "Koi test series select nahi ki gayi");
+       req.flash("error", "No test series selected.");
         return res.redirect(sourceListingId ? `/test/${sourceListingId}` : "/owner/content-library");
     }
 

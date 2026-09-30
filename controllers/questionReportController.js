@@ -14,7 +14,7 @@ export const submitReport = async (req, res) => {
         }
 
         const question = await Question.findById(questionId);
-        if (!question) return res.status(404).json({ success: false, message: "Question nahi mili" });
+        if (!question) return res.status(404).json({ success: false, message: "Question not found." });
 
         // 👇 Sirf Listing.type check — "Paid" (exact enum value, capital P)
         const listing = await Listing.findById(question.listing).select("type");

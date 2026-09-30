@@ -178,7 +178,7 @@ proceedBtn?.addEventListener("click", async function () {
                 if (verifyData.success) {
                     window.location.href = `/series/${verifyData.slug}`;
                 } else {
-                    alert("Payment verification failed!");
+                    showToast("Payment verification failed!", "error");
                 }
             },
             modal: {
@@ -193,7 +193,7 @@ proceedBtn?.addEventListener("click", async function () {
         rzp.open();
 
     } catch (err) {
-        alert("Something went wrong: " + err.message);
+        showToast("Something went wrong: " + err.message, "error");
         btn.disabled = false;
         btn.innerText = "PROCEED TO BUY";
     }

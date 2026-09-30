@@ -1,0 +1,154 @@
+/* =====================================================================
+   Custom Test Wizard: purana <style> block ki jagah (layout same, colors premium)
+   Palette:  ink #1b1a4a | primary #4f46e5 | violet #7c3aed | tint #eef0ff
+             line #e4e7f5 | muted #6b7194 | gold (PRO) #fbbf24
+   ===================================================================== */
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ---------- Layout + cards (structure same, colors upgraded) ---------- */
+.wiz-card {
+    background: #fff;
+    border: 1px solid #e4e7f5;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    box-shadow: 0 1px 2px rgba(27, 26, 74, 0.04), 0 18px 40px -26px rgba(49, 46, 129, 0.28);
+    scroll-margin-top: 90px;
+}
+@media (min-width: 640px) { .wiz-card { padding: 1.75rem; } }
+
+.wiz-card-head { display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1rem; }
+.wiz-icon {
+    width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.16);
+}
+.wiz-title { font-size: 0.9375rem; font-weight: 700; color: #1b1a4a; letter-spacing: -0.01em; }
+.wiz-subtitle { font-size: 0.75rem; color: #6b7194; margin-top: 0.125rem; }
+.wiz-field + .wiz-field { margin-top: 1.75rem; }
+.wiz-label-row { margin-bottom: 0.625rem; }
+
+.wiz-layout { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: start; }
+@media (min-width: 1024px) { .wiz-layout { grid-template-columns: 1fr 360px; gap: 1.75rem; } }
+/* Mobile: fixed summary bar ke neeche content na chhupe */
+@media (max-width: 1023px) { .wiz-layout { padding-bottom: 4.5rem; } }
+
+/* ---------- Tailwind ke slate / gray ko premium ink tones se badlo (sirf is page mein) ---------- */
+:is(#wizard-flow, #summary-panel, #mobile-summary-bar, #shortfall-modal) .text-slate-900 { color: #1b1a4a; }
+:is(#wizard-flow, #summary-panel, #mobile-summary-bar, #shortfall-modal) .text-slate-700 { color: #2f3160; }
+:is(#wizard-flow, #summary-panel, #mobile-summary-bar, #shortfall-modal) .text-slate-600 { color: #454873; }
+:is(#wizard-flow, #summary-panel, #mobile-summary-bar, #shortfall-modal) .text-slate-500 { color: #6b7194; }
+:is(#wizard-flow, #summary-panel, #mobile-summary-bar, #shortfall-modal) .text-slate-400 { color: #9297b8; }
+:is(#wizard-flow, #summary-panel, #mobile-summary-bar) .border-slate-200 { border-color: #e4e7f5; }
+:is(#wizard-flow, #summary-panel, #mobile-summary-bar) .border-slate-100 { border-color: #eceef9; }
+
+/* PRO / PAID badges: gold gradient */
+:is(#wizard-flow, #summary-panel) .bg-amber-100.text-amber-700 {
+    background-image: linear-gradient(135deg, #fde68a, #fbbf24);
+    color: #78350f;
+    box-shadow: 0 2px 6px -2px rgba(217, 119, 6, 0.5);
+}
+
+/* ---------- Step tabs ---------- */
+.step-nav {
+    display: flex; align-items: center; gap: 0.25rem; overflow-x: auto;
+    padding-bottom: 1.25rem; margin-bottom: 1.5rem; border-bottom: 1px solid #eceef9;
+    scrollbar-width: none;
+}
+.step-nav::-webkit-scrollbar { display: none; }
+.step-pill {
+    display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.75rem 0.375rem 0.375rem;
+    border-radius: 9999px; border: 1px solid #e4e7f5; background: #fff; white-space: nowrap; flex-shrink: 0;
+    transition: all 0.15s ease; cursor: pointer;
+}
+.step-pill + .step-pill { margin-left: 0.25rem; }
+.step-pill-num {
+    width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: #eef0ff; color: #6b7194;
+    display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+}
+.step-pill-label { font-size: 0.8125rem; font-weight: 500; color: #6b7194; }
+.step-pill.active { border-color: #a5b4fc; background: #eef0ff; box-shadow: 0 8px 18px -12px rgba(79, 70, 229, 0.55); }
+.step-pill.active .step-pill-num { background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; box-shadow: 0 6px 12px -4px rgba(79, 70, 229, 0.6); }
+.step-pill.active .step-pill-label { color: #4338ca; font-weight: 600; }
+.step-pill.completed { border-color: #a7f3d0; background: #f2fdf8; }
+.step-pill.completed .step-pill-num { background: #10b981; color: #fff; }
+.step-pill.completed .step-pill-label { color: #047857; }
+.step-pill.locked { opacity: 0.45; cursor: not-allowed; }
+@media (max-width: 480px) { .step-pill-label { display: none; } .step-pill { padding: 0.375rem; } }
+
+/* ---------- Selected states (JS ke check icons se detect, JS change nahi) ---------- */
+.mode-btn:has(.mode-check:not(.hidden)),
+.diff-quick-btn:has(.diff-quick-check:not(.hidden)) {
+    border-color: #6366f1;
+    background: linear-gradient(160deg, #eef0ff 0%, #ffffff 75%);
+    box-shadow: 0 14px 30px -20px rgba(79, 70, 229, 0.6), 0 0 0 3px rgba(99, 102, 241, 0.13);
+}
+.mode-check, .diff-quick-check { background: linear-gradient(135deg, #6366f1, #7c3aed); }
+.mode-btn:has(.mode-check:not(.hidden)) > span:not(.mode-check):not(.absolute) {
+    background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff;
+}
+.category-btn:has(.cat-check:not(.hidden)) { box-shadow: 0 14px 28px -18px rgba(79, 70, 229, 0.5), 0 0 0 3px rgba(99, 102, 241, 0.1); }
+
+/* Count / time / preset chips: selected = indigo premium */
+/* #wizard-flow prefix + !important: upar wale ink-color overrides se text white hi rahe */
+#wizard-flow :is(.count-btn, .time-btn, .preset-btn):is(.bg-indigo-50, .bg-indigo-100, .bg-indigo-600, .border-indigo-400, .border-indigo-500, .border-indigo-600, .text-indigo-700, .is-selected, .selected, .active, [aria-pressed="true"]) {
+    background-image: linear-gradient(135deg, #6366f1, #7c3aed);
+    border-color: #4f46e5;
+    color: #fff !important;
+    box-shadow: 0 10px 20px -8px rgba(79, 70, 229, 0.55);
+}
+
+/* Presets (Balanced / Beginner / Advanced): JS koi class nahi lagati, isliye click ke baad
+   button focus mein rehta hai, wahi selected dikhata hai (sirf CSS) */
+#wizard-flow .preset-btn:focus,
+#wizard-flow .preset-btn:focus-visible {
+    background-image: linear-gradient(135deg, #6366f1, #7c3aed);
+    border-color: #4f46e5;
+    color: #fff !important;
+    box-shadow: 0 10px 20px -8px rgba(79, 70, 229, 0.55);
+    outline: none;
+}
+
+.diff-tab-btn:is(.bg-white, .bg-indigo-600, .active, .is-selected, [aria-pressed="true"], [aria-selected="true"]) {
+    box-shadow: 0 4px 12px -4px rgba(27, 26, 74, 0.25);
+}
+
+/* ---------- Sliders: har level ka apna rang ---------- */
+.diff-slider { appearance: none; background: #e4e7f5; border-radius: 9999px; }
+.diff-slider[data-level="easy"] { color: #10b981; }
+.diff-slider[data-level="medium"] { color: #f59e0b; }
+.diff-slider[data-level="hard"] { color: #f43f5e; }
+.diff-slider::-webkit-slider-thumb {
+    appearance: none; width: 18px; height: 18px; border-radius: 9999px; background: #fff;
+    border: 3px solid currentColor; box-shadow: 0 3px 8px -2px rgba(27, 26, 74, 0.35); cursor: pointer;
+}
+.diff-slider::-moz-range-thumb { width: 14px; height: 14px; border-radius: 9999px; background: #fff; border: 3px solid currentColor; cursor: pointer; }
+
+/* ---------- Buttons ---------- */
+#wiz-next-btn, #generate-paper-btn-inline, #generate-paper-btn-mobile, #shortfall-generate-btn {
+    background-image: linear-gradient(135deg, #4f46e5, #7c3aed);
+    box-shadow: 0 12px 24px -10px rgba(79, 70, 229, 0.6);
+}
+#wiz-next-btn:disabled, #generate-paper-btn-inline:disabled, #generate-paper-btn-mobile:disabled { box-shadow: none; }
+#shortfall-generate-btn:hover { filter: brightness(1.08); }
+@media (max-width: 480px) {
+    #wiz-next-btn, #generate-paper-btn-inline { flex: 1; justify-content: center; }
+}
+
+/* ---------- Summary panel ---------- */
+.wiz-summary {
+    display: none; flex-direction: column; gap: 1rem; position: relative; overflow: hidden;
+    background: #fff; border: 1px solid #e4e7f5; border-radius: 1.25rem; padding: 1.5rem;
+    box-shadow: 0 1px 2px rgba(27, 26, 74, 0.04), 0 18px 40px -26px rgba(49, 46, 129, 0.28);
+}
+.wiz-summary::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, #6366f1, #a78bfa, #22d3ee); }
+@media (min-width: 1024px) {
+    .wiz-summary { display: flex; position: sticky; top: 1.5rem; max-height: calc(100vh - 3rem); }
+}
+#summary-total-count { color: #4338ca; font-size: 1.5rem; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ---------- Mobile bar + modal ---------- */
+#mobile-summary-bar { background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(12px); border-color: #e4e7f5; border-top-left-radius: 1.25rem; border-top-right-radius: 1.25rem; }
+#shortfall-modal { background: rgba(27, 26, 74, 0.55); backdrop-filter: blur(4px); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

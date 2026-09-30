@@ -94,7 +94,7 @@ export const download = async (req, res) => {
         const purchase = req.user && ebook.purchasedBy?.find(p => String(p.user) === String(req.user._id));
         const valid = purchase && new Date() < new Date(purchase.expiresAt);
         if (!valid) {
-            req.flash?.("error", "Please purchase this e-book to download.");
+            req.flash("error", "Please purchase this e-book to download.");
             return res.redirect(`/ebooks/${ebook.slug}`);
         }
     }

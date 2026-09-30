@@ -246,15 +246,15 @@ export const saveConfig = async (req, res) => {
     }
 
     if (!Array.isArray(criteria) || criteria.length === 0) {
-        return res.status(400).json({ success: false, message: "Kam se kam ek filter row add karo (Subject choose karke)." });
+        return res.status(400).json({ success: false, message: "Add at least one filter row (select a subject)." });
     }
     for (const row of criteria) {
     if (!row.subject) {
-        return res.status(400).json({ success: false, message: "Har row me Subject choose karna zaroori hai." });
+        return res.status(400).json({ success: false, message: "Each row must have a subject selected." });
     }
     if (row.countMode !== "subject") {
         if (!row.minCount || !row.maxCount || row.minCount < 1 || row.maxCount < row.minCount) {
-            return res.status(400).json({ success: false, message: `"${row.subject}" row ka Min/Max Q sahi nahi hai.` });
+            return res.status(400).json({ success: false, message: `The Min/Max Q values for the "${row.subject}" row are invalid.` });
         }
     }
 }
@@ -263,11 +263,11 @@ export const saveConfig = async (req, res) => {
 
     if (strategy === "all") {
         if (!questionCount || questionCount < 5 || questionCount > 200) {
-            return res.status(400).json({ success: false, message: "Total question count 5 se 200 ke beech hona chahiye." });
+            return res.status(400).json({ success: false, message: "Total question count must be between 5 and 200." });
         }
     } else {
         if (!Array.isArray(subjectQuestionCounts) || subjectQuestionCounts.length === 0) {
-            return res.status(400).json({ success: false, message: "Subject-wise question count add karo." });
+            return res.status(400).json({ success: false, message: "Add the subject-wise question count." });
         }
     }
 
@@ -275,21 +275,21 @@ export const saveConfig = async (req, res) => {
 let effectiveDuration;
 if (tStrategy === "total") {
     if (!duration || duration < 1 || duration > 180) {
-        return res.status(400).json({ success: false, message: "Duration 1 se 180 minutes ke beech hona chahiye." });
+        return res.status(400).json({ success: false, message: "Duration must be between 1 and 180 minutes." });
     }
     effectiveDuration = duration;
 } else {
     if (!Array.isArray(subjectTimes) || subjectTimes.length === 0) {
-        return res.status(400).json({ success: false, message: "Subject-wise time add karo." });
+        return res.status(400).json({ success: false, message: "Add the subject-wise time." });
     }
     for (const st of subjectTimes) {
         if (!st.subject || !st.minutes || st.minutes < 1) {
-            return res.status(400).json({ success: false, message: "Har subject ka valid time (minutes) hona chahiye." });
+            return res.status(400).json({ success: false, message: "Each subject must have a valid time (in minutes)." });
         }
     }
     effectiveDuration = subjectTimes.reduce((s, st) => s + (Number(st.minutes) || 0), 0);
     if (effectiveDuration < 1 || effectiveDuration > 180) {
-        return res.status(400).json({ success: false, message: "Total (subject-wise sum) duration 1 se 180 minutes ke beech hona chahiye." });
+        return res.status(400).json({ success: false, message: "Total duration (sum of subject-wise times) must be between 1 and 180 minutes." });
     }
 }
 
@@ -299,7 +299,7 @@ if (tStrategy === "total") {
     }
     
     if (!Array.isArray(scheduledDays) || scheduledDays.length === 0) {
-    return res.status(400).json({ success: false, message: "Kam se kam ek Day select karo." });
+    return res.status(400).json({ success: false, message: "Select at least one day." });
 }
 
     // security check — saari listings sach me is category+exam ki hon

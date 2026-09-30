@@ -1,0 +1,578 @@
+
+<link rel="stylesheet" href="/css/wizard-theme.css?v=1">
+
+<% if (typeof isPaidPage !== 'undefined' && isPaidPage) { %>
+<%- include("../../dashboard/sideBar.ejs") %>
+<div id="mainContent" class="md:ml-72 pt-16 min-h-screen bg-[#f4f5fc]">
+<% } %>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[100px] sm:pt-[120px] lg:pt-[136px] pb-6 sm:pb-10">
+
+    <div class="wiz-card mb-6 sm:mb-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+        <div class="min-w-0">
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Build Your Custom Paper</h1>
+            <p class="text-sm text-slate-500 mt-1">Choose your exam, subjects, difficulty and time — your paper will be ready instantly.</p>
+        </div>
+        <button type="button" id="reset-btn"
+            class="shrink-0 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 hover:border-slate-300 bg-white border border-slate-200 rounded-lg px-3 py-2 transition-colors">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Reset</span>
+        </button>
+    </div>
+
+    <!-- ================= LEFT / RIGHT RESPONSIVE LAYOUT ================= -->
+    <div class="wiz-layout">
+
+        <!-- ================= LEFT : STEP WIZARD ================= -->
+        <div id="wizard-flow" class="wiz-card min-w-0" data-tier="<%= typeof tier !== 'undefined' ? tier : 'free' %>" data-can-weak="<%= (typeof canWeakArea !== 'undefined' && canWeakArea) ? 'true' : 'false' %>">
+
+            <!-- ---------- STEP TABS ---------- -->
+            <div id="step-nav" class="step-nav"></div>
+
+            <%
+                const palette = [
+                    { icon: "bg-indigo-100 text-indigo-600",   border: "border-indigo-400",   bg: "bg-indigo-50",   ring: "ring-indigo-100",   text: "text-indigo-700",  hover: "hover:border-indigo-300 hover:bg-indigo-50/40" },
+                    { icon: "bg-rose-100 text-rose-600",       border: "border-rose-400",     bg: "bg-rose-50",     ring: "ring-rose-100",     text: "text-rose-700",    hover: "hover:border-rose-300 hover:bg-rose-50/40" },
+                    { icon: "bg-emerald-100 text-emerald-600", border: "border-emerald-400",  bg: "bg-emerald-50",  ring: "ring-emerald-100",  text: "text-emerald-700", hover: "hover:border-emerald-300 hover:bg-emerald-50/40" },
+                    { icon: "bg-amber-100 text-amber-600",     border: "border-amber-400",    bg: "bg-amber-50",    ring: "ring-amber-100",    text: "text-amber-700",   hover: "hover:border-amber-300 hover:bg-amber-50/40" },
+                    { icon: "bg-sky-100 text-sky-600",         border: "border-sky-400",      bg: "bg-sky-50",      ring: "ring-sky-100",      text: "text-sky-700",     hover: "hover:border-sky-300 hover:bg-sky-50/40" },
+                    { icon: "bg-violet-100 text-violet-600",   border: "border-violet-400",   bg: "bg-violet-50",   ring: "ring-violet-100",   text: "text-violet-700",  hover: "hover:border-violet-300 hover:bg-violet-50/40" },
+                    { icon: "bg-teal-100 text-teal-600",       border: "border-teal-400",     bg: "bg-teal-50",     ring: "ring-teal-100",     text: "text-teal-700",    hover: "hover:border-teal-300 hover:bg-teal-50/40" },
+                    { icon: "bg-fuchsia-100 text-fuchsia-600", border: "border-fuchsia-400",  bg: "bg-fuchsia-50",  ring: "ring-fuchsia-100",  text: "text-fuchsia-700", hover: "hover:border-fuchsia-300 hover:bg-fuchsia-50/40" },
+                ];
+                const colorFor = (key) => {
+                    const s = String(key || "");
+                    let h = 0;
+                    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+                    return palette[h % palette.length];
+                };
+                const weakOk = typeof canWeakArea !== 'undefined' && canWeakArea;
+                const isFreeTier = typeof tier === 'undefined' || tier === 'free'; 
+            %>
+
+            <!-- ========== STEP 1 : CATEGORY ========== -->
+            <div id="step-1" class="step-panel">
+                <div class="wiz-card-head">
+                    <span class="wiz-icon bg-indigo-50 text-indigo-600">
+                        <i data-lucide="layout-grid" class="w-4.5 h-4.5"></i>
+                    </span>
+                    <div>
+                        <p class="wiz-title">Exam category</p>
+                        <p class="wiz-subtitle">Choose your category</p>
+                    </div>
+                </div>
+
+                <div id="category-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <% (typeof categories !== 'undefined' ? categories : []).forEach(cat => {
+                        const c = colorFor(cat.slug || cat.name);
+                        const off = !!cat.disabled;
+                        const icon = String(cat.icon || "").trim();
+                        const isImage = /^(https?:)?\//.test(icon) || /\.(png|jpe?g|svg|webp)$/i.test(icon);
+                        const isFontIcon = /\b(fa-|bi-|ri-|material-icons)/.test(icon);
+                    %>
+                        <button type="button"
+                            class="category-btn group relative flex items-center gap-2.5 rounded-xl border px-3 py-3 text-left transition-all duration-150
+                                <%= off
+                                    ? 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'
+                                    : 'border-slate-200 bg-white ' + c.hover %>"
+                            data-category-id="<%= cat._id %>"
+                            data-category-slug="<%= cat.slug %>"
+                            data-category-name="<%= cat.name %>"
+                            data-exam-count="<%= cat.examCount || 0 %>"
+                            data-on-border="<%= c.border %>"
+                            data-on-bg="<%= c.bg %>"
+                            data-on-ring="<%= c.ring %>"
+                            data-on-text="<%= c.text %>"
+                            <%= off ? 'disabled aria-disabled="true" title="No exams available in this category yet"' : '' %>>
+
+                            <span class="cat-icon w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden
+                                <%= off ? 'bg-slate-200 text-slate-400' : c.icon %>">
+                                <% if (isImage && icon) { %>
+                                    <img src="<%= icon %>" alt="" class="w-4.5 h-4.5 object-contain" loading="lazy" />
+                                <% } else if (isFontIcon) { %>
+                                    <i class="<%= icon %> text-[15px]"></i>
+                                <% } else if (icon) { %>
+                                    <i data-lucide="<%= icon %>" class="w-4 h-4"></i>
+                                <% } else { %>
+                                    <span class="text-xs font-bold"><%= String(cat.name || "?").charAt(0).toUpperCase() %></span>
+                                <% } %>
+                            </span>
+
+                            <span class="min-w-0">
+                                <span class="cat-name block text-[13px] font-medium leading-tight truncate <%= off ? 'text-slate-400' : 'text-slate-700' %>">
+                                    <%= cat.name %>
+                                </span>
+                                <span class="block text-[11px] mt-0.5 text-slate-400">
+                                    <%= off ? 'No exams yet' : (cat.examCount + (cat.examCount === 1 ? ' exam' : ' exams')) %>
+                                </span>
+                            </span>
+
+                            <span class="cat-check hidden absolute top-2 right-2 w-4 h-4 rounded-full bg-white border items-center justify-center <%= c.border %>">
+                                <i data-lucide="check" class="w-2.5 h-2.5 <%= c.text %>"></i>
+                            </span>
+                        </button>
+                    <% }) %>
+                </div>
+
+                <% if (!categories || !categories.length) { %>
+                    <p class="text-sm text-slate-400">No categories available right now.</p>
+                <% } %>
+            </div>
+
+            <!-- ========== STEP 2 : EXAM ========== -->
+<div id="step-2" class="step-panel hidden">
+    <div class="wiz-card-head">
+        <span class="wiz-icon bg-indigo-50 text-indigo-600">
+            <i data-lucide="graduation-cap" class="w-4.5 h-4.5"></i>
+        </span>
+        <div>
+            <p class="wiz-title">Exam selection</p>
+            <p class="wiz-subtitle">Choose one exam</p>
+        </div>
+    </div>
+
+    <div id="exam-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+    <p id="exam-empty" class="hidden text-sm text-slate-400 mt-2">No exams found.</p>
+</div>
+
+            <!-- ========== STEP 3 : MODE ========== -->
+            <div id="step-3" class="step-panel hidden">
+                <div class="wiz-card-head">
+                    <span class="wiz-icon bg-indigo-50 text-indigo-600">
+                        <i data-lucide="target" class="w-4.5 h-4.5"></i>
+                    </span>
+                    <div>
+                        <p class="wiz-title">Mode selection</p>
+                        <p class="wiz-subtitle">How do you want to build the paper?</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+                    <!-- Practice mode — free + pro -->
+                    <button type="button" data-mode="custom"
+                        class="mode-btn relative text-left rounded-xl border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all">
+                        <span class="mode-check hidden absolute top-3 right-3 w-5 h-5 rounded-full bg-indigo-600 text-white items-center justify-center">
+                            <i data-lucide="check" class="w-3 h-3"></i>
+                        </span>
+                        <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+                            <i data-lucide="sliders-horizontal" class="w-4.5 h-4.5"></i>
+                        </span>
+                        <p class="text-sm font-semibold text-slate-900">Practice mode</p>
+                        <p class="text-xs text-slate-500 mt-1 leading-snug">Build your own paper by choosing subjects, topics and difficulty.</p>
+                    </button>
+
+                    <!-- Weak Area: sirf valid paid-listing wale user ke liye -->
+<button type="button" data-mode="weakArea"
+    <%= !weakOk ? 'disabled aria-disabled="true" title="You must be enrolled in a paid test series to use Weak Area Mode"' : '' %>
+    class="mode-btn relative text-left rounded-xl border border-slate-200 p-4 transition-all
+        <%= !weakOk ? 'opacity-60 cursor-not-allowed' : 'hover:border-indigo-300 hover:shadow-sm' %>">
+    <span class="mode-check hidden absolute top-3 right-3 w-5 h-5 rounded-full bg-indigo-600 text-white items-center justify-center">
+        <i data-lucide="check" class="w-3 h-3"></i>
+    </span>
+    <% if (!weakOk) { %>
+        <span class="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+            <i data-lucide="lock" class="w-2.5 h-2.5"></i> PAID BATCH
+        </span>
+    <% } %>
+    <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+        <i data-lucide="crosshair" class="w-4.5 h-4.5"></i>
+    </span>
+    <p class="text-sm font-semibold text-slate-900">Weak area mode</p>
+    <p class="text-xs text-slate-500 mt-1 leading-snug">
+        <%= weakOk ? "Auto-picks topics you're weak in, based on your past attempts." : "Available only if you have a paid test series." %>
+    </p>
+</button>
+
+<!-- Exam pattern: Pro / Pro Max -->
+<button type="button" data-mode="examPattern"
+    class="mode-btn relative text-left rounded-xl border border-slate-200 p-4 transition-all hover:border-indigo-300 hover:shadow-sm">
+    <span class="mode-check hidden absolute top-3 right-3 w-5 h-5 rounded-full bg-indigo-600 text-white items-center justify-center">
+        <i data-lucide="check" class="w-3 h-3"></i>
+    </span>
+    <% if (isFreeTier) { %>
+        <span class="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+            <i data-lucide="lock" class="w-2.5 h-2.5"></i> PRO
+        </span>
+    <% } %>
+    <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+        <i data-lucide="file-stack" class="w-4.5 h-4.5"></i>
+    </span>
+    <p class="text-sm font-semibold text-slate-900">Exam pattern mode</p>
+    <p class="text-xs text-slate-500 mt-1 leading-snug">Follow the official exam pattern with its real marks distribution.</p>
+</button>
+ 
+                </div>
+            </div>
+
+            <!-- ========== STEP 4 : SUBJECTS & TOPICS ========== -->
+            <div id="step-4" class="step-panel hidden">
+                <div id="block-subjects">
+                    <div class="wiz-card-head justify-between">
+                        <div class="flex items-start gap-3">
+                            <span class="wiz-icon bg-indigo-50 text-indigo-600">
+                                <i data-lucide="book-open" class="w-4.5 h-4.5"></i>
+                            </span>
+                            <div>
+                                <p class="wiz-title">Subjects</p>
+                                <p class="wiz-subtitle">Select the subjects you want to study</p>
+                            </div>
+                        </div>
+                        <button type="button" id="select-all-subjects" class="text-xs font-medium text-indigo-600 hover:text-indigo-700 shrink-0">Select all</button>
+                    </div>
+
+                     
+
+                    <div id="subject-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+                    <p id="subject-empty" class="hidden text-sm text-slate-400">No questions have been added for this exam yet.</p>
+                </div>
+
+                <div id="block-topics" class="mt-6 pt-6 border-t border-slate-100">
+                    <div class="wiz-card-head justify-between">
+                        <div class="flex items-start gap-3">
+                            <span class="wiz-icon bg-indigo-50 text-indigo-600">
+                                <i data-lucide="list-tree" class="w-4.5 h-4.5"></i>
+                            </span>
+                            <div>
+                                <p class="wiz-title">Topics</p>
+                                <p class="wiz-subtitle">Leave this blank to pull from the whole subject</p>
+                            </div>
+                        </div>
+                        <button type="button" id="clear-topics" class="text-xs font-medium text-slate-500 hover:text-slate-700 shrink-0">Clear</button>
+                    </div>
+                    <div id="topic-groups" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <!-- ========== STEP 5 : DIFFICULTY + QUESTION COUNT ========== -->
+            <div id="step-5" class="step-panel hidden">
+                <div id="block-difficulty">
+                    <div class="wiz-card-head">
+                        <span class="wiz-icon bg-indigo-50 text-indigo-600">
+                            <i data-lucide="bar-chart-3" class="w-4.5 h-4.5"></i>
+                        </span>
+                        <div>
+                            <p class="wiz-title">Difficulty</p>
+                            <p class="wiz-subtitle">Choose the difficulty level for your paper</p>
+                        </div>
+                    </div>
+
+                    <div class="inline-flex items-center gap-1 p-1 rounded-full bg-slate-100 mb-5">
+                        <button type="button" id="diff-tab-quick"
+                            class="diff-tab-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors">
+                            <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Quick Select
+                        </button>
+                        <button type="button" id="diff-tab-custom"
+                            class="diff-tab-btn flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors">
+                            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> Custom Ratio
+                            <% if (isFreeTier) { %>
+                                <span class="ml-0.5 inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                    <i data-lucide="lock" class="w-2 h-2"></i> PRO
+                                </span>
+                            <% } %>
+                        </button>
+                    </div>
+
+                    <div id="diff-panel-quick" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <button type="button" class="diff-quick-btn relative text-left rounded-xl border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all" data-quick="easy">
+                            <span class="diff-quick-check hidden absolute top-3 right-3 w-5 h-5 rounded-full bg-indigo-600 text-white items-center justify-center">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                            </span>
+                            <span class="flex items-center gap-2 mb-1">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span class="text-sm font-semibold text-slate-900">Easy</span>
+                            </span>
+                            <p class="text-xs text-slate-500 leading-snug">Mostly easy questions</p>
+                        </button>
+
+                        <button type="button" class="diff-quick-btn relative text-left rounded-xl border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all" data-quick="medium">
+                            <span class="diff-quick-check hidden absolute top-3 right-3 w-5 h-5 rounded-full bg-indigo-600 text-white items-center justify-center">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                            </span>
+                            <span class="flex items-center gap-2 mb-1">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+                                <span class="text-sm font-semibold text-slate-900">Medium</span>
+                            </span>
+                            <p class="text-xs text-slate-500 leading-snug">Mostly medium questions</p>
+                        </button>
+
+                        <button type="button" class="diff-quick-btn relative text-left rounded-xl border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all" data-quick="hard">
+                            <span class="diff-quick-check hidden absolute top-3 right-3 w-5 h-5 rounded-full bg-indigo-600 text-white items-center justify-center">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                            </span>
+                            <span class="flex items-center gap-2 mb-1">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+                                <span class="text-sm font-semibold text-slate-900">Hard</span>
+                            </span>
+                            <p class="text-xs text-slate-500 leading-snug">Mostly hard questions</p>
+                        </button>
+
+                        <button type="button" class="diff-quick-btn relative text-left rounded-xl border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all" data-quick="mixed">
+                            <span class="diff-quick-check hidden absolute top-3 right-3 w-5 h-5 rounded-full bg-indigo-600 text-white items-center justify-center">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                            </span>
+                            <span class="flex items-center gap-2 mb-1">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0"></span>
+                                <span class="text-sm font-semibold text-slate-900">Mixed</span>
+                            </span>
+                            <p class="text-xs text-slate-500 leading-snug">Balanced mix of all levels</p>
+                        </button>
+                    </div>
+
+                    <div id="diff-panel-custom" class="hidden">
+                        <div class="flex flex-wrap gap-2 mb-5">
+                            <button type="button" class="preset-btn px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors" data-preset="balanced">Balanced</button>
+                            <button type="button" class="preset-btn px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors" data-preset="easy">Beginner</button>
+                            <button type="button" class="preset-btn px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors" data-preset="hard">Advanced</button>
+                        </div>
+
+                        <div class="space-y-4">
+                            <% const levels = [
+                                { key: "easy",   label: "Easy",   dot: "bg-emerald-500", bar: "accent-emerald-500" },
+                                { key: "medium", label: "Medium", dot: "bg-amber-500",   bar: "accent-amber-500" },
+                                { key: "hard",   label: "Hard",   dot: "bg-rose-500",    bar: "accent-rose-500" },
+                            ]; %>
+                            <% levels.forEach(l => { %>
+                                <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                                    <span class="flex items-center gap-2 w-20 shrink-0">
+                                        <span class="w-2 h-2 rounded-full <%= l.dot %> shrink-0"></span>
+                                        <span class="text-sm text-slate-700"><%= l.label %></span>
+                                    </span>
+                                    <input type="range" min="0" max="100" step="5" value="<%= l.key === 'medium' ? 50 : 25 %>"
+                                        class="diff-slider flex-1 min-w-[100px] h-1.5 <%= l.bar %> cursor-pointer" data-level="<%= l.key %>" />
+                                    <span class="w-10 text-right text-sm font-semibold text-slate-900 shrink-0" data-pct="<%= l.key %>">
+                                        <%= l.key === 'medium' ? 50 : 25 %>%
+                                    </span>
+                                    <span class="hidden sm:inline w-20 text-right text-xs text-slate-400 shrink-0" data-avail="<%= l.key %>">—</span>
+                                </div>
+                            <% }) %>
+                        </div>
+
+                        <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                            <p class="text-xs text-slate-500">Total distribution</p>
+                            <p id="diff-total" class="text-xs font-semibold text-slate-900">100%</p>
+                        </div>
+                        <p id="diff-warning" class="hidden text-xs text-rose-600 mt-2">The three values must add up to 100%.</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-slate-100" id="question-count-block">
+                    <div class="flex flex-wrap items-center justify-between gap-1 mb-2.5">
+                        <label class="text-sm font-medium text-slate-700">Number of questions</label>
+                        <span id="available-label" class="text-xs text-slate-400"></span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <% [10,20,30].forEach(n => { %>
+    <button type="button" data-count="<%= n %>"
+        class="count-btn px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-indigo-300 transition-colors"><%= n %></button>
+<% }) %>
+<% [50,70,100].forEach(n => { %>
+                            <button type="button" data-count="<%= n %>" data-locked="<%= isFreeTier ? 'true' : 'false' %>"
+                                class="count-btn inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium transition-colors
+                                    <%= isFreeTier ? 'text-slate-400 hover:border-slate-300' : 'text-slate-600 hover:border-indigo-300' %>">
+                                <%= n %>
+                                <% if (isFreeTier) { %>
+                                    <span class="inline-flex items-center gap-0.5 text-[9px] font-bold px-1 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                        <i data-lucide="lock" class="w-2 h-2"></i> PRO
+                                    </span>
+                                <% } %>
+                            </button>
+                        <% }) %>
+                        <button type="button" data-count="custom" data-locked="<%= isFreeTier ? 'true' : 'false' %>"
+                            class="count-btn inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium transition-colors
+                                <%= isFreeTier ? 'text-slate-400 hover:border-slate-300' : 'text-slate-600 hover:border-indigo-300' %>">
+                            Custom
+                            <% if (isFreeTier) { %>
+                                <span class="inline-flex items-center gap-0.5 text-[9px] font-bold px-1 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                    <i data-lucide="lock" class="w-2 h-2"></i> PRO
+                                </span>
+                            <% } %>
+                        </button>
+                        <input id="custom-count-input" type="number" min="1" placeholder="e.g. 75"
+                            class="hidden w-28 px-3 py-2 rounded-lg border border-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/25" />
+                    </div>
+                    <p id="count-warning" class="hidden text-xs text-amber-600 mt-2"></p>
+                </div>
+            </div>
+
+            <!-- ========== STEP 6 : SETTINGS (TIME + LANGUAGE) ========== -->
+            <div id="step-6" class="step-panel hidden">
+                <div id="block-settings">
+                    <div class="wiz-card-head">
+                        <span class="wiz-icon bg-indigo-50 text-indigo-600">
+                            <i data-lucide="settings-2" class="w-4.5 h-4.5"></i>
+                        </span>
+                        <div>
+                            <p class="wiz-title">Paper settings</p>
+                            <p class="wiz-subtitle">Time and language</p>
+                        </div>
+                    </div>
+
+                    <div id="exam-pattern-timing-display" class="hidden wiz-field">
+    <label class="block text-sm font-medium text-slate-700 wiz-label-row">Exam Timing (set by pattern)</label>
+    <div id="exam-pattern-timing-content" class="space-y-2"></div>
+</div>
+                    <div class="wiz-field" id="time-limit-editable-block">
+                        <label class="block text-sm font-medium text-slate-700 wiz-label-row">Time limit</label>
+                        <div class="flex flex-wrap gap-2">
+                            <% [10,20,30,50].forEach(t => { %>
+                                <button type="button" data-time="<%= t %>"
+                                    class="time-btn px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-indigo-300 transition-colors"><%= t %> min</button>
+                            <% }) %>
+                            <button type="button" data-time="custom" data-locked="<%= isFreeTier ? 'true' : 'false' %>"
+                                class="time-btn inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium transition-colors
+                                    <%= isFreeTier ? 'text-slate-400 hover:border-slate-300' : 'text-slate-600 hover:border-indigo-300' %>">
+                                Custom
+                                <% if (isFreeTier) { %>
+                                    <span class="inline-flex items-center gap-0.5 text-[9px] font-bold px-1 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                        <i data-lucide="lock" class="w-2 h-2"></i> PRO
+                                    </span>
+                                <% } %>
+                            </button>
+                            <input id="custom-time-input" type="number" min="1" placeholder="e.g. 45"
+                                class="hidden w-28 px-3 py-2 rounded-lg border border-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/25" />
+                        </div>
+                    </div>
+
+                    <div class="wiz-field">
+                        <label class="block text-sm font-medium text-slate-700 wiz-label-row">Language</label>
+                        <div id="language-row" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- ========== STEP 7 : WEAK AREAS ========== -->
+<div id="step-7" class="step-panel hidden">
+    <div class="wiz-card-head">
+        <span class="wiz-icon bg-rose-50 text-rose-600"><i data-lucide="crosshair" class="w-4.5 h-4.5"></i></span>
+        <div>
+            <p class="wiz-title">Weak areas detected</p>
+            <p class="wiz-subtitle">Based on your past test attempts. Select the subjects or topics you want to practice</p>
+        </div>
+    </div>
+    <div id="weak-list" class="space-y-3"></div>
+    <p id="weak-empty" class="hidden text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3">
+        No weak areas found yet. Attempt a few tests of this exam first (at least 5 questions per topic).
+    </p>
+</div>
+
+<!-- ========== STEP 8 : EXAM PATTERN ========== -->
+<div id="step-8" class="step-panel hidden">
+    <div class="wiz-card-head">
+        <span class="wiz-icon bg-amber-50 text-amber-600"><i data-lucide="file-stack" class="w-4.5 h-4.5"></i></span>
+        <div>
+            <p class="wiz-title">Exam pattern</p>
+            <p class="wiz-subtitle">Real subject-wise distribution and marks of this exam</p>
+        </div>
+    </div>
+    <div id="pattern-list" class="space-y-3"></div>
+    <p id="pattern-empty" class="hidden text-sm text-slate-400">No pattern available for this exam yet.</p>
+</div>
+
+
+
+
+
+
+            <!-- ---------- BACK / NEXT / GENERATE ---------- -->
+            <div class="flex items-center justify-between gap-3 mt-6 pt-5 border-t border-slate-100">
+                <button type="button" id="wiz-back-btn"
+                    class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors invisible">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+                </button>
+                <button type="button" id="wiz-next-btn" disabled
+                    class="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold opacity-50 cursor-not-allowed transition-all">
+                    Next <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+                <button type="button" id="generate-paper-btn-inline" disabled
+                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold opacity-50 cursor-not-allowed transition-all">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Generate paper
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= RIGHT : SUMMARY (always visible, updates live) ================= -->
+        <aside id="summary-panel" class="wiz-summary">
+            <div>
+                <p class="text-sm font-semibold text-slate-900">Your paper summary</p>
+                <p class="text-xs text-slate-400 mt-0.5">Your selected exam, subjects, difficulty, and other preferences will appear here.</p>
+            </div>
+
+            <div class="flex items-start gap-2 bg-indigo-50 text-indigo-700 text-[11px] rounded-lg p-2.5 shrink-0">
+                <i data-lucide="info" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
+                <span>This paper is only stored in this browser for 24 hours, after which it is removed automatically.</span>
+            </div>
+
+            <div id="summary-sections" class="space-y-3 overflow-y-auto pr-1 no-scrollbar"></div>
+
+            <div class="mt-auto pt-3 border-t border-slate-200 space-y-3 shrink-0">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-slate-600">Total questions</span>
+                    <span id="summary-total-count" class="text-base font-bold text-slate-900">0</span>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ================= MOBILE SUMMARY ================= -->
+    <div id="mobile-summary-bar" class="hidden lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+        <button type="button" id="mobile-summary-toggle" class="w-full flex items-center justify-between px-4 py-3">
+            <span class="text-sm">
+                <span class="font-bold text-slate-900" id="mobile-summary-count">0</span>
+                <span class="text-slate-500"> questions selected</span>
+            </span>
+            <span class="flex items-center gap-1 text-indigo-600 text-sm font-medium">
+                View summary <i data-lucide="chevron-up" class="w-4 h-4" id="mobile-summary-chevron"></i>
+            </span>
+        </button>
+        <div id="mobile-summary-sheet" class="hidden max-h-[65vh] overflow-y-auto border-t border-slate-100 px-4 pb-4 pt-3">
+            <div id="mobile-summary-sections" class="space-y-3"></div>
+            <button type="button" id="generate-paper-btn-mobile"
+                class="w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold opacity-50 cursor-not-allowed transition-all" disabled>
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Generate paper
+            </button>
+        </div>
+    </div>
+
+    <!-- ============ QUESTION SHORTFALL CONFIRM MODAL ============ -->
+    <div id="shortfall-modal" class="hidden fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
+            <span class="mx-auto w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+            </span>
+            <p class="text-sm font-semibold text-slate-900 mb-1.5">Sorry, that many questions aren't available</p>
+            <p id="shortfall-message" class="text-sm text-slate-500 leading-relaxed mb-5"></p>
+            <div class="flex gap-3">
+                <button type="button" id="shortfall-cancel-btn"
+                    class="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Cancel</button>
+                <button type="button" id="shortfall-generate-btn"
+                    class="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">Generate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CONFIRM MODAL (delete / clear-all) ============ -->
+<div id="confirmModal" class="hidden fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
+        <span class="mx-auto w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+        </span>
+        <p id="confirmModalMessage" class="text-sm text-slate-700 leading-relaxed mb-5"></p>
+        <div class="flex gap-3">
+            <button type="button" id="confirmModalCancel"
+                class="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Cancel</button>
+            <button type="button" id="confirmModalOk"
+                class="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700">OK</button>
+        </div>
+    </div>
+</div>
+</section>
+
+<% if (typeof isPaidPage !== 'undefined' && isPaidPage) { %>
+</div>
+<% } %>
+
+
+<script type="application/ld+json" nonce="<%= cspNonce %>"><%- structuredData %></script>
+<script src="/js/customTest/wizard.js" defer></script>

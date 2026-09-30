@@ -1,0 +1,221 @@
+<link rel="stylesheet" href="/css/pricing.css?v=1">
+
+<% if (isPaidPage) { %>
+    <%- include("../../dashboard/sideBar.ejs") %>
+    <div id="mainContent" class="md:ml-72 pt-16 min-h-screen bg-gray-100">
+<% } %>
+
+<%
+const isFree = tier === 'free';
+const isPro = tier === 'pro';
+const isPromax = tier === 'promax';
+
+const tierMeta = {
+    free:   { name: 'Free',    icon: 'fa-user',  cardCls: 'bg-white border border-slate-200', titleCls: 'text-slate-900', badgeCls: 'bg-slate-100 text-slate-600' },
+    pro:    { name: 'Pro',     icon: 'fa-crown', cardCls: 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-500/30', titleCls: 'text-white', badgeCls: 'bg-white/20 text-white' },
+    promax: { name: 'Pro Max', icon: 'fa-gem',   cardCls: 'bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-950 text-white shadow-2xl shadow-indigo-900/40 border border-white/10', titleCls: 'text-white', badgeCls: 'bg-emerald-400/20 text-emerald-300' }
+};
+const meta = tierMeta[tier] || tierMeta.free;
+
+const benefitsMap = {
+    pro: [
+        'Everything in Free', 'Data After Reload', 'Exam Pattern Mode', 'Custom Difficulty Distribution',
+        'Auto Balance', 'Personalized Paper', 'Instant Paper Preview', 'Instant Test Generation',
+        'Detailed Performance Analysis', 'Difficulty-wise Performance', 'Answer Key',
+        'Print / Download Paper', 'Generate Similar Paper', 'AI Question Import — PDF Upload', 'Completely Ad-Free'
+    ],
+    promax: [
+        'Everything in Pro', 'AI Weak-Topic Custom Papers', 'Smart Personalized Paper', 'Weak-topic Priority',
+        'Previous Performance Based Paper', 'Practice Wrong Questions', 'Advanced Performance Insights',
+        'Recommended Topics for Next Paper', 'Adaptive Difficulty', 'Personalized Weakness Tracking',
+        'Smart Revision Suggestions', 'AI Question Import — Maximum Quota'
+    ]
+};
+%>
+
+<section class="relative isolate overflow-hidden max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-[104px] sm:pt-[120px] pb-10">
+
+    <div aria-hidden="true" class="pointer-events-none absolute -left-24 -top-10 -z-10 h-80 w-80 rounded-full bg-indigo-300/30 blur-3xl"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute -right-24 top-40 -z-10 h-96 w-96 rounded-full bg-violet-300/20 blur-3xl"></div>
+
+    <a href="<%= returnUrl %>" class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-1.5 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 backdrop-blur transition hover:text-indigo-600 hover:ring-indigo-200 mb-6">
+        <i class="fa-solid fa-arrow-left text-xs"></i> Back
+    </a>
+
+    <div class="mb-7 flex items-center gap-3">
+        <span class="grid h-11 w-11 place-items-center rounded-2xl bg-indigo-100 text-indigo-600">
+            <i class="fa-solid fa-crown text-lg"></i>
+        </span>
+        <div>
+            <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Manage Your Plan</h1>
+            <p class="text-xs sm:text-sm text-slate-500">Manage your Custom Paper subscription, usage and plan benefits.</p>
+        </div>
+    </div>
+
+        <!-- ===================== CURRENT PLAN / BENEFITS (Pro/Pro Max only) ===================== -->
+    <% if (isFree) { %>
+        <div class="rounded-3xl <%= meta.cardCls %> p-6 sm:p-8 text-center mb-6">
+            <span class="inline-flex items-center gap-1.5 rounded-full <%= meta.badgeCls %> px-3 py-1 text-xs font-semibold mb-4">
+                <i class="fa-solid fa-user text-[10px]"></i> Current Plan: Free
+            </span>
+            <h2 class="text-lg sm:text-xl font-bold text-slate-900 mb-2">You're on the Free plan</h2>
+            <p class="text-sm text-slate-500 max-w-md mx-auto mb-6">
+                Upgrade to Pro or Pro Max to unlock exam pattern mode, detailed analysis, ad-free practice and more.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="/custom-test/upgrade?plan=pro&returnTo=<%= encodeURIComponent(returnUrl + '/manage') %>"
+                   class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-5 py-3 text-sm font-semibold shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 transition">
+                    <i class="fa-solid fa-crown"></i> Upgrade to Pro
+                </a>
+                <a href="/custom-test/upgrade?plan=promax&returnTo=<%= encodeURIComponent(returnUrl + '/manage') %>"
+                   class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 text-slate-700 px-5 py-3 text-sm font-semibold hover:bg-slate-50 transition">
+                    <i class="fa-solid fa-gem"></i> Upgrade to Pro Max
+                </a>
+            </div>
+        </div>
+    <% } else { %>
+        <div class="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-5 sm:gap-6 mb-6">
+            <div class="rounded-3xl <%= meta.cardCls %> p-5 sm:p-6 relative overflow-hidden">
+                <div aria-hidden="true" class="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold <%= meta.titleCls %>">
+                        Current Plan
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-400/90 px-2.5 py-1 text-[11px] font-bold text-emerald-950">
+                        <i class="fa-solid fa-circle text-[6px]"></i> Active
+                    </span>
+                </div>
+                <div class="flex items-center gap-2.5 mb-1.5">
+                    <span class="grid h-9 w-9 place-items-center rounded-xl bg-white/15 <%= meta.titleCls %>">
+                        <i class="fa-solid <%= meta.icon %> text-sm"></i>
+                    </span>
+                    <h2 class="text-xl font-extrabold <%= meta.titleCls %>"><%= meta.name %></h2>
+                </div>
+                <p class="text-2xl font-extrabold <%= meta.titleCls %> mb-1">
+                    ₹<%= currentPrice %> <span class="text-sm font-medium opacity-70">/month</span>
+                </p>
+                <p class="text-xs sm:text-sm opacity-80 <%= meta.titleCls %> mb-5">
+                    <%= isPromax ? 'Maximum personalization for serious preparation.' : 'Advanced practice and personalized preparation.' %>
+                </p>
+
+                <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs sm:text-sm <%= meta.titleCls %> opacity-90 mb-5">
+                    <% if (expiresAt) { %>
+                    <span class="inline-flex items-center gap-1.5">
+                        <i class="fa-regular fa-calendar"></i> Valid till <%= new Date(expiresAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                        <i class="fa-regular fa-clock"></i> <%= daysRemaining %> days remaining
+                    </span>
+                    <% } %>
+                </div>
+
+                <% if (isPro) { %>
+                <a href="/custom-test/upgrade?plan=promax&returnTo=<%= encodeURIComponent(returnUrl + '/manage') %>"
+                   class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white text-indigo-700 px-4 py-3 text-sm font-semibold shadow-lg hover:-translate-y-0.5 transition">
+                    <i class="fa-solid fa-gem"></i> Upgrade to Pro Max
+                </a>
+                <% } %>
+            </div>
+
+            <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6">
+                <p class="mb-4 flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <i class="fa-solid fa-crown text-indigo-500"></i> Your <%= meta.name %> benefits
+                </p>
+                <ul class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-xs sm:text-sm text-slate-600">
+                    <% (benefitsMap[tier] || []).forEach(b => { %>
+                        <li class="flex items-start gap-2">
+                            <span class="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-indigo-50 text-indigo-600">
+                                <i class="fa-solid fa-check text-[9px]"></i>
+                            </span>
+                            <%= b %>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- ===================== USAGE OVERVIEW (Free, Pro, Pro Max — sabke liye) ===================== -->
+    <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6 mb-6">
+        <div class="flex items-center justify-between mb-5">
+            <p class="text-sm font-bold text-slate-800">Usage Overview</p>
+            <span class="text-xs text-slate-400">Today <i class="fa-solid fa-chevron-down text-[9px] ml-1"></i></span>
+        </div>
+
+        <%
+        const usageRows = [
+    { label: 'AI Questions', icon: 'fa-wand-magic-sparkles', color: 'bg-indigo-500', ...usage.aiQuestions },
+    { label: 'Requests',     icon: 'fa-paper-plane',         color: 'bg-violet-500', ...usage.requests },
+    { label: 'Text',         icon: 'fa-align-left',          color: 'bg-emerald-500', ...usage.text },
+    { label: 'Images',       icon: 'fa-image',               color: 'bg-amber-500',  ...usage.images }, ...(limits.pdfAllowed ? [{ label: 'PDF', icon: 'fa-file-pdf', color: 'bg-cyan-500', unit: 'MB', ...usage.pdf }] : []),
+];
+        %>
+        <div class="space-y-4">
+            <% usageRows.forEach(u => {
+                const pct = u.limit > 0 ? Math.min(100, Math.round((u.used / u.limit) * 100)) : 0;
+                const full = u.limit > 0 && u.used >= u.limit;
+            %>
+            <div class="flex items-center gap-3">
+                <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-50 text-slate-500">
+                    <i class="fa-solid <%= u.icon %> text-xs"></i>
+                </span>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between text-xs sm:text-sm mb-1.5">
+                        <span class="font-medium text-slate-700"><%= u.label %></span>
+                        <span class="font-semibold <%= full ? 'text-rose-600' : 'text-slate-800' %>">
+    <%= u.used.toLocaleString() %> / <%= u.limit.toLocaleString() %><%= u.unit ? ' ' + u.unit : '' %><%= full ? ' · Limit reached' : '' %>
+</span>
+                    </div>
+                    <div class="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                        <div class="h-1.5 rounded-full <%= full ? 'bg-rose-500' : u.color %>" style="width:<%= pct %>%"></div>
+                    </div>
+                </div>
+            </div>
+            <% }) %>
+        </div>
+
+        <!-- Plan limits reference (pricing-card jaisi info) -->
+        <div class="mt-5 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+            <p class="mb-3 text-xs font-semibold text-slate-600">Your <%= meta.name %> plan limits</p>
+            <ul class="space-y-2 text-xs sm:text-sm">
+    <li class="flex justify-between"><span class="text-slate-500">Text / request</span><span class="font-semibold text-slate-700"><%= limits.textCharsPerRequest.toLocaleString() %> chars</span></li>
+    <li class="flex justify-between"><span class="text-slate-500">Text / day</span><span class="font-semibold text-slate-700"><%= limits.textCharsPerDay.toLocaleString() %> chars</span></li>
+    <li class="flex justify-between"><span class="text-slate-500">Images / day</span><span class="font-semibold text-slate-700"><%= limits.imagesPerDay %> (max <%= limits.imageMaxSizeMB %> MB each)</span></li>
+    <li class="flex justify-between"><span class="text-slate-500">PDF / day</span>
+        <% if (limits.pdfAllowed) { %><span class="font-semibold text-slate-700"><%= limits.pdfMBPerDay %> MB (max <%= limits.pdfMaxPages %> pages/file)</span>
+        <% } else { %><span class="font-semibold text-slate-400">Not available</span><% } %>
+    </li>
+</ul>
+        </div>
+    </div>
+
+       <!-- ===================== PLAN INFO (Pro/Pro Max only) ===================== -->
+    <% if (!isFree) { %>
+    <div class="rounded-3xl bg-white border border-slate-200 p-5 sm:p-6">
+        <div class="flex items-start gap-3">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-500">
+                <i class="fa-solid fa-circle-info text-xs"></i>
+            </span>
+            <div class="min-w-0">
+                <p class="text-sm font-bold text-slate-800">Plan Details</p>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+                    Your <%= meta.name %> plan is valid till
+                    <span class="font-semibold text-slate-700">
+                        <% if (expiresAt) { %><%= new Date(expiresAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %><% } else { %>your billing period ends<% } %>
+                    </span>.
+                    There's no auto-renewal — once it expires, you'll move back to the Free plan unless you upgrade again.
+                </p>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+</section>
+
+<% if (isPaidPage) { %>
+    </div>
+<% } %>
+
+<script nonce="<%= cspNonce %>">
+    window.__managePlanData = { returnUrl: <%- JSON.stringify(returnUrl) %> };
+</script>

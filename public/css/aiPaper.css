@@ -1,0 +1,56 @@
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* :where() = zero specificity, taaki Tailwind classes isse override kar sakein */
+:where(.wiz-card) {
+    background: #fff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 16px 40px -20px rgba(15, 23, 42, 0.18);
+}
+@media (min-width: 640px) { :where(.wiz-card) { padding: 2rem; } }
+
+.wiz-field + .wiz-field { margin-top: 1rem; }
+
+/* Step pills (JS active / done class lagati hai) */
+.ai-step-pill { padding: 0.25rem 0.75rem 0.25rem 0.25rem; border-radius: 999px; transition: background-color .2s ease, box-shadow .2s ease; }
+.ai-step-num { background: #f1f5f9; color: #64748b; transition: background-color .2s ease, box-shadow .2s ease; }
+.ai-step-pill span:last-child { color: #94a3b8; font-size: 0.8125rem; font-weight: 500; }
+.ai-step-pill.active { background: #eef2ff; box-shadow: inset 0 0 0 1px #c7d2fe; }
+.ai-step-pill.active .ai-step-num { background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; box-shadow: 0 6px 14px -4px rgba(79, 70, 229, 0.6); }
+.ai-step-pill.active span:last-child { color: #4338ca; font-weight: 600; }
+.ai-step-pill.done .ai-step-num { background: #10b981; color: #fff; }
+.ai-step-pill.done span:last-child { color: #047857; }
+
+/* Source cards: jo card open hai uske neeche upload / paste option judta hai */
+.ai-source-card.is-open > .ai-source-btn {
+    border-color: #818cf8;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background: #f8faff;
+    box-shadow: 0 12px 30px -16px rgba(79, 70, 229, 0.5);
+}
+.ai-source-card.is-open > .ai-source-slot {
+    border: 1px solid #818cf8;
+    border-top: 0;
+    border-radius: 0 0 1rem 1rem;
+    background: #fff;
+}
+.ai-source-card.is-open .ai-chev { transform: rotate(180deg); background: #e0e7ff; color: #4338ca; }
+.ai-source-slot > :not(.hidden) { animation: ai-in .3s ease both; }
+
+/* Progress ring + animations */
+#ai-progress-ring { transition: stroke-dashoffset 0.5s ease; }
+
+@keyframes ai-orbit { to { transform: rotate(360deg); } }
+@keyframes ai-sweep { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
+@keyframes ai-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes ai-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.ai-step-panel { animation: ai-in .35s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+    .ai-step-panel, .ai-source-slot > :not(.hidden) { animation: none; }
+    .ai-chev { transition: none; }
+}

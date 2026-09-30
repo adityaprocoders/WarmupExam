@@ -50,8 +50,8 @@ export const resetPasswordSchema = Joi.object({
 })
 .xor("otp", "resetToken")
 .messages({
-    "object.missing": "OTP ya reset link zaroori hai",
-    "object.xor": "Sirf ek tarika use karo — OTP ya reset link"
+    "object.missing": "An OTP or a reset link is required.",
+    "object.xor": "Use only one method: either the OTP or the reset link."
 });
 
 export const verifyResetTokenSchema = Joi.object({
@@ -259,12 +259,12 @@ export const createFileSchema = Joi.object({
 
 export const createTestSchema = Joi.object({
     title: Joi.string().trim().min(2).max(150).required().messages({
-        "string.empty": "Test title zaroori hai"
+        "string.empty": "Test title is required."
     }),
 
     listingId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required().messages({
         "string.pattern.base": "Invalid listing ID",
-        "any.required": "listingId missing hai"
+        "any.required": "listingId is missing."
     }),
 
     sectionId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).allow(null, ""),
@@ -295,7 +295,7 @@ export const createTestSchema = Joi.object({
     publishAt: Joi.date().when("visibility", {
         is: "scheduled",
         then: Joi.date().required().messages({
-            "any.required": "Schedule ke liye publish date/time zaroori hai"
+            "any.required": "A publish date and time is required for scheduling."
         }),
         otherwise: Joi.date().allow(null, "")
     }),

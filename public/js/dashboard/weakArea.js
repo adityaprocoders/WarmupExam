@@ -1,3 +1,73 @@
+// ============= CUSTOM DROPDOWN (generic, works with dynamic options) =============
+function buildCustomDropdown(selectEl) {
+    if (!selectEl) return;
+    const wrapper = selectEl.closest('.wa-dropdown');
+    if (!wrapper) return;
+
+    const trigger = wrapper.querySelector('.wa-trigger');
+    const label = wrapper.querySelector('.wa-trigger-label');
+    const menu = wrapper.querySelector('.wa-menu');
+    const chevron = wrapper.querySelector('.wa-chevron');
+
+    menu.innerHTML = '';
+    Array.from(selectEl.options).forEach(function (optionEl) {
+        const opt = document.createElement('div');
+        opt.className = 'wa-option px-3.5 py-2 text-xs font-medium text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between gap-2 transition-colors whitespace-nowrap';
+        opt.setAttribute('data-value', optionEl.value);
+        opt.innerHTML = optionEl.textContent + ' <i class="fa-solid fa-check text-indigo-500 text-xs wa-check" style="display:none;"></i>';
+
+        if (optionEl.value === selectEl.value) {
+            opt.classList.add('bg-indigo-50', 'text-indigo-600');
+            opt.querySelector('.wa-check').style.display = 'inline-block';
+        }
+
+        opt.addEventListener('click', function () {
+            selectEl.value = optionEl.value;
+            label.textContent = optionEl.textContent;
+
+            menu.querySelectorAll('.wa-option').forEach(o => {
+                o.classList.remove('bg-indigo-50', 'text-indigo-600');
+                o.querySelector('.wa-check').style.display = 'none';
+            });
+            opt.classList.add('bg-indigo-50', 'text-indigo-600');
+            opt.querySelector('.wa-check').style.display = 'inline-block';
+
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            closeMenu();
+        });
+
+        menu.appendChild(opt);
+    });
+
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    label.textContent = selectedOption ? selectedOption.textContent : '';
+
+    function closeMenu() {
+        menu.classList.add('hidden');
+        chevron.classList.remove('rotate-180');
+    }
+
+    function openMenu() {
+        document.querySelectorAll('.wa-menu').forEach(m => m.classList.add('hidden'));
+        document.querySelectorAll('.wa-dropdown').forEach(d => d.classList.remove('z-40'));
+        wrapper.classList.add('z-40');
+        menu.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+    }
+
+    const newTrigger = trigger.cloneNode(true);
+    trigger.parentNode.replaceChild(newTrigger, trigger);
+    newTrigger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        menu.classList.contains('hidden') ? openMenu() : closeMenu();
+    });
+}
+
+document.addEventListener('click', function () {
+    document.querySelectorAll('.wa-menu').forEach(m => m.classList.add('hidden'));
+});
+
+
 const __weakAreaDataEl = document.getElementById('weakAreaData');
 const __weakAreaData = __weakAreaDataEl ? JSON.parse(__weakAreaDataEl.textContent) : {};
 
@@ -12,6 +82,7 @@ const weakAreasAll = __weakAreaData.weakAreasAll || [];
 let currentSubject = weakAreaData_focusSubject;
 let currentTopic = weakAreaData_focusTopic;
 let topics = (topicsBySubject[currentSubject] || []);
+
 
 
   // Dynamic & different color pool for subjects
@@ -75,7 +146,7 @@ let topics = (topicsBySubject[currentSubject] || []);
     if (!topicBody) return;
     topicBody.innerHTML = '';
     if (topics.length === 0) {
-      topicBody.innerHTML = `<tr><td colspan="5" class="text-center text-xs text-slate-400 py-6">Is subject ke liye koi topic data nahi mila.</td></tr>`;
+      topicBody.innerHTML = `<tr><td colspan="5" class="text-center text-xs text-slate-400 py-6">No topic data found for this subject.</td></tr>`;
       return;
     }
     topics.forEach((t, i) => {
@@ -110,7 +181,7 @@ let topics = (topicsBySubject[currentSubject] || []);
     if (label) label.textContent = `(${currentTopic || 'No Data'})`;
 
     if (rows.length === 0) {
-      subtopicBody.innerHTML = `<tr><td colspan="4" class="text-center text-xs text-slate-400 py-6">Is topic ke liye koi subtopic data nahi mila.</td></tr>`;
+      subtopicBody.innerHTML = `<tr><td colspan="4" class="text-center text-xs text-slate-400 py-6">No sub-topic data found for this topic.</td></tr>`;
       return;
     }
     rows.forEach(s => {
@@ -152,6 +223,7 @@ let topics = (topicsBySubject[currentSubject] || []);
         `<option value="${s.name}" ${s.name === currentSubject ? 'selected' : ''}>${s.name}</option>`
     ).join('');
     sel.addEventListener('change', (e) => selectSubject(e.target.value));
+     buildCustomDropdown(sel); 
   }
 
   // ---- Modal core ----
@@ -176,7 +248,7 @@ let topics = (topicsBySubject[currentSubject] || []);
 
   function buildTopicTableHtml(rows, kind) {
     if (!rows || rows.length === 0) {
-      return `<p class="text-center text-xs text-slate-400 py-8">Koi data nahi mila.</p>`;
+      return `<p class="text-center text-xs text-slate-400 py-8">No data found.</p>`;
     }
     const wrongCol = kind === 'subtopic' ? `<th class="font-medium pb-2 px-2">Wrong %</th>` : '';
     const rowsHtml = rows.map((t, i) => `
@@ -230,7 +302,7 @@ let topics = (topicsBySubject[currentSubject] || []);
 
   function openAllWeakAreasModal() {
     if (!weakAreasAll || weakAreasAll.length === 0) {
-      openModal('All Weak Areas', `<p class="text-center text-xs text-slate-400 py-8">Koi weak area detect nahi hui.</p>`);
+      openModal('All Weak Areas', `<p class="text-center text-xs text-slate-400 py-8">No weak areas detected.</p>`);
       return;
     }
     const rowsHtml = weakAreasAll.map((w, i) => `
@@ -311,6 +383,7 @@ let topics = (topicsBySubject[currentSubject] || []);
   populateSubjectDropdown();
   renderTopics();
   renderSubtopicsInline();
+  buildCustomDropdown(document.getElementById('topicSortSelect'));   // 👈 यह नई लाइन जोड़ी
 
   if (window.lucide) lucide.createIcons();
  

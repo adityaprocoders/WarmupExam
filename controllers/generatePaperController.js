@@ -37,7 +37,7 @@ async function getTestIdsForListing(listingId, sectionIds) {
 ============================================================ */
 export const renderGeneratePaper = async (req, res) => {
     const { listingId, sectionId, parentType, parentId, returnUrl } = req.query;
-    if (!listingId) throw new ExpressError(400, "listingId query param zaroori hai");
+    if (!listingId) throw new ExpressError(400, "listingId query parameter is required.");
 
     const listing = await Listing.findById(listingId);
     if (!listing) throw new ExpressError(404, "Listing Not Found");
@@ -177,9 +177,9 @@ export const getQuestionFilters = async (req, res) => {
 export const generatePaper = async (req, res) => {
     const body = req.body;
 
-    if (!body.listingId) return res.status(400).json({ success: false, message: "listingId missing hai" });
+    if (!body.listingId) return res.status(400).json({ success: false, message: "listingId is required." });
     if (!Array.isArray(body.criteria) || body.criteria.length === 0) {
-        return res.status(400).json({ success: false, message: "Kam se kam ek criteria row zaroori hai" });
+        return res.status(400).json({ success: false, message: "At least one criteria row is required." });
     }
 
     const listingDoc = await Listing.findById(body.listingId).select("marks");
@@ -196,7 +196,7 @@ export const generatePaper = async (req, res) => {
     if (testIds.length === 0) {
         return res.status(400).json({
             success: false,
-            message: "Is listing (ya selected section) me abhi tak koi test/question nahi mila."
+            message: "No tests or questions are available in this listing or selected section."
         });
     }
 
@@ -284,7 +284,7 @@ export const generatePaper = async (req, res) => {
         if (uniqueQIds.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: `"${label}" ke liye koi question nahi mila (Section/Subject/Topic/SubTopic combination check karo).`
+                message: `No questions were found for "${label}". Please check the selected section, subject, topic, and subtopic.`
             });
         }
 
@@ -308,7 +308,7 @@ export const generatePaper = async (req, res) => {
         if (avgDemand > maxPossible) {
             return res.status(400).json({
                 success: false,
-                message: `"${label}" ke liye sirf ${pool.length} questions hain. ${noOfPapers} papers x ${minCount}-${maxCount}Q x max-repeat(${maxRepeat}) ke hisaab se kam hain.`
+                message: `Only ${pool.length} questions are available for "${label}". The selected paper configuration requires ${noOfPapers} papers with ${minCount}-${maxCount} questions per paper and a maximum repeat count of ${maxRepeat}.`
             });
         }
 
@@ -340,7 +340,7 @@ export const generatePaper = async (req, res) => {
 
             if (selected.length < needed) {
                 shortfallWarnings.push(
-                    `Paper ${p + 1}: "${label}" ke liye ${needed} chahiye the, sirf ${selected.length} mil paaye.`
+                    `Paper ${p + 1}: "${label}" needs ${needed} questions, but only ${selected.length} were available.`
                 );
             }
 
@@ -408,7 +408,7 @@ export const generatePaper = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: `${createdTestIds.length} paper(s) generate ho gaye`,
+        message: `${createdTestIds.length} paper(s) generated successfully.`,
         testIds: createdTestIds,
         warnings: shortfallWarnings.length > 0 ? shortfallWarnings : undefined
     });

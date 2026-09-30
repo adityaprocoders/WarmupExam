@@ -97,7 +97,7 @@ document.getElementById('qbStatTotal').closest('.bg-white').addEventListener('cl
       if (!data.success) { qbTableBody.innerHTML = `<tr><td colspan="10" class="text-center text-red-500 py-8">Load error.</td></tr>`; return; }
 
       if (!data.questions.length) {
-        qbTableBody.innerHTML = `<tr><td colspan="10" class="text-center text-gray-400 py-8">Koi question nahi mila.</td></tr>`;
+        qbTableBody.innerHTML = `<tr><td colspan="10" class="text-center text-gray-400 py-8">No questions found.</td></tr>`;
         qbPageInfo.textContent = '—';
         return;
       }
@@ -110,7 +110,7 @@ document.getElementById('qbStatTotal').closest('.bg-white').addEventListener('cl
       document.getElementById('qbPrevPageBtn').disabled = data.page <= 1;
       document.getElementById('qbNextPageBtn').disabled = data.page >= totalPages;
     } catch (err) {
-      qbTableBody.innerHTML = `<tr><td colspan="10" class="text-center text-red-500 py-8">Load karne mein error aayi.</td></tr>`;
+      qbTableBody.innerHTML = `<tr><td colspan="10" class="text-center text-red-500 py-8">An error occurred while loading.</td></tr>`;
     }
   }
 
@@ -170,7 +170,7 @@ document.getElementById('qbStatTotal').closest('.bg-white').addEventListener('cl
       if (!data.success) { qbDetailBody.innerHTML = `<p class="text-center text-red-500 py-8">Load error.</p>`; return; }
       renderQbDetail(data.question);
     } catch (err) {
-      qbDetailBody.innerHTML = `<p class="text-center text-red-500 py-8">Load karne mein error aayi.</p>`;
+      qbDetailBody.innerHTML = `<p class="text-center text-red-500 py-8">An error occurred while loading.</p>`;
     }
   }
 
@@ -252,23 +252,23 @@ document.getElementById('qbAddQuestionBtn').addEventListener('click', () => {
 });
 
   async function resolveQbQuestion(id) {
-    if (!confirm('Is question ko resolve karna hai? Report clear ho jaayegi.')) return;
+    if (!confirm('Resolve this question? The report will be cleared.')) return;
     try {
       const res = await fetch(`/api/owner/question-bank/questions/${id}/resolve`, { method: 'PATCH' });
       const data = await res.json();
       if (data.success) { qbDetailOverlay.classList.add('hidden'); fetchQbQuestions(); loadQbStats(); }
-      else alert(data.message);
-    } catch (err) { alert('Something went wrong'); }
+      else showToast(data.message, "error");
+    } catch (err) { showToast('Something went wrong', 'error'); }
   }
 
   async function disableQbQuestion(id) {
-    if (!confirm('Is question ko disable karna hai?')) return;
+    if (!confirm('Disable this question?')) return;
     try {
       const res = await fetch(`/api/owner/question-bank/questions/${id}/disable`, { method: 'PATCH' });
       const data = await res.json();
       if (data.success) { qbDetailOverlay.classList.add('hidden'); fetchQbQuestions(); loadQbStats(); }
-      else alert(data.message);
-    } catch (err) { alert('Something went wrong'); }
+      else showToast(data.message, "error");
+    } catch (err) { showToast('Something went wrong', 'error'); }
   }
 
   async function enableQbQuestion(id) {
@@ -276,31 +276,31 @@ document.getElementById('qbAddQuestionBtn').addEventListener('click', () => {
       const res = await fetch(`/api/owner/question-bank/questions/${id}/enable`, { method: 'PATCH' });
       const data = await res.json();
       if (data.success) { qbDetailOverlay.classList.add('hidden'); fetchQbQuestions(); loadQbStats(); }
-      else alert(data.message);
-    } catch (err) { alert('Something went wrong'); }
+      else showToast(data.message, "error");
+    } catch (err) { showToast('Something went wrong', 'error'); }
   }
 
   async function duplicateQbQuestion(id) {
     try {
       const res = await fetch(`/api/owner/question-bank/questions/${id}/duplicate`, { method: 'POST' });
       const data = await res.json();
-      if (data.success) { fetchQbQuestions(); loadQbStats(); } else alert(data.message);
-    } catch (err) { alert('Something went wrong'); }
+      if (data.success) { fetchQbQuestions(); loadQbStats(); } else showToast(data.message, "error");
+    } catch (err) { showToast('Something went wrong', 'error'); }
   }
 
   async function deleteQbQuestion(id) {
-    if (!confirm('Is question ko delete karna hai?')) return;
+    if (!confirm('Delete this question?')) return;
     try {
       let res = await fetch(`/api/owner/question-bank/questions/${id}`, { method: 'DELETE' });
       let data = await res.json();
       if (!data.success && data.requiresForce) {
-        if (!confirm(`${data.message}\n\nPhir bhi permanently delete karna hai?`)) return;
+        if (!confirm(`${data.message}\n\nDelete it permanently anyway?`)) return;
         res = await fetch(`/api/owner/question-bank/questions/${id}?force=true`, { method: 'DELETE' });
         data = await res.json();
       }
       if (data.success) { qbDetailOverlay.classList.add('hidden'); fetchQbQuestions(); loadQbStats(); }
-      else alert(data.message);
-    } catch (err) { alert('Something went wrong'); }
+      else showToast(data.message, "error");
+    } catch (err) { showToast('Something went wrong', 'error'); }
   }
 })();
 
@@ -454,10 +454,10 @@ function addOptionRow(text = '', image = '', isCorrect = false, type = 'mcq') {
                 img.src = result.url;
                 img.classList.remove('hidden');
             } else {
-                alert("Upload fail: " + (result.message || "Unknown error"));
+                showToast("Upload fail: " + (result.message || "Unknown error"), "error");
             }
         } catch (err) {
-            alert("Image upload me error aaya");
+            showToast("Image upload failed. Please try again.", "error");;
         }
     });
 
@@ -701,8 +701,8 @@ function renderQbMultiContent() {
                         const img = imgList.querySelector(`.qbMultiOptImagePreview[data-optidx="${oi}"]`);
                         img.src = result.url;
                         img.classList.remove('hidden');
-                    } else alert("Upload fail: " + (result.message || "Unknown error"));
-                } catch (err) { alert("Image upload me error aaya"); }
+                    } else showToast("Upload fail: " + (result.message || "Unknown error"), "error");
+                } catch (err) { showToast("Image upload failed. Please try again.", "error");; }
             });
         });
         imgList.querySelectorAll('.qbMultiRemoveOptBtn').forEach(btn => {
@@ -797,7 +797,7 @@ function qbAddMultiOption() {
 }
 
 function qbRemoveMultiOption(optIdx) {
-    if (qbMultiOptionCount <= 2) { alert("Kam se kam 2 options zaroori hain."); return; }
+    if (qbMultiOptionCount <= 2) { showToast("At least 2 options are required.", "error"); return; }
     const snap = qbSnapshotMultiContent();
     snap.optionImages.splice(optIdx, 1);
     snap.optionTexts.forEach(langOpts => langOpts.splice(optIdx, 1));
@@ -935,8 +935,8 @@ document.getElementById('qbFormSaveBtn').addEventListener('click', async () => {
         payload = buildQbPayload();
     }
 
-    if (!payload.listing) return alert('Listing choose karna zaroori hai');
-    if (!payload.subject || !payload.topic) return alert('Subject aur Topic zaroori hain');
+    if (!payload.listing) return showToast('Please select a listing.', 'error');
+    if (!payload.subject || !payload.topic) return showToast('Subject and Topic are required.', 'error');
 
     const url = qbFormMode === 'edit'
         ? `/api/owner/question-bank/questions/${qbFormEditId}`
@@ -955,10 +955,10 @@ document.getElementById('qbFormSaveBtn').addEventListener('click', async () => {
             fetchQbQuestions();
             loadQbStats();
         } else {
-            alert(data.message || 'Save nahi ho paya');
+            showToast(data.message || 'Save failed. Please try again.', 'error');
         }
     } catch (err) {
-        alert('Something went wrong');
+        showToast('Something went wrong.', 'error');
     }
 });
 
@@ -989,10 +989,10 @@ async function qbUploadImage(fileInputId, hiddenInputId, previewImgId) {
             img.src = result.url;
             img.classList.remove('hidden');
         } else {
-            alert("Upload fail: " + (result.message || "Unknown error"));
+            showToast("Upload fail: " + (result.message || "Unknown error"), "error");
         }
     } catch (err) {
-        alert("Image upload me error aaya");
+        showToast("Image upload failed. Please try again.", "error");;
     }
 }
 

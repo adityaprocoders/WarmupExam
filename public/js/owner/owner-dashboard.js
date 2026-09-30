@@ -24,6 +24,7 @@
     coupons: loadCoupons,
     users: () => loadUsers(userSearchInput ? userSearchInput.value.trim() : ''),
     payments: loadPayments,
+    customtest: loadCustomTestPricing,
     loginhistory: loadLoginHistory,
     questionbank: () => loadQuestionBank() 
   };
@@ -171,7 +172,7 @@
       const res = await fetch('/api/owner/testseries');
       const data = await res.json();
       if (!data.success || !data.listings.length) {
-        testSeriesGrid.innerHTML = `<p class="text-gray-400 text-sm col-span-full text-center py-6">Koi test series nahi mili.</p>`;
+        testSeriesGrid.innerHTML = `<p class="text-gray-400 text-sm col-span-full text-center py-6">No test series found.</p>`;
         return;
       }
       allTestSeriesData = data.listings;   // 👈 NAYA
@@ -184,7 +185,7 @@
         filterTestSeries(searchInput.value);
       }
     } catch (err) {
-      testSeriesGrid.innerHTML = `<p class="text-red-500 text-sm col-span-full text-center py-6">Load karne mein error aayi.</p>`;
+      testSeriesGrid.innerHTML = `<p class="text-red-500 text-sm col-span-full text-center py-6">An error occurred while loading.</p>`;
     }
 }
 
@@ -208,7 +209,7 @@ function filterTestSeries(term) {
             emptyMsg = document.createElement('p');
             emptyMsg.id = 'testSeriesEmptyMsg';
             emptyMsg.className = 'text-gray-400 text-sm col-span-full text-center py-6';
-            emptyMsg.textContent = 'Koi matching test series nahi mili.';
+            emptyMsg.textContent = 'No matching test series found.';
             testSeriesGrid.appendChild(emptyMsg);
         }
     } else if (emptyMsg) {
@@ -240,9 +241,15 @@ function testSeriesCard(s) {
           <div class="mb-2 flex flex-wrap items-center">${typeBadge}${visibilityBadge}${enrollBadge}</div>
           <p class="text-gray-900 font-bold mb-1">${priceLabel}</p>
           <p class="text-xs text-gray-400 mb-3">${s.purchasedCount} purchased (all-time)</p>
-          <div class="flex gap-2">
+          <div class="flex gap-2 flex-wrap">
             <a href="/tests/${s._id}/edit" class="flex-1 text-center border-2 border-indigo-600 text-indigo-600 text-sm font-semibold py-2 rounded-lg hover:bg-indigo-50">Edit</a>
             <button data-id="${s._id}" class="deleteTestSeriesBtn flex-1 text-center bg-red-50 text-red-600 text-sm font-semibold py-2 rounded-lg hover:bg-red-100">Delete</button>
+            <button
+              data-category="${escapeHtml(s.category || '')}"
+              data-exam="${escapeHtml(s.exam || '')}"
+              class="addContentBtn w-full text-center border-2 border-gray-200 text-gray-600 text-sm font-semibold py-2 rounded-lg hover:bg-gray-50">
+              <i class="fa-solid fa-table-list mr-1"></i> Add Content
+            </button>
           </div>
         </div>
       </div>`;
@@ -251,16 +258,16 @@ function testSeriesCard(s) {
   function attachTestSeriesEvents() {
     document.querySelectorAll('.deleteTestSeriesBtn').forEach(btn => {
       btn.addEventListener('click', async function () {
-        if (!confirm('Is test series ko delete karna hai?')) return;
+        if (!confirm('Delete this test series?')) return;
         const id = this.dataset.id;
         this.disabled = true;
         try {
           const res = await fetch(`/api/owner/testseries/${id}`, { method: 'DELETE' });
           const data = await res.json();
           if (data.success) loadTestSeries();
-          else { alert(data.message || 'Delete nahi ho paya'); this.disabled = false; }
+          else { showToast(data.message || 'Failed to delete.', 'error'); this.disabled = false; }
         } catch (err) {
-          alert('Something went wrong');
+          showToast('Something went wrong.', 'error');
           this.disabled = false;
         }
       });
@@ -339,18 +346,18 @@ function testSeriesCard(s) {
           const res = await fetch(`/admin/coupons/${id}/toggle`, { method: 'PATCH' });
           const data = await res.json();
           if (data.success) loadCoupons(); else this.disabled = false;
-        } catch (err) { alert('Something went wrong'); this.disabled = false; }
+        } catch (err) { showToast('Something went wrong.', 'error'); this.disabled = false; }
       });
     });
     document.querySelectorAll('.deleteCouponBtn').forEach(btn => {
       btn.addEventListener('click', async function () {
-        if (!confirm('Is coupon ko delete karna hai?')) return;
+        if (!confirm('Delete this coupon?')) return;
         const id = this.dataset.id;
         try {
           const res = await fetch(`/admin/coupons/${id}`, { method: 'DELETE' });
           const data = await res.json();
           if (data.success) loadCoupons();
-        } catch (err) { alert('Something went wrong'); }
+        } catch (err) { showToast('Something went wrong', 'error'); }
       });
     });
   }
@@ -423,8 +430,8 @@ function testSeriesCard(s) {
       userTotalBadge.textContent = `${data.total} Total`;
 
       if (!data.success || !data.users.length) {
-        usersTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">Koi user nahi mila.</td></tr>`;
-        usersCardList.innerHTML = `<p class="text-center text-gray-400 py-8">Koi user nahi mila.</p>`;
+        usersTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">No users found.</td></tr>`;
+        usersCardList.innerHTML = `<p class="text-center text-gray-400 py-8">No users found.</p>`;
         return;
       }
 
@@ -432,8 +439,8 @@ function testSeriesCard(s) {
       usersCardList.innerHTML = data.users.map(userCard).join('');
       attachUserEvents();
     } catch (err) {
-      usersTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">Load karne mein error aayi.</td></tr>`;
-      usersCardList.innerHTML = `<p class="text-center text-red-500 py-8">Load karne mein error aayi.</p>`;
+      usersTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">An error occurred while loading.</td></tr>`;
+      usersCardList.innerHTML = `<p class="text-center text-red-500 py-8">An error occurred while loading.</p>`;
     }
   }
 
@@ -454,6 +461,21 @@ function planBadge(plan) {
         ? `<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">Premium</span>`
         : `<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Free</span>`;
 }
+
+function customTestBadge(u) {
+    const map = {
+        free: 'bg-gray-100 text-gray-500',
+        pro: 'bg-indigo-50 text-indigo-600',
+        promax: 'bg-purple-50 text-purple-600'
+    };
+    const cls = map[u.customTestTier] || map.free;
+    const expiryLine = (u.customTestTier !== 'free' && u.customTestExpiresAt)
+        ? `<span class="block text-[10px] text-gray-400 mt-0.5">till ${fmtJoinDate(u.customTestExpiresAt)}</span>`
+        : '';
+    return `<span class="text-xs font-bold px-2 py-0.5 rounded-full ${cls}">${escapeHtml(u.customTestLabel)}</span>${expiryLine}`;
+}
+
+
 
 function userAvatar(u, sizeClass) {
     const initial = (u.name || u.username || u.email || '?').charAt(0).toUpperCase();
@@ -485,6 +507,7 @@ function userRow(u) {
         <td class="py-3 pr-3 text-gray-600 text-center">${u.enrolledCount}</td>
         <td class="py-3 pr-3 text-gray-500 text-xs whitespace-nowrap">${fmtJoinDate(u.joinedOn)}</td>
         <td class="py-3 pr-3">${statusBadge(u.status)}</td>
+        <td class="py-3 pr-3">${customTestBadge(u)}</td>
         <td class="py-3 pr-3">
           <button data-id="${u._id}" class="toggleUserBtn relative inline-flex h-6 w-11 items-center rounded-full transition ${u.hasActiveSub ? 'bg-green-500' : 'bg-gray-300'}">
             <span class="inline-block h-4 w-4 transform rounded-full bg-white transition ${u.hasActiveSub ? 'translate-x-6' : 'translate-x-1'}"></span>
@@ -516,6 +539,8 @@ function userCard(u) {
           <span class="text-gray-600">${u.enrolledCount} series enrolled</span>
           <span class="text-gray-400">•</span>
           ${statusBadge(u.status)}
+          <span class="text-gray-400">•</span>
+          ${customTestBadge(u)}
         </div>
 
         <p class="text-[11px] text-gray-400">Joined on ${fmtJoinDate(u.joinedOn)}</p>
@@ -543,21 +568,21 @@ function userCard(u) {
           const res = await fetch(`/api/owner/users/${id}/toggle`, { method: 'PATCH' });
           const data = await res.json();
           if (data.success) loadUsers(userSearchInput.value.trim());
-          else { alert(data.message || 'Update nahi ho paya'); this.disabled = false; }
-        } catch (err) { alert('Something went wrong'); this.disabled = false; }
+           else { showToast(data.message || 'Failed to update.', 'error'); this.disabled = false; }
+        } catch (err) { showToast('Something went wrong.', 'error'); this.disabled = false; }
       });
     });
 
     document.querySelectorAll('.deleteUserBtn').forEach(btn => {
       btn.addEventListener('click', async function () {
-        if (!confirm('Is user ko delete karna hai? Ye action wapas nahi ho sakta.')) return;
+        if (!confirm('Delete this user? This action cannot be undone.')) return;
         const id = this.dataset.id;
         try {
           const res = await fetch(`/api/owner/users/${id}`, { method: 'DELETE' });
           const data = await res.json();
           if (data.success) loadUsers(userSearchInput.value.trim());
-          else alert(data.message || 'Delete nahi ho paya');
-        } catch (err) { alert('Something went wrong'); }
+          else showToast(data.message || 'Failed to delete.', 'error');
+        } catch (err) { showToast('Something went wrong', 'error'); }
       });
     });
   }
@@ -579,7 +604,7 @@ function userCard(u) {
       const data = await res.json();
 
       if (!data.success) {
-        paymentsTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">${escapeHtml(data.message || 'Load nahi ho paya')}</td></tr>`;
+        paymentsTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">${escapeHtml(data.message || 'Failed to load.')}</td></tr>`;
         return;
       }
 
@@ -587,7 +612,7 @@ function userCard(u) {
       paymentsCount.textContent = data.count;
 
       if (!data.payments.length) {
-        paymentsTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">Abhi tak koi paid transaction nahi hui.</td></tr>`;
+        paymentsTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">No paid transactions yet.</td></tr>`;
         return;
       }
 
@@ -604,7 +629,7 @@ function userCard(u) {
         </tr>
       `).join('');
     } catch (err) {
-      paymentsTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">Load karne mein error aayi.</td></tr>`;
+      paymentsTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">An error occurred while loading.</td></tr>`;
     }
   }
 
@@ -619,14 +644,14 @@ async function loadLoginHistory() {
     const data = await res.json();
 
     if (!data.success) {
-      loginHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">Load nahi ho paya.</td></tr>`;
+      loginHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">Failed to load..</td></tr>`;
       return;
     }
 
     loginHistoryBadge.textContent = `${data.history.length} entries`;
 
     if (!data.history.length) {
-      loginHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">Koi login history nahi hai.</td></tr>`;
+      loginHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">No login history available.</td></tr>`;
       return;
     }
 
@@ -646,23 +671,23 @@ async function loadLoginHistory() {
 
     attachLoginHistoryEvents();
   } catch (err) {
-    loginHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">Load karne mein error aayi.</td></tr>`;
+    loginHistoryTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">An error occurred while loading.</td></tr>`;
   }
 }
 
 function attachLoginHistoryEvents() {
   document.querySelectorAll('.deleteLoginHistoryBtn').forEach(btn => {
     btn.addEventListener('click', async function () {
-      if (!confirm('Is login entry ko delete karna hai?')) return;
+      if (!confirm('Delete this login entry?')) return;
       const id = this.dataset.id;
       this.disabled = true;
       try {
         const res = await fetch(`/api/owner/login-history/${id}`, { method: 'DELETE' });
         const data = await res.json();
         if (data.success) loadLoginHistory();
-        else { alert(data.message || 'Delete nahi ho paya'); this.disabled = false; }
+        else { showToast(data.message || 'Failed to delete.', 'error'); this.disabled = false; }
       } catch (err) {
-        alert('Something went wrong');
+        showToast('Something went wrong.', 'error');
         this.disabled = false;
       }
     });
@@ -670,15 +695,15 @@ function attachLoginHistoryEvents() {
 }
 
 document.getElementById('deleteAllLoginHistoryBtn')?.addEventListener('click', async function () {
-  if (!confirm('Poori login history delete karna hai? Ye action wapas nahi ho sakta.')) return;
+  if (!confirm('Delete the entire login history? This action cannot be undone.')) return;
   this.disabled = true;
   try {
     const res = await fetch('/api/owner/login-history-all', { method: 'DELETE' });
     const data = await res.json();
     if (data.success) loadLoginHistory();
-    else { alert(data.message || 'Delete nahi ho paya'); this.disabled = false; }
+    else { showToast(data.message || 'Failed to delete.', 'error'); this.disabled = false; }
   } catch (err) {
-    alert('Something went wrong');
+    showToast('Something went wrong.', 'error');
     this.disabled = false;
   }
 });
@@ -688,7 +713,141 @@ document.getElementById('testSeriesSearchInput')?.addEventListener('input', func
     filterTestSeries(this.value);
 });
 
-  // ---------------- INITIAL LOAD ----------------
-  loadDashboard();
+
+
+
+// ---------------- CUSTOM TEST PRICING ----------------
+function pricingRow(planKey, row) {
+    const discount = row.originalPrice > 0
+        ? Math.round((1 - row.price / row.originalPrice) * 100)
+        : 0;
+    return `
+      <div class="border border-gray-100 rounded-xl p-3 flex flex-wrap items-end gap-3" data-plan="${planKey}">
+        <div class="w-20 shrink-0">
+          <label class="text-xs text-gray-400 mb-1 block">Months</label>
+          <input type="number" min="1" max="36" class="ct-months w-full border rounded-lg px-2.5 py-1.5 text-sm font-bold" value="${row.months}">
+        </div>
+        <div class="flex-1 min-w-[100px]">
+          <label class="text-xs text-gray-400 mb-1 block">Original Price (₹)</label>
+          <input type="number" min="0" class="ct-original w-full border rounded-lg px-2.5 py-1.5 text-sm" value="${row.originalPrice}">
+        </div>
+        <div class="flex-1 min-w-[100px]">
+          <label class="text-xs text-gray-400 mb-1 block">Sell Price (₹)</label>
+          <input type="number" min="0" class="ct-price w-full border rounded-lg px-2.5 py-1.5 text-sm" value="${row.price}">
+        </div>
+        <div class="w-16 shrink-0 text-center">
+          <p class="text-xs text-gray-400 mb-1">Discount</p>
+          <p class="ct-discount text-sm font-bold text-green-600">${discount}%</p>
+        </div>
+        <button type="button" class="ct-remove-row w-8 h-8 shrink-0 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center">
+          <i class="fa-solid fa-trash text-xs"></i>
+        </button>
+      </div>`;
+}
+
+function attachPricingRowEvents(container) {
+    container.querySelectorAll('[data-plan]').forEach(row => {
+        const orig = row.querySelector('.ct-original');
+        const price = row.querySelector('.ct-price');
+        const disc = row.querySelector('.ct-discount');
+        function recalc() {
+            const o = Number(orig.value) || 0;
+            const p = Number(price.value) || 0;
+            disc.textContent = (o > 0 ? Math.round((1 - p / o) * 100) : 0) + '%';
+        }
+        orig.addEventListener('input', recalc);
+        price.addEventListener('input', recalc);
+
+        row.querySelector('.ct-remove-row')?.addEventListener('click', () => row.remove());  // 👈 NAYA
+    });
+}
+
+async function loadCustomTestPricing() {
+    const loading = document.getElementById('ctPricingLoading');
+    const grid = document.getElementById('ctPricingGrid');
+    const footer = document.getElementById('ctPricingGridFooter');
+    loading.classList.remove('hidden');
+    grid.classList.add('hidden');
+    footer.classList.add('hidden');
+
+    try {
+        const res = await fetch('/api/owner/custom-test/pricing');
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message);
+
+        const proContainer = document.getElementById('ctProRows');
+        const promaxContainer = document.getElementById('ctPromaxRows');
+        proContainer.innerHTML = data.pricing.pro.map(r => pricingRow('pro', r)).join('');
+        promaxContainer.innerHTML = data.pricing.promax.map(r => pricingRow('promax', r)).join('');
+        attachPricingRowEvents(proContainer);
+        attachPricingRowEvents(promaxContainer);
+
+        loading.classList.add('hidden');
+        grid.classList.remove('hidden');
+        footer.classList.remove('hidden');
+    } catch (err) {
+        loading.textContent = 'An error occurred while loading.';
+    }
+}
+
+document.getElementById('ctSavePricingBtn')?.addEventListener('click', async function () {
+    const btn = this;
+    const msg = document.getElementById('ctPricingMsg');
+
+    function collect(planKey) {
+    const container = document.getElementById(planKey === 'pro' ? 'ctProRows' : 'ctPromaxRows');
+    return Array.from(container.querySelectorAll('[data-plan]')).map(row => ({
+        months: Number(row.querySelector('.ct-months').value),
+        originalPrice: Number(row.querySelector('.ct-original').value),
+        price: Number(row.querySelector('.ct-price').value)
+    }));
+}
+
+    const payload = { pro: collect('pro'), promax: collect('promax') };
+
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try {
+        const res = await fetch('/api/owner/custom-test/pricing', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        msg.classList.remove('hidden');
+        if (data.success) {
+            msg.className = 'text-sm text-green-600';
+            msg.textContent = 'Pricing saved successfully!';
+        } else {
+            msg.className = 'text-sm text-red-600';
+            msg.textContent = data.message || 'Failed to save.';
+        }
+    } catch (err) {
+        msg.classList.remove('hidden');
+        msg.className = 'text-sm text-red-600';
+        msg.textContent = 'Network error';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1.5"></i> Save Pricing';
+    }
+});
+
+document.querySelectorAll('.ct-add-duration-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const planKey = this.dataset.plan;
+        const container = document.getElementById(planKey === 'pro' ? 'ctProRows' : 'ctPromaxRows');
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = pricingRow(planKey, { months: 1, originalPrice: 0, price: 0 });
+        const newRow = wrapper.firstElementChild;
+        container.appendChild(newRow);
+        attachPricingRowEvents(container); // naye row pe bhi listeners lag jaayenge
+        newRow.querySelector('.ct-months').focus();
+    });
+});
+
+// ---------------- INITIAL LOAD ----------------
+loadDashboard();
+
+ 
 })();
  
