@@ -9,7 +9,7 @@ import { calculateRankFromPredictor, calculateRankRange } from "../utils/rankHel
 import { getTestStatus, formatDateTime } from "../utils/testStatus.js";
 import { getLiveTestRank } from "../utils/liveRankHelper.js";
 import { getAccuracyComparison } from "../utils/testStatsHelper.js";
-
+import { isOwnerUser } from "../utils/authHelpers.js";
 
 
 
@@ -476,7 +476,9 @@ if (isAllowed && listing?.rankPredictorData?.length > 0) {
     const secs = totalSeconds % 60;
     const timeFormatted = [hrs, mins, secs].map(v => String(v).padStart(2, "0")).join(":");
 
-    const sectionBreakdown = Object.values(sectionStatusMap);   // 👈 NAYA
+    const sectionBreakdown = Object.values(sectionStatusMap);  
+
+        const canDownloadKey = isOwnerUser(req) || listing?.type === "Paid";
 
     const analysisData = {
         score: attempt.score,
@@ -493,7 +495,16 @@ if (isAllowed && listing?.rankPredictorData?.length > 0) {
         negativeMarks: negativeTotal,
         skippedCount: attempt.skippedCount,
         topicBreakdown,
-        sectionBreakdown,   // 👈 NAYA
+        sectionBreakdown,
+                testTitle: test?.title || "",
+        listingTitle: listing?.title || "",
+        attemptedOn: attempt.createdAt,
+        durationMinutes: Number(test?.duration) || 0,
+        timeTakenSeconds: totalSeconds,
+        userName: req.user?.name || "",
+        correctCount: attempt.correctCount || 0,
+        wrongCount: attempt.wrongCount || 0,
+        canDownloadKey,
         solutions
     };
 

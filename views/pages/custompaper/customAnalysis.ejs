@@ -12,6 +12,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/analysis.css">
+        <link rel="stylesheet" href="/css/answerKey.css?v=1">
 </head>
 <body class="bg-[#F4F7FE] font-sans" data-tier="<%= typeof tier !== 'undefined' ? tier : 'free' %>">
 
@@ -138,9 +139,15 @@
                         <button class="sol-filter-btn px-5 py-2 text-xs font-bold rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer" data-filter="wrong" data-action="filter-sol">Incorrect</button>
                         <button class="sol-filter-btn px-5 py-2 text-xs font-bold rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer" data-filter="skipped" data-action="filter-sol">Skipped</button>
                     </div>
-                    <button data-action="download-pdf" class="no-print flex items-center gap-2 bg-[#05CD99] text-white px-5 py-2.5 rounded-xl font-bold hover:scale-105 transition-all shadow-lg shadow-green-100 cursor-pointer">
-                        <i class="fas fa-file-download"></i> DOWNLOAD ANSWER KEY
-                    </button>
+                   <% const canDownloadKey = typeof tier !== 'undefined' && (tier === 'pro' || tier === 'promax'); %>
+<button data-action="download-pdf" class="no-print flex items-center gap-2 bg-[#05CD99] text-white px-5 py-2.5 rounded-xl font-bold hover:scale-105 transition-all shadow-lg shadow-green-100 cursor-pointer">
+    <i class="fas fa-file-download"></i> DOWNLOAD ANSWER KEY
+    <% if (!canDownloadKey) { %>
+        <span class="ml-1 inline-flex items-center gap-1 rounded-full bg-gradient-to-br from-amber-200 to-amber-500 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-950 shadow-sm ring-1 ring-amber-600/20">
+            <i class="fas fa-lock text-[9px]"></i> PRO
+        </span>
+    <% } %>
+</button>
                 </div>
                 <div class="overflow-y-auto pr-1" style="max-height: calc(100vh - 230px);">
                     <div id="solutions-list" class="space-y-4"></div>
@@ -182,10 +189,15 @@
             </div>
         </div>
     </div>
+    
+        <div id="answer-key-print" aria-hidden="true"></div>
 
     <script type="application/json" id="analysisPageData">
-    { "paperId": <%- safeJsonStringify(paperId) %>, "returnUrl": <%- safeJsonStringify(returnUrl || "/custom-test") %> }
+        { "paperId": <%- safeJsonStringify(paperId) %>, "returnUrl": <%- safeJsonStringify(returnUrl || "/custom-test") %>, "userName": <%- safeJsonStringify(typeof userName !== 'undefined' ? userName : "") %> }
     </script>
 
-    <script src="/js/customTest/analysis.js" defer></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/html2canvas-pro@1/dist/html2canvas-pro.min.js"></script>
+<script defer src="/js/answerKey.js"></script>
+<script src="/js/customTest/analysis.js" defer></script>
 </html>

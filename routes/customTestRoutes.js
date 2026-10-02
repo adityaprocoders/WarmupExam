@@ -2,8 +2,7 @@ import express from "express";
 import { isLoggedIn } from "../middleware/isLoggedIn.js";
 import { requireDashboardAccess } from "../middleware/requireDashboardAccess.js";
 import multer from "multer";
-import { generateAIPaper, getAIPaper, getAIUsage, listAIPapers } from "../controllers/aiPaperController.js";
-
+import { generateAIPaper, getAIPaper, getAIUsage, listAIPapers, deleteAIPaper, clearAIPapers } from "../controllers/aiPaperController.js";
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -31,7 +30,9 @@ import {
     deleteCustomPaperAttempt,     
     clearCustomPaperAttempts,
      aiGeneratorPage,
-     manageplanPage, 
+     manageplanPage,
+     getCustomDashboardStats
+
 } from "../controllers/customTestController.js";
 
 import { createCustomTestOrder, applyCustomTestCoupon, verifyCustomTestPayment, razorpayWebhook } from "../controllers/customTestPaymentController.js";
@@ -70,7 +71,7 @@ router.post("/api/custom-test/generate", isLoggedIn, generatePaper);
 
 router.post("/api/custom-test/attempt/:paperId/submit",  isLoggedIn, submitCustomPaperAttempt);
 router.get("/api/custom-test/attempt/:paperId/analysis", isLoggedIn, getCustomPaperAnalysis);
-
+router.get("/api/custom-test/dashboard-stats", isLoggedIn, getCustomDashboardStats);
 
 
 router.post("/api/custom-test/payment/create-order", isLoggedIn, createCustomTestOrder);
@@ -89,6 +90,9 @@ router.get("/dashboard/custom-test/ai-generate", isLoggedIn, requireDashboardAcc
 router.get("/custom-test/manage", isLoggedIn, manageplanPage);
 router.get("/dashboard/custom-test/manage", isLoggedIn, requireDashboardAccess, manageplanPage);
  
+
+router.delete("/api/custom-test/ai/paper/:paperId", isLoggedIn, deleteAIPaper);
+router.delete("/api/custom-test/ai/papers",         /* same middlewares as attempt delete */ clearAIPapers);
  
 
 export default router;

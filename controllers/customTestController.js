@@ -816,7 +816,8 @@ export const customTestAnalysisPage = async (req, res, next) => {
             returnUrl: req.query.from || (isPaid ? "/dashboard/custom-test" : "/custom-test"),
             title: "Custom Practice Paper - Analysis | WarmupExam",
             robots: "noindex, nofollow",
-            tier,   // 👈 NAYA
+            tier,   
+                        userName: (req.user && req.user.name) || "",
         });
     } catch (err) {
         next(err);
@@ -872,11 +873,17 @@ export const submitCustomPaperAttempt = async (req, res) => {
         const attempt = await CustomPaperAttempt.create({
             paperId, user: req.user._id,
             language: result.language || "English",
+                        title: String((Array.isArray(result.config?.exams) ? result.config.exams.join(", ") : "") || "").slice(0, 120),
+            source: String(paperId).startsWith("ai_") ? "ai" : "manual",
+            subjects: (Array.isArray(result.config?.subjects) && result.config.subjects.length
+                ? result.config.subjects
+                : Object.keys(result.bySubject || {})).map(String).slice(0, 10),
             answers,
             score: result.score, totalMarks: result.totalMarks, totalQuestions: result.totalQuestions,
             attempted: result.attempted, correct: result.correct, wrong: result.wrong,
             accuracy: result.accuracy, timeTakenSeconds: result.timeTakenSeconds,
             bySubject: result.bySubject,
+            timeLimitSeconds: Number(result.timeLimitSeconds) || 0,
             expiresAt: new Date(Date.now() + expiryHours * 60 * 60 * 1000),
         });
 
@@ -922,6 +929,8 @@ export const getCustomPaperAnalysis = async (req, res) => {
             attempted: attempt.attempted, correct: attempt.correct, wrong: attempt.wrong,
             accuracy: attempt.accuracy, timeTakenSeconds: attempt.timeTakenSeconds,
             bySubject: attempt.bySubject || {},
+            title: attempt.title || "", subjects: attempt.subjects || [], language: attempt.language,
+            submittedAt: attempt.createdAt, timeLimitSeconds: attempt.timeLimitSeconds || 0,
             perQuestion: attempt.answers || [],
         });
     } catch (err) {
@@ -949,6 +958,115 @@ export const clearCustomPaperAttempts = async (req, res) => {
     }
 };
 
+
+/* ------------------------------------------------------------
+   GET /api/custom-test/dashboard-stats?limit=7|15|all — Pro / Pro Max
+------------------------------------------------------------ */
+const STRONG_MIN_ACCURACY = 70;
+
+export const getCustomDashboardStats = async (req, res) => {
+    try {
+        const tier = getCustomTestTier(req);
+        if (!isPaidCustomTestTier(tier)) {
+            return res.status(403).json({ success: false, error: "UPGRADE_REQUIRED" });
+        }
+
+        const rawLimit = String(req.query.limit || "7");
+        const limit = rawLimit === "all" ? 0 : Math.min(Math.max(parseInt(rawLimit, 10) || 7, 1), 50);
+
+        let query = CustomPaperAttempt.find({ user: req.user._id })
+            .select("paperId title source subjects bySubject score totalMarks accuracy createdAt answers.subject answers.topic answers.difficulty answers.answered answers.isCorrect")
+            .sort({ createdAt: -1 });
+        if (limit) query = query.limit(limit);
+        const attempts = await query.lean();
+
+        const pct = (a) => (a.totalMarks > 0 ? Math.max(0, Math.round((a.score / a.totalMarks) * 100)) : 0);
+        const avg = (arr) => (arr.length ? Math.round(arr.reduce((s, n) => s + n, 0) / arr.length) : 0);
+        const isAi = (id) => String(id).startsWith("ai_");
+        const diffKey = (v) => {
+            const d = String(v || "").toLowerCase();
+            return d === "easy" || d === "medium" || d === "hard" ? d : null;
+        };
+
+        // Topic-wise and subject-wise stats across the selected attempts
+        const topicMap = new Map();
+        const subjectMap = new Map();
+
+        attempts.forEach((a) => (a.answers || []).forEach((ans) => {
+            const subject = ans.subject || "General";
+            const name = ans.topic || subject;
+            const key = `${subject}||${name}`;
+
+            if (!topicMap.has(key)) {
+                topicMap.set(key, {
+                    name, subject, total: 0, attempted: 0, correct: 0,
+                    diff: { easy: { attempted: 0, correct: 0 }, medium: { attempted: 0, correct: 0 }, hard: { attempted: 0, correct: 0 } },
+                });
+            }
+            if (!subjectMap.has(subject)) subjectMap.set(subject, { name: subject, attempted: 0, correct: 0 });
+
+            const t = topicMap.get(key);
+            const s = subjectMap.get(subject);
+            t.total += 1;
+            if (!ans.answered) return;
+
+            t.attempted += 1; s.attempted += 1;
+            if (ans.isCorrect) { t.correct += 1; s.correct += 1; }
+
+            const dk = diffKey(ans.difficulty);
+            if (dk) {
+                t.diff[dk].attempted += 1;
+                if (ans.isCorrect) t.diff[dk].correct += 1;
+            }
+        }));
+
+        const topics = [...topicMap.values()]
+            .filter((t) => t.attempted >= WEAK_MIN_ATTEMPTED)
+            .map((t) => ({
+                ...t,
+                wrong: t.attempted - t.correct,
+                skipped: t.total - t.attempted,
+                accuracy: Math.round((t.correct / t.attempted) * 100),
+            }));
+
+        const strongTopics = topics.filter((t) => t.accuracy >= STRONG_MIN_ACCURACY).sort((a, b) => b.accuracy - a.accuracy);
+        // Weakest first; if accuracy ties, the topic with more wrong answers comes first
+        const weakTopics = topics.filter((t) => t.accuracy < WEAK_MAX_ACCURACY)
+            .sort((a, b) => a.accuracy - b.accuracy || b.wrong - a.wrong);
+        // Weakest subject first
+        const subjects = [...subjectMap.values()]
+            .filter((s) => s.attempted > 0)
+            .map((s) => ({ ...s, accuracy: Math.round((s.correct / s.attempted) * 100) }))
+            .sort((a, b) => a.accuracy - b.accuracy);
+
+        res.json({
+            success: true,
+            totals: {
+                testsAttempted: attempts.length,
+                avgScore: avg(attempts.map(pct)),
+                accuracy: avg(attempts.map((a) => a.accuracy || 0)),
+                strongTopics: strongTopics.length,
+            },
+            trend: attempts.slice().reverse().map((a) => ({
+                paperId: a.paperId, date: a.createdAt,
+                accuracy: Math.round(a.accuracy || 0), scorePercent: pct(a),
+            })),
+            strongTopics: strongTopics.slice(0, 5),
+            weakTopics: weakTopics.slice(0, 5),
+            subjects,
+            recent: attempts.slice(0, 10).map((a) => ({
+                paperId: a.paperId,
+                title: a.title || (isAi(a.paperId) ? "AI Generated Paper" : "Custom Paper"),
+                source: a.source || (isAi(a.paperId) ? "ai" : "manual"),
+                subjects: a.subjects && a.subjects.length ? a.subjects : Object.keys(a.bySubject || {}),
+                score: a.score, totalMarks: a.totalMarks, date: a.createdAt,
+            })),
+        });
+    } catch (err) {
+        console.error("getCustomDashboardStats error:", err);
+        res.status(500).json({ success: false, message: "Server error." });
+    }
+};
 
 // ---------------- UPGRADE TO PRO PAGE ----------------
 export const customTestUpgradePage = async (req, res) => {
@@ -1130,6 +1248,16 @@ export const manageplanPage = async (req, res, next) => {
 
 if (isPaid) {
     renderOpts.layout = "layouts/dashboard";
+
+    const now = new Date();
+    const activeEnrollment = (req.user.enrolledListings || []).find(
+        (e) => e && e.listing && (!e.expiresAt || new Date(e.expiresAt) > now)
+    );
+    renderOpts.listing = req.user.lastAccessedBatch || (activeEnrollment && activeEnrollment.listing) || null;
+    renderOpts.sections = renderOpts.listing
+        ? await Section.find({ listing: renderOpts.listing._id }).sort({ createdAt: 1 })
+        : [];
+    renderOpts.currentSection = null;
 }
 
 res.render("pages/custompaper/managePlan", renderOpts);

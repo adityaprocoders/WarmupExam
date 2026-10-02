@@ -1,13 +1,14 @@
 (function () {
   "use strict";
 
-  const { paperId, returnUrl } = JSON.parse(document.getElementById("analysisPageData").textContent);
+    const { paperId, returnUrl, userName } = JSON.parse(document.getElementById("analysisPageData").textContent);
   const TIER = document.querySelector("[data-tier]")?.dataset.tier || "free";
   const RESULT_KEY = "wue:customPaper:result:" + paperId;
   const $ = (id) => document.getElementById(id);
 
   let currentFilter = "all";
   let solutions = [];
+  let currentResult = null;
   let reportState = { questionId: null, reason: null };
 
   const STATUS_META = {
@@ -461,6 +462,63 @@ solutionImage: s.solutionImage || (s.solution && s.solution.image) || "",
     }
   }
 
+
+    /* ---------------- DOWNLOAD ACCESS (Pro / Pro Max only) ---------------- */
+    /* ---------------- DOWNLOAD ACCESS (Pro / Pro Max only) ---------------- */
+  const CAN_DOWNLOAD = TIER === "pro" || TIER === "promax";
+
+   function setupDownloadButton() {
+    const btn = document.querySelector('[data-action="download-pdf"]');
+    if (!btn || CAN_DOWNLOAD) return;
+    btn.className = "no-print relative flex items-center gap-2 bg-gray-100 text-gray-400 px-5 py-2.5 rounded-xl font-bold cursor-not-allowed";
+    btn.title = "Available for Pro and Pro Max users";
+    btn.insertAdjacentHTML("beforeend",
+      '<span class="ml-1 px-2 py-0.5 rounded-full bg-[#4318FF] text-white text-[10px] font-extrabold tracking-wide">PRO</span>');
+  }
+
+    /* ---------------- ANSWER KEY (direct PDF download) ---------------- */
+  function downloadAnswerKeyPdf(btn) {
+    if (!CAN_DOWNLOAD) {
+      showFlashMessage("Answer Key download is a Pro feature. Taking you to the plans...", true);
+      setTimeout(() => { window.location.href = "/pricing?from=" + encodeURIComponent(window.location.pathname); }, 1200);
+      return;
+    }
+    const r = currentResult;
+    if (!r || !solutions.length || !window.AnswerKey) {
+      showFlashMessage("Unable to generate the PDF right now. Please refresh the page and try again.", true);
+      return;
+    }
+
+    const cfg = r.config || {};
+    const exams = Array.isArray(cfg.exams) ? cfg.exams.filter(Boolean).join(", ") : "";
+    const title = exams || r.title || "Custom Paper";
+    const subjects = (Array.isArray(cfg.subjects) && cfg.subjects.length) ? cfg.subjects
+      : (Array.isArray(r.subjects) && r.subjects.length) ? r.subjects
+      : Object.keys(r.bySubject || {});
+    const kind = String(paperId).startsWith("ai_") ? "AI Premium Paper" : "Custom Paper";
+    const durMin = r.timeLimitSeconds ? Math.round(r.timeLimitSeconds / 60) : (Number(cfg.timeLimit) || 0);
+
+    window.AnswerKey.download({
+      button: btn,
+      onError: (msg) => showFlashMessage(msg, true),
+      header: {
+        title,
+        subline: kind + (subjects.length ? " \u2022 " + subjects.join(", ") : ""),
+        userName: userName || "Student",
+        attemptedOn: r.submittedAt || r.generatedAt,
+        durationMinutes: durMin,
+      },
+      stats: {
+        score: r.score, totalMarks: r.totalMarks, accuracy: r.accuracy,
+        correct: r.correct, wrong: r.wrong,
+        unattempted: Math.max(0, r.totalQuestions - r.attempted),
+        timeTakenSeconds: r.timeTakenSeconds,
+      },
+      questions: solutions,
+    });
+  }
+
+
   /* ---------------- EVENTS ---------------- */
   document.addEventListener("click", function (e) {
     const img = e.target.closest(".zoomable-img");
@@ -475,7 +533,7 @@ solutionImage: s.solutionImage || (s.solution && s.solution.image) || "",
     if (action === "switch-tab") switchAnalysisTab(el.dataset.tab);
     else if (action === "go-back") goBack();
     else if (action === "filter-sol") filterSol(el.dataset.filter);
-    else if (action === "download-pdf") window.print();
+    else if (action === "download-pdf") downloadAnswerKeyPdf(el);
     else if (action === "open-report-modal") openReportModal(el.dataset.questionId);
     else if (action === "close-report-modal") closeReportModal();
     else if (action === "select-report-reason") selectReportReason(el.dataset.reason, el);
@@ -499,6 +557,7 @@ solutionImage: s.solutionImage || (s.solution && s.solution.image) || "",
     }
 
     solutions = buildSolutions(result);
+        currentResult = result;
 
     renderTop(result);
     renderSectionBreakdown(buildSectionBreakdown(result, solutions));

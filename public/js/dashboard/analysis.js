@@ -1,6 +1,8 @@
  
         let currentFilter = 'all';
 
+   
+
         function switchAnalysisTab(tab) {
             const overallTab = document.getElementById('tab-overall');
             const solutionsTab = document.getElementById('tab-solutions');
@@ -113,6 +115,7 @@ if (hasValidRank) {
             renderRankPredictorCard(data.rankPredictorCard);
             renderSolutions();
             renderMath();
+        
         }
 
         function renderTopicStrength(topics) {
@@ -365,7 +368,7 @@ function buildSolutionCard(sol) {
     if (action === 'switch-tab') switchAnalysisTab(el.dataset.tab);
     else if (action === 'go-back') goBackToPreviousPage();
     else if (action === 'filter-sol') filterSol(el.dataset.filter);
-    else if (action === 'download-pdf') downloadFilteredSolutionPDF();
+    else if (action === 'download-pdf') downloadAnswerKey(el);
      else if (action === 'open-report-modal') openReportModal(el.dataset.questionId);
     else if (action === 'close-report-modal') closeReportModal();
     else if (action === 'select-report-reason') selectReportReason(el.dataset.reason, el);
@@ -400,8 +403,34 @@ function buildSolutionCard(sol) {
             renderSolutions();
         }
 
-        function downloadFilteredSolutionPDF() {
-            window.print();
+        function downloadAnswerKey(btn) {
+            const d = window.ANALYSIS_DATA;
+            if (d && d.canDownloadKey === false) {
+                showFlashMessage('Answer Key download is available only in paid batches.', true);
+                return;
+            }
+            if (!d || !window.AnswerKey) {
+                showFlashMessage('Unable to generate the PDF right now. Please refresh the page and try again.', true);
+                return;
+            }
+            const names = [d.listingTitle, d.testTitle].filter(Boolean);
+            window.AnswerKey.download({
+                button: btn,
+                onError: (msg) => showFlashMessage(msg, true),
+                header: {
+                    title: names.join(' \u2014 ') || 'Answer Key',
+                    subline: names.join(' \u2022 '),
+                    userName: d.userName,
+                    attemptedOn: d.attemptedOn,
+                    durationMinutes: d.durationMinutes
+                },
+                stats: {
+                    score: d.score, totalMarks: d.totalMarks, accuracy: d.accuracy,
+                    correct: d.correctCount, wrong: d.wrongCount,
+                    unattempted: d.skippedCount, timeTakenSeconds: d.timeTakenSeconds
+                },
+                questions: d.solutions || []
+            });
         }
 
         function renderMath() {

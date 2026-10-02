@@ -1,23 +1,40 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-
     function getNotifIcon(notifType) {
-    switch (notifType) {
-        case "new_test_series":
-            return { icon: "clipboard-list", bg: "bg-orange-100", color: "text-orange-600" };
-        case "subscription_expiring":
-            return { icon: "clock", bg: "bg-red-100", color: "text-red-600" };
-        default:
-            return { icon: "bell", bg: "bg-indigo-100", color: "text-indigo-600" };
+        switch (notifType) {
+            case "new_test_series":
+                return { icon: "clipboard-list", bg: "bg-orange-100", color: "text-orange-600" };
+            case "subscription_expiring":
+                return { icon: "clock", bg: "bg-red-100", color: "text-red-600" };
+            default:
+                return { icon: "bell", bg: "bg-indigo-100", color: "text-indigo-600" };
+        }
     }
-}
 
+    // XSS se bachne ke liye (title/message user ya admin se aa sakta hai)
+    function escapeHtml(str = "") {
+        return String(str).replace(/[&<>"']/g, c => ({
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        }[c]));
+    }
+
+    function emptyState(text) {
+        return `
+            <div class="flex flex-col items-center justify-center py-10 px-4 text-center">
+                <span class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+                    <i data-lucide="bell-off" class="w-5 h-5"></i>
+                </span>
+                <p class="text-sm font-semibold text-slate-700">${text}</p>
+                <p class="text-xs text-slate-400 mt-1">You're all caught up.</p>
+            </div>
+        `;
+    }
 
     const bellBtn = document.querySelector('[data-action="toggle-notif-dropdown"]');
     const dropdown = document.getElementById("notifDropdownMenu");
     const listBox = document.getElementById("notifListBox");
     const redDot = document.getElementById("notifRedDot");
-    const clearAllBtn = document.getElementById("notifClearAllBtn");   // 🆕
+    const clearAllBtn = document.getElementById("notifClearAllBtn");
 
     if (!bellBtn) return;
 
@@ -34,28 +51,29 @@ document.addEventListener("DOMContentLoaded", () => {
             redDot.classList.toggle("hidden", unseenCount === 0);
 
             if (!data.notifications.length) {
-                listBox.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">No new notifications right now.</p>`;
-                clearAllBtn?.classList.add("hidden");   // 🆕 koi notification nahi -> button hide
+                listBox.innerHTML = emptyState("No new notifications");
+                clearAllBtn?.classList.add("hidden");
+                if (window.lucide) lucide.createIcons();
                 return;
             }
 
-            clearAllBtn?.classList.remove("hidden");   // 🆕 notifications hain -> button dikhao
+            clearAllBtn?.classList.remove("hidden");
 
             listBox.innerHTML = data.notifications.map(n => {
                 const { icon, bg, color } = getNotifIcon(n.notifType);
                 const link = n.meta?.listingId ? `/test/${n.meta.listingId}` : null;
 
                 return `
-                    <div class="flex items-start gap-3 px-4 py-3 border-b border-slate-50 hover:bg-slate-50">
-                        <div class="w-9 h-9 shrink-0 rounded-xl ${bg} flex items-center justify-center">
-                            <i data-lucide="${icon}" class="w-4.5 h-4.5 ${color}"></i>
+                    <div class="flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 transition">
+                        <div class="w-10 h-10 shrink-0 rounded-xl ${bg} flex items-center justify-center">
+                            <i data-lucide="${icon}" class="w-5 h-5 ${color}"></i>
                         </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-semibold text-slate-800">${n.title}</p>
-                            <p class="text-xs text-slate-500 mt-0.5">${n.message}</p>
-                            <div class="flex items-center justify-between mt-1.5">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-slate-800 leading-snug break-words">${escapeHtml(n.title)}</p>
+                            <p class="text-xs text-slate-500 mt-0.5 leading-relaxed break-words">${escapeHtml(n.message)}</p>
+                            <div class="flex items-center justify-between gap-2 mt-2">
                                 <p class="text-[10px] text-slate-400">${new Date(n.sentAt).toLocaleString()}</p>
-                                ${link ? `<a href="${link}" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800">View →</a>` : ""}
+                                ${link ? `<a href="${link}" class="shrink-0 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800">View →</a>` : ""}
                             </div>
                         </div>
                     </div>
@@ -65,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (window.lucide) lucide.createIcons();
         } catch (err) {
             console.error("Load notifications error:", err);
-            listBox.innerHTML = `<p class="text-center text-xs text-red-400 py-6">Failed to load.</p>`;
+            listBox.innerHTML = `<p class="text-center text-xs text-red-400 py-8">Failed to load.</p>`;
             clearAllBtn?.classList.add("hidden");
         }
     }
@@ -100,10 +118,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const res = await fetch("/api/notifications/clear-all", { method: "POST" });
             const data = await res.json();
             if (data.success) {
-                listBox.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">No notifications.</p>`;
+                listBox.innerHTML = emptyState("No notifications");
+                if (window.lucide) lucide.createIcons();
                 redDot.classList.add("hidden");
                 unseenCount = 0;
-                clearAllBtn.classList.add("hidden");   // 🆕 clear hote hi button khud hide
+                clearAllBtn.classList.add("hidden");
             }
         } catch (err) {
             console.error("Clear all error:", err);

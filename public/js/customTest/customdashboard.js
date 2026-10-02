@@ -46,9 +46,19 @@ async function loadPapers() {
      const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || "";
      const HISTORY_TTL = PAGE_TIER === "promax" ? 2 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
 
+// Resolves true when the server confirms the delete (free tier has nothing on the server)
 async function serverDelete(url) {
-    if (!IS_PAID_TIER) return;
-    try { await fetch(url, { method: "DELETE", headers: { "x-csrf-token": CSRF } }); } catch (_) {}
+    if (!IS_PAID_TIER) return true;
+    try {
+        const res = await fetch(url, { method: "DELETE", credentials: "same-origin", headers: { "x-csrf-token": CSRF } });
+        const data = await res.json().catch(() => ({}));
+        return res.ok && data.success !== false;
+    } catch (_) { return false; }
+}
+
+function notify(message) {
+    if (typeof window.showToast === "function") window.showToast(message, "error");
+    else window.alert(message);
 }
 
 function saveHistory(list) {
@@ -85,43 +95,96 @@ function loadHistory() {
     return kept;
 }
 
-async function deleteHistoryItem(paperId) {
-    saveHistory(loadHistory().filter((p) => p.paperId !== paperId));
+/* ---------- ANALYSIS ONLY ---------- */
+function removeLocalAnalysis(paperId) {
     try { localStorage.removeItem(RESULT_KEY_PREFIX + paperId); } catch (_) {}
-
-    try {
-        const raw = localStorage.getItem(PAPER_LIST_KEY);
-        let list = raw ? JSON.parse(raw) : [];
-        if (Array.isArray(list)) {
-            list = list.filter((p) => p.id !== paperId);
-            localStorage.setItem(PAPER_LIST_KEY, JSON.stringify(list));
-        }
-    } catch (_) {}
-
-    await serverDelete(`/api/custom-test/attempt/${encodeURIComponent(paperId)}`);
+    saveHistory(loadHistory().filter((p) => p.paperId !== paperId));
 }
 
-async function clearAllHistory() {
-    loadHistory().forEach((p) => {
-        try { localStorage.removeItem(RESULT_KEY_PREFIX + p.paperId); } catch (_) {}
-    });
+async function deleteAnalysis(paperId) {
+    const ok = await serverDelete(`/api/custom-test/attempt/${encodeURIComponent(paperId)}`);
+    if (!ok) return false;
+    removeLocalAnalysis(paperId);
+    document.dispatchEvent(new Event("wue:custom-data-changed"));   // NEW
+    return true;
+}
+
+function removeAllLocalAnalyses() {
+    try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith(RESULT_KEY_PREFIX)) localStorage.removeItem(k);
+        }
+    } catch (_) {}
     try { localStorage.removeItem(HISTORY_KEY); } catch (_) {}
+}
+
+async function deleteAllAnalyses() {
+    if (!(await serverDelete("/api/custom-test/attempts"))) return false;
+    removeAllLocalAnalyses();
+    document.dispatchEvent(new Event("wue:custom-data-changed"));   // NEW
+    return true;
+}
+
+/* ---------- TEST (+ its analysis) ---------- */
+function removeLocalPaper(paperId) {
+    try { sessionStorage.removeItem("wue:attemptAllowed:" + paperId); } catch (_) {}
+    try {
+        const raw = localStorage.getItem(PAPER_LIST_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(list)) {
+            localStorage.setItem(PAPER_LIST_KEY, JSON.stringify(list.filter((p) => p.id !== paperId)));
+        }
+    } catch (_) {}
+}
+
+async function deletePaper(paperId) {
+    // Analysis in DB (Pro / Pro Max)
+    const jobs = [serverDelete(`/api/custom-test/attempt/${encodeURIComponent(paperId)}`)];
+    // AI papers only: the paper and its embedded questions live in the DB.
+    // Normal (cp_) papers are local only; the shared question bank is never touched.
+    if (String(paperId).startsWith("ai_")) {
+        jobs.push(serverDelete(`/api/custom-test/ai/paper/${encodeURIComponent(paperId)}`));
+    }
+    if ((await Promise.all(jobs)).includes(false)) return false;
+
+        removeLocalAnalysis(paperId);
+    removeLocalPaper(paperId);
+    document.dispatchEvent(new Event("wue:custom-data-changed"));   // NEW
+    return true;
+}
+
+async function deleteAllPapers() {
+    const results = await Promise.all([
+        serverDelete("/api/custom-test/attempts"),
+        serverDelete("/api/custom-test/ai/papers"),
+    ]);
+    if (results.includes(false)) return false;
+
+        removeAllLocalAnalyses();
     try { localStorage.removeItem(PAPER_LIST_KEY); } catch (_) {}
-    await serverDelete("/api/custom-test/attempts");
+    document.dispatchEvent(new Event("wue:custom-data-changed"));   // NEW
+    return true;
 }
 
     function icons() { window.lucide && window.lucide.createIcons(); }
 
 
-    function showConfirmModal(message) {
+function showConfirmModal(message, opts = {}) {
     return new Promise((resolve) => {
         const modal = document.getElementById("confirmModal");
+        const titleEl = document.getElementById("confirmModalTitle");
         const msgEl = document.getElementById("confirmModalMessage");
         const okBtn = document.getElementById("confirmModalOk");
         const cancelBtn = document.getElementById("confirmModalCancel");
         if (!modal || !msgEl || !okBtn || !cancelBtn) { resolve(window.confirm(message)); return; }
 
+        // Move the modal to <body> so it is visible even when its parent section is hidden
+        if (modal.parentElement !== document.body) document.body.appendChild(modal);
+
+        if (titleEl) titleEl.textContent = opts.title || "Are you sure?";
         msgEl.textContent = message;
+        okBtn.textContent = opts.confirmLabel || "Delete";
         modal.classList.remove("hidden");
         icons();
 
@@ -202,7 +265,12 @@ function buildActiveCardHtml(paper) {
                         <p class="text-xs text-slate-500 truncate">${topic}</p>
                     </div>
                 </div>
-                ${badgeHtml(paper)}
+                                <div class="flex items-center gap-1.5 shrink-0">
+                    ${badgeHtml(paper)}
+                    <button type="button" class="paper-delete-btn w-7 h-7 grid place-items-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Delete this test" aria-label="Delete this test">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="mt-5 flex items-center justify-between text-center">
@@ -233,6 +301,13 @@ async function renderActive() {
     const slot = document.getElementById("active-paper-slot");
     const papers = await loadPapers();
 
+    const delAllBtn = document.getElementById("clear-all-papers");
+    if (delAllBtn) {
+        const hasPapers = papers.length > 0;
+        delAllBtn.classList.toggle("hidden", !hasPapers);
+        delAllBtn.classList.toggle("inline-flex", hasPapers);
+    }
+        
     if (!papers.length) {
         slot.className = "";
         slot.innerHTML = `<div class="wiz-card text-center py-8 sm:py-10">
@@ -299,7 +374,7 @@ async function renderActive() {
                         </div>
                         <div class="flex items-center gap-1.5">
     <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full ${t.badge}">${p.scorePercent}%</span>
-    <button type="button" class="history-delete-btn w-7 h-7 grid place-items-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" data-paper-id="${p.paperId}" title="Delete this attempt" aria-label="Delete this attempt">
+    <button type="button" class="history-delete-btn w-7 h-7 grid place-items-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" data-paper-id="${p.paperId}" title="Delete this analysis" aria-label="Delete this analysis">
         <i data-lucide="trash-2" class="w-4 h-4"></i>
     </button>
 </div>
@@ -341,23 +416,63 @@ async function renderActive() {
         document.getElementById("create-paper-btn")?.addEventListener("click", goToCreatePaper);
  
 
+        // Your Papers: delete a single analysis (the test stays)
         document.getElementById("papers-history-grid")?.addEventListener("click", async (e) => {
-    const btn = e.target.closest(".history-delete-btn");
-    if (!btn) return;
-    const ok = await showConfirmModal("Delete this attempt? Its analysis will also be removed.");
-    if (!ok) return;
-    await deleteHistoryItem(btn.dataset.paperId);
-    renderHistory();
-    await renderActive();
-    icons();
-});
+            const btn = e.target.closest(".history-delete-btn");
+            if (!btn) return;
+            const ok = await showConfirmModal("This will permanently delete your attempt and its analysis. The test will remain available. This action cannot be undone.", { title: "Delete this analysis?", confirmLabel: "Delete analysis" });
+            if (!ok) return;
+            if (!(await deleteAnalysis(btn.dataset.paperId))) {
+                notify("We couldn't delete this analysis. Please try again.");
+                return;
+            }
+            renderHistory();
+            await renderActive();
+            icons();
+        });
 
-document.getElementById("clear-all-history")?.addEventListener("click", async () => {
-    const ok = await showConfirmModal("Clear all your papers and attempts");
-    if (!ok) return;
-    await clearAllHistory();
-    location.reload();
-});
+        // Your Papers: delete all analyses (tests stay)
+        document.getElementById("clear-all-history")?.addEventListener("click", async () => {
+            const ok = await showConfirmModal("This will permanently delete all your attempts and analyses. Your tests will remain available. This action cannot be undone.", { title: "Delete all analyses?", confirmLabel: "Delete all" });
+            if (!ok) return;
+            if (!(await deleteAllAnalyses())) {
+                notify("We couldn't delete your analyses. Please try again.");
+                return;
+            }
+            renderHistory();
+            await renderActive();
+            icons();
+        });
+
+        // Generated Paper: delete a single test (its analysis is deleted too)
+        document.getElementById("active-paper-slot")?.addEventListener("click", async (e) => {
+            const btn = e.target.closest(".paper-delete-btn");
+            if (!btn) return;
+            const paperId = btn.closest(".active-paper-card")?.dataset.paperId;
+            if (!paperId) return;
+            const ok = await showConfirmModal("This will permanently delete the test along with all of its attempts and analysis. This action cannot be undone.", { title: "Delete this test?", confirmLabel: "Delete test" });
+            if (!ok) return;
+            if (!(await deletePaper(paperId))) {
+                notify("We couldn't delete this test. Please try again.");
+                return;
+            }
+            renderHistory();
+            await renderActive();
+            icons();
+        });
+
+        // Generated Paper: delete all tests (all analyses are deleted too)
+        document.getElementById("clear-all-papers")?.addEventListener("click", async () => {
+            const ok = await showConfirmModal("This will permanently delete all your tests along with all of their attempts and analyses. This action cannot be undone.", { title: "Delete all tests?", confirmLabel: "Delete all" });
+            if (!ok) return;
+            if (!(await deleteAllPapers())) {
+                notify("We couldn't delete your tests. Please try again.");
+                return;
+            }
+            renderHistory();
+            await renderActive();
+            icons();
+        });
 
 
         document.getElementById("history-view-all")?.addEventListener("click", (e) => {

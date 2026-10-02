@@ -21,6 +21,161 @@
 <section id="custom-test-page" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-[104px] sm:pt-[120px] lg:pt-[136px] pb-8 sm:pb-10" data-tier="<%= typeof tier !== 'undefined' ? tier : 'free' %>">
 
     <!-- ===================== HERO ===================== -->
+
+    <% if (isPaidTier) { %>
+<!-- ===================== PRO+ DASHBOARD (Pro / Pro Max only) ===================== -->
+<div id="ct-pro-dashboard" class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1.65fr_1fr]">
+
+    <!-- LEFT COLUMN -->
+    <div class="flex min-w-0 flex-col gap-5">
+
+        <!-- Hero -->
+        <section aria-labelledby="generator-heading" class="relative overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-5 shadow-sm sm:p-7">
+            <div class="relative z-10 max-w-md">
+                <span class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-indigo-700 shadow-sm ring-1 ring-indigo-100">
+                    <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+                    AI Custom Test Generator
+                    <span class="rounded-md bg-indigo-600 px-1.5 py-0.5 text-[10px] font-bold text-white"><%= tier === 'promax' ? 'Pro Max' : 'Pro' %></span>
+                </span>
+                <h1 id="generator-heading" class="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Create Custom Test</h1>
+                <p class="mt-2 text-sm leading-relaxed text-slate-500">Get personalized papers, focus on weak topics, track your progress and improve with AI.</p>
+
+                <div class="mt-5 flex flex-wrap gap-3">
+                    <a href="<%= isPaidPage ? '/dashboard/custom-test/create' : '/custom-test/create' %>" id="create-paper-btn"
+    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-indigo-700 active:scale-[0.98] sm:w-auto">
+    <i data-lucide="plus" class="h-4 w-4"></i> Create New Test
+</a>
+                    <a href="<%= isPaidPage ? '/dashboard/custom-test/ai-generate' : '/custom-test/ai-generate' %>"
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:-translate-y-0.5 hover:bg-indigo-50 active:scale-[0.98] sm:w-auto">
+                        <i data-lucide="sparkles" class="h-4 w-4"></i> Generate with AI
+                    </a>
+                </div>
+
+                <div class="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                    <span class="inline-flex items-center gap-1.5 font-semibold text-emerald-600">
+                        <i data-lucide="check" class="h-3.5 w-3.5"></i> <%= tier === 'promax' ? 'Pro Max Active' : 'Pro Active' %>
+                    </span>
+                    <% if (typeof customTestExpiresAt !== 'undefined' && customTestExpiresAt) { %>
+                        <span>Valid till <%= new Date(customTestExpiresAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %></span>
+                    <% } %>
+                    <a href="<%= isPaidPage ? '/dashboard/custom-test/manage' : '/custom-test/manage' %>" class="font-semibold text-indigo-600 hover:underline">Manage Plan &rarr;</a>
+                </div>
+            </div>
+
+            <!-- Illustration (hidden on small screens) -->
+            <svg viewBox="0 0 200 200" fill="none" aria-hidden="true" class="pointer-events-none absolute right-4 top-1/2 hidden w-44 -translate-y-1/2 md:block lg:w-52">
+                <circle cx="100" cy="100" r="82" fill="#e0e7ff" opacity="0.6"/>
+                <line x1="100" y1="60" x2="100" y2="40" stroke="#a5b4fc" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="100" cy="36" r="6" fill="#818cf8"/>
+                <rect x="55" y="60" width="90" height="70" rx="28" fill="#fff" stroke="#c7d2fe" stroke-width="3"/>
+                <rect x="68" y="76" width="64" height="38" rx="16" fill="#312e81"/>
+                <circle cx="86" cy="95" r="6" fill="#67e8f9"/><circle cx="114" cy="95" r="6" fill="#67e8f9"/>
+                <rect x="70" y="136" width="60" height="30" rx="14" fill="#fff" stroke="#c7d2fe" stroke-width="3"/>
+            </svg>
+        </section>
+
+        <!-- Performance -->
+        <section aria-labelledby="ct-perf-heading" class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="grid h-9 w-9 place-items-center rounded-xl bg-indigo-100 text-indigo-600"><i data-lucide="bar-chart-3" class="h-4 w-4"></i></span>
+                    <h2 id="ct-perf-heading" class="text-base font-bold text-slate-900">Your Custom Test Performance</h2>
+                </div>
+                <select id="ctRangeSelect" aria-label="Select range"
+                    class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                    <option value="7">Last 7 Tests</option>
+                    <option value="15">Last 15 Tests</option>
+                    <option value="all">All Tests</option>
+                </select>
+            </div>
+
+            <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div class="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5">
+                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-indigo-100 text-indigo-600"><i data-lucide="file-text" class="h-4 w-4"></i></span>
+                    <div class="min-w-0"><p id="ctStatTests" class="text-xl font-extrabold text-slate-900">&ndash;</p><p class="truncate text-[11px] text-slate-400">Tests Attempted</p></div>
+                </div>
+                <div class="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5">
+                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-violet-100 text-violet-600"><i data-lucide="star" class="h-4 w-4"></i></span>
+                    <div class="min-w-0"><p id="ctStatScore" class="text-xl font-extrabold text-slate-900">&ndash;</p><p class="truncate text-[11px] text-slate-400">Avg. Score</p></div>
+                </div>
+                <div class="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5">
+                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-600"><i data-lucide="target" class="h-4 w-4"></i></span>
+                    <div class="min-w-0"><p id="ctStatAccuracy" class="text-xl font-extrabold text-slate-900">&ndash;</p><p class="truncate text-[11px] text-slate-400">Accuracy</p></div>
+                </div>
+                <div class="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5">
+                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-600"><i data-lucide="arrow-up" class="h-4 w-4"></i></span>
+                    <div class="min-w-0"><p id="ctStatStrong" class="text-xl font-extrabold text-slate-900">&ndash;</p><p class="truncate text-[11px] text-slate-400">Strong Topics</p></div>
+                </div>
+            </div>
+
+            <h3 class="mt-6 text-sm font-bold text-slate-800">Accuracy Trend</h3>
+            <div class="relative mt-3 h-56 sm:h-64"><canvas id="ctTrendChart"></canvas></div>
+            <div id="ctTrendEmpty" class="mt-3 hidden rounded-xl border border-dashed border-slate-200 bg-slate-50 py-14 text-center text-sm text-slate-400">
+                Attempt a custom test to see your accuracy trend.
+            </div>
+        </section>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="flex min-w-0 flex-col gap-5">
+
+        <!-- AI Suggestions -->
+        <section aria-labelledby="ct-sug-heading" class="rounded-3xl border border-indigo-100 bg-gradient-to-b from-indigo-50/70 to-white p-5 shadow-sm">
+            <div class="flex items-center gap-2">
+                <span class="grid h-8 w-8 place-items-center rounded-xl bg-indigo-100 text-indigo-600"><i data-lucide="sparkles" class="h-4 w-4"></i></span>
+                <h2 id="ct-sug-heading" class="text-base font-bold text-slate-900">AI Suggestions</h2>
+                <span class="rounded-md bg-indigo-600 px-1.5 py-0.5 text-[10px] font-bold text-white">NEW</span>
+            </div>
+            <p class="mt-1 text-xs text-slate-400">Based on your performance &amp; weak topics</p>
+
+            <div class="mt-3 divide-y divide-slate-100">
+                <div>
+                    <button type="button" data-ct-suggest="revision" class="flex w-full items-center gap-3 py-3 text-left">
+                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><i data-lucide="calendar-check" class="h-4 w-4"></i></span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-semibold text-slate-800">Smart Revision Plan</span>
+                            <span id="ctSugRevisionSub" class="block truncate text-xs text-slate-400">Personalized study plan for you</span>
+                        </span>
+                        <i data-lucide="chevron-right" class="h-4 w-4 shrink-0 text-slate-400 transition-transform"></i>
+                    </button>
+                    <div data-ct-suggest-panel="revision" id="ctSugRevisionBody" class="hidden pb-3 pl-12 text-sm text-slate-600"></div>
+                </div>
+                <div>
+                    <button type="button" data-ct-suggest="weak" class="flex w-full items-center gap-3 py-3 text-left">
+                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><i data-lucide="target" class="h-4 w-4"></i></span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-semibold text-slate-800">Weak Topic Practice</span>
+                            <span id="ctSugWeakSub" class="block truncate text-xs text-slate-400">Focus on your weakest topics</span>
+                        </span>
+                        <i data-lucide="chevron-right" class="h-4 w-4 shrink-0 text-slate-400 transition-transform"></i>
+                    </button>
+                    <div data-ct-suggest-panel="weak" id="ctSugWeakBody" class="hidden pb-3 pl-12 text-sm text-slate-600"></div>
+                </div>
+                <div>
+                    <button type="button" data-ct-suggest="insights" class="flex w-full items-center gap-3 py-3 text-left">
+                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><i data-lucide="bar-chart-3" class="h-4 w-4"></i></span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-semibold text-slate-800">Performance Insights</span>
+                            <span id="ctSugInsightsSub" class="block truncate text-xs text-slate-400">Detailed analysis of your attempts</span>
+                        </span>
+                        <i data-lucide="chevron-right" class="h-4 w-4 shrink-0 text-slate-400 transition-transform"></i>
+                    </button>
+                    <div data-ct-suggest-panel="insights" id="ctSugInsightsBody" class="hidden pb-3 pl-12 text-sm text-slate-600"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Activity -->
+        <section aria-labelledby="ct-recent-heading" class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+            <h2 id="ct-recent-heading" class="mb-4 text-lg font-bold text-slate-900">Recent Activity</h2>
+            <div id="ctRecentList" class="max-h-96 divide-y divide-slate-100 overflow-y-auto pr-1">
+                <p class="py-10 text-center text-sm text-slate-400">Loading&hellip;</p>
+            </div>
+        </section>
+    </div>
+</div>
+<% } else { %>
+
     <section aria-labelledby="generator-heading"
         class="relative isolate overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-indigo-900 via-indigo-700 to-violet-700 text-white shadow-[0_24px_60px_-24px_rgba(67,56,202,0.6)] <%= isPaidTier ? '' : 'mt-8' %>">
 
@@ -180,11 +335,19 @@
         </div>
     </section>
 
+     <% } %>
+
     <!-- ===================== ACTIVE / GENERATED PAPER (localStorage se) ===================== -->
     <section aria-labelledby="active-paper-heading" class="mt-10">
-        <div class="mb-3 flex items-center gap-2.5">
-            <span class="grid h-8 w-8 place-items-center rounded-xl bg-indigo-100 text-indigo-700"><i data-lucide="file-text" class="h-4 w-4"></i></span>
-            <h2 id="active-paper-heading" class="text-base font-bold tracking-tight text-slate-900">Generated Paper</h2>
+                <div class="mb-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+                <span class="grid h-8 w-8 place-items-center rounded-xl bg-indigo-100 text-indigo-700"><i data-lucide="file-text" class="h-4 w-4"></i></span>
+                <h2 id="active-paper-heading" class="text-base font-bold tracking-tight text-slate-900">Generated Paper</h2>
+            </div>
+                        <button type="button" id="clear-all-papers"
+                class="hidden items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 hover:text-rose-700">
+                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i> Delete all
+            </button>
         </div>
 
         <div id="active-paper-slot" aria-live="polite">
@@ -200,6 +363,8 @@
         </div>
     </section>
 
+   
+
     <!-- ===================== YOUR PAPERS (HISTORY, localStorage se) ===================== -->
     <section aria-labelledby="your-papers-heading" class="mt-10 hidden" id="your-papers-section">
         <div class="mb-3 flex items-center justify-between gap-3">
@@ -214,24 +379,28 @@
         </div>
         <p id="papers-history-empty" class="hidden text-sm text-slate-400">You haven't completed any papers yet.</p>
         <div id="papers-history-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
+ 
 
-
-        <!-- ============ CONFIRM MODAL (delete / clear-all) ============ -->
-<div id="confirmModal" class="hidden fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
-        <span class="mx-auto w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4">
-            <i data-lucide="trash-2" class="w-5 h-5"></i>
-        </span>
-        <p id="confirmModalMessage" class="text-sm text-slate-700 leading-relaxed mb-5"></p>
-        <div class="flex gap-3">
-            <button type="button" id="confirmModalCancel"
-                class="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">Cancel</button>
-            <button type="button" id="confirmModalOk"
-                class="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700">OK</button>
+        <!-- ============ CONFIRM MODAL (shared by all delete actions) ============ -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+        <div class="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
+            <span class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                <i data-lucide="trash-2" class="h-5 w-5"></i>
+            </span>
+            <h3 id="confirmModalTitle" class="mb-1.5 text-base font-bold text-slate-900">Are you sure?</h3>
+            <p id="confirmModalMessage" class="mb-5 text-sm leading-relaxed text-slate-600"></p>
+            <div class="flex gap-3">
+                <button type="button" id="confirmModalCancel"
+                    class="flex-1 rounded-xl border border-slate-300 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
+                <button type="button" id="confirmModalOk"
+                    class="flex-1 rounded-xl bg-rose-600 py-2.5 text-sm font-semibold text-white hover:bg-rose-700">Delete</button>
+            </div>
         </div>
     </div>
-</div>
-    </section>
+
+</section>
+
+    
 
 </section>
 
@@ -280,4 +449,10 @@
 <% } %>
 
 <script src="/js/customTest/customdashboard.js" defer></script>
+
+<% if (isPaidTier) { %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/js/customTest/customStats.js" defer></script>
+<% } %>
+
 <script src="/js/customTest/aiPaperGenerator.js?v=2" defer></script>

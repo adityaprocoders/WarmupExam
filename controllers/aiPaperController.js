@@ -319,3 +319,32 @@ export const listAIPapers = async (req, res) => {
         res.status(500).json({ success: false, papers: [] });
     }
 };
+
+
+/* ------------------------------------------------------------
+   DELETE /api/custom-test/ai/paper/:paperId
+   Removes one AI paper (its questions are embedded in the document).
+------------------------------------------------------------ */
+export const deleteAIPaper = async (req, res) => {
+    try {
+        const r = await CustomAIPaper.deleteOne({ paperId: req.params.paperId, user: req.user._id });
+        res.json({ success: true, deleted: r.deletedCount });
+    } catch (err) {
+        console.error("deleteAIPaper error:", err);
+        res.status(500).json({ success: false, message: "Server error." });
+    }
+};
+
+/* ------------------------------------------------------------
+   DELETE /api/custom-test/ai/papers
+   Removes all AI papers of the logged-in user.
+------------------------------------------------------------ */
+export const clearAIPapers = async (req, res) => {
+    try {
+        const r = await CustomAIPaper.deleteMany({ user: req.user._id });
+        res.json({ success: true, deleted: r.deletedCount });
+    } catch (err) {
+        console.error("clearAIPapers error:", err);
+        res.status(500).json({ success: false, message: "Server error." });
+    }
+};

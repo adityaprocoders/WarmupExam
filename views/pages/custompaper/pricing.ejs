@@ -22,7 +22,7 @@ const plans = [
       ['Exam Selection — Multiple Exams'],
       ['Custom Practice Mode', 'subject, topic, difficulty & language'],
       ['Weak Area Practice', 'from your enrolled Test Series'],
-      ['Basic Performance Analysis'],
+      ['Basic Performance Analysis', 'saved in this browser only'],
       ['AI Question Import', 'Images & Text']
     ],
     tiles: limitTiles(AL.free),
@@ -37,9 +37,13 @@ const plans = [
     desc: 'Advanced practice and personalized preparation.',
     banner: { icon: 'fa-circle-check', text: 'Completely Ad-Free', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-100' },
     incTitle: 'Everything in Free, plus',
-    features: [
-      ['Data After Reload'], ['Exam Pattern Mode'], ['Custom Difficulty Distribution'],
+        features: [
+      ['Data After Reload'],
+      ['Analysis Backup', 'saved to your account for 24 hours, open on any device'],
+      ['Exam Pattern Mode'], ['Custom Difficulty Distribution'],
       ['Instant Paper Preview'], ['Instant Test Generation'], ['Detailed Performance Analysis'], ['Difficulty-wise Performance'],
+      ['Performance Dashboard', 'accuracy trend, strong & weak topics'],
+      ['Smart Revision Suggestions', 'based on your weak topics'],
       ['Answer Key'], ['Print / Download Paper'], ['AI Question Import', 'PDF Upload']
     ],
     tiles: limitTiles(AL.pro),
@@ -53,10 +57,13 @@ const plans = [
     desc: 'Maximum personalization for serious preparation.',
     banner: { icon: 'fa-circle-check', text: 'Completely Ad-Free', cls: 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/20' },
     incTitle: 'Everything in Pro, plus',
-    features: [
+        features: [
       ['AI Weak-Topic Custom Papers'], ['Smart Personalized Paper'], ['Weak-topic Priority'], ['Previous Performance Based Paper'],
       ['Practice Wrong Questions'], ['Advanced Performance Insights'], ['Adaptive Difficulty'],
-      ['Personalized Weakness Tracking'], ['Smart Revision Suggestions'], ['AI Question Import', 'Maximum Quota']
+      ['Personalized Weakness Tracking'],
+      ['Longer Retention', 'analysis & AI papers kept for 48 hours'],
+      ['Reattempt Tests'],
+      ['AI Question Import', 'Maximum Quota']
     ],
     tiles: limitTiles(AL.promax),
     rows: limitRows(AL.promax),
