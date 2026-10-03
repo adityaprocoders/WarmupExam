@@ -227,9 +227,9 @@ if (!extracted.length) {
                     expiresAt: new Date(Date.now() + expiryHours * 60 * 60 * 1000),
                 });
             } catch (dbErr) {
-                console.error("CustomAIPaper save failed (non-fatal):", dbErr);
-               
-            }
+    console.error("CustomAIPaper save failed:", dbErr);
+    return res.status(500).json({ success: false, message: "Could not save your paper. Please try again." });
+}
         }
 
         res.json({

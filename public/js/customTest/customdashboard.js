@@ -1,6 +1,8 @@
 (function () {
     "use strict";
 
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
     const PAPER_LIST_KEY = "wue:customPaper:list";
     const RESULT_KEY_PREFIX = "wue:customPaper:result:";
     const HISTORY_KEY = "wue:customPaper:history";
@@ -308,12 +310,16 @@ async function renderActive() {
         delAllBtn.classList.toggle("inline-flex", hasPapers);
     }
         
-    if (!papers.length) {
+        if (!papers.length) {
         slot.className = "";
-        slot.innerHTML = `<div class="wiz-card text-center py-8 sm:py-10">
+        slot.innerHTML = `<div class="wiz-card flex flex-col items-center border-2 border-dashed border-indigo-200 bg-gradient-to-b from-white to-indigo-50/60 py-8 text-center shadow-none sm:py-10">
+            <span class="mb-3.5 grid h-[3.25rem] w-[3.25rem] place-items-center rounded-2xl bg-indigo-100 text-indigo-600">
+                <i data-lucide="file-plus-2" class="h-6 w-6"></i>
+            </span>
             <p class="text-sm font-semibold text-slate-900">No paper generated yet</p>
-            <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">Create a custom paper above to get a mock test with your chosen exam, topics, and difficulty.</p>
+            <p class="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-slate-500">Create a custom paper above to get a mock test with your chosen exam, topics, and difficulty.</p>
         </div>`;
+        icons();
         return;
     }
 

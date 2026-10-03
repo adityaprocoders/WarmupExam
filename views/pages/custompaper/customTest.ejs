@@ -18,9 +18,15 @@
     </div>
 <% } %>
 
-<section id="custom-test-page" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-[104px] sm:pt-[120px] lg:pt-[136px] pb-8 sm:pb-10" data-tier="<%= typeof tier !== 'undefined' ? tier : 'free' %>">
+<section id="custom-test-page" class="min-h-screen max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-[104px] sm:pt-[120px] lg:pt-[136px] pb-8 sm:pb-10" data-tier="<%= typeof tier !== 'undefined' ? tier : 'free' %>">
 
     <!-- ===================== HERO ===================== -->
+<div class="mb-4">
+    <a href="#" id="backBtn" data-fallback="<%= isPaidPage ? '/dashboard' : '/' %>"
+       class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-2 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 backdrop-blur transition hover:text-indigo-600 hover:ring-indigo-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:py-1.5">
+        <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i> Back
+    </a>
+</div>
 
     <% if (isPaidTier) { %>
 <!-- ===================== PRO+ DASHBOARD (Pro / Pro Max only) ===================== -->
@@ -456,3 +462,28 @@
 <% } %>
 
 <script src="/js/customTest/aiPaperGenerator.js?v=2" defer></script>
+<script nonce="<%= cspNonce %>">
+(function () {
+    function init() {
+        var btn = document.getElementById('backBtn');
+        if (!btn) return;
+
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            var ref = document.referrer;
+            var sameSite = false;
+            try { sameSite = !!ref && new URL(ref).origin === window.location.origin; } catch (_) {}
+
+            if (history.length > 1 && (sameSite || !ref)) {
+                history.back();
+            } else {
+                window.location.href = btn.getAttribute('data-fallback') || '/';
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
+</script>

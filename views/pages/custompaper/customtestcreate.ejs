@@ -8,6 +8,13 @@
 
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[100px] sm:pt-[120px] lg:pt-[136px] pb-6 sm:pb-10">
 
+    <div class="mb-4">
+    <a href="#" id="backBtn" data-fallback="<%= (typeof isPaidPage !== 'undefined' && isPaidPage) ? '/dashboard/custom-test' : '/custom-test' %>"
+       class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-2 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 backdrop-blur transition hover:text-indigo-600 hover:ring-indigo-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:py-1.5">
+        <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i> Back
+    </a>
+</div>
+
     <div class="wiz-card mb-6 sm:mb-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
         <div class="min-w-0">
             <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Build Your Custom Paper</h1>
@@ -575,4 +582,29 @@
 
 
 <script type="application/ld+json" nonce="<%= cspNonce %>"><%- structuredData %></script>
+<script nonce="<%= cspNonce %>">
+(function () {
+    function init() {
+        var btn = document.getElementById('backBtn');
+        if (!btn) return;
+
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            var ref = document.referrer;
+            var sameSite = false;
+            try { sameSite = !!ref && new URL(ref).origin === window.location.origin; } catch (_) {}
+
+            if (history.length > 1 && (sameSite || !ref)) {
+                history.back();
+            } else {
+                window.location.href = btn.getAttribute('data-fallback') || '/';
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
+</script>   <!-- DELETE -->
 <script src="/js/customTest/wizard.js" defer></script>

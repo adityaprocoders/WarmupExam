@@ -1,6 +1,5 @@
 import Listing from "../models/listing.js";
 import Test from "../models/Test.js";
-import router from "../routes/ownerRoutes.js";
 import Category from "../models/Category.js";
 import { getValidEnrollments } from "../utils/cleanupHelpers.js";
 
@@ -60,12 +59,12 @@ categories.forEach(c => {
 });
 };
 
-export const aboutUs = (req, res) => res.render("pages/UI/AboutUs", {
-    title: "About Us - Built by Aspirants Who Sat These Exams",
+ export const aboutUs = (req, res) => res.render("pages/UI/AboutUs", {
+    title: "About WarmupExam - Founded by Aditya Kumar Singh",
     description:
-         "WarmupExam was built by aspirants frustrated with PDF test series that didn't match the real exam pattern. Here's our mission.",
+        "WarmupExam is an independent mock test platform built and developed by Aditya Kumar Singh, a full-stack developer, to give aspirants realistic exam practice.",
     keywords:
-        "about WarmupExam, mock test platform India, exam preparation startup, rank predictor, weak area analysis",
+        "about WarmupExam, Aditya Kumar Singh, WarmupExam founder, mock test platform India",
     canonicalUrl: "https://warmupexam.com/aboutUs"
 });
 
@@ -112,4 +111,4 @@ export const help = (req, res) => res.render("pages/UI/help-center", {
     canonicalUrl: "https://warmupexam.com/help"
 });
 
-export default router;
+ 

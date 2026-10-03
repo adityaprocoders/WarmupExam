@@ -237,7 +237,7 @@ if (langEl) langEl.textContent = cfg.language || paper.language || "English";
         HAS_SUBJECT_TABS = cfg.timeStrategy === "sectional" && Array.isArray(cfg.subjectTime) && cfg.subjectTime.length > 0;
 
         let state = questions.map(() => ({
-            visited: false, marked: false, selected: null, numericValue: null, sectionIndex: 0,
+            visited: false, marked: false, selected: null, numericValue: null, sectionIndex: 0, saved: false,
         }));
 
         if (HAS_SUBJECT_TABS) {
@@ -272,6 +272,8 @@ if (langEl) langEl.textContent = cfg.language || paper.language || "English";
         const paletteGrid = $("#paletteGrid");
         const paletteGridMobile = $("#paletteGridMobile");
         const prevBtn = $("#prevBtn");
+        const saveNextBtn = $("#saveNextBtn");
+        const footerSubmitBtn = $("#footerSubmitBtn");
         const timerDisplay = $("#timerDisplay");
         const timerLabel = $("#timerLabel");
         const submitBreakdownBody = $("#submitBreakdownBody");
@@ -336,6 +338,15 @@ if (langEl) langEl.textContent = cfg.language || paper.language || "English";
         }
 
         // ---------------- RENDER QUESTION ----------------
+
+                function updateNavButtons() {
+            if (!saveNextBtn || !footerSubmitBtn) return;
+            const isLast = current === total - 1;
+            const showSubmit = isLast && state[current].saved;
+            saveNextBtn.classList.toggle("hidden", showSubmit);
+            footerSubmitBtn.classList.toggle("hidden", !showSubmit);
+        }
+
         function renderQuestion() {
             const q = questions[current];
             const disp = getDisplay(q);
@@ -415,6 +426,7 @@ if (langEl) langEl.textContent = cfg.language || paper.language || "English";
             }
 
             prevBtn.disabled = current === 0;
+            updateNavButtons();
             if (HAS_SUBJECT_TABS) updateSubjectTabsState();
             updatePalette();
         }
@@ -426,6 +438,7 @@ if (langEl) langEl.textContent = cfg.language || paper.language || "English";
             const idx = Number(input.dataset.index);
             const q = questions[current];
             const st = state[current];
+            st.saved = false;
 
             if (q.type === "multiple") {
                 st.selected = st.selected || [];
@@ -442,8 +455,10 @@ if (langEl) langEl.textContent = cfg.language || paper.language || "English";
         });
 
         integerInput.addEventListener("input", (e) => {
+            state[current].saved = false;
             state[current].numericValue = e.target.value === "" ? null : Number(e.target.value);
             updatePalette();
+            updateNavButtons();
         });
 
         // ---------------- NAVIGATION ----------------
@@ -467,18 +482,27 @@ if (langEl) langEl.textContent = cfg.language || paper.language || "English";
         }
 
         function saveAndNext() {
-            if (current < total - 1) goto(current + 1);
-            else updatePalette();
+            if (current < total - 1) {
+                goto(current + 1);
+            } else {
+                state[current].saved = true;
+                renderQuestion();
+            }
         }
 
         function markForReview() {
             state[current].marked = true;
-            if (current < total - 1) goto(current + 1);
-            else { renderQuestion(); }
+            if (current < total - 1) {
+                goto(current + 1);
+            } else {
+                state[current].saved = true;
+                renderQuestion();
+            }
         }
 
         function clearResponse() {
             const q = questions[current];
+            state[current].saved = false;
             if (q.type === "integer") { state[current].numericValue = null; integerInput.value = ""; }
             else { state[current].selected = null; }
             renderQuestion();

@@ -45,8 +45,6 @@ router.get("/sitemap.xml", async (req, res) => {
         urls.push(urlEntry(`${baseUrl}/ebooks`, { priority: "0.7" }));
         urls.push(urlEntry(`${baseUrl}/alltests`, { priority: "0.9" }));
         urls.push(urlEntry(`${baseUrl}/custom-test`, { priority: "0.8" }));
-        urls.push(urlEntry(`${baseUrl}/custom-test/create`, { priority: "0.8" }));
-        urls.push(urlEntry(`${baseUrl}/custom-test/ai-generate`, { priority: "0.8" }));
         urls.push(urlEntry(`${baseUrl}/pricing`, { priority: "0.7" }));
         urls.push(urlEntry(`${baseUrl}/skill-tests/typing-test`, { priority: "0.8" }));
         urls.push(urlEntry(`${baseUrl}/skill-tests/data-entry-test`, { priority: "0.8" }));

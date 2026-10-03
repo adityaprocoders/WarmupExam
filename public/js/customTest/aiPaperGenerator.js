@@ -29,7 +29,7 @@
         hard:   { easy: 0,   medium: 0,   hard: 100 },
         mixed:  { easy: 25,  medium: 50,  hard: 25 },
     };
-    const ON = ["border-indigo-400", "ring-2", "ring-indigo-100", "bg-indigo-50/40"];
+    
     const setTxt = (id, t) => { const el = $(id); if (el) el.textContent = t; };
     const diffTotal = () => state.difficulty.easy + state.difficulty.medium + state.difficulty.hard;
 
@@ -57,9 +57,11 @@
     function setMode(mode) {
         state.mode = mode;
         document.querySelectorAll("[data-mode-card]").forEach((c) => {
-            const on = c.dataset.modeCard === mode;
-            ON.forEach((k) => c.classList.toggle(k, on));
-        });
+    const on = c.dataset.modeCard === mode;
+    c.classList.toggle("is-active", on);
+    c.setAttribute("aria-pressed", on ? "true" : "false");
+});
+
         const t = MODE_TEXT[mode];
         setTxt("ai-src-sub", t.sub);
         setTxt("ai-src-images-desc", t.images);

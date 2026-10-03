@@ -138,7 +138,8 @@ function stepValid(key) {
     icons();
   }
 
-function goToStep(index) {
+function goToStep(index, opts) {
+  const doScroll = !opts || opts.scroll !== false;
   currentStepIndex = Math.max(0, Math.min(index, STEPS.length - 1));
   const key = STEPS[currentStepIndex];
   Object.values(STEP_PANELS).forEach((id) => $(id)?.classList.add("hidden"));
@@ -147,7 +148,10 @@ function goToStep(index) {
   if (key === "settings") renderExamPatternTiming();
   updateStepButtons();
   renderStepNav();
-  wizardFlowEl?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  if (doScroll && wizardFlowEl && wizardFlowEl.getBoundingClientRect().top < 0) {
+    wizardFlowEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
   function updateStepButtons() {
@@ -185,7 +189,7 @@ function goToStep(index) {
       maxUnlockedIndex = Math.max(maxUnlockedIndex, currentStepIndex + 1);
       goToStep(currentStepIndex + 1);
     });
-    goToStep(0);
+    goToStep(0, { scroll: false });
   }
 
   /* Ek step ka data badalne par uske AAGE ke saare steps ka data + unlock reset karo

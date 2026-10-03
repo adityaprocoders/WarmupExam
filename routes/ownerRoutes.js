@@ -28,7 +28,8 @@ import {
     getListingMarksForExam,
     getCategoriesOwner,
     getAllExamPatternSummaries,
-     deleteExamPatternSummary  
+     deleteExamPatternSummary,
+    getUserAIUsageOwner
 } from "../controllers/ownerController.js";
 import { isOwner } from "../middleware/isLoggedIn.js";
 import { getLoginHistory, deleteLoginHistory, deleteAllLoginHistory } from "../controllers/ownerController.js";
@@ -74,6 +75,7 @@ router.get("/api/owner/custom-test/pricing", isOwner, getCustomTestPricingOwner)
 router.patch("/api/owner/custom-test/pricing", isOwner, updateCustomTestPricingOwner);
 router.post("/api/owner/users/:id/custom-test/grant", isOwner, grantCustomTestAccess);
 router.post("/api/owner/users/:id/custom-test/revoke", isOwner, revokeCustomTestAccess);
+router.get("/api/owner/users/:id/ai-usage", isOwner, getUserAIUsageOwner);
 
 router.get("/api/owner/login-history", isOwner, getLoginHistory);
 router.delete("/api/owner/login-history/:id", isOwner, deleteLoginHistory);

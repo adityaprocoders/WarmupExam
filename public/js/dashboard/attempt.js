@@ -22,7 +22,7 @@ subjectsOrder.forEach((subj, sIdx) => {
 let currentIndex = 0;
 let currentSectionIndex = 0;
 
-let qState = flatQuestions.map(() => ({ status: 'notVisited', answer: null }));
+let qState = flatQuestions.map(() => ({ status: 'notVisited', answer: null, saved: false }));
 let testSubmitted = false;
 
 /* ================= MATH RENDERING (KaTeX) ================= */
@@ -273,6 +273,19 @@ function updateTimerDisplay() {
 }
 
 /* ================= RENDER QUESTION ================= */
+
+function updateNavButtons() {
+    const saveNextBtn = document.getElementById('saveNextBtn');
+    const footerSubmitBtn = document.getElementById('footerSubmitBtn');
+    if (!saveNextBtn || !footerSubmitBtn) return;
+
+    const isLast = currentIndex === flatQuestions.length - 1;
+    const showSubmit = isLast && qState[currentIndex].saved;
+
+    saveNextBtn.classList.toggle('hidden', showSubmit);
+    footerSubmitBtn.classList.toggle('hidden', !showSubmit);
+}
+
 function renderQuestion() {
     if (flatQuestions.length === 0) return;
 
@@ -338,6 +351,7 @@ function renderQuestion() {
     }
 
     document.getElementById('prevBtn').disabled = currentIndex === 0;
+updateNavButtons();
 
     if (HAS_SUBJECT_TABS) {
         document.querySelectorAll('.subject-tab').forEach((el, i) => {
@@ -354,6 +368,7 @@ function renderQuestion() {
 
 function selectOption(idx, type) {
     const state = qState[currentIndex];
+    state.saved = false;
     if (type === 'multiple') {
         if (!Array.isArray(state.answer)) state.answer = [];
         const pos = state.answer.indexOf(idx);
@@ -368,14 +383,21 @@ function selectOption(idx, type) {
 function saveIntegerAnswer() {
     const state = qState[currentIndex];
     const val = document.getElementById('integerInput').value;
+    state.saved = false;
     state.answer = val === '' ? null : Number(val);
     state.status = (val === '') ? 'notAnswered' : 'answered';
     renderPalette();
     updateCounts();
+    updateNavButtons();
 }
 
 /* ================= NAV ACTIONS ================= */
 function saveAndNext() {
+    if (currentIndex === flatQuestions.length - 1) {
+        qState[currentIndex].saved = true;
+        renderQuestion();
+        return;
+    }
     goNext();
 }
 
@@ -383,12 +405,19 @@ function markForReview() {
     const state = qState[currentIndex];
     state.status = (state.answer !== null && state.answer !== undefined && !(Array.isArray(state.answer) && state.answer.length === 0))
         ? 'markedAnswered' : 'markedNotAnswered';
+
+    if (currentIndex === flatQuestions.length - 1) {
+        state.saved = true;
+        renderQuestion();
+        return;
+    }
     goNext();
 }
 
 function clearResponse() {
     qState[currentIndex].answer = null;
     qState[currentIndex].status = 'notAnswered';
+    qState[currentIndex].saved = false;
     renderQuestion();
 }
 

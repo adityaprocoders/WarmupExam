@@ -145,10 +145,13 @@ const hasSubjectTiming = normalizedTimeStrategy === 'subject'
             <button id="prevBtn" data-action="prev-question" class="px-3 sm:px-8 py-3 sm:py-2.5 rounded-xl border border-gray-300 text-gray-600 font-bold text-xs sm:text-sm active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed">
                 Previous
             </button>
-            <button data-action="save-and-next" class="px-3 sm:px-8 py-3 sm:py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-bold text-xs sm:text-sm active:scale-95 transition">
-                <span class="sm:hidden">Save &amp; Next</span>
-                <span class="hidden sm:inline">Save &amp; Next</span>
-            </button>
+            <button id="saveNextBtn" data-action="save-and-next" class="px-3 sm:px-8 py-3 sm:py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-bold text-xs sm:text-sm active:scale-95 transition">
+    Save &amp; Next
+</button>
+
+<button id="footerSubmitBtn" data-action="confirm-submit" class="hidden lg:hidden px-3 sm:px-8 py-3 sm:py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm active:scale-95 transition">
+    Submit Test
+</button>
         </div>
 
     </div>

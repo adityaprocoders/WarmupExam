@@ -128,12 +128,14 @@ app.use(helmet({
                     "https://fonts.gstatic.com",
                     "data:"
                 ],
-                imgSrc: [
+               imgSrc: [
     "'self'",
     "data:",
     "https://res.cloudinary.com",
     "https://lh3.googleusercontent.com",
     "https://*.googleusercontent.com",
+    "https://api.dicebear.com",
+    "https://placehold.co",
     "https://pagead2.googlesyndication.com",
     "https://*.adtrafficquality.google",
     "https://googleads.g.doubleclick.net",
@@ -239,7 +241,12 @@ app.get("/sw.js", (req, res) => {
 });
 
 app.use(express.static(path.join(__dirname, "public"), {
-    maxAge: process.env.NODE_ENV === "production" ? "7d" : 0,
+    maxAge: isProd ? "7d" : 0,
+    setHeaders(res, filePath) {
+        if (/\.(js|css|html)$/.test(filePath)) {
+            res.setHeader("Cache-Control", "no-cache"); // har baar ETag se check, change na ho to 304
+        }
+    },
 }));
 
 app.use(sitemapRoutes);

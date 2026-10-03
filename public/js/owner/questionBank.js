@@ -135,7 +135,7 @@ document.getElementById('qbStatTotal').closest('.bg-white').addEventListener('cl
         <td class="px-4 py-3">${statusBadge(q.status)}</td>
         <td class="px-4 py-3 text-gray-600 text-xs">${q.usedIn}</td>
         <td class="px-4 py-3 text-xs ${q.reportCount > 0 ? 'text-red-600 font-bold' : 'text-gray-400'}">${q.reportCount}</td>
-        <td class="px-4 py-3 text-right whitespace-nowrap" onclick="event.stopPropagation()">
+        <td class="px-4 py-3 text-right whitespace-nowrap" data-stop-row>
           <button data-id="${q._id}" class="qbEditBtn text-indigo-600 hover:text-indigo-800 mr-2"><i class="fa-solid fa-pen text-xs"></i></button>
           <button data-id="${q._id}" class="qbDuplicateBtn text-gray-500 hover:text-gray-700 mr-2"><i class="fa-regular fa-copy text-xs"></i></button>
           <button data-id="${q._id}" class="qbDeleteBtn text-red-500 hover:text-red-700"><i class="fa-solid fa-trash text-xs"></i></button>
@@ -144,7 +144,10 @@ document.getElementById('qbStatTotal').closest('.bg-white').addEventListener('cl
   }
 
   function attachRowEvents() {
-    document.querySelectorAll('.qbRowClick').forEach(row => row.addEventListener('click', () => openQbDetail(row.dataset.id)));
+    document.querySelectorAll('.qbRowClick').forEach(row => row.addEventListener('click', (e) => {
+    if (e.target.closest('[data-stop-row]')) return;   // Edit/Duplicate/Delete cell par row detail na khule
+    openQbDetail(row.dataset.id);
+}));
     document.querySelectorAll('.qbEditBtn').forEach(btn => btn.addEventListener('click', () => openQbEdit(btn.dataset.id)));
     document.querySelectorAll('.qbDuplicateBtn').forEach(btn => btn.addEventListener('click', () => duplicateQbQuestion(btn.dataset.id)));
     document.querySelectorAll('.qbDeleteBtn').forEach(btn => btn.addEventListener('click', () => deleteQbQuestion(btn.dataset.id)));

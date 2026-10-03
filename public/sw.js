@@ -1,75 +1,72 @@
-const CACHE_NAME = "warmupexam-v2";
-const urlsToCache = [
-  "/css/output.css",
-  "/images/logo.svg",
-  "/offline.html"
-];
+const CACHE_NAME = "warmupexam-v3";
+const urlsToCache = ["/css/output.css", "/images/logo.svg", "/offline.html"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return Promise.all(
-        urlsToCache.map((url) =>
-          cache.add(url).catch((err) => {
-            console.warn("Cache add failed for:", url, err);
-          })
-        )
-      );
-    })
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.all(urlsToCache.map((u) => cache.add(u).catch(() => {})))
+    )
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  if (!event.request.url.startsWith(self.location.origin)) return;
+function putSafe(req, res) {
+  if (res && res.ok && res.type === "basic") {
+    const clone = res.clone();
+    caches.open(CACHE_NAME).then((c) => c.put(req, clone)).catch(() => {});
+  }
+}
 
-  if (event.request.mode === "navigate") {
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  // 1) API aur private pages: kabhi cache nahi
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/dashboard") ||
+      url.pathname.startsWith("/owner") || url.pathname.startsWith("/profile") ||
+      url.pathname.startsWith("/attempt") || url.pathname.startsWith("/series")) {
+    return; // browser normal network se le
+  }
+
+  // 2) Pages: network, fail ho to sirf offline.html
+  if (req.mode === "navigate") {
     event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(async () => {
-          const cached = await caches.match(event.request);
-          if (cached) return cached;
-          const fallback = await caches.match("/offline.html");
-          if (fallback) return fallback;
-          return new Response(
-            "<h1>Offline</h1><p>Please check your internet connection.</p>",
-            { status: 503, headers: { "Content-Type": "text/html" } }
-          );
-        })
+      fetch(req).catch(async () =>
+        (await caches.match("/offline.html")) ||
+        new Response("<h1>Offline</h1><p>Please check your internet connection.</p>",
+          { status: 503, headers: { "Content-Type": "text/html" } })
+      )
     );
     return;
   }
 
+  // 3) JS / CSS: network-first (nayi deploy turant mile)
+  if (/\.(js|css)$/.test(url.pathname)) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => { putSafe(req, res); return res; })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // 4) Images / fonts: cache-first
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.ok && networkResponse.type === "basic") {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return new Response("", { status: 504, statusText: "Network error" });
-        });
-    })
+    caches.match(req).then((cached) =>
+      cached ||
+      fetch(req).then((res) => { putSafe(req, res); return res; })
+        .catch(() => new Response("", { status: 504 }))
+    )
   );
 });

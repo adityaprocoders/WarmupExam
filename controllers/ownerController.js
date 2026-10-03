@@ -12,7 +12,8 @@ import CustomTestPricing from "../models/customTestPricing.js";
 import ExamPatternSummary from "../models/ExamPatternSummary.js";
 import Category from "../models/Category.js";
 import CustomTestPayment from "../models/customTestPayment.js";
-
+import { calculateRankFromPredictor } from "../utils/rankHelper.js";
+import { getUsageSummary } from "../utils/aiUsageTracker.js";
 
 
 // ---------------- DASHBOARD STATS ----------------
@@ -456,6 +457,68 @@ export const renderUserDetailPage = async (req, res) => {
         };
         const customTestPricingJson = JSON.stringify(customTestPricing).replace(/</g, "\\u003c");
 
+        // ---------- TEST SERIES PERFORMANCE STATS (sirf test series ke normal tests) ----------
+const rawAttempts = await Attempt.find({ user: targetUser._id })
+    .populate("test", "title listing isLiveTest isDailyWarmup")
+    .lean();
+
+// Live test, daily warmup aur deleted test ke attempts hata do
+const seriesAttempts = rawAttempts.filter(a =>
+    a.test && !a.test.isLiveTest && !a.test.isDailyWarmup && a.test.listing
+);
+
+const statListingIds = [...new Set(seriesAttempts.map(a => String(a.test.listing)))];
+const statListings = await Listing.find({ _id: { $in: statListingIds } })
+    .select("rankPredictorData").lean();
+const predictorByListing = {};
+statListings.forEach(l => { predictorByListing[String(l._id)] = l.rankPredictorData || []; });
+
+let performanceStats = {
+    testsAttempted: 0,
+    overallAccuracy: "—",
+    averageScore: "—",
+    highestScore: "—",
+    highestScoreTest: "Highest Score",
+    bestRank: "—",
+    bestRankTest: "Best Rank",
+    worstRank: "—",
+    worstRankTest: "Worst Rank"
+};
+
+if (seriesAttempts.length > 0) {
+    const totalCorrect = seriesAttempts.reduce((s, a) => s + (a.correctCount || 0), 0);
+    const totalWrong = seriesAttempts.reduce((s, a) => s + (a.wrongCount || 0), 0);
+    const attemptedQs = totalCorrect + totalWrong;
+
+    const avg = seriesAttempts.reduce((s, a) => s + (a.score || 0), 0) / seriesAttempts.length;
+
+    let top = seriesAttempts[0];
+    let best = null, worst = null;
+
+    seriesAttempts.forEach(a => {
+        if ((a.score || 0) > (top.score || 0)) top = a;
+
+        const predictor = predictorByListing[String(a.test.listing)] || [];
+        const { rank } = calculateRankFromPredictor(a.score || 0, predictor);
+        if (typeof rank !== "number") return;   // predictor data nahi to skip
+
+        if (!best || rank < best.rank) best = { rank, title: a.test.title };
+        if (!worst || rank > worst.rank) worst = { rank, title: a.test.title };
+    });
+
+    performanceStats = {
+        testsAttempted: seriesAttempts.length,
+        overallAccuracy: attemptedQs > 0 ? Math.round((totalCorrect / attemptedQs) * 100) : 0,
+        averageScore: Math.round(avg * 10) / 10,
+        highestScore: top.score || 0,
+        highestScoreTest: top.test.title,
+        bestRank: best ? best.rank : "—",
+        bestRankTest: best ? best.title : "Best Rank",
+        worstRank: worst ? worst.rank : "—",
+        worstRankTest: worst ? worst.title : "Worst Rank"
+    };
+}
+
         const userDetail = {
             _id: targetUser._id,
             name: targetUser.name,
@@ -482,11 +545,7 @@ export const renderUserDetailPage = async (req, res) => {
             grantedSubscriptions,
             paymentHistory,
 
-            testsAttempted: "—",
-            overallAccuracy: "—",
-            averageScore: "—",
-            highestScore: "—",
-            bestRank: "—",
+            ...performanceStats,
             currentRank: "—",
             leaderboardPosition: "—",
             percentile: "—",
@@ -498,7 +557,7 @@ export const renderUserDetailPage = async (req, res) => {
 
         const availableListings = await Listing.find({});
 
-        res.render("owner/userDetail", {
+        res.render("owner/userdetail", {
             userDetail, availableListings, user: req.user,
             customTestInfo, customTestPricing, customTestPricingJson
         });
@@ -1216,5 +1275,37 @@ export const revokeCustomTestAccess = async (req, res) => {
     } catch (err) {
         console.error("Revoke custom test access error:", err);
         res.status(500).json({ success: false, message: "Failed to remove access." });
+    }
+};
+
+// ---------------- USER KA CUSTOM TEST AI USAGE (owner ke liye) ----------------
+export const getUserAIUsageOwner = async (req, res) => {
+    try {
+        const targetUser = await User.findById(req.params.id).select("customTestTier customTestExpiresAt");
+        if (!targetUser) return res.status(404).json({ success: false, message: "User not found." });
+
+        const now = new Date();
+        const rawTier = targetUser.customTestTier || "free";
+        const active = rawTier !== "free" && (!targetUser.customTestExpiresAt || targetUser.customTestExpiresAt > now);
+        const tier = active ? rawTier : "free";
+
+        const summary = await getUsageSummary(targetUser._id, tier);
+
+        res.json({
+            success: true,
+            tier,
+            tierLabel: tier === "promax" ? "Pro Max" : (tier === "pro" ? "Pro" : "Free"),
+            usage: {
+                aiQuestions: { used: summary.questionsUsed, limit: summary.questionsLimit },
+                requests: { used: summary.apiCallsUsed, limit: summary.apiCallsLimit },
+                text: { used: summary.textCharsUsed, limit: summary.textCharsLimit },
+                images: { used: summary.imagesUsed, limit: summary.imagesLimit },
+                pdf: { used: summary.pdfMBUsed, limit: summary.pdfMBLimit }
+            },
+            limits: summary.limits
+        });
+    } catch (err) {
+        console.error("Owner AI usage error:", err);
+        res.status(500).json({ success: false, message: "Failed to load AI usage." });
     }
 };

@@ -92,7 +92,7 @@ router.get("/dashboard/custom-test/manage", isLoggedIn, requireDashboardAccess, 
  
 
 router.delete("/api/custom-test/ai/paper/:paperId", isLoggedIn, deleteAIPaper);
-router.delete("/api/custom-test/ai/papers",         /* same middlewares as attempt delete */ clearAIPapers);
+router.delete("/api/custom-test/ai/papers", isLoggedIn, clearAIPapers);
  
 
 export default router;
