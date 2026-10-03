@@ -128,10 +128,12 @@ app.use(helmet({
                     "https://fonts.gstatic.com",
                     "data:"
                 ],
-               imgSrc: [
+                imgSrc: [
     "'self'",
     "data:",
     "https://res.cloudinary.com",
+    "https://lh3.googleusercontent.com",
+    "https://*.googleusercontent.com",
     "https://pagead2.googlesyndication.com",
     "https://*.adtrafficquality.google",
     "https://googleads.g.doubleclick.net",
