@@ -11,11 +11,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // XSS se bachne ke liye (title/message user ya admin se aa sakta hai)
     function escapeHtml(str = "") {
         return String(str).replace(/[&<>"']/g, c => ({
             "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
         }[c]));
+    }
+
+    function decodeAngle(str = "") {
+        return String(str)
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">");
     }
 
     function emptyState(text) {
@@ -69,8 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             <i data-lucide="${icon}" class="w-5 h-5 ${color}"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-slate-800 leading-snug break-words">${escapeHtml(n.title)}</p>
-                            <p class="text-xs text-slate-500 mt-0.5 leading-relaxed break-words">${escapeHtml(n.message)}</p>
+                            <p class="text-sm font-semibold text-slate-800 leading-snug break-words">${escapeHtml(decodeAngle(n.title))}</p>
+                            <p class="text-xs text-slate-500 mt-0.5 leading-relaxed break-words">${escapeHtml(decodeAngle(n.message))}</p>
                             <div class="flex items-center justify-between gap-2 mt-2">
                                 <p class="text-[10px] text-slate-400">${new Date(n.sentAt).toLocaleString()}</p>
                                 ${link ? `<a href="${link}" class="shrink-0 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800">View →</a>` : ""}

@@ -51,18 +51,17 @@ export function getLimitsForTier(tier) {
     return AI_LIMITS[tier] || AI_LIMITS.free;
 }
 
+ 
+ const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export function todayDateString() {
-    // Server local date, "YYYY-MM-DD" — calendar-day reset
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+    // IST calendar day, "YYYY-MM-DD" (server UTC par ho tab bhi raat 12 baje IST reset)
+    return new Date(Date.now() + IST_OFFSET_MS).toISOString().slice(0, 10);
 }
 
- 
 export function nextResetAt() {
-    const d = new Date();
-    d.setHours(24, 0, 0, 0);
-    return d.toISOString();
+    // Agli IST midnight (ISO string)
+    const next = (Math.floor((Date.now() + IST_OFFSET_MS) / DAY_MS) + 1) * DAY_MS - IST_OFFSET_MS;
+    return new Date(next).toISOString();
 }

@@ -4,8 +4,15 @@ import User from "../models/usersShema.js";
 import CustomTestPricing from "../models/customTestPricing.js";
 import CustomTestPayment from "../models/customTestPayment.js";
 import Coupon from "../models/coupon.js";
+import { recordPayment, applyRefund } from "../utils/paymentLedger.js";
 import { validateCustomTestCoupon } from "../utils/couponHelper.js";
+import { activateEnrollment } from "./paymentController.js";
 
+const safeEqual = (a, b) => {
+    const A = Buffer.from(String(a));
+    const B = Buffer.from(String(b));
+    return A.length === B.length && crypto.timingSafeEqual(A, B);
+};
 
 
 export const applyCustomTestCoupon = async (req, res) => {
@@ -45,6 +52,12 @@ export const createCustomTestOrder = async (req, res) => {
         const user = await User.findById(req.user._id);
         if (!user) return res.status(401).json({ success: false, message: "Session expired." });
 
+                const RANK = { free: 0, pro: 1, promax: 2 };
+        const activeTier = user.customTestExpiresAt && user.customTestExpiresAt > new Date() ? user.customTestTier : "free";
+        if (RANK[plan] < RANK[activeTier]) {
+            return res.status(400).json({ success: false, message: "Your current plan is higher and still active. You can buy this plan after it expires." });
+        }
+        
                 const safeDonation = Math.max(0, Math.min(10000, Math.floor(Number(donationAmount) || 0)));
         let couponDiscount = 0, appliedCouponId = null, appliedCode = "";
         if (couponCode) {
@@ -82,37 +95,73 @@ export const createCustomTestOrder = async (req, res) => {
     }
 };
 
-async function activateSubscription({ userId, plan, months, razorpayOrderId, razorpayPaymentId, source }) {
-    const paymentRecord = await CustomTestPayment.findOne({ razorpayOrderId });
-    if (!paymentRecord) throw new Error("Payment record not found");
-    if (paymentRecord.status === "paid") return { alreadyProcessed: true, tier: plan };
+async function activateSubscription({ razorpayOrderId, razorpayPaymentId, source }) {
+    // ATOMIC CLAIM: verify aur webhook ek saath aaye to sirf ek aage badhega
+    const claimed = await CustomTestPayment.findOneAndUpdate(
+        { razorpayOrderId, status: { $ne: "paid" } },
+        { $set: { status: "paid", razorpayPaymentId, source } },
+        { new: true }
+    );
+    if (!claimed) {
+        if (!(await CustomTestPayment.exists({ razorpayOrderId }))) throw new Error("Payment record not found");
+        return { alreadyProcessed: true };
+    }
 
-    const user = await User.findById(userId);
-    if (!user) throw new Error("User not found");
+    // plan / months / user DB record se (order notes ya request pe bharosa nahi)
+    const { plan, months } = claimed;
 
-    const now = new Date();
-    const isSameTierActive = user.customTestTier === plan && user.customTestExpiresAt && user.customTestExpiresAt > now;
-    const base = isSameTierActive ? user.customTestExpiresAt : now;
-    const newExpiresAt = new Date(base);
-    newExpiresAt.setDate(newExpiresAt.getDate() + Number(months) * 30);
+    let user;
+    try {
+        user = await User.findById(claimed.user);
+        if (!user) throw new Error("User not found");
 
-    user.customTestTier = plan;
-    user.customTestExpiresAt = newExpiresAt;
-    await user.save();
+        const now = new Date();
+        const isSameTierActive = user.customTestTier === plan && user.customTestExpiresAt && user.customTestExpiresAt > now;
+        const base = isSameTierActive ? user.customTestExpiresAt : now;
+        const newExpiresAt = new Date(base);
+        newExpiresAt.setDate(newExpiresAt.getDate() + Number(months) * 30);
 
-    paymentRecord.status = "paid";
-    paymentRecord.razorpayPaymentId = razorpayPaymentId;
-    paymentRecord.source = source;
-    await paymentRecord.save();
+        user.customTestTier = plan;
+        user.customTestExpiresAt = newExpiresAt;
+        await user.save();
+    } catch (err) {
+        // activation fail: claim wapas kholo taaki webhook retry / verify dobara chal sake
+        await CustomTestPayment.updateOne({ _id: claimed._id }, { $set: { status: "created" } });
+        throw err;
+    }
 
-        if (paymentRecord.couponId) {
-        await Coupon.updateOne({ _id: paymentRecord.couponId }, { $inc: { usedCount: 1 } });
-        const upd = await Coupon.updateOne(
-            { _id: paymentRecord.couponId, "usedBy.user": userId },
-            { $inc: { "usedBy.$.count": 1 } }
-        );
-        if (!upd.modifiedCount) {
-            await Coupon.updateOne({ _id: paymentRecord.couponId }, { $push: { usedBy: { user: userId, count: 1 } } });
+    // Ledger + coupon: try ke bahar
+    const planLabel = plan === "promax" ? "Pro Max" : "Pro";
+    await recordPayment({
+        user,
+        kind: "customtest",
+        itemId: null,
+        itemTitle: `Custom Test ${planLabel} (${Number(months)} month${Number(months) > 1 ? "s" : ""})`,
+        plan,
+        months: Number(months),
+        validityDays: Number(months) * 30,
+        baseAmount: claimed.baseAmount ?? claimed.amount,
+        couponCode: claimed.couponCode || "",
+        couponDiscount: claimed.couponDiscount || 0,
+        donation: claimed.donation || 0,
+        amount: claimed.amount,
+        orderId: razorpayOrderId,
+        paymentId: razorpayPaymentId,
+        expiresAt: user.customTestExpiresAt
+    });
+
+    if (claimed.couponId) {
+        try {
+            await Coupon.updateOne({ _id: claimed.couponId }, { $inc: { usedCount: 1 } });
+            const upd = await Coupon.updateOne(
+                { _id: claimed.couponId, "usedBy.user": user._id },
+                { $inc: { "usedBy.$.count": 1 } }
+            );
+            if (!upd.modifiedCount) {
+                await Coupon.updateOne({ _id: claimed.couponId }, { $push: { usedBy: { user: user._id, count: 1 } } });
+            }
+        } catch (e) {
+            console.error("coupon consume failed:", claimed.couponId, e);
         }
     }
 
@@ -133,7 +182,7 @@ export const verifyCustomTestPayment = async (req, res) => {
         const expectedSignature = crypto
             .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
             .update(body.toString()).digest("hex");
-        if (expectedSignature !== razorpay_signature) {
+                if (!safeEqual(expectedSignature, razorpay_signature)) {
             return res.status(400).json({ success: false, message: "Payment verification failed" });
         }
 
@@ -147,21 +196,17 @@ export const verifyCustomTestPayment = async (req, res) => {
             return res.status(400).json({ success: false, message: "Order details mismatch" });
         }
 
-        const pricingDoc = await CustomTestPricing.findOne({ key: "default" });
-        const matchedRow = (pricingDoc?.[plan] || []).find((r) => r.months === Number(months));
-        const expected = matchedRow
-    ? Math.max(1, matchedRow.price - Number(order.notes.couponDiscount || 0) + Number(order.notes.donation || 0))
-    : 0;
-if (!matchedRow || Math.round(expected * 100) !== order.amount) {
-            return res.status(400).json({ success: false, message: "Payment amount mismatch. The pricing has changed. Please start the payment again." });
+                const stored = await CustomTestPayment.findOne({ razorpayOrderId: razorpay_order_id, user: req.user._id });
+        if (!stored || stored.plan !== plan || stored.months !== Number(months) ||
+            Math.round(stored.amount * 100) !== order.amount) {
+            return res.status(400).json({ success: false, message: "Order details mismatch" });
         }
 
-        const result = await activateSubscription({
-            userId: req.user._id, plan, months,
-            razorpayOrderId: razorpay_order_id, razorpayPaymentId: razorpay_payment_id,
+                const result = await activateSubscription({
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
             source: "client_verify",
         });
-
         req.flash("success", `🎉 Payment successful! Custom Test ${plan === "promax" ? "Pro Max" : "Pro"} activated.`);
         res.json({ success: true, tier: result.tier, expiresAt: result.expiresAt });
     } catch (err) {
@@ -176,19 +221,55 @@ export const razorpayWebhook = async (req, res) => {
         const expected = crypto
             .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
             .update(req.rawBody).digest("hex");
-        if (signature !== expected) return res.status(400).json({ success: false });
+         if (!safeEqual(signature, expected)) return res.status(400).json({ success: false });
 
         const event = req.body;
+
+        // ---------- REFUND EVENTS (panel se ho ya Razorpay Dashboard se, dono yahi aate hain) ----------
+        if (typeof event.event === "string" && event.event.startsWith("refund.")) {
+            const refund = event.payload?.refund?.entity;
+            if (refund?.payment_id) {
+                const status = event.event === "refund.failed" ? "failed"
+                    : event.event === "refund.processed" ? "processed" : "created";
+                await applyRefund({
+                    paymentId: refund.payment_id,
+                    refund: { id: refund.id, amount: refund.amount, status }
+                });
+            }
+            return res.json({ success: true });
+        }
+
+                if (event.event === "payment.failed") {
+            const failed = event.payload?.payment?.entity;
+            if (failed?.order_id) {
+                await CustomTestPayment.updateOne(
+                    { razorpayOrderId: failed.order_id, status: "created" },
+                    { $set: { status: "failed" } }
+                );
+            }
+            return res.json({ success: true });
+        }
+
         if (event.event !== "payment.captured") return res.json({ success: true });
 
         const payment = event.payload.payment.entity;
         const order = await razorpayInstance.orders.fetch(payment.order_id);
-        const { userId, plan, months, kind } = order.notes;
-        if (kind !== "custom_test_subscription") return res.json({ success: true });
+              // Test series order (createOrder ke notes me listingId hota hai)
+        if (order.notes?.listingId && order.notes?.userId) {
+            await activateEnrollment({
+                userId: order.notes.userId,
+                listingId: order.notes.listingId,
+                order,
+                paymentId: payment.id
+            });
+            return res.json({ success: true });
+        }
+
+        if (order.notes?.kind !== "custom_test_subscription") return res.json({ success: true });
 
         await activateSubscription({
-            userId, plan, months,
-            razorpayOrderId: payment.order_id, razorpayPaymentId: payment.id,
+            razorpayOrderId: payment.order_id,
+            razorpayPaymentId: payment.id,
             source: "webhook",
         });
         res.json({ success: true });

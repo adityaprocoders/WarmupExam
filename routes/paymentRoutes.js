@@ -29,7 +29,6 @@ router.post(
 router.post(
     "/verify-payment",
     isLoggedIn,
-     paymentLimiter, 
     validateBody(verifyPaymentSchema),
     wrapAsync(paymentController.verifyPayment)
 );

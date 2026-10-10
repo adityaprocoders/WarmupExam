@@ -68,14 +68,15 @@ export const getLeaderboardData = async (req, res) => {
     const testIds = tests.map(t => t._id);
 
     // ---- Date range banao (default = today) ----
+    // IST (UTC+5:30) ke hisaab se din: server UTC par ho tab bhi raat 12 baje reset hoga
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+    const DAY_MS = 24 * 60 * 60 * 1000;
     const now = new Date();
-    const startToday = new Date(now);
-    startToday.setHours(0, 0, 0, 0);
+    const startToday = new Date(Math.floor((now.getTime() + IST_OFFSET_MS) / DAY_MS) * DAY_MS - IST_OFFSET_MS);
 
     let dateFilter;
     if (period === "yesterday") {
-        const startYesterday = new Date(startToday);
-        startYesterday.setDate(startYesterday.getDate() - 1);
+        const startYesterday = new Date(startToday.getTime() - DAY_MS);
         dateFilter = { createdAt: { $gte: startYesterday, $lt: startToday } };
     } else {
         dateFilter = { createdAt: { $gte: startToday, $lte: now } };

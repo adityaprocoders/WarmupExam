@@ -5,8 +5,9 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import bcrypt from "bcrypt";
-import User from "../models/usersShema.js"; 
+import User from "../models/usersShema.js";  
 
+const DEFAULT_AVATAR = "/images/default-avatar.png";
 
 passport.use(
     "user-local",
@@ -49,17 +50,30 @@ passport.use(
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
+                // Google photo ko bada size do (default 96px hota hai)
+                const googlePhoto = profile.photos?.[0]?.value
+                    ? profile.photos[0].value.replace(/=s\d+-c$/, "=s256-c")
+                    : null;
+
                 let user = await User.findOne({ googleId: profile.id });
+
                 if (!user) {
+                    // Naya Google user: Google photo, nahi hai to default
                     user = await User.create({
                         name: profile.displayName,
                         email: profile.emails[0].value,
                         googleId: profile.id,
-                        avatar: profile.photos?.[0]?.value || null,
+                        avatar: googlePhoto || DEFAULT_AVATAR,
                         authProvider: "google",
                         isVerified: true
                     });
+                } else if (googlePhoto && (!user.avatar || user.avatar === DEFAULT_AVATAR)) {
+                    // Purana Google user jiske paas photo nahi hai: Google photo laga do
+                    // (jisne khud photo upload ki hai, uski overwrite nahi hogi)
+                    user.avatar = googlePhoto;
+                    await user.save();
                 }
+
                 return done(null, user);
             } catch (err) {
                 return done(err);

@@ -50,6 +50,7 @@ export async function validateAndCalculateCoupon(code, userId, listingId, cartAm
         valid: true,
         discount,
         couponId: coupon._id,
+        code: coupon.code,
         message: "Coupon applied successfully"
     };
 }

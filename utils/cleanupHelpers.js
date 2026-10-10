@@ -2,33 +2,76 @@ import User from "../models/usersShema.js";
 import Test from "../models/Test.js";
 import Attempt from "../models/TestAttempt.js";
 import AttemptSession from "../models/AttemptSession.js";
+import Listing from "../models/listing.js";
+import LiveTestResult from "../models/LiveTestResult.js";
 
-// Ek batch (listing) ki validity expire hone par, us user ka is batch se
-// related saara test-data delete karta hai. Account/profile bilkul untouched.
-export async function cleanupExpiredBatchData(userId, listingId) {
-    const testIds = await Test.find({ listing: listingId }).distinct("_id");
+export async function cleanupExpiredBatchData(userId, listingId, { force = false } = {}) {
+    const now = new Date();
 
-    // 1) Attempts (scores, answers, poori analysis history)
-    await Attempt.deleteMany({ user: userId, listing: listingId });
+    const user = await User.findById(userId).select("enrolledListings");
+    if (!user) return;
 
-    // 2) Koi beech-mein-chhoda-hua AttemptSession
+    const entries = user.enrolledListings.filter(
+        e => String(e.listing) === String(listingId)
+    );
+    if (entries.length === 0) return;
+
+    // Suspended enrollment ko haath nahi lagana
+    if (!force && entries.some(e => e.suspendedByOwner)) return;
+
+    const hasValid = entries.some(e => !e.expiresAt || new Date(e.expiresAt) >= now);
+
+    if (hasValid && !force) {
+        // Valid entry maujood hai: sirf expired duplicate entries hatao, data mat chhuo
+        await User.updateOne(
+            { _id: userId },
+            { $pull: { enrolledListings: { listing: listingId, expiresAt: { $lt: now } } } }
+        );
+        return;
+    }
+
+    // Saari entries expired hain (ya refund se force): data permanently delete.
+    const testIds = await Test.find({ listing: listingId, isLiveTest: { $ne: true } }).distinct("_id");
+    const liveTestIds = await Test.find({ listing: listingId, isLiveTest: true }).distinct("_id");
+
+    await Attempt.deleteMany({
+        user: userId,
+        test: { $nin: liveTestIds },
+        $or: [{ listing: listingId }, { test: { $in: testIds } }]
+    });
+
     if (testIds.length > 0) {
         await AttemptSession.deleteMany({ user: userId, test: { $in: testIds } });
     }
 
-    // 3) enrolledListings se is batch ki entry poori tarah hata do
+    const pullCond = force
+        ? { listing: listingId }
+        : { listing: listingId, expiresAt: { $lt: now } };   // fresh renewal kabhi nahi hatega
     await User.updateOne(
         { _id: userId },
-        { $pull: { enrolledListings: { listing: listingId } } }
+        { $pull: { enrolledListings: pullCond } }
     );
 
-    // 4) lastAccessedBatch agar isi listing ko point kar raha tha, clear karo
     await User.updateOne(
         { _id: userId, lastAccessedBatch: listingId },
         { $set: { lastAccessedBatch: null } }
     );
-}
 
+    const expiredListing = await Listing.findById(listingId).select("exam").lean();
+    if (expiredListing?.exam) {
+        const otherValidIds = user.enrolledListings
+            .filter(e => String(e.listing) !== String(listingId) && (!e.expiresAt || new Date(e.expiresAt) >= now))
+            .map(e => e.listing);
+
+        const sameExamLeft = otherValidIds.length > 0
+            ? await Listing.exists({ _id: { $in: otherValidIds }, exam: expiredListing.exam })
+            : null;
+
+        if (!sameExamLeft) {
+            await LiveTestResult.deleteMany({ user: userId, exam: expiredListing.exam });
+        }
+    }
+}
 
 export function getValidEnrollments(user) {
     const enrolledIds = [];

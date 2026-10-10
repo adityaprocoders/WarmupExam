@@ -1,30 +1,43 @@
+<%
+    // ---- helpers (sirf is page ke liye) ----
+    const tile = "w-10 h-10 shrink-0 rounded-xl bg-slate-100 text-indigo-500 flex items-center justify-center";
+    const inputCls = "w-full text-sm font-medium text-slate-800 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500";
+    const chipCls = "exam-chip inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold";
+    const removeCls = "exam-remove w-5 h-5 rounded-full flex items-center justify-center text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700 leading-none";
 
+    // purana `exam` (string) bhi dikhe, naya `targetExams` (array) priority me
+    const exams = (currentUser.targetExams && currentUser.targetExams.length)
+        ? currentUser.targetExams
+        : (currentUser.exam ? [currentUser.exam] : []);
+
+    const states = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry"];
+    const examSuggestions = ["NIMCET","JEE Main","JEE Advanced","NEET","SSC CGL","SSC CHSL","UPSC","Banking","Railway","CUET","Board Exam"];
+%>
 
 <!-- Profile Page -->
 <section class="min-h-screen bg-slate-50 pt-[104px] sm:pt-[128px] pb-6 sm:pb-10">
     <div class="max-w-4xl mx-auto px-4 sm:px-6">
 
-        <form id="profileForm" action="/profile?_method=PATCH" method="POST" enctype="multipart/form-data">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-           <div class="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6 mb-6">
+        <form id="profileForm" action="/profile?_method=PATCH" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+            <div class="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6 mb-6">
 
                 <div class="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 mx-auto sm:mx-0">
-    <div class="w-full h-full rounded-full overflow-hidden bg-slate-200 border-4 border-white shadow-md ring-1 ring-slate-200">
-        <img id="avatarPreview"
-          src="<%= currentUser.avatar || '/images/default-avatar.png' %>"
-          data-fallback-src="https://api.dicebear.com/7.x/initials/svg?seed=<%= currentUser.name %>"
-          alt="<%= currentUser.name %>"
-          class="w-full h-full object-cover">
-    </div>
-    
-    <!-- Camera Icon Label with Proper Absolute Positioning -->
-    <label for="avatarInput" class="absolute bottom-0 right-0 w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center shadow-md cursor-pointer transition border-2 border-white">
-        <i class="fa-solid fa-camera text-xs"></i>
-        <input type="file" id="avatarInput" accept="image/*" class="hidden">
-    </label>
-</div>
+                    <div class="w-full h-full rounded-full overflow-hidden bg-slate-200 border-4 border-white shadow-md ring-1 ring-slate-200">
+                        <img id="avatarPreview"
+                            src="<%= currentUser.avatar || '/images/default-avatar.png' %>"
+                            data-fallback-src="https://api.dicebear.com/7.x/initials/svg?seed=<%= encodeURIComponent(currentUser.name) %>"
+                            alt="<%= currentUser.name %>"
+                            class="w-full h-full object-cover">
+                    </div>
 
-                <!-- username/email + settings gear ek row me, responsive -->
+                    <label for="avatarInput" class="absolute bottom-0 right-0 w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center shadow-md cursor-pointer transition border-2 border-white">
+                        <i class="fa-solid fa-camera text-xs"></i>
+                        <input type="file" id="avatarInput" accept="image/*" class="hidden">
+                    </label>
+                </div>
+
                 <div class="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
 
                     <div class="text-center sm:text-left min-w-0">
@@ -60,6 +73,7 @@
                 </div>
             </div>
 
+            <!-- ===== PROFILE DETAIL CARD ===== -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm">
                 <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100">
                     <h2 class="font-bold text-slate-800 text-base sm:text-lg">Profile Detail</h2>
@@ -69,103 +83,170 @@
                     </button>
                 </div>
 
-                <div class="px-5 sm:px-6 py-5 space-y-8">
+                <div class="px-5 sm:px-6 py-6 space-y-8">
 
+                    <!-- ---------- PERSONAL DETAILS ---------- -->
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600 pb-2 mb-4 border-b border-slate-100">
-                            Personal Details
-                        </p>
+                        <div class="flex items-center gap-3 pb-3 mb-5 border-b border-slate-100">
+                            <div class="<%= tile %>"><i class="fa-solid fa-user text-sm"></i></div>
+                            <p class="text-base font-bold text-indigo-600">Personal Details</p>
+                        </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
 
-                            <div class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-slate-50 sm:border-none">
-                                <span class="w-40 shrink-0 text-sm text-slate-500">Username</span>
-                                <span class="field-view text-sm font-medium text-slate-800">@<%= currentUser.username %></span>
-                                <div class="field-input hidden w-full">
-                                    <div class="relative w-full">
-                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">@</span>
-                                        <input type="text" id="usernameInput" name="username"
-                                            value="<%= currentUser.username %>"
-                                            autocomplete="off" spellcheck="false"
-                                            class="w-full text-sm font-medium text-slate-800 border-2 border-slate-300 rounded-lg pl-7 pr-9 py-1.5 focus:outline-none transition" />
-                                        <span id="usernameIcon" class="absolute right-3 top-1/2 -translate-y-1/2 text-sm hidden"></span>
+                            <!-- Username -->
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="<%= tile %>"><i class="fa-solid fa-at text-sm"></i></div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs text-slate-400">Username</p>
+                                    <p class="field-view text-sm font-semibold text-slate-800 mt-0.5 truncate">@<%= currentUser.username %></p>
+                                    <div class="field-input hidden mt-1">
+                                        <div class="relative w-full">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">@</span>
+                                            <input type="text" id="usernameInput" name="username"
+                                                value="<%= currentUser.username %>"
+                                                autocomplete="off" spellcheck="false"
+                                                class="w-full text-sm font-medium text-slate-800 border-2 border-slate-300 rounded-lg pl-7 pr-9 py-1.5 focus:outline-none transition" />
+                                            <span id="usernameIcon" class="absolute right-3 top-1/2 -translate-y-1/2 text-sm hidden"></span>
+                                        </div>
+                                        <p id="usernameHint" class="text-xs mt-1.5 text-slate-400">3-20 characters: letters, numbers, underscore</p>
                                     </div>
-                                    <p id="usernameHint" class="text-xs mt-1.5 text-slate-400">3-20 characters: letters, numbers, underscore</p>
                                 </div>
                             </div>
 
-                            <div class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-slate-50 sm:border-none">
-                                <span class="w-40 shrink-0 text-sm text-slate-500">Name</span>
-                                <span class="field-view text-sm font-medium text-slate-800"><%= currentUser.name %></span>
-                                <input type="text" name="name" value="<%= currentUser.name %>"
-                                    class="field-input hidden w-full text-sm font-medium text-slate-800 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                            </div>
-
-                            <div class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-slate-50 sm:border-none">
-                                <span class="w-40 shrink-0 text-sm text-slate-500">Mobile No</span>
-                                <span class="field-view text-sm font-medium text-slate-800"><%= currentUser.mobile || 'N/A' %></span>
-                                <input type="text" name="mobile" value="<%= currentUser.mobile || '' %>" maxlength="10"
-                                    placeholder="Enter mobile number"
-                                    class="field-input hidden w-full text-sm font-medium text-slate-800 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                            </div>
-
-                            <div class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-slate-50 sm:border-none">
-                                <span class="w-40 shrink-0 text-sm text-slate-500">Email</span>
-                                <span class="field-view text-sm font-medium text-slate-800 truncate"><%= currentUser.email %></span>
-                                <div class="field-input hidden w-full">
-                                    <div class="relative w-full">
-                                        <input type="email" id="emailInput" name="email"
-                                            value="<%= currentUser.email %>"
-                                            autocomplete="off" spellcheck="false"
-                                            class="w-full text-sm font-medium text-slate-800 border-2 border-slate-300 rounded-lg px-3 pr-9 py-1.5 focus:outline-none transition" />
-                                        <span id="emailIcon" class="absolute right-3 top-1/2 -translate-y-1/2 text-sm hidden"></span>
-                                    </div>
-                                    <p id="emailHint" class="text-xs mt-1.5 text-slate-400">Enter a valid email address</p>
+                            <!-- Name -->
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="<%= tile %>"><i class="fa-solid fa-id-card text-sm"></i></div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs text-slate-400">Name</p>
+                                    <p class="field-view text-sm font-semibold text-slate-800 mt-0.5 truncate"><%= currentUser.name %></p>
+                                    <input type="text" name="name" value="<%= currentUser.name %>" maxlength="50"
+                                        class="field-input hidden mt-1 <%= inputCls %>" />
                                 </div>
                             </div>
 
-                            <div class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-slate-50 sm:border-none">
-                                <span class="w-40 shrink-0 text-sm text-slate-500">Living City/Village/Town</span>
-                                <span class="field-view text-sm font-medium text-slate-800"><%= currentUser.city || 'N/A' %></span>
-                                <input type="text" name="city" value="<%= currentUser.city || '' %>"
-                                    placeholder="Enter your city"
-                                    class="field-input hidden w-full text-sm font-medium text-slate-800 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                            <!-- Mobile -->
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="<%= tile %>"><i class="fa-solid fa-phone text-sm"></i></div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs text-slate-400">Mobile No.</p>
+                                    <p class="field-view text-sm font-semibold text-slate-800 mt-0.5"><%= currentUser.mobile || 'N/A' %></p>
+                                    <input type="text" name="mobile" value="<%= currentUser.mobile || '' %>" maxlength="10"
+                                        inputmode="numeric" placeholder="10-digit mobile number"
+                                        class="field-input hidden mt-1 <%= inputCls %>" />
+                                </div>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="<%= tile %>"><i class="fa-solid fa-envelope text-sm"></i></div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs text-slate-400">Email</p>
+                                    <p class="field-view text-sm font-semibold text-slate-800 mt-0.5 truncate"><%= currentUser.email %></p>
+                                    <div class="field-input hidden mt-1">
+                                        <div class="relative w-full">
+                                            <input type="email" id="emailInput" name="email"
+                                                value="<%= currentUser.email %>"
+                                                autocomplete="off" spellcheck="false"
+                                                class="w-full text-sm font-medium text-slate-800 border-2 border-slate-300 rounded-lg px-3 pr-9 py-1.5 focus:outline-none transition" />
+                                            <span id="emailIcon" class="absolute right-3 top-1/2 -translate-y-1/2 text-sm hidden"></span>
+                                        </div>
+                                        <p id="emailHint" class="text-xs mt-1.5 text-slate-400">Enter a valid email address</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- State -->
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="<%= tile %>"><i class="fa-solid fa-map-location-dot text-sm"></i></div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs text-slate-400">State</p>
+                                    <p class="field-view text-sm font-semibold text-slate-800 mt-0.5"><%= currentUser.state || 'N/A' %></p>
+                                    <select name="state" class="field-input hidden mt-1 <%= inputCls %>">
+                                        <option value="">Select state</option>
+                                        <% states.forEach(function(s) { %>
+                                            <option value="<%= s %>" <%= currentUser.state === s ? 'selected' : '' %>><%= s %></option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- City -->
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="<%= tile %>"><i class="fa-solid fa-city text-sm"></i></div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs text-slate-400">City / Village / Town</p>
+                                    <p class="field-view text-sm font-semibold text-slate-800 mt-0.5 truncate"><%= currentUser.city || 'N/A' %></p>
+                                    <input type="text" name="city" value="<%= currentUser.city || '' %>" maxlength="50"
+                                        placeholder="Enter your city"
+                                        class="field-input hidden mt-1 <%= inputCls %>" />
+                                </div>
+                            </div>
+
+                            <!-- Pin Code -->
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="<%= tile %>"><i class="fa-solid fa-location-dot text-sm"></i></div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs text-slate-400">Pin Code</p>
+                                    <p class="field-view text-sm font-semibold text-slate-800 mt-0.5"><%= currentUser.pinCode || 'N/A' %></p>
+                                    <input type="text" name="pinCode" value="<%= currentUser.pinCode || '' %>" maxlength="6"
+                                        inputmode="numeric" placeholder="6-digit pin code"
+                                        class="field-input hidden mt-1 <%= inputCls %>" />
+                                </div>
                             </div>
 
                         </div>
                     </div>
 
+                    <!-- ---------- ACADEMIC DETAILS ---------- -->
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600 pb-2 mb-4 border-b border-slate-100">
-                            Academic Details
-                        </p>
+                        <div class="flex items-center gap-3 pb-3 mb-5 border-b border-slate-100">
+                            <div class="<%= tile %>"><i class="fa-solid fa-graduation-cap text-sm"></i></div>
+                            <p class="text-base font-bold text-indigo-600">Academic Details</p>
+                        </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                        <!-- Target Exam (1 ya zyada) -->
+                        <div class="flex items-start gap-3 min-w-0">
+                            <div class="<%= tile %>"><i class="fa-solid fa-bullseye text-sm"></i></div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs text-slate-400">Target Exam</p>
 
-                            <div class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-slate-50 sm:border-none">
-                                <span class="w-40 shrink-0 text-sm text-slate-500">Class</span>
-                                <span class="field-view text-sm font-medium text-slate-800"><%= currentUser.class || 'N/A' %></span>
-                                <select name="class"
-                                    class="field-input hidden w-full text-sm font-medium text-slate-800 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                    <option value="">Select class</option>
-                                    <% ["9th","10th","11th","12th","12+","Dropper"].forEach(function(c) { %>
-                                        <option value="<%= c %>" <%= currentUser.class === c ? 'selected' : '' %>><%= c %></option>
-                                    <% }) %>
-                                </select>
+                                <!-- view mode -->
+                                <div class="field-view flex flex-wrap gap-1.5 mt-1.5">
+                                    <% if (exams.length) { %>
+                                        <% exams.forEach(function(e) { %>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold"><%= e %></span>
+                                        <% }) %>
+                                    <% } else { %>
+                                        <span class="text-sm font-semibold text-slate-800">N/A</span>
+                                    <% } %>
+                                </div>
+
+                                <!-- edit mode -->
+                                <div class="field-input hidden mt-1">
+                                    <div id="examBox" class="flex flex-wrap items-center gap-1.5 w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-indigo-500">
+                                        <div id="examChips" class="contents" data-original="<%= JSON.stringify(exams) %>">
+                                            <% exams.forEach(function(e) { %>
+                                                <span class="<%= chipCls %>">
+                                                    <span><%= e %></span>
+                                                    <input type="hidden" name="targetExams" value="<%= e %>">
+                                                    <button type="button" class="<%= removeCls %>" aria-label="Remove <%= e %>">&times;</button>
+                                                </span>
+                                            <% }) %>
+                                        </div>
+                                        <input type="text" id="examTextInput" list="examSuggestions" maxlength="40"
+                                            autocomplete="off" placeholder="Type exam name, press Enter"
+                                            class="flex-1 min-w-[150px] text-sm font-medium text-slate-800 bg-transparent outline-none py-0.5 px-1" />
+                                    </div>
+                                    <datalist id="examSuggestions">
+                                        <% examSuggestions.forEach(function(s) { %><option value="<%= s %>"></option><% }) %>
+                                    </datalist>
+                                    <p class="text-xs mt-1.5 text-slate-400">Ek ya zyada exam add kar sakte ho (max 10). Enter ya comma dabao.</p>
+                                </div>
                             </div>
-
-                            <div class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-slate-50 sm:border-none">
-                                <span class="w-40 shrink-0 text-sm text-slate-500">Exam</span>
-                                <span class="field-view text-sm font-medium text-slate-800"><%= currentUser.exam || 'N/A' %></span>
-                                <input type="text" name="exam" value="<%= currentUser.exam || '' %>"
-                                    placeholder="e.g. SSC, JEE"
-                                    class="field-input hidden w-full text-sm font-medium text-slate-800 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                            </div>
-
                         </div>
                     </div>
 
-    
                 </div>
 
                 <div id="saveBar" class="hidden items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
@@ -184,128 +265,126 @@
         </form>
 
         <!-- Avatar Crop Modal -->
-<div id="cropModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/50 px-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-5">
-        <h3 class="text-base font-bold text-slate-800 mb-4">Adjust Photo</h3>
+        <div id="cropModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/50 px-4">
+            <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-5">
+                <h3 class="text-base font-bold text-slate-800 mb-4">Adjust Photo</h3>
 
-         <div class="w-full h-72 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
-    <img id="cropImage" src="" alt="Crop preview" class="max-w-full block">
-</div>
+                <div class="w-full h-72 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center">
+                    <img id="cropImage" src="" alt="Crop preview" class="max-w-full block">
+                </div>
 
-        <div id="cropErrorMsg" class="hidden text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3 py-2 mt-3"></div>
+                <div id="cropErrorMsg" class="hidden text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3 py-2 mt-3"></div>
 
-        <div class="flex justify-end gap-3 mt-5">
-            <button type="button" id="cropCancelBtn"
-                class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
-                Cancel
-            </button>
-            <button type="button" id="cropSaveBtn"
-                class="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                Save
-            </button>
-        </div>
-    </div>
-</div>
-
-        <!-- NAYA: Change Password Modal -->
-<div id="changePasswordModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-base font-bold text-slate-800">Change Password</h3>
-            <button type="button" id="closeChangePasswordModal" class="text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-
-        <p class="text-xs text-slate-400 mb-4">Verify your current password to set a new password.</p>
-
-        <div class="space-y-4">
-
-            <div class="flex flex-col">
-                <label class="text-sm text-slate-500 mb-1.5">Current Password</label>
-                <div class="relative">
-                    <input type="password" id="currentPasswordInput" autocomplete="current-password"
-                        placeholder="Enter current password"
-                        class="w-full text-sm font-medium text-slate-800 border-2 border-slate-300 rounded-lg px-3 pr-9 py-1.5 focus:outline-none transition" />
-                    <button type="button" class="pw-toggle absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" data-target="currentPasswordInput">
-                        <i class="fa-solid fa-eye text-xs"></i>
+                <div class="flex justify-end gap-3 mt-5">
+                    <button type="button" id="cropCancelBtn"
+                        class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
+                        Cancel
+                    </button>
+                    <button type="button" id="cropSaveBtn"
+                        class="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        Save
                     </button>
                 </div>
             </div>
+        </div>
 
-            <div class="flex flex-col">
-                <label class="text-sm text-slate-500 mb-1.5">New Password</label>
-                <div class="relative">
-                    <input type="password" id="newPasswordInput" autocomplete="new-password"
-                        placeholder="Min 8 characters"
-                        class="w-full text-sm font-medium text-slate-800 border-2 border-slate-300 rounded-lg px-3 pr-9 py-1.5 focus:outline-none transition" />
-                    <button type="button" class="pw-toggle absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" data-target="newPasswordInput">
-                        <i class="fa-solid fa-eye text-xs"></i>
+        <!-- Change Password Modal -->
+        <div id="changePasswordModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
+            <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-slate-800">Change Password</h3>
+                    <button type="button" id="closeChangePasswordModal" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
-                <p id="newPasswordHint" class="text-xs mt-1.5 text-slate-400">At least 8 characters</p>
-            </div>
 
-            <div class="flex flex-col">
-                <label class="text-sm text-slate-500 mb-1.5">Confirm New Password</label>
-                <div class="relative">
-                    <input type="password" id="confirmPasswordInput" autocomplete="new-password"
-                        placeholder="Re-enter new password"
-                        class="w-full text-sm font-medium text-slate-800 border-2 border-slate-300 rounded-lg px-3 pr-9 py-1.5 focus:outline-none transition" />
-                    <button type="button" class="pw-toggle absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" data-target="confirmPasswordInput">
-                        <i class="fa-solid fa-eye text-xs"></i>
+                <p class="text-xs text-slate-400 mb-4">Verify your current password to set a new password.</p>
+
+                <div class="space-y-4">
+
+                    <div class="flex flex-col">
+                        <label class="text-sm text-slate-500 mb-1.5">Current Password</label>
+                        <div class="relative">
+                            <input type="password" id="currentPasswordInput" autocomplete="current-password"
+                                placeholder="Enter current password"
+                                class="w-full text-sm font-medium text-slate-800 border-2 border-slate-300 rounded-lg px-3 pr-9 py-1.5 focus:outline-none transition" />
+                            <button type="button" class="pw-toggle absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" data-target="currentPasswordInput">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label class="text-sm text-slate-500 mb-1.5">New Password</label>
+                        <div class="relative">
+                            <input type="password" id="newPasswordInput" autocomplete="new-password"
+                                placeholder="Min 8 characters"
+                                class="w-full text-sm font-medium text-slate-800 border-2 border-slate-300 rounded-lg px-3 pr-9 py-1.5 focus:outline-none transition" />
+                            <button type="button" class="pw-toggle absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" data-target="newPasswordInput">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                        <p id="newPasswordHint" class="text-xs mt-1.5 text-slate-400">At least 8 characters</p>
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label class="text-sm text-slate-500 mb-1.5">Confirm New Password</label>
+                        <div class="relative">
+                            <input type="password" id="confirmPasswordInput" autocomplete="new-password"
+                                placeholder="Re-enter new password"
+                                class="w-full text-sm font-medium text-slate-800 border-2 border-slate-300 rounded-lg px-3 pr-9 py-1.5 focus:outline-none transition" />
+                            <button type="button" class="pw-toggle absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" data-target="confirmPasswordInput">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                        <p id="confirmPasswordHint" class="text-xs mt-1.5 text-slate-400">&nbsp;</p>
+                    </div>
+
+                    <div id="passwordUpdateMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2"></div>
+
+                    <div class="flex justify-end gap-3 pt-1">
+                        <button type="button" id="cancelChangePasswordBtn"
+                            class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
+                            Cancel
+                        </button>
+                        <button type="button" id="updatePasswordBtn"
+                            class="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            Update Password
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Account Confirmation Modal -->
+        <div id="deleteAccountModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
+            <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800">Delete Account</h3>
+                </div>
+                <p class="text-sm text-slate-500 mb-5">
+                    Are you sure you want to delete your account? This action is
+                    <span class="font-semibold text-red-600">permanent</span>
+                    and cannot be undone. All your data, including your purchases, profile, avatar, and purchase history, will be permanently deleted.
+                </p>
+                <div id="deleteAccountMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2 mb-4"></div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" id="deleteCancelBtn"
+                        class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
+                        Cancel
+                    </button>
+                    <button type="button" id="deleteConfirmBtn"
+                        class="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        Ok, Delete
                     </button>
                 </div>
-                <p id="confirmPasswordHint" class="text-xs mt-1.5 text-slate-400">&nbsp;</p>
-            </div>
-
-            <div id="passwordUpdateMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2"></div>
-
-            <div class="flex justify-end gap-3 pt-1">
-                <button type="button" id="cancelChangePasswordBtn"
-                    class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
-                    Cancel
-                </button>
-                <button type="button" id="updatePasswordBtn"
-                    class="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    Update Password
-                </button>
             </div>
         </div>
-    </div>
-</div>
 
-
-
-        <!-- NAYA: Delete Account Confirmation Modal -->
-<div id="deleteAccountModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
-        <div class="flex items-center gap-3 mb-3">
-            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
-            </div>
-            <h3 class="text-base font-bold text-slate-800">Delete Account</h3>
-        </div>
-        <p class="text-sm text-slate-500 mb-5">
-    Are you sure you want to delete your account? This action is
-    <span class="font-semibold text-red-600">permanent</span>
-    and cannot be undone. All your data, including your purchases, profile, avatar, and purchase history, will be permanently deleted.
-</p>
-        <div id="deleteAccountMsg" class="hidden text-xs font-medium rounded-lg px-3 py-2 mb-4"></div>
-        <div class="flex justify-end gap-3">
-            <button type="button" id="deleteCancelBtn"
-                class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
-                Cancel
-            </button>
-            <button type="button" id="deleteConfirmBtn"
-                class="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                Ok, Delete
-            </button>
-        </div>
-    </div>
-</div>
-
-        <!-- ===== NAYA: My Purchases Section ===== -->
+        <!-- My Purchases Section -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm mt-6">
             <div class="flex items-center gap-2 px-5 sm:px-6 py-4 border-b border-slate-100">
                 <i class="fa-solid fa-arrow-left text-slate-400 text-sm"></i>
@@ -319,40 +398,40 @@
                         <p class="text-sm text-slate-400">You haven't enrolled in any batch or course yet.</p>
                     </div>
                 <% } else { %>
-                     <% myPurchases.forEach(function(p) { %>
+                    <% myPurchases.forEach(function(p) { %>
 
                     <div class="relative border rounded-xl overflow-hidden
-    <%= p.badge === 'expired' ? 'border-slate-200 grayscale opacity-60' : 'border-slate-200' %>">
+                        <%= p.badge === 'expired' ? 'border-slate-200 grayscale opacity-60' : 'border-slate-200' %>">
 
-    <% if (p.badge === 'expired') { %>
-        <div class="absolute inset-0 bg-white/40 backdrop-blur-[1px] pointer-events-none"></div>
-    <% } %>
-  <div class="flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4">
-            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-100 shrink-0">
-                 <img src="<%= p.thumbnail || '/images/default-course.png' %>"
-                    data-fallback-src="https://placehold.co/200x200?text=Course"
-                    alt="<%= p.listingTitle %>"
-                    class="w-full h-full object-cover">
-            </div>
-            <div class="flex-1 min-w-0">
-                <span class="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mb-1
-                    <%= p.badge === 'expired' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600' %>">
-                    <%= p.badge === 'expired' ? 'Expired' : 'Success' %>
-                </span>
-                <h3 class="text-sm sm:text-base font-semibold text-slate-800 truncate"><%= p.listingTitle %></h3>
-                <p class="text-xs text-slate-400 mt-0.5">
-                    <%= p.date %> &nbsp;&bull;&nbsp; <%= p.isFree ? 'Free' : ('₹' + p.price) %>
-                </p>
-            </div>
-        </div>
-        <% if (p.expiryMessage) { %>
-            <div class="px-3 sm:px-4 py-2 text-xs font-medium
-                <%= p.badge === 'expired' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700' %>">
-                <%= p.expiryMessage %>
-            </div>
-        <% } %>
-    </div>
-<% }) %>
+                        <% if (p.badge === 'expired') { %>
+                            <div class="absolute inset-0 bg-white/40 backdrop-blur-[1px] pointer-events-none"></div>
+                        <% } %>
+                        <div class="flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4">
+                            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-100 shrink-0">
+                                <img src="<%= p.thumbnail || '/images/default-course.png' %>"
+                                    data-fallback-src="https://placehold.co/200x200?text=Course"
+                                    alt="<%= p.listingTitle %>"
+                                    class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <span class="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mb-1
+                                    <%= p.badge === 'expired' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600' %>">
+                                    <%= p.badge === 'expired' ? 'Expired' : 'Success' %>
+                                </span>
+                                <h3 class="text-sm sm:text-base font-semibold text-slate-800 truncate"><%= p.listingTitle %></h3>
+                                <p class="text-xs text-slate-400 mt-0.5">
+                                    <%= p.date %> &nbsp;&bull;&nbsp; <%= p.isFree ? 'Free' : ('₹' + p.price) %>
+                                </p>
+                            </div>
+                        </div>
+                        <% if (p.expiryMessage) { %>
+                            <div class="px-3 sm:px-4 py-2 text-xs font-medium
+                                <%= p.badge === 'expired' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700' %>">
+                                <%= p.expiryMessage %>
+                            </div>
+                        <% } %>
+                    </div>
+                    <% }) %>
                 <% } %>
             </div>
         </div>
@@ -366,4 +445,3 @@
 
 
 <script src="/js/profile.js" defer></script>
-

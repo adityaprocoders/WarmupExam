@@ -5,12 +5,28 @@ import Attempt from "../models/TestAttempt.js";
 import AttemptSession from "../models/AttemptSession.js";
 import ExpressError from "../utils/ExpressError.js";
 import Section from "../models/Section.js";
+import LiveTestResult from "../models/LiveTestResult.js";
 import { calculateRankFromPredictor, calculateRankRange } from "../utils/rankHelper.js";
 import { getTestStatus, formatDateTime } from "../utils/testStatus.js";
 import { getLiveTestRank } from "../utils/liveRankHelper.js";
 import { getAccuracyComparison } from "../utils/testStatsHelper.js";
 import { isOwnerUser } from "../utils/authHelpers.js";
 
+
+function buildClientQuestions(mappings, lang) {
+    return mappings.filter(m => m.question).map(m => {
+        const resolved = resolveQuestionForLanguage(m.question, lang);
+        return stripAnswerFields({
+            ...resolved,
+            subject: m.subject || resolved.subject || "",
+            topic: m.topic || resolved.topic || "",
+            subTopic: m.subTopic || resolved.subTopic || "",
+            order: m.order,
+            positiveMarks: m.positiveMarks,
+            negativeMarks: m.negativeMarks
+        });
+    });
+}
 
 
 // Question document ko selected language ke hisaab se FLAT object me convert karta hai
@@ -49,6 +65,97 @@ function stripAnswerFields(q) {
     return safe;
 }
 
+function resolveTestLanguage(test, requested) {
+    let lang = requested || (test.languages && test.languages[0]) || "English";
+
+    if (test.languageMode === "multiple") {
+        if (!test.languages || !test.languages.includes(lang)) {
+            lang = test.languages && test.languages[0] ? test.languages[0] : "English";
+        }
+    } else {
+        lang = (test.languages && test.languages[0]) || "English";
+    }
+
+    let availableLanguages = test.languages || ["English"];
+    if (test.languageMode === "multiple" && test.showLanguage && test.showLanguage !== "all") {
+        if (test.languages && test.languages.includes(test.showLanguage)) {
+            availableLanguages = [test.showLanguage];
+        }
+    }
+    if (availableLanguages.length === 1) lang = availableLanguages[0];
+
+    return lang;
+}
+
+export const startAttempt = async (req, res) => {
+    const { testId } = req.params;
+
+    const test = await Test.findById(testId);
+    if (!test) throw new ExpressError(404, "Test Not Found");
+
+    const { status, publishAt } = getTestStatus(test);
+    if (status === "upcoming") {
+        return res.status(403).json({
+            success: false,
+            message: `This test has not started yet. It will begin at ${formatDateTime(publishAt)}.`
+        });
+    }
+    if (status === "expired") {
+        return res.status(403).json({
+            success: false,
+            message: "This test is no longer available because its time window has expired."
+        });
+    }
+
+    if (test.isLiveTest) {
+        if (test.liveTestExpiresAt && new Date(test.liveTestExpiresAt) <= new Date()) {
+            return res.status(403).json({ success: false, message: "This Live Test has ended." });
+        }
+        const existingAttempt = await Attempt.findOne({ test: testId, user: req.user._id });
+        if (existingAttempt) {
+            return res.status(409).json({
+                success: false,
+                code: "ALREADY_SUBMITTED",
+                message: "You have already attempted this test.",
+                redirect: `/attempt/${existingAttempt._id}/analysis`
+            });
+        }
+    }
+
+    const lang = resolveTestLanguage(test, req.body?.lang);
+
+    let session = null;
+    if (test.isLiveTest) {
+        session = await AttemptSession.findOne({ test: testId, user: req.user._id });
+        if (session && session.exited) {
+            session.exited = false;
+            await session.save();
+        }
+    } else {
+        await AttemptSession.deleteMany({ test: testId, user: req.user._id });
+    }
+
+    if (!session || session.exited) {
+        session = await AttemptSession.create({ test: testId, user: req.user._id, language: lang });
+    }
+
+    res.json({ success: true });
+};
+
+export const exitAttempt = async (req, res) => {
+    const { testId } = req.params;
+
+    const test = await Test.findById(testId).select("isLiveTest");
+    if (!test) throw new ExpressError(404, "Test Not Found");
+
+    if (test.isLiveTest) {
+        await AttemptSession.updateMany({ test: testId, user: req.user._id }, { $set: { exited: true } });
+    } else {
+        await AttemptSession.deleteMany({ test: testId, user: req.user._id });
+    }
+
+    res.json({ success: true });
+};
 
 export const showInstructions = async (req, res) => {
     const { id } = req.params;
@@ -94,12 +201,7 @@ if (availableLanguages.length === 1) {
     lang = availableLanguages[0];
 }
 
-    const questions = mappings.filter(m => m.question).map(m => stripAnswerFields({
-        ...resolveQuestionForLanguage(m.question, lang),
-        order: m.order,
-        positiveMarks: m.positiveMarks,
-        negativeMarks: m.negativeMarks
-    }));
+    const questions = buildClientQuestions(mappings, lang);
  
 
     const subjectMap = {};
@@ -124,27 +226,41 @@ export const showAttempt = async (req, res) => {
     const test = await Test.findById(id);
     if (!test) throw new ExpressError(404, "Test Not Found");
 
+    const from = req.query.from;
+    const safeFrom = (typeof from === "string" && from.startsWith("/") && !from.startsWith("//")) ? from : null;
+
     const { status, publishAt } = getTestStatus(test);
     if (status === "upcoming") {
         req.flash("error", `This test has not started yet. It will begin at ${formatDateTime(publishAt)}.`);
-        return res.redirect("back");
+        return res.redirect(req.get("Referer") || "/dashboard");
     }
     if (status === "expired") {
         req.flash("error", "This test is no longer available because its time window has expired.");
-        return res.redirect("back");
+        return res.redirect(req.get("Referer") || "/dashboard");
     }
 
     if (test.isLiveTest) {
-    const existingAttempt = await Attempt.findOne({ test: id, user: req.user._id });
-    if (existingAttempt) {
-        req.flash("error", "You have already attempted this test.");
-        return res.redirect(`/attempt/${existingAttempt._id}/analysis`);
+        const existingAttempt = await Attempt.findOne({ test: id, user: req.user._id });
+
+        if (test.liveTestExpiresAt && new Date(test.liveTestExpiresAt) <= new Date()) {
+            req.flash("error", "This Live Test has ended.");
+            return res.redirect(req.get("Referer") || "/dashboard");
+        }
+
+        if (existingAttempt) {
+            req.flash("error", "You have already attempted this test.");
+            return res.redirect(`/attempt/${existingAttempt._id}/analysis`);
+        }
     }
-}
+
+    // Session sirf Proceed (start endpoint) se banta hai. Nahi hai to test mat kholo.
+    const session = await AttemptSession.findOne({ test: id, user: req.user._id }).sort({ createdAt: -1 });
+    if (!session || session.exited) {
+        return res.redirect(safeFrom || "/dashboard");
+    }
 
     const mappings = await TestQuestion.find({ test: id }).sort({ order: 1 }).populate("question");
 
-    // ✅ Language validate karo (query param se) — questions banane se PEHLE
     let lang = req.query.lang || (test.languages && test.languages[0]) || "English";
 
     if (test.languageMode === "multiple") {
@@ -155,13 +271,17 @@ export const showAttempt = async (req, res) => {
         lang = (test.languages && test.languages[0]) || "English";
     }
 
-    // ✅ Har question ko isi language ke hisaab se resolve karo (translations[] handle karega)
-    const questions = mappings.filter(m => m.question).map(m => stripAnswerFields({
-        ...resolveQuestionForLanguage(m.question, lang),
-        order: m.order,
-        positiveMarks: m.positiveMarks,
-        negativeMarks: m.negativeMarks
-    }));
+    let availableLanguages = test.languages || ["English"];
+    if (test.languageMode === "multiple" && test.showLanguage && test.showLanguage !== "all") {
+        if (test.languages && test.languages.includes(test.showLanguage)) {
+            availableLanguages = [test.showLanguage];
+        }
+    }
+    if (availableLanguages.length === 1) {
+        lang = availableLanguages[0];
+    }
+
+    const questions = buildClientQuestions(mappings, lang);
 
     const subjectsOrder = [];
     const grouped = {};
@@ -174,16 +294,13 @@ export const showAttempt = async (req, res) => {
         grouped[q.subject].push(q);
     });
 
-    const session = await AttemptSession.create({ test: id, user: req.user._id, language: lang });
-
-    
-    const returnUrl = req.query.from || req.headers.referer || "/dashboard";
+    const returnUrl = safeFrom || req.headers.referer || "/dashboard";
 
     res.render("dashboard/attempt", {
         layout: false, test, subjectsOrder, grouped,
         sessionId: session._id.toString(),
         returnUrl,
-        currentUser: req.user   // ✅ candidate info ke liye
+        currentUser: req.user
     });
 };
 
@@ -198,18 +315,17 @@ export const submitAttempt = async (req, res) => {
         return res.status(400).json({ success: false, message: "Session missing. Please restart the test." });
     }
 
-    // ✅ Atomic consume — findOneAndDelete race-safe hai (double-click, network retry,
-    // 2 tabs, ya stale back-button page se dobara submit — sab yahin block ho jaate hain).
-    const session = await AttemptSession.findOneAndDelete({
-        _id: sessionId, test: testId, user: req.user._id
-    });
-
-    if (!session) {
-        return res.status(409).json({
-            success: false,
-            message: "This attempt has already been submitted or has expired. Please start a new attempt."
-        });
+    if (!Array.isArray(answers)) {
+        return res.status(400).json({ success: false, message: "Invalid answers" });
     }
+
+    const allowedSeconds = (() => {
+        const total = (Number(test.duration) || 0) * 60;
+        const sub = (test.subjectTime || []).reduce((s, st) => s + (Number(st.duration) || 0), 0) * 60;
+        const secs = test.timeStrategy === "subject" ? Math.max(total, sub) : total;
+        return secs > 0 ? secs : 3600;
+    })();
+    let safeTime = Math.max(0, Math.min(Math.floor(Number(timeTaken) || 0), allowedSeconds + 120));
 
     const { status, publishAt } = getTestStatus(test);
     if (status === "upcoming") {
@@ -226,16 +342,35 @@ export const submitAttempt = async (req, res) => {
     }
 
     if (test.isLiveTest) {
-    const alreadyAttempted = await Attempt.findOne({ test: testId, user: req.user._id });
-    if (alreadyAttempted) {
+        const alreadyAttempted = await Attempt.findOne({ test: testId, user: req.user._id });
+        if (alreadyAttempted) {
+            return res.status(409).json({
+                success: false,
+                code: "ALREADY_SUBMITTED",
+                message: "You have already submitted this test."
+            });
+        }
+    }
+
+    // Session ab sabse last check ke baad consume hoga
+    const session = await AttemptSession.findOneAndDelete({
+        _id: sessionId, test: testId, user: req.user._id
+    });
+
+    if (!session || session.exited) {
         return res.status(409).json({
             success: false,
-            message: "You have already submitted this test."
+            code: "SESSION_INVALID",
+            message: "This attempt has already been submitted or has expired. Please start a new attempt."
         });
     }
-}
 
-    // ✅ Listing ke marks config se qualifying-only subjects nikal lo
+    // Live test: time server-side session start se nikalo
+    if (test.isLiveTest && session.createdAt) {
+        const elapsed = Math.max(0, Math.floor((Date.now() - new Date(session.createdAt).getTime()) / 1000));
+        safeTime = Math.min(elapsed, allowedSeconds);
+    }
+
     const listingForMarks = await Listing.findById(test.listing).select("marks");
     const qualifyingSubjects = new Set(
         (listingForMarks?.marks || [])
@@ -243,7 +378,7 @@ export const submitAttempt = async (req, res) => {
             .map(m => m.subject)
     );
 
-    const mappings = await TestQuestion.find({ test: testId }).populate("question");
+    const mappings = await TestQuestion.find({ test: testId }).sort({ order: 1 }).populate("question");
 
     let score = 0, correctCount = 0, wrongCount = 0, skippedCount = 0;
     const savedAnswers = [];
@@ -254,55 +389,117 @@ export const submitAttempt = async (req, res) => {
 
         const userAns = answers.find(a => a.questionId === String(q._id));
 
+        let cleanSel = [];
         let isCorrect = false, attempted = false;
 
         if (userAns) {
             if (q.type === "integer") {
-                attempted = userAns.numericAnswer !== null && userAns.numericAnswer !== undefined;
-                isCorrect = attempted && Number(userAns.numericAnswer) === Number(q.numericAnswer);
+                const v = userAns.numericAnswer;
+                attempted = v !== null && v !== undefined && String(v).trim() !== "" && !isNaN(Number(v));
+                isCorrect = attempted && Number(v) === Number(q.numericAnswer);
             } else {
-                const sel = userAns.selectedOptions || [];
-                attempted = sel.length > 0;
+                const rawSel = Array.isArray(userAns.selectedOptions) ? userAns.selectedOptions : [];
+                cleanSel = [...new Set(rawSel.map(Number))].filter(Number.isInteger);
+                attempted = cleanSel.length > 0;
                 const correct = q.correctAnswers || [];
-                isCorrect = attempted && sel.length === correct.length && sel.every(i => correct.includes(i));
+                isCorrect = attempted && cleanSel.length === correct.length && cleanSel.every(i => correct.includes(i));
             }
         }
 
-        // ✅ Qualifying-only subject hai to sirf marks add na karo, baki sab (correct/wrong count) normal chalega
-        const isQualifyingOnly = qualifyingSubjects.has(q.subject);
+        const isQualifyingOnly = qualifyingSubjects.has(m.subject || q.subject);
 
         if (!attempted) skippedCount++;
         else if (isCorrect) {
             correctCount++;
-            if (!isQualifyingOnly) score += m.positiveMarks;
+            if (!isQualifyingOnly) score += (m.positiveMarks || 0);
         } else {
             wrongCount++;
-            if (!isQualifyingOnly) score -= m.negativeMarks;
+            if (!isQualifyingOnly) score -= (m.negativeMarks || 0);
         }
 
         savedAnswers.push({
             question: q._id,
-            selectedOptions: userAns?.selectedOptions || [],
+            selectedOptions: cleanSel,
             numericAnswer: userAns?.numericAnswer ?? null,
             status: userAns?.status || "notVisited"
         });
     });
 
+    // Live test: duplicate attempt rokne ke liye pehle LiveTestResult (unique user+test) se lock
+    let liveLockCreated = false;
+    if (test.isLiveTest) {
+        try {
+            await LiveTestResult.create({
+                user: req.user._id, exam: test.liveTestExam, test: test._id,
+                testTitle: test.title, score, totalMarks: test.totalMarks,
+                correctCount, wrongCount, skippedCount, timeTaken: safeTime,
+                attemptedAt: new Date(), analysisExpiresAt: test.liveTestExpiresAt
+            });
+            liveLockCreated = true;
+        } catch (err) {
+            if (err.code === 11000) {
+                return res.status(409).json({
+                    success: false,
+                    code: "ALREADY_SUBMITTED",
+                    message: "You have already submitted this test."
+                });
+            }
+            console.error("[live-result] lock failed:", err);
+        }
+    }
+
+    let attempt;
+    try {
+        attempt = await Attempt.create({
+            test: testId,
+            listing: test.listing,
+            user: req.user._id,
+            answers: savedAnswers,
+            score, totalMarks: test.totalMarks, correctCount, wrongCount, skippedCount,
+            timeTaken: safeTime, submitType: submitType || "manual",
+            language: session.language || "English"
+        });
+    } catch (err) {
+        if (liveLockCreated) {
+            await LiveTestResult.deleteOne({ user: req.user._id, test: test._id }).catch(() => {});
+        }
+        await AttemptSession.create({
+            _id: session._id, test: testId, user: req.user._id, language: session.language,
+            createdAt: session.createdAt
+        }).catch(() => {});
+        throw err;
+    }
+
+    // Naya attempt ban gaya, ab purane delete karo (sirf non-live)
     if (!test.isLiveTest) {
-    await Attempt.deleteOne({ user: req.user._id, test: testId });
-}                                                         // 👈 NAYA
+        await Attempt.deleteMany({ user: req.user._id, test: testId, _id: { $ne: attempt._id } });
+    }
 
-
-    const attempt = await Attempt.create({
-        test: testId,
-        listing: test.listing,
-        user: req.user._id,
-        answers: savedAnswers,
-        score, totalMarks: test.totalMarks, correctCount, wrongCount, skippedCount,
-        timeTaken: timeTaken || 0, submitType: submitType || "manual",
-        language: session.language || "English"   // 👈 naya
-    });
-    
+    if (test.isLiveTest) {
+        try {
+            if (liveLockCreated) {
+                await LiveTestResult.updateOne(
+                    { user: req.user._id, test: test._id },
+                    { $set: { attemptId: attempt._id, attemptedAt: attempt.createdAt } }
+                );
+            } else {
+                await LiveTestResult.create({
+                    user: req.user._id,
+                    exam: test.liveTestExam,
+                    test: test._id,
+                    testTitle: test.title,
+                    attemptId: attempt._id,
+                    score, totalMarks: test.totalMarks,
+                    correctCount, wrongCount, skippedCount,
+                    timeTaken: safeTime,
+                    attemptedAt: attempt.createdAt,
+                    analysisExpiresAt: test.liveTestExpiresAt
+                });
+            }
+        } catch (err) {
+            if (err.code !== 11000) console.error("[live-result] save failed:", err);
+        }
+    }
 
     res.status(200).json({ success: true, attemptId: attempt._id });
 };
@@ -314,6 +511,7 @@ export const showAnalysis = async (req, res) => {
     if (!attempt) throw new ExpressError(404, "Attempt Not Found");
 
     const test = await Test.findById(attempt.test);
+    if (!test) throw new ExpressError(404, "Test Not Found");
     const listing = await Listing.findById(attempt.listing);
 
     // ✅ Listing ke marks config se qualifying-only subjects nikal lo
@@ -323,12 +521,18 @@ export const showAnalysis = async (req, res) => {
             .map(m => m.subject)
     );
 
-    const mappings = await TestQuestion.find({ test: attempt.test });
-    const marksMap = {};
+    const mappings = await TestQuestion.find({ test: attempt.test }).sort({ order: 1 });
+const orderMap = {};
+mappings.forEach(m => { orderMap[String(m.question)] = m.order; });
+const sortedAnswers = [...attempt.answers].sort((a, b) =>
+    (orderMap[String(a.question?._id)] ?? 99999) - (orderMap[String(b.question?._id)] ?? 99999)
+);
+const marksMap = {};
     mappings.forEach(m => {
         marksMap[String(m.question)] = {
             positiveMarks: m.positiveMarks || 0,
-            negativeMarks: m.negativeMarks || 0
+            negativeMarks: m.negativeMarks || 0,
+             subject: m.subject || ""
         };
     });
 
@@ -338,7 +542,7 @@ export const showAnalysis = async (req, res) => {
     const sectionStatusMap = {};
     const solutions = [];
 
-    attempt.answers.forEach((a, idx) => {
+    sortedAnswers.forEach((a, idx) => {
         const q = a.question;
         if (!q) return;
 
@@ -348,8 +552,9 @@ export const showAnalysis = async (req, res) => {
         let isCorrect = false;
 
         if (q.type === "integer") {
-            attempted = a.numericAnswer !== null && a.numericAnswer !== undefined;
-            isCorrect = attempted && Number(a.numericAnswer) === Number(q.numericAnswer);
+          const v = a.numericAnswer;
+attempted = v !== null && v !== undefined && String(v).trim() !== "" && !isNaN(Number(v));
+isCorrect = attempted && Number(v) === Number(q.numericAnswer);
         } else {
             const sel = a.selectedOptions || [];
             attempted = sel.length > 0;
@@ -360,7 +565,7 @@ export const showAnalysis = async (req, res) => {
         let status = "skipped";
         if (attempted) status = isCorrect ? "correct" : "wrong";
 
-        const subject = q.subject || "General";
+        const subject = marks.subject || q.subject || "General";
         const isQualifyingOnly = qualifyingSubjects.has(subject);
 
         // ✅ Sirf marks add karna skip karo, baaki (topicBreakdown counts) normal rahenge
@@ -404,10 +609,10 @@ export const showAnalysis = async (req, res) => {
         solutions.push({
             order: idx + 1,
             questionId: q._id,  
-            subject: q.subject || "",
+            subject: subject,
             type: q.type || "",
             topic: q.topic || "",
-            subtopic: q.subtopic || "",
+            subtopic: q.subTopic || "",
             difficulty: q.difficulty || "",
             status,
             questionText: resolvedQ.question || "",
@@ -434,7 +639,7 @@ export const showAnalysis = async (req, res) => {
     });
 
     const { rank: predictorRank } = calculateRankFromPredictor(attempt.score, listing?.rankPredictorData);
-const { rank: liveRank, totalUsers: liveTotalUsers } = await getLiveTestRank(attempt.test, attempt.score);
+const { rank: liveRank, totalUsers: liveTotalUsers } = await getLiveTestRank(attempt.test, attempt.score, test.isLiveTest ? (attempt.timeTaken || 0) : 0);
 
      // 🆕 NAYA — Rank Predictor Card (gate + range)
 let rankPredictorCard = { show: false };

@@ -387,10 +387,47 @@ window.addEventListener("click", function (e) {
 });
 
 
-function startTest(testId) {
-    const langParam = encodeURIComponent(selectedTestLanguage || 'English');
+let __startingTest = false;
+
+async function startTest(testId) {
+    if (__startingTest) return;
+    __startingTest = true;
+
+    const lang = selectedTestLanguage || 'English';
+    const langParam = encodeURIComponent(lang);
     const fromParam = encodeURIComponent(window.location.pathname + window.location.search);
-    window.location.href = `/attempt/${testId}?lang=${langParam}&from=${fromParam}`;
+    const btn = document.getElementById('proceedBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Starting...'; }
+
+    try {
+        const res = await fetch(`/api/attempt/${testId}/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lang })
+        });
+
+        if (res.redirected) {
+            window.location.href = res.url;
+            return;
+        }
+
+        let result = {};
+        try { result = await res.json(); } catch (_) {}
+
+        if (result.code === 'ALREADY_SUBMITTED' && result.redirect) {
+            window.location.href = result.redirect;
+            return;
+        }
+        if (!res.ok || !result.success) {
+            throw new Error(result.message || 'Unable to start the test.');
+        }
+
+        window.location.href = `/attempt/${testId}?lang=${langParam}&from=${fromParam}`;
+    } catch (err) {
+        __startingTest = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Proceed'; }
+        showToast(err.message || 'Unable to start the test.', 'error');
+    }
 }
 
 if (window.lucide) {

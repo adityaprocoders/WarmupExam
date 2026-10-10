@@ -31,7 +31,7 @@ categories.forEach(c => {
     // Total tests count nikalo har listing ke liye
     const listingIds = tests.map(l => l._id);
     const testCounts = await Test.aggregate([
-        { $match: { listing: { $in: listingIds } } },
+        { $match: { listing: { $in: listingIds }, isLiveTest: { $ne: true } } },
         { $group: { _id: "$listing", count: { $sum: 1 } } }
     ]);
     const testCountMap = {};

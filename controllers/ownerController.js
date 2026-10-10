@@ -1,4 +1,5 @@
 import User from "../models/usersShema.js";
+import { generateSessionId } from "../utils/sessionHelper.js";
 import Listing from "../models/listing.js";
 import { Resend } from "resend";  
 import Attempt from "../models/TestAttempt.js";
@@ -11,9 +12,18 @@ import Notification from "../models/Notification.js";
 import CustomTestPricing from "../models/customTestPricing.js";
 import ExamPatternSummary from "../models/ExamPatternSummary.js";
 import Category from "../models/Category.js";
-import CustomTestPayment from "../models/customTestPayment.js";
+import PaymentRecord from "../models/PaymentRecord.js";
+import razorpayInstance from "../utils/razorpay.js";
+import { applyRefund } from "../utils/paymentLedger.js";
+import mongoose from "mongoose";
 import { calculateRankFromPredictor } from "../utils/rankHelper.js";
 import { getUsageSummary } from "../utils/aiUsageTracker.js";
+import { cascadeDeleteListing } from "../utils/deleteHelpers.js";
+import CustomPaperAttempt from "../models/CustomPaperAttempt.js";
+import AIUsage from "../models/AIUsage.js";
+import LiveTestResult from "../models/LiveTestResult.js";
+import CustomAIPaper from "../models/CustomAIPaper.js";
+import CustomTestPayment from "../models/customTestPayment.js";
 
 
 // ---------------- DASHBOARD STATS ----------------
@@ -39,11 +49,10 @@ export const getDashboardStats = async (req, res) => {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
 
-        // Real revenue: is mahine ke sab enrollments ka amountPaid sum
-        const revenueAgg = await User.aggregate([
-            { $unwind: "$enrolledListings" },
-            { $match: { "enrolledListings.enrolledAt": { $gte: startOfMonth } } },
-            { $group: { _id: null, total: { $sum: "$enrolledListings.amountPaid" } } }
+        // Real revenue: permanent payment ledger se (expire/cleanup ka asar nahi, custom test bhi count, refund minus)
+        const revenueAgg = await PaymentRecord.aggregate([
+            { $match: { paidAt: { $gte: startOfMonth } } },
+            { $group: { _id: null, total: { $sum: { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] } } } }
         ]);
         const revenueThisMonth = revenueAgg[0]?.total || 0;
 
@@ -84,16 +93,12 @@ export const getChartData = async (req, res) => {
         ]);
 
         // 2) Revenue Trend — real amountPaid data, month-wise
-        const revenueRaw = await User.aggregate([
-            { $unwind: "$enrolledListings" },
-            { $match: { "enrolledListings.enrolledAt": { $gte: sixMonthsAgo } } },
+        const revenueRaw = await PaymentRecord.aggregate([
+            { $match: { paidAt: { $gte: sixMonthsAgo } } },
             {
                 $group: {
-                    _id: {
-                        year: { $year: "$enrolledListings.enrolledAt" },
-                        month: { $month: "$enrolledListings.enrolledAt" }
-                    },
-                    total: { $sum: "$enrolledListings.amountPaid" }
+                    _id: { year: { $year: "$paidAt" }, month: { $month: "$paidAt" } },
+                    total: { $sum: { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] } }
                 }
             },
             { $sort: { "_id.year": 1, "_id.month": 1 } }
@@ -160,10 +165,9 @@ export const getAllTestSeriesOwner = async (req, res) => {
         ]);
 
         // 👇 NAYA: har listing ke liye TOTAL purchased count (amountPaid > 0, all-time — expired bhi count)
-        const purchasedAgg = await User.aggregate([
-            { $unwind: "$enrolledListings" },
-            { $match: { "enrolledListings.amountPaid": { $gt: 0 } } },
-            { $group: { _id: "$enrolledListings.listing", count: { $sum: 1 } } }
+        const purchasedAgg = await PaymentRecord.aggregate([
+            { $match: { kind: "testseries", status: { $ne: "refunded" } } },
+            { $group: { _id: "$itemId", count: { $sum: 1 } } }
         ]);
 
         const enrolledMap = new Map(enrolledAgg.map(e => [String(e._id), e.count]));
@@ -197,14 +201,12 @@ export const getAllTestSeriesOwner = async (req, res) => {
 export const deleteTestSeries = async (req, res) => {
     try {
         const { id } = req.params;
-
-        // 🔧 FIX: pehle listing na milne par bhi "success:true" jaisa response ban sakta tha.
-        // Ab agar listing already nahi hai to clear 404 milega, frontend confuse nahi hoga.
-        const deleted = await Listing.findByIdAndDelete(id);
-        if (!deleted) {
+                 const listing = await Listing.findById(id);
+        if (!listing) {
             return res.status(404).json({ success: false, message: "Test series not found." });
         }
-
+        await cascadeDeleteListing(id);
+        await Listing.findByIdAndDelete(id);
         res.json({ success: true, message: "Test series deleted successfully." });
     } catch (err) {
         console.error("Delete test series error:", err);
@@ -358,6 +360,11 @@ export const deleteUser = async (req, res) => {
         // ---------- Attempts + User delete ----------
         await Attempt.deleteMany({ user: id });
         await AttemptSession.deleteMany({ user: id });
+        await CustomPaperAttempt.deleteMany({ user: id });
+        await AIUsage.deleteMany({ user: id });
+        await LiveTestResult.deleteMany({ user: id });
+        await CustomAIPaper.deleteMany({ user: id });
+        await CustomTestPayment.deleteMany({ user: id });
         await User.findByIdAndDelete(id);
 
         res.json({ success: true, message: "User deleted successfully." });
@@ -411,27 +418,51 @@ export const renderUserDetailPage = async (req, res) => {
             };
         });
 
-        const testSeriesPayments = targetUser.enrolledListings.map(e => ({
-            invoiceId: e.orderId || e.paymentId || "FREE-" + e._id.toString().slice(-6).toUpperCase(),
-            amount: e.amountPaid || 0,
-            date: e.enrolledAt.toDateString(),
-            status: e.amountPaid > 0 ? "Paid" : "Free",
-            sortDate: e.enrolledAt
-        }));
+// ---------- PAYMENT HISTORY (permanent ledger: sirf asli payments) ----------
+        const paymentDocs = await PaymentRecord.find({ user: targetUser._id })
+            .sort({ paidAt: -1 })
+            .lean();
 
-        const customPayments = await CustomTestPayment.find({ user: targetUser._id, status: "paid" }).lean();
-        const customTestPayments = customPayments.map(p => ({
-            invoiceId: p.razorpayOrderId.startsWith("owner_grant_")
-                ? `CT-GRANT-${String(p._id).slice(-6).toUpperCase()}`
-                : p.razorpayOrderId,
-            amount: p.amount || 0,
-            date: new Date(p.createdAt).toDateString(),
-            status: p.amount > 0 ? "Paid" : "Free",
-            sortDate: p.createdAt
-        }));
+        const planName = (pl) => (pl === "promax" ? "Pro Max" : "Pro");
+        const paymentHistory = paymentDocs.map(p => {
+            const isCT = p.kind === "customtest";
+            const validity = isCT && p.months
+                ? `${p.months} month${p.months > 1 ? "s" : ""}`
+                : (p.validityDays ? `${p.validityDays} days` : "-");
+            return {
+                id: String(p._id),
+                invoiceNo: p.invoiceNo || ("WE" + String(p.orderId).replace(/\W/g, "").slice(-8).toUpperCase()),
+                kind: p.kind,
+                kindLabel: isCT ? "Custom Test" : (p.kind === "ebook" ? "E-Book" : "Test Series"),
+                itemTitle: p.itemTitle,
+                subtitle: isCT
+                    ? `Custom Test • ${planName(p.plan)} • ${validity}`
+                    : `${p.kind === "ebook" ? "E-Book" : "Test Series"} • ${validity}`,
+                validity,
+                amount: p.amount || 0,
+                baseAmount: p.baseAmount,
+                couponCode: p.couponCode || "",
+                couponDiscount: p.couponDiscount || 0,
+                donation: p.donation || 0,
+                status: p.status || "success",
+                refundedAmount: p.refundedAmount || 0,
+                refundedAt: p.refundedAt ? new Date(p.refundedAt).getTime() : null,
+                methodType: p.methodType || "",
+                methodDetail: p.methodDetail || "",
+                orderId: p.orderId,
+                paymentId: p.paymentId || "",
+                canRefund: !!p.paymentId && p.source === "razorpay" && (p.status || "success") !== "refunded",
+                ts: new Date(p.paidAt).getTime(),
+                expiresTs: p.expiresAt ? new Date(p.expiresAt).getTime() : null
+            };
+        });
+        const paymentsJson = JSON.stringify(paymentHistory).replace(/</g, "\\u003c");
 
-        const paymentHistory = [...testSeriesPayments, ...customTestPayments]
-            .sort((a, b) => new Date(b.sortDate) - new Date(a.sortDate));
+        // Current subscription me asli coupon dikhao (pehle hamesha "-" tha)
+        if (currentSub?.orderId) {
+            const rec = paymentDocs.find(p => p.orderId === currentSub.orderId);
+            if (rec?.couponCode) subscriptionInfo.couponUsed = rec.couponCode;
+        }
 
         // ---------- CUSTOM TEST INFO ----------
         const ctTier = targetUser.customTestTier || "free";
@@ -523,7 +554,10 @@ if (seriesAttempts.length > 0) {
             _id: targetUser._id,
             name: targetUser.name,
             email: targetUser.email,
-            mobile: targetUser.mobile || "-",
+                        mobile: targetUser.mobile || "-",
+            state: targetUser.state || "-",
+            city: targetUser.city || "-",
+            pinCode: targetUser.pinCode || "-",
             avatar: targetUser.avatar,
             status: targetUser.banned ? "Banned" : "Active",
             banInfo: {
@@ -559,7 +593,8 @@ if (seriesAttempts.length > 0) {
 
         res.render("owner/userdetail", {
             userDetail, availableListings, user: req.user,
-            customTestInfo, customTestPricing, customTestPricingJson
+            customTestInfo, customTestPricing, customTestPricingJson,
+            paymentsJson
         });
     } catch (err) {
         console.error("User detail page error:", err);
@@ -583,7 +618,7 @@ export const grantSubscription = async (req, res) => {
         if (!targetUser) return res.status(404).json({ success: false, message: "User not found." });
 
         const start = startDate ? new Date(startDate) : new Date();
-        const days = Number(duration) || 30;
+                const days = Math.max(1, Number(duration) || 30);
         const expiresAt = new Date(start);
         expiresAt.setDate(expiresAt.getDate() + days);
 
@@ -602,10 +637,10 @@ export const grantSubscription = async (req, res) => {
                 e => String(e.listing) === String(listing._id)
             );
 
-            if (existing) {
+                       if (existing) {
                 existing.suspendedByOwner = false;
-                existing.expiresAt = expiresAt;
-                // 🔧 FIX: enrolledAt ko reset nahi karte agar wo already paid tha — sirf naya (free) grant hone par set karo
+                // sirf badhao, kabhi chhota mat karo (unlimited ya lamba expiry safe rahe)
+                if (existing.expiresAt && existing.expiresAt < expiresAt) existing.expiresAt = expiresAt;
                 if (!existing.amountPaid) existing.enrolledAt = start;
             } else {
                 targetUser.enrolledListings.push({
@@ -722,6 +757,7 @@ export const ownerResetUserPassword = async (req, res) => {
 
         const tempPassword = Math.random().toString(36).slice(-8);
         targetUser.password = tempPassword; // pre('save') hook hash kar dega
+        targetUser.activeSessionId = generateSessionId(); // user ke purane sessions logout
         await targetUser.save();
 
         await resend.emails.send({
@@ -739,49 +775,103 @@ export const ownerResetUserPassword = async (req, res) => {
     }
 };
 
-// ---------------- PAYMENTS (real, sab users ke paid enrollments se) ----------------
-// 🆕 NEW: "Payments" tab pehle sirf static placeholder tha ("Payments history yaha aayegi").
-// Ab ye real DB se paid transactions nikalta hai.
+// ---------------- PAYMENTS (permanent ledger: sab users ke asli payments) ----------------
 export const getAllPaymentsOwner = async (req, res) => {
     try {
-        const paymentsAgg = await User.aggregate([
-            { $unwind: "$enrolledListings" },
-            { $match: { "enrolledListings.amountPaid": { $gt: 0 } } },
-            {
-                $lookup: {
-                    from: "listings",
-                    localField: "enrolledListings.listing",
-                    foreignField: "_id",
-                    as: "listingInfo"
+        const [docs, totals] = await Promise.all([
+            PaymentRecord.find().sort({ paidAt: -1 }).limit(200).lean(),   // recent 200, pagination baad me
+            PaymentRecord.aggregate([{
+                $group: {
+                    _id: null,
+                    total: { $sum: { $subtract: ["$amount", { $ifNull: ["$refundedAmount", 0] }] } },
+                    count: { $sum: 1 }
                 }
-            },
-            { $unwind: { path: "$listingInfo", preserveNullAndEmptyArrays: true } },
-            {
-                $project: {
-                    _id: "$enrolledListings._id",
-                    userName: "$name",
-                    userEmail: "$email",
-                    listingTitle: { $ifNull: ["$listingInfo.title", "Deleted Listing"] },
-                    amount: "$enrolledListings.amountPaid",
-                    date: "$enrolledListings.enrolledAt",
-                    invoiceId: {
-                        $ifNull: [
-                            "$enrolledListings.orderId",
-                            { $ifNull: ["$enrolledListings.paymentId", "-"] }
-                        ]
-                    }
-                }
-            },
-            { $sort: { date: -1 } },
-            { $limit: 200 } // recent 200 transactions — pagination baad me add ki ja sakti hai
+            }])
         ]);
 
-        const totalRevenue = paymentsAgg.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const payments = docs.map(p => ({
+            _id: p._id,
+            userId: p.user,
+            userName: p.userName,
+            userEmail: p.userEmail,
+            kind: p.kind,
+            listingTitle: p.itemTitle,
+            amount: p.amount,
+            status: p.status || "success",
+            refundedAmount: p.refundedAmount || 0,
+            couponCode: p.couponCode || "",
+            date: p.paidAt,
+            invoiceId: p.invoiceNo || p.orderId
+        }));
 
-        res.json({ success: true, payments: paymentsAgg, totalRevenue, count: paymentsAgg.length });
+        res.json({
+            success: true,
+            payments,
+            totalRevenue: totals[0]?.total || 0,     // sab payments ka net total (refund minus)
+            count: payments.length,
+            totalCount: totals[0]?.count || 0
+        });
     } catch (err) {
         console.error("Get payments error:", err);
         res.status(500).json({ success: false, message: "Failed to load payments." });
+    }
+};
+
+// ---------------- DELETE PAYMENT RECORD (sirf owner, manually, permanent) ----------------
+export const deletePaymentRecord = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "Invalid payment id." });
+        }
+         
+                 const rec = await PaymentRecord.findById(id);
+        if (!rec) return res.status(404).json({ success: false, message: "Payment record not found." });
+        if (rec.status !== "refunded") {
+            return res.status(400).json({ success: false, message: "Only fully refunded payment records can be deleted." });
+        }
+        await rec.deleteOne();
+                res.json({ success: true, message: "Payment record deleted permanently." });
+    } catch (err) {
+        console.error("Delete payment record error:", err);
+        res.status(500).json({ success: false, message: "Failed to delete payment record." });
+    }
+};
+
+// ---------------- REFUND (owner, Razorpay API se; access bhi hatega: expire jaisa) ----------------
+export const refundPayment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "Invalid payment id." });
+        }
+
+        const rec = await PaymentRecord.findById(id);
+        if (!rec) return res.status(404).json({ success: false, message: "Payment record not found." });
+        if (!rec.paymentId || rec.source !== "razorpay") {
+            return res.status(400).json({ success: false, message: "This payment cannot be refunded from here." });
+        }
+
+        const remaining = rec.amount - (rec.refundedAmount || 0);
+        if (remaining <= 0) {
+            return res.status(400).json({ success: false, message: "This payment is already fully refunded." });
+        }
+
+        // Full (bacha hua) amount refund. Partial refund Razorpay Dashboard se karo, webhook record update kar dega.
+        const refund = await razorpayInstance.payments.refund(rec.paymentId, {
+            amount: Math.round(remaining * 100),
+            speed: "normal",
+            notes: { invoiceNo: rec.invoiceNo || "", initiatedBy: "owner_panel" }
+        });
+
+        // Webhook ka intezaar nahi: abhi apply karo (applyRefund idempotent hai, webhook baad me aaye to duplicate nahi banega)
+        await applyRefund({ paymentId: rec.paymentId, refund: { id: refund.id, amount: refund.amount, status: refund.status } });
+
+                res.json({ success: true, message: `₹${remaining} refund initiated. The user's access will be removed once the refund is processed.` });
+    } catch (err) {
+        console.error("Refund error:", err);
+        const msg = err?.error?.description || err?.message || "Refund failed.";
+        res.status(err?.statusCode >= 400 && err?.statusCode < 500 ? 400 : 500).json({ success: false, message: msg });
     }
 };
 
@@ -850,23 +940,45 @@ export const getAllNotificationsOwner = async (req, res) => {
     }
 };
 
+// datetime-local jaisi string (bina timezone) ko IST maano; ISO (Z / +05:30) ko jaisa hai waisa
+const parseScheduledAt = (value) => {
+    if (!value) return null;
+    const str = String(value).trim();
+    const hasZone = /(Z|[+-]\d{2}:?\d{2})$/i.test(str);
+    const d = new Date(hasZone ? str : `${str}+05:30`);
+    return isNaN(d.getTime()) ? null : d;
+};
+
+const cleanCustomIds = (ids) => (Array.isArray(ids) ? ids : []).filter(id => mongoose.isValidObjectId(id));
+
 // ---------------- ESTIMATED REACH (audience select karte hi call hota hai) ----------------
+// Student side (getAudienceFilter) ke saath same rule: active paid = amountPaid > 0, suspend nahi, expire nahi
 export const getNotificationReach = async (req, res) => {
     try {
         const { audienceType, customUserIds } = req.query;
+        const now = new Date();
+
+        const notBanned = { banned: { $ne: true } };
+        const activePaid = {
+            enrolledListings: {
+                $elemMatch: {
+                    amountPaid: { $gt: 0 },
+                    suspendedByOwner: { $ne: true },
+                    $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
+                }
+            }
+        };
 
         let count = 0;
         if (audienceType === "all") {
-            count = await User.countDocuments();
+            count = await User.countDocuments(notBanned);
         } else if (audienceType === "paid") {
-            count = await User.countDocuments({ "enrolledListings.amountPaid": { $gt: 0 } });
+            count = await User.countDocuments({ ...notBanned, ...activePaid });
         } else if (audienceType === "free") {
-            count = await User.countDocuments({
-                $or: [{ enrolledListings: { $size: 0 } }, { "enrolledListings.amountPaid": { $not: { $gt: 0 } } }]
-            });
+            count = await User.countDocuments({ ...notBanned, $nor: [activePaid] });
         } else if (audienceType === "custom") {
-            const ids = customUserIds ? customUserIds.split(",").filter(Boolean) : [];
-            count = ids.length;
+            const ids = customUserIds ? String(customUserIds).split(",").filter(Boolean) : [];
+            count = cleanCustomIds(ids).length;
         }
 
         res.json({ success: true, count });
@@ -899,6 +1011,7 @@ export const searchUsersForNotification = async (req, res) => {
     }
 };
 
+ 
 // ---------------- CREATE + SEND NOTIFICATION ----------------
 export const createNotification = async (req, res) => {
     try {
@@ -907,17 +1020,35 @@ export const createNotification = async (req, res) => {
         if (!title || !message || !audienceType) {
             return res.status(400).json({ success: false, message: "Title, message, and audience are required." });
         }
+        if (String(title).length > 60) {
+            return res.status(400).json({ success: false, message: "Title can be at most 60 characters." });
+        }
+        if (String(message).length > 500) {
+            return res.status(400).json({ success: false, message: "Message can be at most 500 characters." });
+        }
+        if (!["all", "paid", "free", "custom"].includes(audienceType)) {
+            return res.status(400).json({ success: false, message: "Invalid audience." });
+        }
+
+        const ids = audienceType === "custom" ? cleanCustomIds(customUserIds) : [];
+        if (audienceType === "custom" && ids.length === 0) {
+            return res.status(400).json({ success: false, message: "Select at least one valid student." });
+        }
 
         const doc = new Notification({
             title,
             message,
             audienceType,
-            customUserIds: audienceType === "custom" ? (customUserIds || []) : [],
+            customUserIds: ids,
             createdBy: req.user._id
         });
 
-        if (scheduleType === "later" && scheduledAt) {
-            doc.scheduledAt = new Date(scheduledAt);
+        if (scheduleType === "later") {
+            const when = parseScheduledAt(scheduledAt);
+            if (!when) {
+                return res.status(400).json({ success: false, message: "Select a valid schedule date and time." });
+            }
+            doc.scheduledAt = when;
             doc.status = "scheduled";
         } else {
             doc.sentAt = new Date();
@@ -928,6 +1059,9 @@ export const createNotification = async (req, res) => {
         await doc.save();
         res.json({ success: true, notification: doc, message: "Notification sent successfully." });
     } catch (err) {
+        if (err.name === "ValidationError" || err.name === "CastError") {
+            return res.status(400).json({ success: false, message: "Invalid notification data. Please check and try again." });
+        }
         console.error("Create notification error:", err);
         res.status(500).json({ success: false, message: "Notification bhej nahi payi" });
     }
@@ -937,6 +1071,7 @@ export const createNotification = async (req, res) => {
 export const deleteNotification = async (req, res) => {
     try {
         const { id } = req.params;
+        if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: "Notification not found." });
         const deleted = await Notification.findByIdAndDelete(id);   // 👈 hamesha poora delete — already sahi hai
         if (!deleted) return res.status(404).json({ success: false, message: "Notification not found." });
         res.json({ success: true, message: "Notification deleted successfully." });
@@ -951,20 +1086,44 @@ export const updateNotification = async (req, res) => {
         const { id } = req.params;
         const { title, message, audienceType, customUserIds, scheduleType, scheduledAt } = req.body;
 
+        if (!mongoose.isValidObjectId(id)) return res.status(404).json({ success: false, message: "Notification not found." });
         const notif = await Notification.findById(id);
         if (!notif) return res.status(404).json({ success: false, message: "Notification not found." });
 
-        if (notif.status === "sent") {
+        // Sirf "scheduled" edit ho sakti hai (sent ya expired ko dobara zinda nahi kar sakte)
+        if (notif.status !== "scheduled") {
             return res.status(400).json({ success: false, message: "A notification that has already been sent cannot be edited. You can only delete it." });
+        }
+
+        if (!title || !message || !audienceType) {
+            return res.status(400).json({ success: false, message: "Title, message, and audience are required." });
+        }
+        if (String(title).length > 60) {
+            return res.status(400).json({ success: false, message: "Title can be at most 60 characters." });
+        }
+        if (String(message).length > 500) {
+            return res.status(400).json({ success: false, message: "Message can be at most 500 characters." });
+        }
+        if (!["all", "paid", "free", "custom"].includes(audienceType)) {
+            return res.status(400).json({ success: false, message: "Invalid audience." });
+        }
+
+        const ids = audienceType === "custom" ? cleanCustomIds(customUserIds) : [];
+        if (audienceType === "custom" && ids.length === 0) {
+            return res.status(400).json({ success: false, message: "Select at least one valid student." });
         }
 
         notif.title = title;
         notif.message = message;
         notif.audienceType = audienceType;
-        notif.customUserIds = audienceType === "custom" ? (customUserIds || []) : [];
+        notif.customUserIds = ids;
 
-        if (scheduleType === "later" && scheduledAt) {
-            notif.scheduledAt = new Date(scheduledAt);
+        if (scheduleType === "later") {
+            const when = parseScheduledAt(scheduledAt);
+            if (!when) {
+                return res.status(400).json({ success: false, message: "Select a valid schedule date and time." });
+            }
+            notif.scheduledAt = when;
             notif.status = "scheduled";
         } else {
             notif.sentAt = new Date();
@@ -975,11 +1134,15 @@ export const updateNotification = async (req, res) => {
         await notif.save();
         res.json({ success: true, notification: notif, message: "Notification updated successfully." });
     } catch (err) {
+        if (err.name === "ValidationError" || err.name === "CastError") {
+            return res.status(400).json({ success: false, message: "Invalid notification data. Please check and try again." });
+        }
         console.error("Update notification error:", err);
         res.status(500).json({ success: false, message: "Failed to update." });
     }
 };
-
+ 
+ 
 
 // ---------------- CUSTOM TEST PRICING (owner-editable Pro/Pro+ pricing) ----------------
 export const getCustomTestPricingOwner = async (req, res) => {
@@ -1235,20 +1398,7 @@ export const grantCustomTestAccess = async (req, res) => {
         targetUser.customTestExpiresAt = newExpiresAt;
         await targetUser.save();
 
-        try {
-            await CustomTestPayment.create({
-                user: targetUser._id,
-                plan,
-                months,
-                amount: 0,
-                razorpayOrderId: `owner_grant_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-                razorpayPaymentId: "owner_grant",
-                status: "paid",
-                source: "owner"
-            });
-        } catch (recErr) {
-            console.error("Custom test grant record save failed (non-fatal):", recErr);
-        }
+        // NOTE: owner grant ka payment record store nahi hota (sirf asli payments store hote hain)
 
         res.json({
             success: true,

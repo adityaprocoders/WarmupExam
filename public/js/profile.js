@@ -1,11 +1,17 @@
  
     (function () {
 
-        document.querySelectorAll('img[data-fallback-src]').forEach(img => {
-        img.addEventListener('error', function handler() {
-            img.removeEventListener('error', handler);
-            img.src = img.dataset.fallbackSrc;
-        });
+         document.querySelectorAll('img[data-fallback-src]').forEach(img => {
+        const fallback = img.dataset.fallbackSrc;
+
+        const useFallback = () => {
+            if (img.src !== fallback) img.src = fallback;   // fallback bhi fail ho to loop nahi banega
+        };
+
+        img.addEventListener('error', useFallback);
+
+        // Agar image pehle hi fail ho chuki hai (listener lagne se pehle), to abhi fallback lagao
+        if (img.complete && img.naturalWidth === 0) useFallback();
     });
 
     
@@ -56,6 +62,8 @@
             emailValid = true;
             saveBtn.disabled = false;
             resetPasswordSection();
+                        resetExamChips();
+            setEditMode(false);
             setEditMode(false);
         });
 
@@ -541,6 +549,76 @@
                 deleteConfirmBtn.disabled = false;
                 deleteConfirmBtn.textContent = "Ok, Delete";
             }
+        });
+    }
+
+        // ===== Target Exam (multi-value chips) =====
+    const examChips = document.getElementById("examChips");
+    const examTextInput = document.getElementById("examTextInput");
+    const originalExams = examChips ? JSON.parse(examChips.dataset.original || "[]") : [];
+
+    const CHIP_CLASS = "exam-chip inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold";
+    const REMOVE_CLASS = "exam-remove w-5 h-5 rounded-full flex items-center justify-center text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700 leading-none";
+
+    function currentExams() {
+        return [...examChips.querySelectorAll('input[name="targetExams"]')].map(i => i.value.toLowerCase());
+    }
+
+    function addExamChip(raw) {
+        const value = (raw || "").trim().replace(/\s+/g, " ").slice(0, 40);
+        if (!value) return;
+        const list = currentExams();
+        if (list.includes(value.toLowerCase()) || list.length >= 10) return;
+
+        const chip = document.createElement("span");
+        chip.className = CHIP_CLASS;
+
+        const label = document.createElement("span");
+        label.textContent = value;
+
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "targetExams";
+        hidden.value = value;
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = REMOVE_CLASS;
+        remove.setAttribute("aria-label", "Remove " + value);
+        remove.innerHTML = "&times;";
+
+        chip.append(label, hidden, remove);
+        examChips.appendChild(chip);
+    }
+
+    function resetExamChips() {
+        if (!examChips) return;
+        examChips.innerHTML = "";
+        originalExams.forEach(addExamChip);
+        examTextInput.value = "";
+    }
+
+    if (examChips && examTextInput) {
+        examChips.addEventListener("click", (e) => {
+            const btn = e.target.closest(".exam-remove");
+            if (btn) btn.closest(".exam-chip").remove();
+        });
+
+        examTextInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                addExamChip(examTextInput.value);
+                examTextInput.value = "";
+            } else if (e.key === "Backspace" && !examTextInput.value) {
+                const last = examChips.lastElementChild;
+                if (last) last.remove();
+            }
+        });
+
+        // Save dabane se pehle agar kuch type kiya hai (Enter nahi dabaya) to wo bhi add ho jaye
+        document.getElementById("profileForm").addEventListener("submit", () => {
+            addExamChip(examTextInput.value);
+            examTextInput.value = "";
         });
     }
 

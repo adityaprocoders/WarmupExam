@@ -1,11 +1,17 @@
-import User from "../models/usersShema.js"; 
+import User from "../models/usersShema.js";
+import { generateSessionId } from "../utils/sessionHelper.js";
 import cloudinary from "../config/cloudinary.js";
 import { getPublicIdFromUrl } from "../utils/cloudinaryHelper.js";
-import Attempt from "../models/TestAttempt.js"; 
-import AttemptSession from "../models/AttemptSession.js"; 
+import Attempt from "../models/TestAttempt.js";
+import AttemptSession from "../models/AttemptSession.js";
 import CustomPaperAttempt from "../models/CustomPaperAttempt.js";
 import AIUsage from "../models/AIUsage.js";
+import LiveTestResult from "../models/LiveTestResult.js";
+import CustomAIPaper from "../models/CustomAIPaper.js";
+import CustomTestPayment from "../models/customTestPayment.js";
 
+
+// ---------------- SHOW PROFILE ----------------
 export const getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id)
@@ -15,8 +21,7 @@ export const getProfile = async (req, res) => {
             })
             .lean();
 
-            if (!user) {
-             
+        if (!user) {
             return req.logout(function (err) {
                 if (err) console.error("Logout error (stale session user):", err);
                 req.flash("error", "Your session is invalid. Please log in again.");
@@ -24,9 +29,8 @@ export const getProfile = async (req, res) => {
             });
         }
 
-
         const myPurchases = (user.enrolledListings || [])
-            .filter(item => item.listing && item.listing.type === "Paid") // 👈 sirf PAID batch
+            .filter(item => item.listing && item.listing.type === "Paid") // sirf PAID batch
             .map(item => {
                 const isExpired = item.expiresAt && new Date(item.expiresAt) < new Date();
                 let expiryMessage = null;
@@ -47,21 +51,23 @@ export const getProfile = async (req, res) => {
                     thumbnail: item.listing.image || null,
                     listingTitle: item.listing.title,
                     badge: isExpired ? "expired" : "success",
+                    enrolledAt: item.enrolledAt, // sorting ke liye asli date
                     date: new Date(item.enrolledAt).toLocaleDateString("en-IN", {
                         day: "numeric", month: "short", year: "numeric"
                     }),
-                    isFree: false, // sirf paid dikha rahe hain, isliye hamesha false
+                    isFree: false,
                     price: item.amountPaid,
                     expiryMessage
                 };
             })
-            .sort((a, b) => new Date(b.date) - new Date(a.date));
+            // pehle string date pe sort ho raha tha (galat), ab asli date pe
+            .sort((a, b) => new Date(b.enrolledAt) - new Date(a.enrolledAt));
 
         res.render("user/profile", {
             currentUser: req.user,
             isOwner: req.user.role === "owner",
             myPurchases,
-             robots: "noindex, nofollow"
+            robots: "noindex, nofollow"
         });
     } catch (err) {
         console.error(err);
@@ -70,62 +76,72 @@ export const getProfile = async (req, res) => {
     }
 };
 
+// ---------------- UPDATE PROFILE ----------------
+// Fields: name, username, email, mobile, state, city, pinCode, targetExams[]
+// (class hata diya gaya hai; avatar alag route /profile/update-avatar se update hota hai)
 export const updateProfile = async (req, res) => {
     try {
-        const { name, mobile, city, class: userClass, exam, username, email } = req.body;
-        const updateData = { name, mobile, city, class: userClass, exam };
+        const { name, username, email, mobile, state, city, pinCode, targetExams } = req.body;
 
-        if (username && username.trim().toLowerCase() !== req.user.username) {
-            const exists = await User.exists({
-                username: username.trim().toLowerCase(),
+        const cleanUsername = (username || "").trim().toLowerCase();
+        const cleanEmail = (email || "").trim().toLowerCase();
+
+        if (cleanUsername && cleanUsername !== req.user.username) {
+            const usernameTaken = await User.exists({
+                username: cleanUsername,
                 _id: { $ne: req.user._id }
             });
-            if (exists) {
-                req.flash("error", "Username already taken");
+            if (usernameTaken) {
+                req.flash("error", "Username already taken, please choose another");
                 return res.redirect("/profile");
             }
-            updateData.username = username.trim().toLowerCase();
         }
 
-        if (email && email.trim().toLowerCase() !== req.user.email) {
-            const exists = await User.exists({
-                email: email.trim().toLowerCase(),
+        if (cleanEmail && cleanEmail !== req.user.email) {
+            const emailTaken = await User.exists({
+                email: cleanEmail,
                 _id: { $ne: req.user._id }
             });
-            if (exists) {
-                req.flash("error", "Email already in use");
+            if (emailTaken) {
+                req.flash("error", "Email already registered, please use another");
                 return res.redirect("/profile");
             }
-            updateData.email = email.trim().toLowerCase();
         }
 
-        // ---------- AVATAR: 7 din me sirf 1 baar ----------
-        if (req.file) {
-            const lastChanged = req.user.avatarChangedAt;
-            if (lastChanged) {
-                const daysSince = (Date.now() - new Date(lastChanged).getTime()) / (1000 * 60 * 60 * 24);
-                if (daysSince < 7) {
-                    const daysLeft = Math.ceil(7 - daysSince);
-                    req.flash("error", `You can change your avatar again after ${daysLeft} day`);
-                    return res.redirect("/profile");
-                }
-            }
+        // Target exams: duplicates (case-insensitive) hatao, khali hatao, max 10
+        const seen = new Set();
+        const cleanExams = (Array.isArray(targetExams) ? targetExams : [])
+            .map(e => String(e).trim())
+            .filter(e => {
+                const key = e.toLowerCase();
+                if (!e || seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            })
+            .slice(0, 10);
 
-            const oldPublicId = getPublicIdFromUrl(req.user.avatar);
-            if (oldPublicId) {
-                cloudinary.uploader.destroy(oldPublicId).catch(() => {});
-            }
-
-            updateData.avatar = req.file.path;
-            updateData.avatarChangedAt = new Date();
-        }
+        const updateData = {
+            name,
+            mobile: mobile || null,
+            state: state || null,
+            city: city || null,
+            pinCode: pinCode || null,
+            targetExams: cleanExams
+        };
+        if (cleanUsername) updateData.username = cleanUsername;
+        if (cleanEmail) updateData.email = cleanEmail;
 
         await User.findByIdAndUpdate(req.user._id, updateData, { runValidators: true });
+
         req.flash("success", "Profile updated successfully");
         res.redirect("/profile");
     } catch (err) {
-        console.error(err);
-        req.flash("error", "Profile update failed");
+        console.error("PROFILE UPDATE ERROR:", err);
+        if (err.code === 11000) {
+            req.flash("error", "Username or email already taken, please choose another");
+        } else {
+            req.flash("error", "Profile update failed");
+        }
         res.redirect("/profile");
     }
 };
@@ -144,7 +160,7 @@ export const updateAvatar = async (req, res) => {
                 const daysLeft = Math.ceil(7 - daysSince);
                 return res.status(400).json({
                     success: false,
-                    message: `You can change your avatar again after ${daysLeft} days.`
+                    message: `You can change your avatar again after ${daysLeft} day${daysLeft > 1 ? "s" : ""}.`
                 });
             }
         }
@@ -166,36 +182,62 @@ export const updateAvatar = async (req, res) => {
     }
 };
 
+// ---------------- LIVE USERNAME AVAILABILITY CHECK ----------------
 export const checkUsername = async (req, res) => {
-    const username = (req.query.username || "").trim().toLowerCase();
+    try {
+        const username = (req.query.username || "").trim().toLowerCase();
 
-    if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-        return res.json({ available: false, message: "3-20 chars: letters, numbers, underscore only" });
+        if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+            return res.json({
+                available: false,
+                message: "3-20 characters, only letters, numbers, underscore"
+            });
+        }
+
+        if (username === (req.user.username || "").toLowerCase()) {
+            return res.json({ available: true, message: "This is your current username" });
+        }
+
+        const exists = await User.exists({ username, _id: { $ne: req.user._id } });
+
+        return res.json(
+            exists
+                ? { available: false, message: "Username already taken" }
+                : { available: true, message: "Username available" }
+        );
+    } catch (err) {
+        console.error("USERNAME CHECK ERROR:", err);
+        res.status(500).json({ available: false, message: "Error checking username" });
     }
-
-    const exists = await User.exists({ username, _id: { $ne: req.user._id } });
-    res.json(
-        exists
-            ? { available: false, message: "Username already taken" }
-            : { available: true, message: "Username is available" }
-    );
 };
 
+// ---------------- LIVE EMAIL AVAILABILITY CHECK ----------------
 export const checkEmail = async (req, res) => {
-    const email = (req.query.email || "").trim().toLowerCase();
+    try {
+        const email = (req.query.email || "").trim().toLowerCase();
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.json({ available: false, message: "Invalid email format" });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.json({ available: false, message: "Enter a valid email address" });
+        }
+
+        if (email === (req.user.email || "").toLowerCase()) {
+            return res.json({ available: true, message: "This is your current email" });
+        }
+
+        const exists = await User.exists({ email, _id: { $ne: req.user._id } });
+
+        return res.json(
+            exists
+                ? { available: false, message: "Email already registered" }
+                : { available: true, message: "Email available" }
+        );
+    } catch (err) {
+        console.error("EMAIL CHECK ERROR:", err);
+        res.status(500).json({ available: false, message: "Error checking email" });
     }
-
-    const exists = await User.exists({ email, _id: { $ne: req.user._id } });
-    res.json(
-        exists
-            ? { available: false, message: "Email already registered" }
-            : { available: true, message: "Email is available" }
-    );
 };
 
+// ---------------- CHANGE PASSWORD ----------------
 export const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
@@ -222,10 +264,9 @@ export const changePassword = async (req, res) => {
         }
 
         // ---------- PASSWORD: 1 din me max 2 baar ----------
-        const now = Date.now();
-        const oneDayAgo = now - 24 * 60 * 60 * 1000;
+        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
 
-        // Purane (24hr se purane) timestamps hata do
+        // 24hr se purane timestamps hata do
         user.passwordChangeLog = (user.passwordChangeLog || []).filter(
             ts => new Date(ts).getTime() > oneDayAgo
         );
@@ -233,13 +274,16 @@ export const changePassword = async (req, res) => {
         if (user.passwordChangeLog.length >= 2) {
             return res.status(400).json({
                 success: false,
-                message: "`You have reached your daily password change limit. Please try again tomorrow.`"
+                message: "You have reached your daily password change limit. Please try again tomorrow."
             });
         }
 
         user.password = newPassword; // pre-save hook hash kar dega
         user.passwordChangeLog.push(new Date());
+        const newSessionId = generateSessionId();   // dusre sab sessions logout
+        user.activeSessionId = newSessionId;
         await user.save();
+        req.session.currentSessionId = newSessionId; // ye wala (current) session login rahega
 
         res.json({ success: true, message: "Password updated successfully" });
     } catch (err) {
@@ -248,7 +292,7 @@ export const changePassword = async (req, res) => {
     }
 };
 
- 
+// ---------------- DELETE ACCOUNT ----------------
 export const deleteAccount = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -258,20 +302,24 @@ export const deleteAccount = async (req, res) => {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        // ---------- Avatar cloudinary se hatao ----------
+        // Avatar cloudinary se hatao
         const publicId = getPublicIdFromUrl(user.avatar);
         if (publicId) {
             await cloudinary.uploader.destroy(publicId).catch(() => {});
         }
 
-        // ---------- Attempts + User delete ----------
+        // Attempts + User delete
         await Attempt.deleteMany({ user: userId });
         await AttemptSession.deleteMany({ user: userId });
         await CustomPaperAttempt.deleteMany({ user: userId });
         await AIUsage.deleteMany({ user: userId });
+        await LiveTestResult.deleteMany({ user: userId });
+        await CustomAIPaper.deleteMany({ user: userId });
+        await CustomTestPayment.deleteMany({ user: userId });
         await User.findByIdAndDelete(userId);
 
-        // ---------- Session/login clear karke logout ----------
+
+        // Session/login clear karke logout
         req.logout(function (err) {
             if (err) console.error("Logout error during account delete:", err);
             req.session.destroy(() => {

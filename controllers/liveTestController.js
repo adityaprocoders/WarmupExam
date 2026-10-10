@@ -5,11 +5,15 @@ import Test from "../models/Test.js";
 import TestQuestion from "../models/TestQuestion.js";
 import LiveTestConfig from "../models/LiveTestConfig.js";
 import LiveTestUsageLog from "../models/LiveTestUsageLog.js";
+import AttemptSession from "../models/AttemptSession.js";
+import LiveTestResult from "../models/LiveTestResult.js";
 import Attempt from "../models/TestAttempt.js";
 import ExpressError from "../utils/ExpressError.js";
 import User from "../models/usersShema.js";
 
 const VALIDITY_HOURS = Number(process.env.LIVETEST_VALIDITY_HOURS) || 24;
+
+const COOLDOWN_DAYS = Number(process.env.LIVETEST_COOLDOWN_DAYS) || 10;
 
 function getMarksForSubject(subjectsConfig, subjectName) {
     const found = subjectsConfig.find(
@@ -21,32 +25,44 @@ function getMarksForSubject(subjectsConfig, subjectName) {
 }
 
 function todayStr() {
-    return new Date().toISOString().slice(0, 10);
+   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 }
 
 function getNextOccurrence(scheduledDays, startTime) {
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const allowedDays = (scheduledDays && scheduledDays.length > 0) ? scheduledDays : dayNames;
 
-    const now = new Date();
-    const nowIST = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-    const currentHHMM = String(nowIST.getHours()).padStart(2, "0") + ":" + String(nowIST.getMinutes()).padStart(2, "0");
-    const todayIdx = nowIST.getDay();
-    const todayName = dayNames[todayIdx];
+    const IST_MS = 5.5 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    const istNow = new Date(nowMs + IST_MS);
+    const todayIdx = istNow.getUTCDay();
+    const [hh, mm] = String(startTime || "00:00").split(":").map(Number);
 
-    if (allowedDays.includes(todayName) && currentHHMM < startTime) {
-        return { day: "Today", time: startTime };
-    }
-
-    for (let i = 1; i <= 7; i++) {
+    for (let i = 0; i <= 7; i++) {
         const idx = (todayIdx + i) % 7;
-        const name = dayNames[idx];
-        if (allowedDays.includes(name)) {
-            return { day: i === 1 ? "Tomorrow" : name, time: startTime };
-        }
-    }
+        if (!allowedDays.includes(dayNames[idx])) continue;
 
+        // us IST din ka start time, UTC milliseconds me
+        const targetMs = Date.UTC(
+            istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate() + i, hh || 0, mm || 0
+        ) - IST_MS;
+        if (targetMs <= nowMs) continue;
+
+        const day = i === 0 ? "Today" : i === 1 ? "Tomorrow" : i === 7 ? `Next ${dayNames[idx]}` : dayNames[idx];
+        return { day, time: startTime, startsAt: new Date(targetMs).toISOString() };
+    }
     return null;
+}
+
+function getStartingSoon(config) {
+    if (!config) return false;
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const allowed = (config.scheduledDays && config.scheduledDays.length > 0) ? config.scheduledDays : dayNames;
+    const ist = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+    if (!allowed.includes(dayNames[ist.getUTCDay()])) return false;
+    const [hh, mm] = String(config.startTime || "00:00").split(":").map(Number);
+    const diff = (ist.getUTCHours() * 60 + ist.getUTCMinutes()) - ((hh || 0) * 60 + (mm || 0));
+    return diff >= 0 && diff <= 30;
 }
 
 function shuffle(arr) {
@@ -62,7 +78,9 @@ function distributeCount(totalCount, rows) {
     const n = rows.length;
     if (n === 0 || totalCount <= 0) return rows.map(() => 0);
 
-    const weights = rows.map(r => (r.minCount + r.maxCount) / 2);
+    const topicWeights = rows.filter(r => r.countMode !== "subject").map(r => (r.minCount + r.maxCount) / 2);
+const avgTopicWeight = topicWeights.length ? topicWeights.reduce((a, b) => a + b, 0) / topicWeights.length : 1;
+const weights = rows.map(r => r.countMode === "subject" ? avgTopicWeight : (r.minCount + r.maxCount) / 2);
     const sumWeights = weights.reduce((a, b) => a + b, 0);
     const rawShares = weights.map(w => (sumWeights > 0 ? (w / sumWeights) : (1 / n)) * totalCount);
 
@@ -119,8 +137,12 @@ export const renderLiveTestPage = async (req, res) => {
 }
 
 let nextOccurrence = null;
+let startingSoon = false;
 if (!todaysLiveTest && liveTestConfig) {
-    nextOccurrence = getNextOccurrence(liveTestConfig.scheduledDays, liveTestConfig.startTime);
+    startingSoon = getStartingSoon(liveTestConfig);
+    if (!startingSoon) {
+        nextOccurrence = getNextOccurrence(liveTestConfig.scheduledDays, liveTestConfig.startTime);
+    }
 }
 
     res.render("dashboard/liveTest", {
@@ -128,7 +150,7 @@ if (!todaysLiveTest && liveTestConfig) {
     listing, sections,
     currentSection: null, folder: null, file: null,
     isLiveTestPage: true,
-    liveTestConfig, todaysLiveTest, nextOccurrence,
+    liveTestConfig, todaysLiveTest, nextOccurrence, startingSoon,
     title: `Live Test | ${listing.title}`,
     robots: "noindex, nofollow"
 });
@@ -145,25 +167,34 @@ export async function generateLiveTestForExam(exam) {
     const config = await LiveTestConfig.findOne({ exam }).lean();
     if (!config) return;
 
+        // Purane test me bahut kam waqt bacha ho to naya bana do (warna start time roz ~1 minute khiskta hai)
+    const GRACE_MS = Math.min(6 * 60 * 1000, (VALIDITY_HOURS * 60 * 60 * 1000) / 4);
     const existing = await Test.findOne({
-        liveTestExam: exam, isLiveTest: true, liveTestExpiresAt: { $gt: new Date() }
+        liveTestExam: exam,
+        isLiveTest: true,
+        liveTestExpiresAt: { $gt: new Date(Date.now() + GRACE_MS) }
     });
     if (existing) return;
 
     if (!Array.isArray(config.criteria) || config.criteria.length === 0) return;
 
     // saari included listings ke Tests
-    const testIds = await Test.find({ listing: { $in: config.includedListings } }).distinct("_id");
+    const testIds = await Test.find({ listing: { $in: config.includedListings }, isLiveTest: { $ne: true } }).distinct("_id");
     if (testIds.length === 0) return;
 
     // question -> source listing map (marks lookup ke liye)
     const allMappings = await TestQuestion.find({ test: { $in: testIds } }).populate("test", "listing");
     if (allMappings.length === 0) return;
 
-    const questionToListing = new Map();
-    allMappings.forEach(m => {
-        if (m.question) questionToListing.set(String(m.question), m.test.listing);
-    });
+    const questionToListings = new Map();
+allMappings.forEach(m => {
+    if (!m.question || !m.test) return;
+    const key = String(m.question);
+    const lid = String(m.test.listing);
+    if (!questionToListings.has(key)) questionToListings.set(key, []);
+    const arr = questionToListings.get(key);
+    if (!arr.includes(lid)) arr.push(lid);
+});
 
     /* ---------- Step 1: har criteria row ka pool banao ---------- */
     // subject/topic/subTopic/section MAPPING (TestQuestion) se liye jaate hain, Question.subject se NAHI —
@@ -240,24 +271,28 @@ if (Array.isArray(row.difficulty) && row.difficulty.length > 0) {
 
     const globalPicked = new Set(); // dedupe across rows (agar ek hi question do rows me match ho jaaye)
 
-    function pickFromPool(pool, needed) {
+        function pickFromPool(pool, needed) {
         if (needed <= 0) return [];
         const avail = pool.filter(q => !globalPicked.has(String(q._id)));
 
         const fresh = [];
-        const cooldownOk = [];
+        const repeatable = [];
+        const cooldownMs = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+        const nowMs = Date.now();
+
         avail.forEach(q => {
             const usage = usageMap.get(String(q._id));
             if (!usage) { fresh.push(q); return; }
-            if (usage.usageCount < maxRepeat) cooldownOk.push({ ...q, lastUsedAt: usage.lastUsedAt });
+            const cooledDown = nowMs - new Date(usage.lastUsedAt).getTime() >= cooldownMs;
+            if (cooledDown) { fresh.push(q); return; }          // 10 din ho gaye = fresh jaisa
+            if (usage.usageCount < maxRepeat) repeatable.push({ ...q, lastUsedAt: usage.lastUsedAt }); // owner ka repeat count
         });
 
         shuffle(fresh);
-        cooldownOk.sort((a, b) => new Date(a.lastUsedAt) - new Date(b.lastUsedAt)); // least-recently-used pehle
+        repeatable.sort((a, b) => new Date(a.lastUsedAt) - new Date(b.lastUsedAt)); // least-recently-used pehle
 
-        const picked = fresh.slice(0, needed);
-        if (picked.length < needed) picked.push(...cooldownOk.slice(0, needed - picked.length));
-
+        // pehle fresh, kam pade tabhi repeat-allowed
+        const picked = [...fresh, ...repeatable].slice(0, needed);
         picked.forEach(q => globalPicked.add(String(q._id)));
         return picked;
     }
@@ -265,8 +300,8 @@ if (Array.isArray(row.difficulty) && row.difficulty.length > 0) {
     function pickRowQuestions(pool, needed) {
         if (needed <= 0 || pool.length === 0) return [];
 
-        const targetEasy = Math.round((dist.easy / 100) * needed);
-        const targetMedium = Math.round((dist.medium / 100) * needed);
+        const targetEasy = Math.min(needed, Math.round((dist.easy / 100) * needed));
+const targetMedium = Math.min(needed - targetEasy, Math.round((dist.medium / 100) * needed));
         const targetHard = Math.max(0, needed - targetEasy - targetMedium);
 
         const easyPool = pool.filter(q => q.difficulty === "Easy");
@@ -295,7 +330,7 @@ return selected.slice(0, needed);
         const needed = effectiveCounts[idx] || 0;
         const picked = pickRowQuestions(rp.pool, needed);
         if (picked.length < needed) {
-            shortfalls.push(`${rp.row.subject}" row: needed ${needed}, but only ${picked.length} were found.`);
+           shortfalls.push(`"${rp.row.subject}" row: needed ${needed}, but only ${picked.length} were found.`);
         }
         allSelected = allSelected.concat(picked);
     });
@@ -308,14 +343,19 @@ return selected.slice(0, needed);
         console.warn(`[live-test] ${exam} shortfall:`, shortfalls.join(" | "));
     }
 
-    /* ---------- Step 5: marks + Test/TestQuestion create ---------- */
-    const listingIdsNeeded = [...new Set(allSelected.map(q => String(questionToListing.get(String(q._id)))))];
+        /* ---------- Step 5: marks + Test/TestQuestion create ---------- */
+    const listingIdsNeeded = [...new Set(allSelected.flatMap(q => questionToListings.get(String(q._id)) || []))];
     const listingsData = await Listing.find({ _id: { $in: listingIdsNeeded } }).select("marks").lean();
     const listingMarksMap = new Map(listingsData.map(l => [String(l._id), l.marks || []]));
 
     let totalMarks = 0;
     const mappingDocs = allSelected.map((q, i) => {
-        const sourceListingId = String(questionToListing.get(String(q._id)));
+        const sourceListingIds = questionToListings.get(String(q._id)) || [];
+        const subjKey = q.subject?.trim().toLowerCase();
+        // jis source listing ke marks me ye subject ho wahi lo, warna pehli
+        const sourceListingId = sourceListingIds.find(id =>
+            (listingMarksMap.get(id) || []).some(s => s.subject?.trim().toLowerCase() === subjKey)
+        ) || sourceListingIds[0];
         const marksConfig = listingMarksMap.get(sourceListingId) || [];
         const marks = getMarksForSubject(marksConfig, q.subject);
         totalMarks += marks.positiveMarks;
@@ -328,7 +368,9 @@ return selected.slice(0, needed);
 
     const languages = config.languageMode === "both" ? ["English", "Hindi"] : (config.languages || ["English"]);
 
-    const testDoc = await Test.create({
+        let testDoc = null;
+    try {
+    testDoc = await Test.create({
         title: `Live Test — ${exam}`,
         listing: config.includedListings[0],
         section: null,
@@ -364,22 +406,49 @@ return selected.slice(0, needed);
     await LiveTestUsageLog.bulkWrite(bulkOps);
 
     return testDoc;
+    } catch (err) {
+        if (testDoc) {
+            await TestQuestion.deleteMany({ test: testDoc._id }).catch(() => {});
+            await Test.deleteOne({ _id: testDoc._id }).catch(() => {});
+        }
+        throw err;
+    }
 }
 
 /* ================================================================ */
 /* Cleanup — expired live tests hatao, Attempt safe                 */
 /* ================================================================ */
 export async function cleanupExpiredLiveTests() {
-    const expired = await Test.find({
-        isLiveTest: true,
-        liveTestExpiresAt: { $lt: new Date() }
-    }).select("_id");
+ const CLEANUP_GRACE_MS = 4 * 60 * 60 * 1000;
+const expired = await Test.find({
+    isLiveTest: true,
+    liveTestExpiresAt: { $lt: new Date(Date.now() - CLEANUP_GRACE_MS) }
+}).select("_id");
 
     const testIds = expired.map(t => t._id);
     if (testIds.length === 0) return;
 
+    // 1) Delete se PEHLE final rank freeze karo (leaderboard jaisa order: score zyada, phir time kam)
+    for (const testId of testIds) {
+        const attempts = await Attempt.find({ test: testId })
+            .select("user score timeTaken")
+            .sort({ score: -1, timeTaken: 1 })
+            .lean();
+
+        if (attempts.length > 0) {
+            await LiveTestResult.bulkWrite(attempts.map((a, idx) => ({
+                updateOne: {
+                    filter: { test: testId, user: a.user },
+                    update: { $set: { rank: idx + 1, totalParticipants: attempts.length } }
+                }
+            })));
+        }
+    }
+
+    // 2) Ab data delete (Question documents ko haath nahi lagta)
     await TestQuestion.deleteMany({ test: { $in: testIds } });
     await Attempt.deleteMany({ test: { $in: testIds } });
+    await AttemptSession.deleteMany({ test: { $in: testIds } });
     await Test.deleteMany({ _id: { $in: testIds } });
 }
 
@@ -402,6 +471,15 @@ export const renderLiveTestLeaderboard = async (req, res) => {
     req.flash("error", "No active Live Test right now.");
     return res.redirect(`/series/${listing.slug}/live-test`);
 }
+
+    // Leaderboard sirf attempt karne ke baad (owner ko chhod kar)
+    if (req.user.role !== "owner") {
+        const myAttempt = await Attempt.exists({ test: todaysLiveTest._id, user: req.user._id });
+        if (!myAttempt) {
+            req.flash("error", "Attempt the Live Test first to see the leaderboard.");
+            return res.redirect(`/series/${listing.slug}/live-test`);
+        }
+    }
 
     const attempts = await Attempt.find({ test: todaysLiveTest._id })
         .populate("user", "name")

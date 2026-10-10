@@ -3,6 +3,7 @@ import { isLoggedIn } from "../middleware/isLoggedIn.js";
 import { requireDashboardAccess } from "../middleware/requireDashboardAccess.js";
 import multer from "multer";
 import { generateAIPaper, getAIPaper, getAIUsage, listAIPapers, deleteAIPaper, clearAIPapers } from "../controllers/aiPaperController.js";
+import { paymentLimiter, customTestAvailabilityLimiter, customTestGenerateLimiter } from "../middleware/rateLimiters.js";
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -47,7 +48,7 @@ router.get("/custom-test/analysis/:paperId", customTestAnalysisPage);
 
 router.get("/pricing", pricingPage);
 router.get("/api/custom-test/pricing", getCustomTestPricingPublic);
-router.post("/api/custom-test/payment/apply-coupon", isLoggedIn, applyCustomTestCoupon);
+router.post("/api/custom-test/payment/apply-coupon", isLoggedIn, paymentLimiter, applyCustomTestCoupon);
 router.get("/custom-test/upgrade", isLoggedIn, customTestUpgradePage);
 
 // ---------------- PAID (login + kam se kam ek listing, dashboard shell ke andar) ----------------
@@ -66,15 +67,15 @@ router.get("/api/custom-test/subjects", getSubjects);
 router.get("/api/custom-test/topics", getTopics);
 router.get("/api/custom-test/weak-areas", getWeakAreas);
 router.get("/api/custom-test/patterns", getPatterns);
-router.post("/api/custom-test/availability", getAvailability);
-router.post("/api/custom-test/generate", isLoggedIn, generatePaper);
+router.post("/api/custom-test/availability", customTestAvailabilityLimiter, getAvailability);
+router.post("/api/custom-test/generate", isLoggedIn, customTestGenerateLimiter, generatePaper);
 
 router.post("/api/custom-test/attempt/:paperId/submit",  isLoggedIn, submitCustomPaperAttempt);
 router.get("/api/custom-test/attempt/:paperId/analysis", isLoggedIn, getCustomPaperAnalysis);
 router.get("/api/custom-test/dashboard-stats", isLoggedIn, getCustomDashboardStats);
 
 
-router.post("/api/custom-test/payment/create-order", isLoggedIn, createCustomTestOrder);
+router.post("/api/custom-test/payment/create-order", isLoggedIn, paymentLimiter, createCustomTestOrder);
 router.post("/api/custom-test/payment/verify", isLoggedIn, verifyCustomTestPayment);
 router.post("/api/custom-test/payment/webhook", razorpayWebhook);
 

@@ -62,7 +62,7 @@ const userSchema = new mongoose.Schema({
 
     avatar: {
         type: String,
-        default: null
+        default: "/images/default-avatar.png"
     },
 
     avatarChangedAt: {
@@ -97,6 +97,23 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null,
         trim: true
+    },
+
+     state: {
+        type: String,
+        default: null,
+        trim: true
+    },
+
+    pinCode: {
+        type: String,
+        default: null,
+        trim: true
+    },
+
+    targetExams: {
+        type: [String],
+        default: []
     },
 
     passwordChangeLog: [
@@ -203,6 +220,8 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
+
+userSchema.index({ "enrolledListings.expiresAt": 1 });
 
 userSchema.pre('save', async function () {
   if (this.isModified('password') && this.password) {

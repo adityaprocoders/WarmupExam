@@ -62,7 +62,7 @@ export const allTests = async (req, res) => {
 
     const combinedIds = [...matchedListings, ...allListings].map(l => l._id);
     const testCounts = await Test.aggregate([
-        { $match: { listing: { $in: combinedIds } } },
+        { $match: { listing: { $in: combinedIds }, isLiveTest: { $ne: true } } },
         { $group: { _id: "$listing", count: { $sum: 1 } } }
     ]);
     const testCountMap = {};
@@ -231,7 +231,7 @@ if (isOwner) {
 
     const { enrolledIds } = getValidEnrollments(req.user);
 
-const totalTestCount = await Test.countDocuments({ listing: data._id }); 
+const totalTestCount = await Test.countDocuments({ listing: data._id, isLiveTest: { $ne: true } }); 
 const aboutTestSeries = await buildAboutTestSeries(data._id, Section, Test, data.type); 
 const examPattern = await ExamPatternSummary.findOne({ category: data.category, exam: data.exam }).lean();
 const category = data.category ? await Category.findById(data.category).lean() : null;

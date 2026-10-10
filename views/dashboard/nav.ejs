@@ -103,56 +103,81 @@
            
 
             <!-- Profile + Dropdown -->
-         <div class="relative" id="profileDropdownWrapper">
-                <button data-action="toggle-profile-dropdown"class="flex items-center gap-3 rounded-full hover:bg-slate-800 transition px-2 py-1">
-                    <div class="hidden sm:block text-right">
-                        <p class="text-sm font-semibold text-white leading-tight">
-                            Hi, <%= displayName %>
-                        </p>
-                        <% if (currentUser.username) { %>
-                            <p class="text-xs text-slate-400 flex items-center justify-end gap-1">
-                                @<%= currentUser.username %>
-                                <% if (currentUser.isVerified) { %>
-                                    <i class="fa-solid fa-circle-check text-indigo-400 text-[10px]" title="Verified"></i>
-                                <% } %>
-                            </p>
-                        <% } else { %>
-                            <p class="text-xs text-slate-400">Student</p>
-                        <% } %>
-                    </div>
+<div class="relative" id="profileDropdownWrapper">
 
-                    <% if (currentUser.avatar) { %>
-                        <img
-                            src="<%= currentUser.avatar %>"
-                            alt="Profile"
-                            class="w-10 h-10 rounded-full border-2 border-slate-700 object-cover shrink-0">
-                    <% } else { %>
-                        <span class="w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center border-2 border-slate-700 shrink-0">
-                            <%= initial %>
-                        </span>
+    <button data-action="toggle-profile-dropdown" type="button" aria-label="Account menu"
+        class="group flex items-center gap-3 rounded-full px-2 py-1 transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
+        <div class="hidden sm:block text-right">
+            <p class="text-sm font-semibold text-white leading-tight">
+                Hi, <%= displayName %>
+            </p>
+            <% if (currentUser.username) { %>
+                <p class="text-xs text-slate-400 flex items-center justify-end gap-1">
+                    @<%= currentUser.username %>
+                    <% if (currentUser.isVerified) { %>
+                        <i class="fa-solid fa-circle-check text-indigo-400 text-[10px]" title="Verified"></i>
                     <% } %>
+                </p>
+            <% } else { %>
+                <p class="text-xs text-slate-400">Student</p>
+            <% } %>
+        </div>
 
-                </button>
+        <% if (currentUser.avatar) { %>
+            <img src="<%= currentUser.avatar %>" referrerpolicy="no-referrer" alt="Profile"
+                 class="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-indigo-500/40 transition group-hover:ring-indigo-400">
+        <% } else { %>
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 font-bold text-white ring-2 ring-indigo-500/40 transition group-hover:ring-indigo-400">
+                <%= initial %>
+            </span>
+        <% } %>
+    </button>
 
-                <!-- Dropdown -->
-                <div id="profileDropdownMenu" class="absolute right-0 top-full pt-2 w-48 hidden z-50">
-                    <div class="bg-white border border-slate-200 rounded-xl shadow-lg py-2">
-                        <p class="px-4 py-2 text-sm font-semibold text-slate-800 border-b border-slate-100 truncate">
-                            <%= displayName %>
-                        </p>
-                        <a href="/profile" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition">
-                            <i class="fa-solid fa-user w-4 text-slate-400"></i> My Profile
-                        </a>
-                        <form action="/logout" method="POST"  class="logout-form">
-                             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition text-left">
-                                <i class="fa-solid fa-right-from-bracket w-4"></i> Logout
-                            </button>
-                        </form>
-                    </div>
+    <!-- Dropdown (id aur hidden class nav.js ke liye zaroori hain) -->
+    <div id="profileDropdownMenu" class="absolute right-0 top-full z-50 hidden w-72 max-w-[calc(100vw-1rem)] pt-3">
+        <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-xl shadow-slate-900/20 backdrop-blur-xl">
+
+            <!-- Header card -->
+            <div class="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-br from-indigo-50/70 to-violet-50/50 px-4 py-4">
+                <% if (currentUser.avatar) { %>
+                    <img src="<%= currentUser.avatar %>" referrerpolicy="no-referrer" alt=""
+                         class="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-white shadow-md shadow-indigo-500/25">
+                <% } else { %>
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white ring-2 ring-white shadow-md shadow-indigo-500/25">
+                        <%= initial %>
+                    </span>
+                <% } %>
+                <div class="min-w-0">
+                    <p class="flex items-center gap-1.5 truncate text-sm font-bold text-slate-900">
+                        <span class="truncate"><%= displayName %></span>
+                        <% if (currentUser.isVerified) { %>
+                            <i class="fa-solid fa-circle-check shrink-0 text-xs text-indigo-600" title="Verified"></i>
+                        <% } %>
+                    </p>
+                    <% if (currentUser.username) { %>
+                        <p class="truncate text-xs font-medium text-indigo-600">@<%= currentUser.username %></p>
+                    <% } %>
+                    <p class="truncate text-xs text-slate-500"><%= currentUser.email %></p>
                 </div>
-
             </div>
+
+            <!-- Actions -->
+            <div class="p-2">
+                <a href="/profile" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                    <span class="grid h-8 w-8 place-items-center rounded-lg bg-indigo-50 text-indigo-600"><i class="fa-solid fa-user text-xs"></i></span> Open Profile
+                </a>
+
+                <form action="/logout" method="POST" class="logout-form">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-50">
+                        <span class="grid h-8 w-8 place-items-center rounded-lg bg-red-50 text-red-500"><i class="fa-solid fa-right-from-bracket text-xs"></i></span> Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
 
         </div>
 

@@ -5,7 +5,7 @@
 <div
     id="overlay"
     data-action="toggle-sidebar"
-    class="fixed inset-0 bg-black/40 hidden z-40 md:hidden">
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-40 md:hidden">
 </div>
 
 <!-- Sidebar -->
@@ -15,23 +15,25 @@ class="fixed top-16 left-0
 z-40
 w-72
 h-[calc(100vh-64px)]
-bg-white
+bg-gradient-to-b from-white to-slate-50/70
 border-r
-border-slate-200
+border-slate-200/70
+shadow-xl shadow-slate-900/5 md:shadow-none
 p-6
 transform
--transition-transform
+transition-transform
 duration-300
 -translate-x-full
 md:translate-x-0
-overflow-y-auto">
+overflow-y-auto
+[scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]">
     <!-- Logo (Mobile Only) -->
     <div class="flex items-center justify-between mb-8 md:hidden">
 
         <div class="flex items-center gap-3">
 
     <!-- Logo -->
-    <div class="w-10 h-10 bg-white rounded-lg shadow-sm flex items-center justify-center p-1">
+    <div class="w-10 h-10 bg-white rounded-xl shadow-md shadow-indigo-500/10 ring-1 ring-slate-200 flex items-center justify-center p-1.5">
         <img
             src="/images/logo.svg"
             alt="WarmupExam Logo"
@@ -40,7 +42,7 @@ overflow-y-auto">
 
     <!-- Brand Name -->
     <div>
-        <h2 class="text-lg font-bold text-slate-800 leading-none">
+        <h2 class="text-lg font-bold text-slate-900 leading-none">
             WarmupExam
         </h2>
 
@@ -53,7 +55,7 @@ overflow-y-auto">
 
         <button
             data-action="toggle-sidebar"
-            class="p-2 rounded-lg hover:bg-slate-100">
+            class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition">
 
             <i data-lucide="x"></i>
 
@@ -65,16 +67,20 @@ overflow-y-auto">
     <button
     id="batchBtn"
    data-action="toggle-batch-modal"
-    class="w-full flex items-center justify-between p-3 mb-6 bg-slate-50 border rounded-xl hover:bg-slate-100">
+    class="relative overflow-hidden w-full flex items-center justify-between p-3.5 mb-6 rounded-2xl text-left
+           bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-600
+           shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition">
 
-    <div class="text-left">
+    <span class="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10"></span>
 
-        <p class="text-xs text-slate-400 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse"></span>
+    <div class="relative text-left min-w-0">
+
+        <p class="text-xs text-indigo-100 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
             Current Batch
         </p>
 
-        <p id="selectedBatchName" class="font-semibold text-slate-700">
+        <p id="selectedBatchName" class="font-semibold text-white truncate">
             <%= currentUser.lastAccessedBatch
                 ? currentUser.lastAccessedBatch.title
                 : (currentUser.enrolledListings && currentUser.enrolledListings[0]
@@ -84,7 +90,7 @@ overflow-y-auto">
 
     </div>
 
-    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+    <i data-lucide="chevron-down" class="relative w-4 h-4 text-white shrink-0"></i>
 
 </button>
 
@@ -93,11 +99,11 @@ overflow-y-auto">
 
     <!-- Test Series -->
     <a href="/alltests"
-       class="group flex items-center gap-3 rounded-xl p-3 font-semibold text-slate-800
-              transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-600">
+       class="group flex items-center gap-3 rounded-xl p-3 font-semibold text-slate-700
+              transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-700">
 
-        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50
-                     transition-colors duration-200 group-hover:bg-indigo-100">
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 ring-1 ring-blue-100
+                     transition-colors duration-200 group-hover:bg-indigo-100 group-hover:ring-indigo-200">
             <i class="fa-solid fa-file-lines text-sm text-blue-600 group-hover:text-indigo-600"></i>
         </span>
 
@@ -109,14 +115,14 @@ overflow-y-auto">
 <a href="/dashboard/custom-test"
    class="group flex items-center gap-3 rounded-xl p-3 font-semibold transition-all duration-200
    <%= (typeof isCustomTestPage !== 'undefined' && isCustomTestPage)
-       ? 'bg-indigo-600 text-white shadow-sm'
-       : 'text-slate-800 hover:bg-violet-50 hover:text-violet-700' %>">
+       ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25'
+       : 'text-slate-700 hover:bg-violet-50 hover:text-violet-700' %>">
 
         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg
                      transition-colors duration-200
                      <%= (typeof isCustomTestPage !== 'undefined' && isCustomTestPage)
-                         ? 'bg-white/15'
-                         : 'bg-violet-50 group-hover:bg-violet-100' %>">
+                         ? 'bg-white/20'
+                         : 'bg-violet-50 ring-1 ring-violet-100 group-hover:bg-violet-100' %>">
             <i class="fa-solid fa-file-pen text-sm
                 <%= (typeof isCustomTestPage !== 'undefined' && isCustomTestPage) ? 'text-white' : 'text-violet-600' %>"></i>
         </span>
@@ -133,8 +139,8 @@ overflow-y-auto">
          && !(typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)
          && !(typeof isLiveTestPage !== 'undefined' && isLiveTestPage)
          && !(typeof isCustomTestPage !== 'undefined' && isCustomTestPage)) 
-            ? 'bg-indigo-600 text-white shadow-sm'
-            : 'text-slate-800 hover:bg-slate-100 hover:text-indigo-600' %>">
+            ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25'
+            : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700' %>">
 
         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg
             <%= ((typeof currentSection === 'undefined' || !currentSection) 
@@ -142,8 +148,8 @@ overflow-y-auto">
                 && !(typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)
                 && !(typeof isLiveTestPage !== 'undefined' && isLiveTestPage)
                 && !(typeof isCustomTestPage !== 'undefined' && isCustomTestPage))
-                ? 'bg-white/15'
-                : 'bg-indigo-50 group-hover:bg-indigo-100' %>">
+                ? 'bg-white/90'
+                : 'bg-indigo-50 ring-1 ring-indigo-100 group-hover:bg-indigo-100' %>">
 
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                  xmlns="http://www.w3.org/2000/svg">
@@ -162,13 +168,13 @@ overflow-y-auto">
     <a href="/series/<%= listing.slug %>/weak-areas" 
        class="group flex items-center gap-3 rounded-xl p-3 font-semibold transition-all duration-200
        <%= (typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)
-           ? 'bg-indigo-600 text-white shadow-sm'
-           : 'text-slate-800 hover:bg-slate-100 hover:text-indigo-600' %>">
+           ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25'
+           : 'text-slate-700 hover:bg-rose-50 hover:text-rose-700' %>">
 
         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg
             <%= (typeof isWeakAreaPage !== 'undefined' && isWeakAreaPage)
-                ? 'bg-white/15'
-                : 'bg-rose-50 group-hover:bg-rose-100' %>">
+                ? 'bg-white/20'
+                : 'bg-rose-50 ring-1 ring-rose-100 group-hover:bg-rose-100' %>">
 
             <i data-lucide="target"
                class="h-[18px] w-[18px]
@@ -187,11 +193,11 @@ overflow-y-auto">
 
     <div class="mt-8">
     <div class="flex items-center justify-between mb-4">
-    <h3 class="text-xs uppercase tracking-widest text-slate-600 font-bold">
+    <h3 class="text-xs uppercase tracking-widest text-slate-500 font-bold">
         Practice Zones
     </h3>
     <% if (currentUser.role === 'owner') { %>
-    <button type="button" id="selectModeBtn" data-action="toggle-section-select-mode" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+    <button type="button" id="selectModeBtn" data-action="toggle-section-select-mode" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 px-2 py-1 rounded-md hover:bg-indigo-50 transition">
     Select
 </button>
     <% } %>
@@ -218,24 +224,43 @@ const iconColorMap = {
 
    <ul class="space-y-2.5">
 
-    <!-- Live Test -->
-<li class="rounded-2xl transition-all duration-300
-    <%= (typeof isLiveTestPage !== 'undefined' && isLiveTestPage)
-        ? 'bg-indigo-600'
-        : 'bg-white border border-slate-100 hover:border-red-200 hover:shadow-sm' %>">
-    <a href="/series/<%= listing.slug %>/live-test" class="flex items-center gap-3 p-3">
-        <span class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="2.5" fill="#EF4444"/>
-                <path d="M8.5 8.5a5 5 0 0 0 0 7" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round"/>
-                <path d="M15.5 8.5a5 5 0 0 1 0 7" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round"/>
-                <path d="M5.5 5.5a9 9 0 0 0 0 13" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
-                <path d="M18.5 5.5a9 9 0 0 1 0 13" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+<!-- Live Test (premium) -->
+<% const liveActive = (typeof isLiveTestPage !== 'undefined' && isLiveTestPage); %>
+<li>
+    <a href="/series/<%= listing.slug %>/live-test"
+       class="group relative flex items-center gap-3 overflow-hidden rounded-2xl p-3 ring-1 transition-all duration-300
+       <%= liveActive
+           ? 'bg-gradient-to-r from-indigo-600 to-violet-600 ring-white/10 shadow-lg shadow-indigo-500/30'
+           : 'bg-gradient-to-br from-slate-900 via-slate-800 to-rose-950 ring-white/10 shadow-lg shadow-slate-900/25 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-500/25' %>">
+
+        <!-- decorative glow -->
+        <span class="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-rose-500/25 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></span>
+        <span class="pointer-events-none absolute -bottom-10 -left-6 h-20 w-20 rounded-full bg-white/5"></span>
+
+        <!-- icon -->
+        <span class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="2.5" fill="#F87171"/>
+                <path d="M8.5 8.5a5 5 0 0 0 0 7" stroke="#F87171" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M15.5 8.5a5 5 0 0 1 0 7" stroke="#F87171" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M5.5 5.5a9 9 0 0 0 0 13" stroke="#F87171" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+                <path d="M18.5 5.5a9 9 0 0 1 0 13" stroke="#F87171" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
             </svg>
         </span>
-        <span class="font-bold text-sm flex-1 truncate
-            <%= (typeof isLiveTestPage !== 'undefined' && isLiveTestPage) ? 'text-white' : 'text-slate-900' %>">
-            Live Test
+
+        <!-- text -->
+        <span class="relative min-w-0 flex-1">
+            <span class="block truncate text-sm font-bold leading-tight text-white">Live Test</span>
+            <span class="mt-0.5 block truncate text-[11px] leading-tight text-slate-300/80">Compete &amp; get instant rank</span>
+        </span>
+
+        <!-- LIVE badge -->
+        <span class="relative flex shrink-0 items-center gap-1.5 rounded-full bg-rose-500/90 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm shadow-rose-900/30">
+            <span class="relative flex h-1.5 w-1.5">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75 motion-reduce:animate-none"></span>
+                <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-white"></span>
+            </span>
+            Live
         </span>
     </a>
 </li>
@@ -243,13 +268,14 @@ const iconColorMap = {
 
 <% if (listing.type === "Paid") { %>
 <!-- Daily Warmup (static, sections loop se pehle) -->
-<li class="rounded-2xl overflow-hidden transition-all duration-300 shadow-lg shadow-orange-200/60
+<li class="relative rounded-2xl overflow-hidden transition-all duration-300 shadow-lg shadow-orange-300/50
     <%= (typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage)
-        ? 'scale-[1.02] bg-indigo-600'
-        : 'hover:scale-[1.01]' %>"
+        ? 'scale-[1.02] bg-gradient-to-r from-indigo-600 to-violet-600 !shadow-indigo-500/30'
+        : 'hover:scale-[1.01] hover:shadow-xl hover:shadow-orange-300/60' %>"
     <% if (typeof isDailyWarmupPage === 'undefined' || !isDailyWarmupPage) { %>
         style="background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);"
     <% } %>>
+    <span class="pointer-events-none absolute -right-5 -top-5 h-20 w-20 rounded-full bg-white/15"></span>
     <a href="/series/<%= listing.slug %>/daily-warmup" class="flex items-center gap-3 p-3 relative z-10">
         <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0
             <%= (typeof isDailyWarmupPage !== 'undefined' && isDailyWarmupPage) ? 'bg-white/20' : 'bg-white/20' %>">
@@ -271,17 +297,17 @@ const iconColorMap = {
 
     <li
         id="section-item-<%= section._id %>"
-        class="group relative rounded-2xl transition
+        class="group relative rounded-2xl transition-all duration-200
         <%= isFeatured
-            ? 'featured-card bg-gradient-to-r from-orange-400 to-amber-500 shadow-md'
-            : (isActive ? 'bg-indigo-600' : 'bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-sm') %>">
+            ? 'featured-card bg-gradient-to-r from-orange-400 to-amber-500 shadow-md shadow-amber-500/25'
+            : (isActive ? 'bg-gradient-to-r from-indigo-600 to-violet-600 shadow-md shadow-indigo-500/25' : 'bg-white border border-slate-200/70 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/5') %>">
 
         <div class="flex items-center justify-between p-3">
 
             <% if (currentUser.role === 'owner') { %>
             <input
                 type="checkbox"
-                class="section-select-checkbox hidden mr-2 w-4 h-4 rounded text-indigo-600 shrink-0"
+                class="section-select-checkbox hidden mr-2 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 shrink-0"
                 data-section-id="<%= section._id %>"
                 data-action="section-checkbox">
             <% } %>
@@ -314,7 +340,7 @@ const iconColorMap = {
                     name="title"
                     id="input-<%= section._id %>"
                     value="<%= section.title %>"
-                    class="w-full font-medium border-b-2 border-indigo-200 outline-none bg-transparent text-white">
+                    class="w-full font-medium border-b-2 border-indigo-300 outline-none bg-transparent <%= (isActive || isFeatured) ? 'text-white' : 'text-slate-800' %>">
             </form>
 
             <!-- Owner Actions -->
@@ -329,7 +355,7 @@ const iconColorMap = {
                     <i class="fa-solid fa-pen text-xs"></i>
                 </button>
                 <button type="button" id="save-btn-<%= section._id %>" data-action="save-section" data-id="<%= section._id %>"
-                    class="hidden text-green-500">
+                    class="hidden text-emerald-500">
                     <i class="fa-solid fa-check text-xs"></i>
                 </button>
                 <form action="/section/<%= section._id %>?_method=DELETE" method="POST">
@@ -356,7 +382,7 @@ const iconColorMap = {
 <button
     type="button"
    data-action="show-add-section"
-    class="mt-6 w-full py-3 rounded-xl bg-slate-900 text-white">
+    class="mt-6 w-full py-3 rounded-xl bg-slate-900 text-white font-semibold shadow-md shadow-slate-900/20 hover:bg-slate-800 transition">
     + Add Section
 </button>
 
@@ -372,11 +398,11 @@ const iconColorMap = {
         type="text"
         placeholder="Section Name"
         required
-        class="w-full border rounded-lg px-3 py-2">
+        class="w-full border border-slate-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
 
     <select
         name="icon"
-        class="w-full border rounded-lg px-3 py-2">
+        class="w-full border border-slate-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <option value="fa-solid fa-book">📚 Book</option>
         <option value="fa-solid fa-folder">📁 Folder</option>
         <option value="fa-solid fa-code">💻 Code</option>
@@ -394,14 +420,14 @@ const iconColorMap = {
 
     <select
         name="unit"
-        class="w-full border rounded-lg px-3 py-2">
+        class="w-full border border-slate-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <option value="Tests" selected>Tests</option>
         <option value="Years">Years</option>
     </select>
 
     <button
         type="submit"
-        class="w-full py-2 rounded-lg bg-indigo-600 text-white">
+        class="w-full py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold shadow-md shadow-indigo-500/25 hover:opacity-95 transition">
         Save
     </button>
 </form>
@@ -418,24 +444,23 @@ const iconColorMap = {
         <i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i>
         Leaderboard
     </a> -->
-</div>
-<div class="shrink-0 border-t border-slate-100 p-6 pt-4">
+<div class="shrink-0 border-t border-slate-200/70 p-6 pt-4 -mx-6 -mb-6 mt-6">
     <p class="text-xs uppercase tracking-widest text-slate-400 font-bold mb-3">More</p>
     <div class="space-y-1">
         <a href="/profile"
-   class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+   class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 transition">
     <i data-lucide="user" class="w-[18px] h-[18px]"></i>
     <span class="text-sm font-medium">My Profile</span>
 </a>
 
 <a href="/contactUs"
-   class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+   class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 transition">
     <i data-lucide="headphones" class="w-[18px] h-[18px]"></i>
     <span class="text-sm font-medium">Help &amp; Support</span>
 </a>
 
 <a href="/privacy-Policy"
-   class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+   class="flex items-center gap-3 p-2.5 rounded-xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 transition">
     <i data-lucide="shield-check" class="w-[18px] h-[18px]"></i>
     <span class="text-sm font-medium">Privacy Policy</span>
 </a>
@@ -458,14 +483,14 @@ const iconColorMap = {
  
 
 <!-- Batch Selection Modal -->
-<div id="batchModalOverlay" class="hidden fixed inset-0 z-[60] bg-black/40 flex items-center justify-center px-4">
+<div id="batchModalOverlay" class="hidden fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center px-4">
 
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+    <div class="bg-white rounded-2xl shadow-2xl shadow-slate-900/20 ring-1 ring-slate-200/60 w-full max-w-md max-h-[80vh] flex flex-col">
 
         <!-- Header -->
         <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
             <h2 class="text-lg font-bold text-slate-900">Select your batch</h2>
-            <button data-action="toggle-batch-modal" class="text-slate-400 hover:text-slate-700 transition">
+            <button data-action="toggle-batch-modal" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg p-1 transition">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
@@ -479,12 +504,12 @@ const iconColorMap = {
                     id="batchSearchInput"
                     data-oninput="filter-batch-list"
                     placeholder="Search for your batches"
-                    class="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    class="w-full pl-9 pr-3 py-2.5 border border-slate-200 bg-slate-50 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
         </div>
 
         <!-- Batch List -->
-        <div id="batchListContainer" class="flex-1 overflow-y-auto px-3 py-4">
+        <div id="batchListContainer" class="flex-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin]">
 
              <% 
      const activeBatches = (currentUser.enrolledListings || []).filter(e => 
@@ -501,7 +526,7 @@ const iconColorMap = {
 
                 <label
                     data-batch-name="<%= enrollment.listing.title.toLowerCase() %>"
-                    class="batch-row flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition <%= isCurrent ? 'bg-indigo-50' : 'hover:bg-slate-50' %>">
+                    class="batch-row flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition <%= isCurrent ? 'bg-indigo-50 ring-1 ring-indigo-200' : 'hover:bg-slate-50' %>">
 
                     <input
                         type="radio"
@@ -516,9 +541,9 @@ const iconColorMap = {
                         </span>
 
                         <% if (isPremiumBatch) { %>
-                            <span class="text-xs font-bold text-orange-500">Premium</span>
+                            <span class="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">Premium</span>
                         <% } else { %>
-                            <span class="text-xs font-bold text-green-500">Free</span>
+                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Free</span>
                         <% } %>
                     </div>
 
@@ -535,7 +560,7 @@ const iconColorMap = {
         <div class="p-4 border-t border-slate-100">
             <button
                 data-action="continue-batch-selection"
-                class="w-full py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition">
+                class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:opacity-95 transition">
                 Continue
             </button>
         </div>
@@ -545,18 +570,18 @@ const iconColorMap = {
 </div> 
 
 <!-- Bulk Actions Bar -->
-<div id="bulkActionBar" class="hidden fixed bottom-4 left-4 md:left-[19rem] z-50 bg-slate-900 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3">
+<div id="bulkActionBar" class="hidden fixed bottom-4 left-4 md:left-[19rem] z-50 bg-slate-900 text-white rounded-2xl shadow-2xl shadow-slate-900/30 ring-1 ring-white/10 px-4 py-3 flex items-center gap-3">
     <span id="selectedCountText" class="text-sm font-semibold">0 selected</span>
 
     <div class="relative">
-        <button type="button" data-action="toggle-bulk-copy-dropdown" class="bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+        <button type="button" data-action="toggle-bulk-copy-dropdown" class="bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-95 text-sm font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
             Copy <i class="fa-solid fa-chevron-down text-xs"></i>
         </button>
-        <div id="bulkCopyDropdown" class="hidden absolute bottom-full mb-2 left-0 w-56 bg-white text-slate-800 rounded-xl shadow-lg py-1.5 border border-slate-100">
-            <button type="button" data-action="open-bulk-copy-modal" data-mode="single" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">
+        <div id="bulkCopyDropdown" class="hidden absolute bottom-full mb-2 left-0 w-56 bg-white text-slate-800 rounded-xl shadow-xl py-1.5 border border-slate-100">
+            <button type="button" data-action="open-bulk-copy-modal" data-mode="single" class="w-full text-left px-4 py-2 text-sm hover:bg-indigo-50 hover:text-indigo-700">
                 Copy to one series
             </button>
-            <button type="button" data-action="open-bulk-copy-modal" data-mode="multiple" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50">
+            <button type="button" data-action="open-bulk-copy-modal" data-mode="multiple" class="w-full text-left px-4 py-2 text-sm hover:bg-indigo-50 hover:text-indigo-700">
                 Copy to multiple series
             </button>
         </div>
@@ -570,4 +595,3 @@ const iconColorMap = {
  
 
 <script src="/js/dashboard/sideBar.js" defer></script>
-

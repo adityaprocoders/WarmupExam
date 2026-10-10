@@ -303,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const timeInput = document.getElementById("notifScheduleTime");
             timeInput.classList.remove("hidden");
             timeInput.disabled = false;
-            timeInput.value = new Date(notif.scheduledAt).toISOString().slice(0, 16);
+            timeInput.value = new Date(notif.scheduledAt).toLocaleString("sv-SE", { timeZone: "Asia/Kolkata", hourCycle: "h23" }).slice(0, 16).replace(" ", "T");
         }
 
         updateSummary();

@@ -6,6 +6,7 @@ import Test from "../models/Test.js";
 import Attempt from "../models/TestAttempt.js";
 import ExpressError from "../utils/ExpressError.js";
 import slugify from "slugify";
+import LiveTestResult from "../models/LiveTestResult.js";
 import { checkEnrollment, isOwnerUser } from "../utils/authHelpers.js";
 import { calculateRankFromPredictor } from "../utils/rankHelper.js";
 import { getTestStatus } from "../utils/testStatus.js";
@@ -374,6 +375,32 @@ recentActivity = await Promise.all(allAttempts.map(async (a) => {
                 totalMarks: a.totalMarks || testMap[String(a.test)]?.totalMarks || 0
             };
         });
+
+        
+        // Live test ke permanent results: sirf Recent Activity me (stats/average me nahi)
+        if (listing.exam && (!statsSection || statsSection === "all")) {
+            const liveResults = await LiveTestResult.find({ user: req.user._id, exam: listing.exam }).lean();
+            const nowTs = new Date();
+
+            const liveItems = liveResults.map(r => ({
+                attemptId: r.attemptId,
+                testTitle: r.testTitle,
+                date: r.attemptedAt,
+                score: r.score,
+                totalMarks: r.totalMarks,
+                sectionName: "Live Test",
+                sectionColor: { dot: "bg-red-500", text: "text-red-500" },
+                locationPath: [],
+                isLive: true,
+                analysisAvailable: new Date(r.analysisExpiresAt) > nowTs,
+                rank: r.rank,
+                totalParticipants: r.totalParticipants
+            }));
+
+            recentActivity = [...recentActivity, ...liveItems]
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+        
     }
 
     res.render("dashboard/index", {
@@ -651,6 +678,33 @@ export const exportAllAttempts = async (req, res) => {
             time: a.duration ?? a.timeTaken ?? "--"
         };
     });
+
+        // Live test ke permanent results bhi PDF me jodo
+    if (listing.exam && (!statsSection || statsSection === "all")) {
+        const liveResults = await LiveTestResult.find({ user: req.user._id, exam: listing.exam }).lean();
+
+        liveResults.forEach(r => {
+            const correct = r.correctCount || 0;
+            const wrong = r.wrongCount || 0;
+            const attempted = correct + wrong;
+
+            data.push({
+                testName: r.testTitle,
+                category: "Live Test",
+                date: r.attemptedAt,
+                attempted,
+                correct,
+                wrong,
+                maxMarks: r.totalMarks || 0,
+                score: r.score ?? 0,
+                rank: r.rank ? `${r.rank}/${r.totalParticipants}` : "Pending",
+                accuracy: attempted > 0 ? Math.round((correct / attempted) * 100) : 0,
+                time: r.timeTaken ?? "--"
+            });
+        });
+
+        data.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
 
     res.json({ success: true, listingTitle: listing.title, data });
 };

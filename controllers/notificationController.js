@@ -1,29 +1,47 @@
 import Notification from "../models/Notification.js";
 
+
+// Is user ko kaunsi notifications dikhni chahiye (teeno functions yahi use karte hain)
+const getAudienceFilter = (user) => {
+    const now = new Date();
+    const hasActiveSub = (user.enrolledListings || []).some(e =>
+        !e.suspendedByOwner && (!e.expiresAt || e.expiresAt > now) && e.amountPaid > 0
+    );
+    const audienceMatch = hasActiveSub ? ["all", "paid"] : ["all", "free"];
+    return {
+        $or: [
+            { audienceType: { $in: audienceMatch } },
+            { audienceType: "custom", customUserIds: user._id }
+        ]
+    };
+};
+
 // ---------------- STUDENT: GET MY NOTIFICATIONS ----------------
 export const getMyNotifications = async (req, res) => {
     try {
+               if (req.user.role === "owner") {
+            return res.json({ success: true, notifications: [], unseenCount: 0 });
+        }
+
         const now = new Date();
         const userId = req.user._id;
 
-        const hasActiveSub = (req.user.enrolledListings || []).some(e =>
-            !e.suspendedByOwner && (!e.expiresAt || e.expiresAt > now) && e.amountPaid > 0
-        );
-        const audienceMatch = hasActiveSub ? ["all", "paid"] : ["all", "free"];
-
-        const notifications = await Notification.find({
+                const baseFilter = {
             status: "sent",
             expiresAt: { $gt: now },
-            clearedBy: { $ne: userId },   // 👈 multi-recipient wali jo isne clear ki, wo exclude
-            $or: [
-                { audienceType: { $in: audienceMatch } },
-                { audienceType: "custom", customUserIds: userId }
-            ]
-        }).sort({ sentAt: -1 }).limit(30).lean();
+            clearedBy: { $ne: userId },
+            ...getAudienceFilter(req.user)
+        };
 
-        const unseen = notifications.filter(n => !n.seenBy?.some(id => String(id) === String(userId)));
+        // Sirf wahi fields jo bell dropdown ko chahiye — seenBy / clearedBy / customUserIds / createdBy bahar nahi jaate
+        const [notifications, unseenCount] = await Promise.all([
+            Notification.find(baseFilter)
+                .select("title message sentAt notifType meta.listingId")
+                .sort({ sentAt: -1 }).limit(30).lean(),
+            Notification.countDocuments({ ...baseFilter, seenBy: { $ne: userId } })   // sirf latest 30 nahi, sab ka count
+        ]);
 
-        res.json({ success: true, notifications, unseenCount: unseen.length });
+        res.json({ success: true, notifications, unseenCount });
     } catch (err) {
         console.error("Get my notifications error:", err);
         res.status(500).json({ success: false, message: "Failed to load notifications." });
@@ -33,11 +51,18 @@ export const getMyNotifications = async (req, res) => {
 // ---------------- STUDENT: MARK ALL AS SEEN ----------------
 export const markNotificationsSeen = async (req, res) => {
     try {
+        if (req.user.role === "owner") return res.json({ success: true });
+
         const userId = req.user._id;
         const now = new Date();
 
         await Notification.updateMany(
-            { status: "sent", expiresAt: { $gt: now }, seenBy: { $ne: userId } },
+            {
+                status: "sent",
+                expiresAt: { $gt: now },
+                seenBy: { $ne: userId },
+                ...getAudienceFilter(req.user)
+            },
             { $addToSet: { seenBy: userId } }
         );
 
@@ -54,39 +79,28 @@ export const markNotificationsSeen = async (req, res) => {
 // ke liye clearedBy me add, baaki students ko dikhti rahegi.
 export const clearMyNotifications = async (req, res) => {
     try {
+        if (req.user.role === "owner") return res.json({ success: true });
+
         const userId = req.user._id;
         const now = new Date();
 
-        const notifications = await Notification.find({
+        // Sirf wahi notifications jo is user ko dikhti hain
+        const mine = {
             status: "sent",
             expiresAt: { $gt: now },
-            clearedBy: { $ne: userId }
+            clearedBy: { $ne: userId },
+            ...getAudienceFilter(req.user)
+        };
+
+        // 1) Sirf is user ki personal (single-recipient) notifications delete
+        await Notification.deleteMany({
+            ...mine,
+            audienceType: "custom",
+            customUserIds: { $size: 1, $all: [userId] }
         });
 
-        const singleRecipientIds = [];
-        const multiRecipientIds = [];
-
-        for (const notif of notifications) {
-            const isSingleRecipient =
-                notif.audienceType === "custom" && notif.customUserIds.length === 1;
-
-            if (isSingleRecipient) {
-                singleRecipientIds.push(notif._id);
-            } else {
-                multiRecipientIds.push(notif._id);
-            }
-        }
-
-        if (singleRecipientIds.length > 0) {
-            await Notification.deleteMany({ _id: { $in: singleRecipientIds } });
-        }
-
-        if (multiRecipientIds.length > 0) {
-            await Notification.updateMany(
-                { _id: { $in: multiRecipientIds } },
-                { $addToSet: { clearedBy: userId } }
-            );
-        }
+        // 2) Baaki (all/paid/free/multi-custom): sirf is user ke liye clear
+        await Notification.updateMany(mine, { $addToSet: { clearedBy: userId } });
 
         res.json({ success: true, message: "Notifications cleared successfully." });
     } catch (err) {

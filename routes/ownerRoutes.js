@@ -13,6 +13,8 @@ import {
     banUser, unbanUser,
     ownerResetUserPassword,
     getAllPaymentsOwner,
+    deletePaymentRecord,
+    refundPayment,
     getAllNotificationsOwner,
     getNotificationReach,
     searchUsersForNotification,
@@ -69,6 +71,8 @@ router.post("/api/owner/users/:id/unban", isOwner, unbanUser);
 router.post("/api/owner/users/:id/reset-password", isOwner, ownerResetUserPassword);
 
 router.get("/api/owner/payments", isOwner, getAllPaymentsOwner);
+router.post("/api/owner/payments/:id/refund", isOwner, refundPayment);
+router.delete("/api/owner/payments/:id", isOwner, deletePaymentRecord);
 
 
 router.get("/api/owner/custom-test/pricing", isOwner, getCustomTestPricingOwner);

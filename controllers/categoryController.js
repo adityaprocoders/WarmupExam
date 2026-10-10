@@ -157,7 +157,7 @@ export const showCategory = async (req, res, next) => {
 
         const categoryListingIds = await Listing.find(baseFilter).select("_id").lean();
         const listingIds = categoryListingIds.map(l => l._id);
-        const totalTestsCount = await Test.countDocuments({ listing: { $in: listingIds } });
+        const totalTestsCount = await Test.countDocuments({ listing: { $in: listingIds }, isLiveTest: { $ne: true } });
         const languages = await Listing.distinct("language", baseFilter);
         const exams = await Listing.distinct("exam", baseFilter);
 
@@ -170,7 +170,7 @@ export const showCategory = async (req, res, next) => {
 
         const listingIdsForCount = listings.map(l => l._id);
         const testCounts = await Test.aggregate([
-            { $match: { listing: { $in: listingIdsForCount } } },
+            { $match: { listing: { $in: listingIdsForCount }, isLiveTest: { $ne: true } } },
             { $group: { _id: "$listing", count: { $sum: 1 } } }
         ]);
         const testCountMap = {};
@@ -310,7 +310,7 @@ export const getCategoryTestsApi = async (req, res) => {
 
         const listingIds = paginated.map((l) => l._id);
         const testCounts = await Test.aggregate([
-            { $match: { listing: { $in: listingIds } } },
+            { $match: { listing: { $in: listingIds }, isLiveTest: { $ne: true } } },
             { $group: { _id: "$listing", count: { $sum: 1 } } },
         ]);
         const testCountMap = {};

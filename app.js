@@ -3,7 +3,9 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 
 import crypto from 'crypto';
+import mongoose from "mongoose";
 import dotenv from "dotenv";
+
 dotenv.config(); 
 
 import sanitizeMiddleware from "./middleware/sanitize.js";
@@ -71,10 +73,10 @@ app.set('trust proxy', 1);
 if (isProd) {
     app.use((req, res, next) => {
         if (!req.secure && req.headers['x-forwarded-proto'] !== 'https') {
-            return res.redirect(301, `https://warmupexam.com${req.url}`);
+            return res.redirect(308, `https://warmupexam.com${req.url}`);
         }
         if (req.headers.host !== 'warmupexam.com') {
-            return res.redirect(301, `https://warmupexam.com${req.url}`);
+            return res.redirect(308, `https://warmupexam.com${req.url}`);
         }
         next();
     });
@@ -91,7 +93,8 @@ app.use((req, res, next) => {
 });
  
 app.use(helmet({
-        contentSecurityPolicy: isProd ? {
+    referrerPolicy: { policy: "same-origin" },
+    contentSecurityPolicy: isProd ? {
     directives: {
                 defaultSrc: ["'self'"],
                  scriptSrc: [
@@ -216,8 +219,6 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 8080;
 
-connectDB();
-
 
 
 // cron
@@ -301,11 +302,20 @@ app.use(session({
     }
 }));
 
+ 
+ const BOT_UA_RE = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|mediapartners|lighthouse|pingdom|uptime|headless|curl|wget|python-requests|go-http-client|axios|node-fetch/i;
 
 app.use((req, res, next) => {
-    if (!req.session) return next();
-    if (!req.session.initialized) {
-        req.session.initialized = true;  
+    if (!req.session || req.session.initialized) return next();
+
+    const ua = req.headers["user-agent"] || "";
+    const isPageView =
+        req.method === "GET" &&
+        !req.xhr &&
+        req.accepts(["html", "json"]) === "html";
+
+    if (isPageView && ua && !BOT_UA_RE.test(ua)) {
+        req.session.initialized = true;
     }
     next();
 });
@@ -363,7 +373,7 @@ app.use((req, res, next) => {
     } else if (req.user) {
         res.set('Cache-Control', 'private, no-cache');
     } else {
-        res.set('Cache-Control', 'public, max-age=60');
+        res.set('Cache-Control', 'private, no-cache');
     }
     if (noIndexPaths.some(p => req.path.startsWith(p))) {
         res.set('X-Robots-Tag', 'noindex, nofollow');
@@ -497,7 +507,50 @@ app.locals.nl2br = function (str) {
 app.use(errorHandler);
 
 
-app.listen(PORT, () => {
-    console.log(`Server Running on port ${PORT} [${process.env.NODE_ENV || "development"}]`);
+let server;
+
+async function startServer() {
+    await connectDB();
+    server = app.listen(PORT, () => {
+        console.log(`Server Running on port ${PORT} [${process.env.NODE_ENV || "development"}]`);
+    });
+}
+startServer();
+let shuttingDown = false;
+
+function gracefulShutdown(signal, exitCode = 0) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`${signal} received, shutting down gracefully...`);
+
+    setTimeout(() => {
+        console.error("Forced shutdown after timeout");
+        process.exit(1);
+    }, 10000).unref();
+
+    const closeDb = async () => {
+        try {
+            await mongoose.connection.close();
+        } catch (e) {
+            console.error("Mongo close error:", e);
+        }
+        process.exit(exitCode);
+    };
+
+    if (server) {
+        server.close(closeDb);
+        server.closeIdleConnections?.();
+    } else {
+        closeDb();
+    }
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("unhandledRejection", (reason) => {
+    console.error("Unhandled Rejection:", reason);
 });
- 
+process.on("uncaughtException", (err) => {
+    console.error("Uncaught Exception:", err);
+    gracefulShutdown("uncaughtException", 1);
+});

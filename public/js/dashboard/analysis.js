@@ -262,10 +262,16 @@ if (hasValidRank) {
                 const optText = typeof opt === 'string' ? opt : (opt.text || '');
                 const optImage = typeof opt === 'object' ? opt.image : null;
 
+                const badge = isSelected
+    ? (isCorrect
+        ? '<span class="ml-2 text-[10px] font-extrabold text-[#05CD99] uppercase">Your Answer ✓</span>'
+        : '<span class="ml-2 text-[10px] font-extrabold text-[#D32F2F] uppercase">Your Answer ✗</span>')
+    : '';
+
                 return `
                     <div class="sol-option-box px-4 py-3 rounded-lg border text-sm katex-content ${cls}">
                         ${optImage ? `<img src="${escapeAttr(optImage)}" alt="option ${optionLabel(idx)}" class="max-w-full rounded-md mb-2" loading="lazy" />` : ''}
-                        ${optText ? `${optionLabel(idx)}. ${escapeHtml(optText)}` : `${optionLabel(idx)}.`}
+                        ${optText ? `${optionLabel(idx)}. ${escapeHtml(optText)}` : `${optionLabel(idx)}.`}${badge}
                     </div>
                 `;
             }).join('');

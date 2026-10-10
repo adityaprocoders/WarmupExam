@@ -4,6 +4,7 @@ const attemptSessionSchema = new mongoose.Schema({
     test: { type: mongoose.Schema.Types.ObjectId, ref: "Test", required: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     language: { type: String, default: "English" },
+    exited: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now, expires: 25200 } 
 });
 

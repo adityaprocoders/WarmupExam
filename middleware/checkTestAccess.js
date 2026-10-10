@@ -1,9 +1,21 @@
 import Listing from "../models/listing.js";
 import Test from "../models/Test.js";
 import ExpressError from "../utils/ExpressError.js";
-import { checkEnrollment, isPaidListing } from "../utils/authHelpers.js";
+import { checkEnrollment, isPaidListing, isOwnerUser } from "../utils/authHelpers.js";
 import { cleanupExpiredBatchData } from "../utils/cleanupHelpers.js";
 
+// Live test exam ka hota hai: user ke paas us exam ki koi bhi VALID series ho to allow
+async function hasValidSeriesForExam(user, exam) {
+    if (!user || !exam) return false;
+
+    const now = new Date();
+    const validIds = (user.enrolledListings || [])
+        .filter(e => e && e.listing && !e.suspendedByOwner && (!e.expiresAt || new Date(e.expiresAt) > now))
+        .map(e => (e.listing._id ? e.listing._id : e.listing));
+
+    if (validIds.length === 0) return false;
+    return !!(await Listing.exists({ _id: { $in: validIds }, exam }));
+}
 
 export const checkTestAccess = async (req, res, next) => {
     try {
@@ -12,7 +24,17 @@ export const checkTestAccess = async (req, res, next) => {
         const test = await Test.findById(testId);
         if (!test) throw new ExpressError(404, "Test Not Found");
 
-        // 👇 CHANGED: purana behaviour bilkul waisa hi — pehle enrollment check
+        // Live test: exam-wise access
+        if (test.isLiveTest) {
+            if (isOwnerUser(req) || await hasValidSeriesForExam(req.user, test.liveTestExam)) {
+                req.test = test;
+                return next();
+            }
+            req.flash("error", "You need an active test series of this exam to attempt the Live Test.");
+            return res.redirect("/alltests");
+        }
+
+        // Normal test: pehle jaisa
         if (checkEnrollment(req, test.listing)) {
             if (test.isDailyWarmup) {
                 const listing = await Listing.findById(test.listing).select("type slug");
@@ -25,8 +47,6 @@ export const checkTestAccess = async (req, res, next) => {
             return next();
         }
 
-        // 👇 NAYA: access fail hua — pata karo kya wajah SPECIFICALLY expiry hai
-        // (suspend ya "kabhi enroll hi nahi hua" case me cleanup nahi chalega)
         const enrollment = req.user?.enrolledListings?.find(e => {
             const id = e.listing && e.listing._id ? e.listing._id : e.listing;
             return String(id) === String(test.listing);
@@ -44,7 +64,6 @@ export const checkTestAccess = async (req, res, next) => {
             return res.redirect(`/test/${test.listing}`);
         }
 
-        // purana fallback message — jaisa pehle tha
         req.flash("error", "You must be enrolled in this batch to access this test.");
         return res.redirect(`/test/${test.listing}`);
 

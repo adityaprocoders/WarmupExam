@@ -11,6 +11,8 @@ const router = express.Router();
 router.get("/mock-test/:id/instructions", isLoggedIn,  checkTestAccess, wrapAsync(attemptController.showInstructions));
 router.get("/attempt/:id", isLoggedIn,  checkTestAccess, wrapAsync(attemptController.showAttempt));
 router.post("/api/attempt/:testId/submit", isLoggedIn,  checkTestAccess, wrapAsync(attemptController.submitAttempt));
+router.post("/api/attempt/:testId/start", isLoggedIn, checkTestAccess, wrapAsync(attemptController.startAttempt));
+router.post("/api/attempt/:testId/exit", isLoggedIn, wrapAsync(attemptController.exitAttempt));
 router.get("/attempt/:attemptId/analysis", isLoggedIn, wrapAsync(attemptController.showAnalysis));
 
 router.post("/api/questions/:questionId/report", isLoggedIn, wrapAsync(submitReport));

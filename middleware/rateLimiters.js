@@ -42,6 +42,7 @@ export const paymentLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     handler: jsonRateLimitHandler("Too many payment attempts. Please try again later."),
+        keyGenerator: (req) => (req.user?._id ? String(req.user._id) : ipKeyGenerator(req.ip)),
 });
 
 export const contactLimiter = rateLimit({
@@ -50,4 +51,25 @@ export const contactLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     handler: jsonRateLimitHandler("Too many messages sent. Please try again later."),
+});
+
+
+const userOrIpKey = (req) => (req.user?._id ? String(req.user._id) : ipKeyGenerator(req.ip));
+
+export const customTestAvailabilityLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: userOrIpKey,
+    handler: jsonRateLimitHandler("Too many requests. Please slow down and try again in a minute."),
+});
+
+export const customTestGenerateLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 15,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: userOrIpKey,
+    handler: jsonRateLimitHandler("Too many papers generated. Please try again in a few minutes."),
 });

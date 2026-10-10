@@ -978,6 +978,8 @@ subjectTimes: timeStrategy === 'subject' ? subjectTimeList : [],
 
     function toggleHidden(el) { if (el) el.classList.toggle('hidden'); }
 
+        
+
     /* ================= EVENTS ================= */
 
     document.addEventListener('click', function (e) {

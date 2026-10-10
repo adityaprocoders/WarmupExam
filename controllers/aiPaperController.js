@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { processImageFiles, processPDFFile } from "../utils/aiFileProcessing.js";
 import { buildAIExtractPrompt, parseAIQuestions } from "../utils/geminiPrompt.js";
 import { getLimitsForTier, nextResetAt } from "../utils/aiLimits.js";
-import { checkAILimits, recordAIUsage, getUsageSummary } from "../utils/aiUsageTracker.js";
+import { checkAILimits, reserveAIUsage, releaseAIUsage, adjustAIQuestions, getUsageSummary } from "../utils/aiUsageTracker.js";
 import CustomAIPaper from "../models/CustomAIPaper.js";
 import { buildAIGeneratePrompt, cleanGenerated, parseDifficulty } from "../utils/aiGeneratePrompt.js";
 
@@ -175,14 +175,31 @@ const tokenBudget = isGen
     ? Math.min(32768, 4000 + requestedForPrompt * 600)
     : Math.min(32768, 1200 + requestedForPrompt * 450);
 
-const rawResponse = await callGemini(
-    parts, tokenBudget,
-    isGen ? { temperature: 0.4, thinkingLevel: "medium" } : {}
-);
-let extracted = parseAIQuestions(rawResponse);
-if (isGen) extracted = cleanGenerated(extracted);
+const reservation = {
+    questions: Math.min(questionCount, limits.questionsPerRequest),
+    textCharCount, imageCount, pdfSizeMB,
+};
+const reserve = await reserveAIUsage(req.user._id, tier, reservation);
+if (!reserve.ok) {
+    return res.status(429).json({ success: false, error: "LIMIT_EXCEEDED", message: reserve.message, daily: true, resetAt: nextResetAt() });
+}
+reservation.date = reserve.date;
+
+let extracted;
+try {
+    const rawResponse = await callGemini(
+        parts, tokenBudget,
+        isGen ? { temperature: 0.4, thinkingLevel: "medium" } : {}
+    );
+    extracted = parseAIQuestions(rawResponse);
+    if (isGen) extracted = cleanGenerated(extracted);
+} catch (genErr) {
+    await releaseAIUsage(req.user._id, reservation);
+    throw genErr;
+}
 
 if (!extracted.length) {
+    await releaseAIUsage(req.user._id, reservation);
     return res.status(422).json({
         success: false,
         message: isGen
@@ -195,7 +212,7 @@ if (!extracted.length) {
         const finalSet = extracted.slice(0, requested);
 
         // ---------------- Record usage (AFTER successful generation) ----------------
-        await recordAIUsage(req.user._id, { questionsGenerated: finalSet.length, textCharCount, imageCount, pdfSizeMB });
+        await adjustAIQuestions(req.user._id, reservation, finalSet.length);
 
         const questions = finalSet.map((item, i) => ({
             _id: randomUUID(), index: i + 1,

@@ -8,6 +8,12 @@ import { logOwnerLogin } from "../utils/loginLogger.js";
 import LoginHistory from "../models/LoginHistory.js";
 import { generateSessionId } from "../utils/sessionHelper.js";
 import crypto from "crypto";
+import { generateOtp, hashSecret, safeEqualHash } from "../utils/secretHash.js";
+
+const guardAsync = (next, fn) => (err) => {
+    if (err) return next(err);
+    Promise.resolve().then(fn).catch(next);
+};
 
 
 export const renderOwnerLogin = (req, res) => res.render("auth/owner-login", {
@@ -21,32 +27,34 @@ export const ownerLogin = (req, res, next) => {
         if (err) return next(err);
 
         if (!owner) {
-    req.flash("error", "Invalid owner credentials");
-    return req.session.save(() => res.redirect(`/${process.env.OWNER_LOGIN_PATH}`));
-}
+            req.flash("error", "Invalid owner credentials");
+            return req.session.save(() => res.redirect(`/${process.env.OWNER_LOGIN_PATH}`));
+        }
 
-        req.login(owner, async (err) => {
-            if (err) return next(err);
-
-             const newSessionId = generateSessionId();
+        req.login(owner, guardAsync(next, async () => {
+            const newSessionId = generateSessionId();
             req.session.currentSessionId = newSessionId;
- 
-            await logOwnerLogin(req, owner);
 
-            await LoginHistory.create({
-                ownerEmail: req.body.email,
-                ipAddress: req.ip || req.headers["x-forwarded-for"] || "Unknown",
-                userAgent: req.headers["user-agent"] || "",
-                device: req.headers["user-agent"] || "Unknown",
-                location: "Unknown",
-                status: "success"
-            });
+            try {
+                await logOwnerLogin(req, owner);
+
+                await LoginHistory.create({
+                    ownerEmail: req.body.email,
+                    ipAddress: req.ip || req.headers["x-forwarded-for"] || "Unknown",
+                    userAgent: req.headers["user-agent"] || "",
+                    device: req.headers["user-agent"] || "Unknown",
+                    location: "Unknown",
+                    status: "success"
+                });
+            } catch (logErr) {
+                console.error("Owner login history failed:", logErr);
+            }
 
             req.flash("success", "Welcome Owner!");
             req.session.save(() => res.redirect("/owner-dashboard"));
-        });
+        }));
     })(req, res, next);
-};
+};;
 
 
 export const getLoginHistoryApi = async (req, res) => {
@@ -93,33 +101,31 @@ export const register = async (req, res, next) => {
 
         const newUser = await User.create({ name, email: cleaned, password, authProvider: "local" });
 
-        req.login(newUser, async (err) => {
-    if (err) return next(err);
- 
-    const newSessionId = generateSessionId();
-    newUser.activeSessionId = newSessionId;
-    await newUser.save();
-    req.session.currentSessionId = newSessionId;
+        req.login(newUser, guardAsync(next, async () => {
+            const newSessionId = generateSessionId();
+            newUser.activeSessionId = newSessionId;
+            await newUser.save();
+            req.session.currentSessionId = newSessionId;
 
-    req.flash("success", "Account created successfully!");
-    const sessionReturnTo = req.session.returnTo;
-const hasSessionReturnTo = sessionReturnTo
-    && sessionReturnTo.startsWith('/')
-    && sessionReturnTo !== '/';
+            req.flash("success", "Account created successfully!");
+            const sessionReturnTo = req.session.returnTo;
+            const hasSessionReturnTo = sessionReturnTo
+                && sessionReturnTo.startsWith('/')
+                && sessionReturnTo !== '/';
 
-const redirectUrl = (req.body.returnTo && req.body.returnTo.startsWith('/'))
-    ? req.body.returnTo
-    : hasSessionReturnTo
-    ? sessionReturnTo
-    : "/";
+            const redirectUrl = (req.body.returnTo && req.body.returnTo.startsWith('/'))
+                ? req.body.returnTo
+                : hasSessionReturnTo
+                ? sessionReturnTo
+                : "/";
 
-delete req.session.returnTo;
-    req.session.save(() => {
-        res.redirect(redirectUrl);
-    });
-});
+            delete req.session.returnTo;
+            req.session.save(() => {
+                res.redirect(redirectUrl);
+            });
+        }));
     } catch (err) {
-        next(err); // koi aur unexpected error ho to normal error-handler ko de do
+        next(err);
     }
 };
 
@@ -135,41 +141,37 @@ export const login = (req, res, next) => {
             });
         }
 
-        req.login(user, async (err) => {
-    if (err) return next(err);
+        req.login(user, guardAsync(next, async () => {
+            const newSessionId = generateSessionId();
+            user.activeSessionId = newSessionId;
+            await user.save();
+            req.session.currentSessionId = newSessionId;
 
-    // 👇 add these 3 lines (yahan missing thi)
-    const newSessionId = generateSessionId();
-    user.activeSessionId = newSessionId;
-    await user.save();
-    req.session.currentSessionId = newSessionId;
+            req.flash("success", "Logged in successfully!");
 
-    req.flash("success", "Logged in successfully!");
+            const dashboardUrl = await getDashboardRedirectUrl(user);
 
-    const dashboardUrl = await getDashboardRedirectUrl(user);
+            const hasSpecificReturnTo = req.body.returnTo
+                && req.body.returnTo.startsWith('/')
+                && req.body.returnTo !== '/';
 
-    const hasSpecificReturnTo = req.body.returnTo
-    && req.body.returnTo.startsWith('/')
-    && req.body.returnTo !== '/';
+            const sessionReturnTo = req.session.returnTo;
+            const hasSessionReturnTo = sessionReturnTo
+                && sessionReturnTo.startsWith('/')
+                && sessionReturnTo !== '/';
 
-const sessionReturnTo = req.session.returnTo;
-const hasSessionReturnTo = sessionReturnTo
-    && sessionReturnTo.startsWith('/')
-    && sessionReturnTo !== '/';
+            const redirectUrl = hasSpecificReturnTo
+                ? req.body.returnTo
+                : hasSessionReturnTo
+                ? sessionReturnTo
+                : (dashboardUrl || "/");
 
-const redirectUrl = hasSpecificReturnTo
-    ? req.body.returnTo
-    : hasSessionReturnTo
-    ? sessionReturnTo
-    : (dashboardUrl || "/");
+            delete req.session.returnTo;
 
-delete req.session.returnTo; 
-
-req.session.save(() => {
-    res.redirect(redirectUrl);
-});
-});
-         
+            req.session.save(() => {
+                res.redirect(redirectUrl);
+            });
+        }));
     })(req, res, next);
 };
 
@@ -186,40 +188,43 @@ export const googleCallback = (req, res, next) => {
             return req.session.save(() => res.redirect("/?showLogin=true"));
         }
 
-        req.login(user, async (err) => {
-            if (err) return next(err);
-
-             const newSessionId = generateSessionId();
-             user.activeSessionId = newSessionId;
-             await user.save();
-             req.session.currentSessionId = newSessionId;
+        req.login(user, guardAsync(next, async () => {
+            const newSessionId = generateSessionId();
+            user.activeSessionId = newSessionId;
+            await user.save();
+            req.session.currentSessionId = newSessionId;
 
             req.flash("success", "Successfully signed in with Google.");
 
             const sessionReturnTo = req.session.returnTo;
-const hasSessionReturnTo = sessionReturnTo
-    && sessionReturnTo.startsWith('/')
-    && sessionReturnTo !== '/';
+            const hasSessionReturnTo = sessionReturnTo
+                && sessionReturnTo.startsWith('/')
+                && sessionReturnTo !== '/';
 
-const redirectUrl = hasSessionReturnTo
-    ? sessionReturnTo
-    : (await getDashboardRedirectUrl(user)) || "/";
+            const redirectUrl = hasSessionReturnTo
+                ? sessionReturnTo
+                : (await getDashboardRedirectUrl(user)) || "/";
 
-delete req.session.returnTo;
+            delete req.session.returnTo;
 
             req.session.save(() => res.redirect(redirectUrl));
-        });
+        }));
     })(req, res, next);
 };
 
+
+
+
 export const logout = (req, res, next) => {
-    const userId = req.user?._id; // logout se PEHLE user id save kar lo
+    const userId = req.user?._id;
 
-    req.logout(async (err) => {
-        if (err) return next(err);
-
+    req.logout(guardAsync(next, async () => {
         if (userId) {
-            await User.findByIdAndUpdate(userId, { activeSessionId: null });
+            try {
+                await User.findByIdAndUpdate(userId, { activeSessionId: null });
+            } catch (e) {
+                console.error("Logout: activeSessionId clear failed:", e);
+            }
         }
         req.session.currentSessionId = null;
 
@@ -227,7 +232,7 @@ export const logout = (req, res, next) => {
         req.session.save(() => {
             res.redirect("/");
         });
-    });
+    }));
 };
 
 
@@ -388,6 +393,7 @@ export const resetPassword = async (req, res) => {
 
     // Naya password set karo — pre('save') hook khud hash kar dega
     user.password = newPassword;
+    user.activeSessionId = generateSessionId(); // purane saare sessions logout ho jayenge
     user.resetOtp = null;
     user.resetOtpExpiry = null;
     user.resetToken = null;

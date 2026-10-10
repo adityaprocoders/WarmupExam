@@ -6,7 +6,7 @@
 
     <!-- Profile Card -->
     <div class="xl:col-span-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-      <img src="<%= userDetail.avatar || 'https://placehold.co/100x100' %>" class="w-20 h-20 rounded-full object-cover border-4 border-indigo-50 shrink-0">
+      <img src="<%= userDetail.avatar || '/images/default-avatar.png' %>" referrerpolicy="no-referrer" class="w-20 h-20 rounded-full object-cover border-4 border-indigo-50 shrink-0">
       <div class="min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <h2 class="font-bold text-gray-900 text-lg truncate"><%= userDetail.name %></h2>
@@ -16,11 +16,20 @@
           <span class="text-xs font-bold px-2.5 py-1 rounded-full <%= userDetail.status === 'Active' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500' %>"><%= userDetail.status %></span>
           <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600"><%= userDetail.subscriptionPlan %></span>
         </div>
-        <p class="text-sm text-gray-500 mt-2 flex items-center gap-1.5 truncate">
+                <p class="text-sm text-gray-500 mt-2 flex items-center gap-1.5 truncate">
           <i class="fa-solid fa-envelope text-gray-400 text-xs"></i> <%= userDetail.email %>
         </p>
         <p class="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
           <i class="fa-solid fa-phone text-gray-400 text-xs"></i> <%= userDetail.mobile %>
+        </p>
+        <p class="text-sm text-gray-500 mt-1 flex items-center gap-1.5" title="State">
+          <i class="fa-solid fa-map-location-dot text-gray-400 text-xs w-3.5 text-center"></i> <%= userDetail.state %>
+        </p>
+        <p class="text-sm text-gray-500 mt-1 flex items-center gap-1.5" title="City / Village / Town">
+          <i class="fa-solid fa-city text-gray-400 text-xs w-3.5 text-center"></i> <%= userDetail.city %>
+        </p>
+        <p class="text-sm text-gray-500 mt-1 flex items-center gap-1.5" title="Pin Code">
+          <i class="fa-solid fa-location-dot text-gray-400 text-xs w-3.5 text-center"></i> <%= userDetail.pinCode %>
         </p>
       </div>
     </div>
@@ -51,6 +60,14 @@
         <p class="text-sm font-semibold text-gray-900 flex items-center gap-1">
           <%= userDetail.mobileVerified ? 'Yes' : 'No' %>
           <i class="fa-solid <%= userDetail.mobileVerified ? 'fa-check text-green-500' : 'fa-xmark text-red-500' %> text-xs"></i>
+        </p>
+
+                <p class="text-sm text-gray-500 mt-1 flex items-start gap-1.5">
+          <i class="fa-solid fa-location-dot text-gray-400 text-xs mt-1"></i>
+          <span class="min-w-0 break-words"><%= userDetail.address %></span>
+        </p>
+        <p class="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-map-pin text-gray-400 text-xs"></i> <%= userDetail.pinCode %>
         </p>
       </div>
     </div>
@@ -296,101 +313,95 @@
     </div>
   </div>
 
-  <!-- ============ PAYMENT HISTORY + ACTIVITY LOG + RANKINGS ============ -->
-  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+ <!-- ============ PAYMENT HISTORY (full width, premium) ============ --> 
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6">
 
-    <!-- Payment History -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="font-bold text-gray-900">Payment History</h3>
-        <a href="#" class="text-xs font-semibold text-indigo-600">View All</a>
+  <!-- Header + date range -->
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
+    <div>
+      <h3 class="text-xl font-bold text-gray-900">Payment History</h3>
+      <p class="text-sm text-gray-500 mt-0.5">Complete transaction record of this student</p>
+    </div>
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div class="flex items-center gap-4 text-xs bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5">
+        <span class="text-gray-500">Payments <b id="payCount" class="text-gray-900 ml-1">0</b></span>
+        <span class="w-px h-4 bg-gray-200"></span>
+        <span class="text-gray-500">Net paid <b id="payNet" class="text-green-600 ml-1">₹0</b></span>
       </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-xs">
-          <thead class="text-gray-400 uppercase">
-            <tr>
-              <th class="text-left py-2 font-semibold">Invoice ID</th>
-              <th class="text-left py-2 font-semibold">Amount</th>
-              <th class="text-left py-2 font-semibold">Date</th>
-              <th class="text-left py-2 font-semibold">Status</th>
-              <th class="text-right py-2 font-semibold">Invoice</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% userDetail.paymentHistory.forEach(p => { %>
-            <tr class="border-t border-gray-50">
-              <td class="py-2.5 font-semibold text-gray-900"><%= p.invoiceId %></td>
-              <td class="py-2.5 text-gray-700">₹<%= p.amount %></td>
-              <td class="py-2.5 text-gray-500"><%= p.date %></td>
-              <td class="py-2.5">
-                <span class="font-bold <%= p.status === 'Paid' ? 'text-green-600' : 'text-red-500' %>"><%= p.status %></span>
-              </td>
-              <td class="py-2.5 text-right"><i class="fa-solid fa-file-pdf text-gray-400"></i></td>
-            </tr>
-            <% }) %>
-          </tbody>
-        </table>
+      <div class="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2 bg-white">
+        <i class="fa-regular fa-calendar text-indigo-500 text-sm"></i>
+        <input type="date" id="payFrom" aria-label="From date" class="text-sm text-gray-700 outline-none bg-transparent w-[120px]">
+        <span class="text-gray-300">–</span>
+        <input type="date" id="payTo" aria-label="To date" class="text-sm text-gray-700 outline-none bg-transparent w-[120px]">
+        <button type="button" id="payClear" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 ml-1">Clear</button>
       </div>
     </div>
-
-    <!-- Activity Log -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="font-bold text-gray-900">Activity Log</h3>
-        <a href="#" class="text-xs font-semibold text-indigo-600">View All</a>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-xs">
-          <thead class="text-gray-400 uppercase">
-            <tr>
-              <th class="text-left py-2 font-semibold">Date & Time</th>
-              <th class="text-left py-2 font-semibold">Device</th>
-              <th class="text-left py-2 font-semibold">Browser</th>
-              <th class="text-left py-2 font-semibold">IP Address</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% userDetail.activityLog.forEach(a => { %>
-            <tr class="border-t border-gray-50">
-              <td class="py-2.5 text-gray-700 whitespace-nowrap"><%= a.dateTime %></td>
-              <td class="py-2.5 text-gray-500"><%= a.device %></td>
-              <td class="py-2.5 text-gray-500"><%= a.browser %></td>
-              <td class="py-2.5 text-gray-500"><%= a.ipAddress %></td>
-            </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Rankings -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-      <h3 class="font-bold text-gray-900 mb-3">Rankings</h3>
-      <div class="space-y-3">
-        <div class="flex items-center justify-between">
-          <p class="text-xs text-gray-500 flex items-center gap-1.5"><i class="fa-solid fa-trophy text-amber-400"></i> Current Rank</p>
-          <p class="text-sm font-bold text-gray-900">AIR <%= userDetail.currentRank %></p>
-        </div>
-        <div class="flex items-center justify-between gap-2">
-  <p class="text-xs text-gray-500 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-medal text-indigo-400"></i> Best Rank</p>
-  <p class="text-sm font-bold text-gray-900 text-right">AIR <%= userDetail.bestRank %> <span class="block text-xs text-gray-400 font-normal truncate max-w-[160px] ml-auto"><%= userDetail.bestRankTest %></span></p>
-</div>
-<div class="flex items-center justify-between gap-2">
-  <p class="text-xs text-gray-500 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-arrow-trend-down text-red-400"></i> Worst Rank</p>
-  <p class="text-sm font-bold text-gray-900 text-right">AIR <%= userDetail.worstRank %> <span class="block text-xs text-gray-400 font-normal truncate max-w-[160px] ml-auto"><%= userDetail.worstRankTest %></span></p>
-</div>
-        <div class="flex items-center justify-between">
-          <p class="text-xs text-gray-500 flex items-center gap-1.5"><i class="fa-solid fa-chart-simple text-teal-400"></i> Leaderboard Position</p>
-          <p class="text-sm font-bold text-gray-900"><%= userDetail.leaderboardPosition %></p>
-        </div>
-        <div class="flex items-center justify-between">
-          <p class="text-xs text-gray-500 flex items-center gap-1.5"><i class="fa-solid fa-percent text-purple-400"></i> Percentile</p>
-          <p class="text-sm font-bold text-gray-900"><%= userDetail.percentile %>%</p>
-        </div>
-      </div>
-    </div>
-
   </div>
+
+  <!-- Empty state -->
+  <div id="payEmpty" class="hidden text-center py-12">
+    <div class="w-14 h-14 mx-auto rounded-full bg-gray-50 text-gray-300 flex items-center justify-center mb-3"><i class="fa-solid fa-receipt text-xl"></i></div>
+    <p class="text-sm font-semibold text-gray-600">No payments to show</p>
+    <p id="payEmptyMsg" class="text-xs text-gray-400 mt-1"></p>
+  </div>
+
+  <div id="payList">
+  <!-- Desktop / tablet table -->
+  <div id="payDesktop" class="hidden md:block overflow-x-auto rounded-xl border border-gray-100">
+    <table class="w-full min-w-[980px]">
+      <thead>
+        <tr class="bg-gradient-to-r from-slate-50 to-indigo-50/50 text-xs font-semibold text-gray-500">
+          <th class="text-left py-3 pl-4 pr-3">Date &amp; Time</th>
+          <th class="text-left py-3 pr-3">Order ID</th>
+          <th class="text-left py-3 pr-3">Item / Plan</th>
+          <th class="text-left py-3 pr-3">Type</th>
+          <th class="text-left py-3 pr-3">Amount</th>
+          <th class="text-left py-3 pr-3">Payment Method</th>
+          <th class="text-left py-3 pr-3">Status</th>
+          <th class="text-right py-3 pr-4">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="payRows"></tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div id="payMobile" class="md:hidden">
+    <div id="payCards" class="space-y-3"></div>
+  </div>
+  </div>
+</div>
+
+<script type="application/json" id="paymentsData"><%- paymentsJson %></script>
+
+<!-- Three-dot floating menu -->
+<div id="payMenu" style="margin:0" class="hidden fixed z-[90] bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 min-w-[190px]"></div>
+<!-- View modal -->
+ <div id="payViewModal" style="margin:0" class="hidden fixed inset-0 z-[80] bg-black/40 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+      <h2 class="text-lg font-bold text-gray-900">Payment Details</h2>
+      <button id="payViewClose" type="button" class="text-gray-400 hover:text-gray-700" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="payViewBody" class="px-6 py-5 overflow-y-auto"></div>
+    <div class="px-6 py-4 border-t border-gray-100 shrink-0">
+      <button id="payViewClose2" type="button" class="w-full py-2.5 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal (refund / delete) -->
+<div id="payConfirmModal" style="margin:0" class="hidden fixed inset-0 z-[85] bg-black/40 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+    <div class="px-6 py-4 border-b border-gray-100"><h2 id="payConfirmTitle" class="text-lg font-bold text-gray-900"></h2></div>
+    <div id="payConfirmMsg" class="px-6 py-5 text-sm text-gray-600"></div>
+    <div class="flex gap-3 px-6 pb-5">
+      <button id="payConfirmCancel" type="button" class="flex-1 py-2.5 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50">Cancel</button>
+      <button id="payConfirmOk" type="button" class="flex-1 py-2.5 rounded-lg text-white text-sm font-semibold"></button>
+    </div>
+  </div>
+</div>
+
 
 </div>
 </div>
@@ -508,4 +519,5 @@
 
 
 <script src="/js/owner/userdetail.js" defer></script>
+   <script src="/js/owner/userPayments.js" defer></script>
 <script src="/js/owner/userAiUsage.js" defer></script>

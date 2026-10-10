@@ -107,7 +107,7 @@ function buildSections() {
     const built = [];
     const usedSubjects = new Set();
 
-    testData.subjectTime.forEach(entry => {
+    (testData.subjectTime || []).forEach(entry => {
         const labelSubjects = splitSubjectLabel(entry.subject);
         const matchedSubjects = subjectsOrder.filter(s => labelSubjects.includes(normalizeName(s)) && !usedSubjects.has(s));
         if (matchedSubjects.length === 0) return;
@@ -146,7 +146,6 @@ function lockSectionsBefore(newIdx) {
     for (let i = 0; i < newIdx; i++) {
         if (!sectionDone[i]) {
             sectionDone[i] = true;
-            sectionTimeLeft[i] = 0;
         }
     }
     updateSubjectTabsState();
@@ -376,7 +375,11 @@ function selectOption(idx, type) {
     } else {
         state.answer = idx;
     }
-    if (state.status !== 'markedAnswered') state.status = 'answered';
+    const hasAns = Array.isArray(state.answer) ? state.answer.length > 0 : (state.answer !== null && state.answer !== undefined);
+    const wasMarked = state.status === 'markedAnswered' || state.status === 'markedNotAnswered';
+    state.status = hasAns
+        ? (wasMarked ? 'markedAnswered' : 'answered')
+        : (wasMarked ? 'markedNotAnswered' : 'notAnswered');
     renderQuestion();
 }
 
@@ -384,8 +387,10 @@ function saveIntegerAnswer() {
     const state = qState[currentIndex];
     const val = document.getElementById('integerInput').value;
     state.saved = false;
-    state.answer = val === '' ? null : Number(val);
-    state.status = (val === '') ? 'notAnswered' : 'answered';
+    state.answer = (val === '' || isNaN(Number(val))) ? null : Number(val);
+    const wasMarked = state.status === 'markedAnswered' || state.status === 'markedNotAnswered';
+if (val === '') state.status = wasMarked ? 'markedNotAnswered' : 'notAnswered';
+else state.status = wasMarked ? 'markedAnswered' : 'answered';
     renderPalette();
     updateCounts();
     updateNavButtons();
@@ -431,6 +436,8 @@ function goNext() {
 
 function prevQuestion() {
     if (currentIndex > 0) {
+        const prev = flatQuestions[currentIndex - 1];
+        if (HAS_SUBJECT_TABS && sectionDone[prev.sectionIndex]) return;
         currentIndex--;
         checkSectionSwitch();
         renderQuestion();
@@ -638,7 +645,7 @@ async function doSubmitTest(submitType = "manual") {
 
         if (!res.ok || !result.success) {
             // Server ne bola "already submitted" -> ye actually safe case hai (pehla attempt already gaya tha)
-            if (res.status === 409) {
+            if (res.status === 409 && result.code === "ALREADY_SUBMITTED") {
                 testSubmitted = true;
                 showSuccess();
                 return;
@@ -681,7 +688,7 @@ function autoSubmit() {
 function closeSuccessModal() {
     document.getElementById('successModal').classList.add('hidden');
     document.getElementById('autoSubmitToast').classList.add('hidden');
-    window.location.replace(returnUrl);
+        window.location.replace(returnUrl);
 }
 
 /* ================= INIT ================= */
@@ -770,6 +777,10 @@ case 'exit-test':
     }
 });
 
+
+
+
+
 /* ================= BACK BUTTON TRAP (FIXED — history se real entry bhi hatata hai) ================= */
 let leavingIntentionally = false;
 
@@ -792,9 +803,19 @@ function continueTest() {
     // guard already popstate handler me re-arm ho chuka, kuch aur nahi karna
 }
 
-function exitTest() {
+async function exitTest() {
     document.getElementById('backConfirmModal').classList.add('hidden');
     leavingIntentionally = true;
+
+    // sirf itna naya: server ko batao ki attempt discard hua
+    try {
+        await fetch(`/api/attempt/${testData.id}/exit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}',
+            keepalive: true
+        });
+    } catch (_) {}
 
     const landed = function () {
         window.removeEventListener('popstate', landed);
@@ -810,13 +831,3 @@ window.addEventListener('pageshow', function (e) {
         window.location.replace(returnUrl);
     }
 });
-
-document.addEventListener('input', function (e) {
-    const target = e.target.closest('[data-action]');
-    if (!target) return;
-    if (target.dataset.action === 'save-integer-answer') {
-        saveIntegerAnswer();
-    }
-});
-
-

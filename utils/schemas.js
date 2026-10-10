@@ -68,9 +68,14 @@ export const updateProfileSchema = Joi.object({
     mobile: Joi.string().trim().pattern(/^[6-9]\d{9}$/).allow("", null).messages({
         "string.pattern.base": "Please enter a valid 10-digit Indian mobile number"
     }),
+    state: Joi.string().trim().max(50).allow("", null),
     city: Joi.string().trim().max(50).allow("", null),
-    class: Joi.string().trim().allow("", null),
-    exam: Joi.string().trim().allow("", null)
+    pinCode: Joi.string().trim().pattern(/^\d{6}$/).allow("", null).messages({
+        "string.pattern.base": "Pin code must be 6 digits"
+    }),
+    targetExams: Joi.array().items(Joi.string().trim().max(40)).single().max(10).default([]).messages({
+        "array.max": "You can add up to 10 target exams"
+    })
 });
 
 export const changePasswordSchema = Joi.object({

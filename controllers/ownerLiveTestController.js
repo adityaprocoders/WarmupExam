@@ -6,9 +6,18 @@ import Attempt from "../models/TestAttempt.js";
 import LiveTestConfig from "../models/LiveTestConfig.js";
 import LiveTestUsageLog from "../models/LiveTestUsageLog.js";
 import { generateLiveTestForExam } from "./liveTestController.js";
+import AttemptSession from "../models/AttemptSession.js";
+import LiveTestResult from "../models/LiveTestResult.js";
+
+
+
 
 function currentHHMM() {
-    return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' });
+    return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Kolkata' });
+}
+
+function todayDateStr() {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 }
 
 async function getListingQuestionCount(listingId) {
@@ -55,9 +64,11 @@ if (activeTest) {
 } else if (currentHHMM() < config.startTime) {
     status = "upcoming";
     upcoming++;
-} else {
+} else if (config.lastGeneratedDate === todayDateStr()) {
     status = "completed";
     completedToday++;
+} else {
+    status = "pending";
 }
 
         let participants = 0, avgScore = 0, topScore = 0;
@@ -269,6 +280,7 @@ export const saveConfig = async (req, res) => {
         if (!Array.isArray(subjectQuestionCounts) || subjectQuestionCounts.length === 0) {
             return res.status(400).json({ success: false, message: "Add the subject-wise question count." });
         }
+ 
     }
 
   const tStrategy = timeStrategy === "subject" ? "subject" : "total";
@@ -294,13 +306,21 @@ if (tStrategy === "total") {
 }
 
     const { easy = 0, medium = 0, hard = 0 } = difficultyDistribution || {};
+    if ([easy, medium, hard].some(v => !(Number(v) >= 0))) {
+    return res.status(400).json({ success: false, message: "Difficulty values cannot be negative." });
+}
+
     if (easy + medium + hard !== 100) {
         return res.status(400).json({ success: false, message: "Difficulty distribution must total 100%." });
     }
     
-    if (!Array.isArray(scheduledDays) || scheduledDays.length === 0) {
+        if (!Array.isArray(scheduledDays) || scheduledDays.length === 0) {
     return res.status(400).json({ success: false, message: "Select at least one day." });
 }
+
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(startTime || ""))) {
+        return res.status(400).json({ success: false, message: "Start time must be in HH:MM format." });
+    }
 
     // security check — saari listings sach me is category+exam ki hon
     const validCount = await Listing.countDocuments({ _id: { $in: includedListings }, category, exam });
@@ -351,6 +371,22 @@ export const deleteConfig = async (req, res) => {
     const testIds = allTests.map(t => t._id);
 
     if (testIds.length > 0) {
+                for (const testId of testIds) {
+            const attempts = await Attempt.find({ test: testId })
+                .select("user score timeTaken")
+                .sort({ score: -1, timeTaken: 1 })
+                .lean();
+            if (attempts.length > 0) {
+                await LiveTestResult.bulkWrite(attempts.map((a, idx) => ({
+                    updateOne: {
+                        filter: { test: testId, user: a.user },
+                        update: { $set: { rank: idx + 1, totalParticipants: attempts.length } }
+                    }
+                })));
+            }
+        }
+        await AttemptSession.deleteMany({ test: { $in: testIds } });
+
         await TestQuestion.deleteMany({ test: { $in: testIds } });
         await Attempt.deleteMany({ test: { $in: testIds } });
         await Test.deleteMany({ _id: { $in: testIds } });

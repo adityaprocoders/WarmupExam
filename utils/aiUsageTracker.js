@@ -116,3 +116,58 @@ export async function getUsageSummary(userId, tier) {
         limits,
     };
 }
+
+
+
+export async function reserveAIUsage(userId, tier, { questions, textCharCount = 0, imageCount = 0, pdfSizeMB = 0 }) {
+    const limits = getLimitsForTier(tier);
+    const date = todayDateString();
+    try {
+        await AIUsage.findOneAndUpdate(
+            {
+                user: userId,
+                date,
+                apiCallsUsed: { $lt: limits.apiCallsPerDay },
+                questionsUsed: { $lte: limits.questionsPerDay - questions },
+                textCharsUsed: { $lte: limits.textCharsPerDay - textCharCount },
+                imagesUsed: { $lte: limits.imagesPerDay - imageCount },
+                pdfMBUsed: { $lte: limits.pdfMBPerDay - pdfSizeMB },
+            },
+            {
+                $inc: { questionsUsed: questions, apiCallsUsed: 1, textCharsUsed: textCharCount, imagesUsed: imageCount, pdfMBUsed: pdfSizeMB },
+                $push: { recentRequestTimestamps: { $each: [new Date()], $slice: -50 } },
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        return { ok: true, date };
+    } catch (err) {
+        if (err?.code === 11000) {
+            return { ok: false, message: "Your daily AI limit has been reached. Please try again tomorrow." };
+        }
+        throw err;
+    }
+}
+
+export async function releaseAIUsage(userId, { questions, textCharCount = 0, imageCount = 0, pdfSizeMB = 0, date }) {
+    try {
+        await AIUsage.updateOne(
+            { user: userId, date: date || todayDateString() },
+            { $inc: { questionsUsed: -questions, apiCallsUsed: -1, textCharsUsed: -textCharCount, imagesUsed: -imageCount, pdfMBUsed: -pdfSizeMB } }
+        );
+    } catch (e) {
+        console.error("releaseAIUsage failed:", e);
+    }
+}
+
+export async function adjustAIQuestions(userId, reservation, actualQuestions) {
+    const diff = actualQuestions - reservation.questions;
+    if (!diff) return;
+    try {
+        await AIUsage.updateOne(
+            { user: userId, date: reservation.date || todayDateString() },
+            { $inc: { questionsUsed: diff } }
+        );
+    } catch (e) {
+        console.error("adjustAIQuestions failed:", e);
+    }
+}
