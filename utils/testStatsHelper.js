@@ -2,9 +2,20 @@ import Attempt from "../models/TestAttempt.js";
 
 // Isi test ke saare real attempts se accuracy-comparison banata hai
 export async function getAccuracyComparison(testId, userAccuracy) {
-    const attempts = await Attempt.find({ test: testId })
-        .select("correctCount wrongCount")
+    const allAttempts = await Attempt.find({ test: testId })
+        .select("user correctCount wrongCount")
+        .sort({ createdAt: -1 })
         .lean();
+
+    // Har user ka sirf latest attempt
+    const seenUsers = new Set();
+    const attempts = [];
+    for (const a of allAttempts) {
+        const key = String(a.user);
+        if (seenUsers.has(key)) continue;
+        seenUsers.add(key);
+        attempts.push(a);
+    }
 
     const accuracyList = attempts
         .map(a => {

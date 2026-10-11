@@ -5,10 +5,11 @@
 <link rel="preconnect" href="https://pagead2.googlesyndication.com">
 <link rel="preconnect" href="https://www.googletagmanager.com">
 
-<!-- Google AdSense verification (all pages) -->
+<!-- Google AdSense -->
+<% if (typeof showAds === 'undefined' || showAds) { %>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<%= adsensePublisherId %>"
-     crossorigin="anonymous">
-</script>
+     crossorigin="anonymous"></script>
+<% } %>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -88,7 +89,6 @@
   "name": "WarmupExam",
   "url": "https://warmupexam.com",
   "logo": "https://warmupexam.com/images/logo.svg",
-  "founder": { "@id": "https://warmupexam.com/aboutUs#founder" },
   "sameAs": [
     "https://www.instagram.com/warmupexam/",
     "https://www.youtube.com/@WarmupExam"

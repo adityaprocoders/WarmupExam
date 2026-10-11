@@ -5,57 +5,71 @@
    const ldImage = (listing.image && !listing.image.startsWith('data:')) ? listing.image : 'https://warmupexam.com/images/og-banner.jpg'; %>
 
 
-<div class="relative overflow-hidden w-full bg-gradient-to-br from-indigo-80 via-indigo-50 to-indigo-100 pt-[125px] sm:pt-[135px] pb-6 sm:pb-8 px-4 border-b border-indigo-100">
-    <div class="max-w-6xl mx-auto">
+<div class="relative overflow-hidden w-full bg-gradient-to-br from-indigo-50 via-indigo-50 to-indigo-100 pt-[100px] sm:pt-[125px] lg:pt-[135px] pb-8 px-4 border-b border-indigo-100 lg:h-[400px]">
 
+    <!-- Decorative glow -->
+    <div class="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl"></div>
+    <div class="pointer-events-none absolute top-10 right-1/3 h-56 w-56 rounded-full bg-violet-200/40 blur-3xl"></div>
 
-<div class="mb-3 -ml-2 sm:-ml-3">
-    <a href="#" id="backBtn"
-       class="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-1.5 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 backdrop-blur transition hover:text-indigo-600 hover:ring-indigo-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-        <i class="fa-solid fa-arrow-left text-xs"></i> Back
-    </a>
-</div>
+    <div class="relative max-w-6xl mx-auto lg:h-full lg:flex lg:flex-col lg:justify-center">
+        <div class="lg:w-2/3 lg:pr-8">
 
-    <h1 class="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-snug sm:leading-tight">
-        <%= listing.title %>
-    </h1>
+            <!-- Back button -->
+            <div class="mb-4">
+                <a href="#" id="backBtn"
+                   class="inline-flex items-center gap-2 rounded-full bg-white/90 px-3.5 py-1.5 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 backdrop-blur transition hover:text-indigo-600 hover:ring-indigo-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                    <i class="fa-solid fa-arrow-left text-xs"></i> Back
+                </a>
+            </div>
 
-    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-6 mt-3 sm:mt-4">
+            <!-- Breadcrumb -->
+            <nav aria-label="Breadcrumb" class="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-slate-500">
+                <a href="/" class="hover:text-indigo-600 transition">Home</a>
+                <i class="fa-solid fa-chevron-right text-[8px] text-slate-400"></i>
+                <a href="/categories/<%= encodeURIComponent(category.slug) %>" class="hover:text-indigo-600 transition"><%= category.name %></a>
+                <i class="fa-solid fa-chevron-right text-[8px] text-slate-400"></i>
+                <span class="font-medium text-slate-700 line-clamp-1"><%= listing.title %></span>
+            </nav>
 
-        <div class="flex items-center gap-1.5 sm:gap-2">
-            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 text-[10px] sm:text-xs shrink-0">
-                <i class="fa-solid fa-graduation-cap"></i>
-            </span>
-            <span class="text-slate-600 text-[11px] sm:text-sm font-medium">
-                For <%= listing.exam %> Aspirants
-            </span>
+            <!-- Title -->
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight text-slate-900">
+                <%= listing.title %>
+            </h1>
+            <div class="mt-3 h-1 w-14 rounded-full bg-gradient-to-r from-indigo-600 to-violet-400"></div>
+
+            <!-- Info chips -->
+            <div class="mt-5 flex flex-wrap items-center gap-2 sm:gap-3">
+
+                <div class="inline-flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-3.5 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
+                    <span class="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] sm:text-xs text-indigo-600">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </span>
+                    <span class="text-xs sm:text-sm font-semibold text-slate-700">For <%= listing.exam %> Aspirants</span>
+                </div>
+
+                <div class="inline-flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-3.5 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
+                    <span class="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] sm:text-xs text-indigo-600">
+                        <i class="fa-regular fa-clock"></i>
+                    </span>
+                    <span class="text-xs sm:text-sm font-semibold text-slate-700"><%= listing.validityDays %> days access</span>
+                </div>
+
+                <div class="inline-flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-3.5 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
+                    <span class="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] sm:text-xs text-indigo-600">
+                        <i class="fa-solid fa-file-lines"></i>
+                    </span>
+                    <span class="text-xs sm:text-sm font-semibold text-slate-700"><%= totalTestCount %> Total Tests</span>
+                </div>
+
+            </div>
         </div>
-
-        <div class="flex items-center gap-1.5 sm:gap-2">
-            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 text-[10px] sm:text-xs shrink-0">
-                <i class="fa-regular fa-clock"></i>
-            </span>
-            <span class="text-slate-600 text-[11px] sm:text-sm font-medium">
-                <%= listing.validityDays %> days access after enrollment
-            </span>
-        </div>
-
-        <div class="flex items-center gap-1.5 sm:gap-2">
-            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-600 text-[10px] sm:text-xs shrink-0">
-                <i class="fa-solid fa-file-lines"></i>
-            </span>
-            <span class="text-slate-600 text-[11px] sm:text-sm font-medium">
-                <%= totalTestCount %> Total Tests
-            </span>
-        </div>
-
     </div>
 
-     <div class="hidden lg:block absolute -right-4 -bottom-4 opacity-[0.07] text-[16rem] text-indigo-900 pointer-events-none">
+    <!-- Big faded icon -->
+    <div class="hidden lg:block absolute -right-4 -bottom-4 opacity-[0.07] text-[16rem] text-indigo-900 pointer-events-none">
         <i class="<%= category.icon %>"></i>
     </div>
 
-</div>
 </div>
 
 <div class="max-w-6xl mx-auto px-4 pt-6 sm:pt-8 pb-24">
@@ -66,22 +80,42 @@
 
  
 
-    <div class="border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-6 rounded-xl bg-white">
-        <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">About the Test Series</h2>
-        <ul class="space-y-3 sm:space-y-4">
+    <section class="relative overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-sm transition-shadow duration-300 hover:shadow-lg">
+ 
+
+    <!-- Soft glow -->
+    <div class="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-indigo-100/60 blur-3xl"></div>
+
+    <div class="relative p-4 sm:p-6 lg:p-8">
+
+        <!-- Heading -->
+        <div class="mb-5 sm:mb-6 flex items-center gap-3">
+            <span class="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-500 text-white shadow-md shadow-indigo-200">
+                <i class="fa-solid fa-book-open text-base sm:text-lg"></i>
+            </span>
+            <div>
+                <h2 class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900">About the Test Series</h2>
+                <p class="text-xs sm:text-sm text-slate-500">Everything included in this series</p>
+            </div>
+        </div>
+
+        <!-- Items grid -->
+        <ul class="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
             <% aboutTestSeries.forEach(item => { %>
-                <li class="flex items-start gap-2.5 sm:gap-3">
-                    <span class="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 shrink-0 text-sm sm:text-base">
+                <li class="group flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:p-4 transition duration-300 hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-white hover:shadow-md">
+                    <span class="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-sm sm:text-base text-indigo-600 ring-1 ring-indigo-100 transition duration-300 group-hover:bg-indigo-600 group-hover:text-white">
                         <i class="<%= item.icon %>"></i>
                     </span>
-                    <p class="text-sm sm:text-base text-gray-700">
-                        <span class="font-semibold text-gray-900"><%= item.title %>:</span>
-                        <%= item.text %>
-                    </p>
+                    <div class="min-w-0">
+                        <h3 class="text-sm sm:text-base font-bold text-slate-900"><%= item.title %></h3>
+                        <p class="mt-0.5 text-xs sm:text-sm leading-relaxed text-slate-600"><%= item.text %></p>
+                    </div>
                 </li>
             <% }) %>
         </ul>
+
     </div>
+</section>
 
     <%- include('../owner/contentBlocks', { listing, isOwner, allBlocks }) %>
 
@@ -153,6 +187,8 @@
         </div>
     </div>
     <% } %>
+
+    <%- include('../partials/planCompare', { listing, cspNonce }) %>
 
     <!-- FAQ Section -->
  
@@ -247,12 +283,12 @@
 </div>
 
         <!-- Desktop: Sticky Sidebar -->
-<div class="hidden lg:block lg:col-span-1 -mt-[108px] relative z-20 pb-10">
+<div class="hidden lg:block lg:col-span-1 -mt-[244px] relative z-20 pb-10">
     <div class="sticky top-28 bg-white border border-gray-200 rounded-xl shadow-lg p-5">
 
         <!-- Image + Badge overlay -->
         <div class="relative mb-4">
-            <img src="<%= listing.image %>" alt="<%= listing.title %> cover image" class="w-full h-48 object-cover rounded-lg" loading="lazy">
+            <img src="<%= listing.image %>" alt="<%= listing.title %> cover image" width="400" height="192" fetchpriority="high" class="w-full h-48 object-cover rounded-lg">
 
             <span class="<%= listing.type === 'Free' 
                 ? 'bg-green-50 text-green-600 border-green-300' 
@@ -362,36 +398,18 @@
   "name": <%- ld(listing.title) %>,
   "description": <%- ld(listing.shortDescription || listing.description || (listing.title + ' - mock test series for ' + listing.exam + ' aspirants')) %>,
   "image": <%- ld(ldImage) %>,
-  "url": "https://warmupexam.com/test/<%= listing.slug %>",
-  "provider": {
-    "@type": "Organization",
-    "name": "WarmupExam",
-    "sameAs": "https://warmupexam.com"
-  },
-  <% if (listing.type !== 'Free' && listing.price) { %>
+  "url": "https://warmupexam.com/test/<%= encodeURIComponent(listing.slug) %>",
+  "inLanguage": <%- ld(listing.language === 'Hindi' ? 'hi' : 'en') %>,
+  "provider": { "@type": "Organization", "name": "WarmupExam", "url": "https://warmupexam.com" },
   "offers": {
     "@type": "Offer",
-    "category": "Paid",
-    "price": "<%= listing.price %>",
+    "category": <%- ld(listing.type === 'Free' ? 'Free' : 'Paid') %>,
+    "price": "<%= listing.type === 'Free' ? 0 : (listing.price || 0) %>",
     "priceCurrency": "INR",
     "availability": "https://schema.org/InStock",
-    "url": "https://warmupexam.com/test/<%= listing.slug %>"
+    "url": "https://warmupexam.com/test/<%= encodeURIComponent(listing.slug) %>"
   },
-  <% } else { %>
-  "offers": {
-    "@type": "Offer",
-    "category": "Free",
-    "price": "0",
-    "priceCurrency": "INR",
-    "availability": "https://schema.org/InStock",
-    "url": "https://warmupexam.com/test/<%= listing.slug %>"
-  },
-  <% } %>
-  "hasCourseInstance": {
-    "@type": "CourseInstance",
-    "courseMode": "online",
-    "courseWorkload": "P<%= listing.validityDays %>D"
-  }
+  "hasCourseInstance": { "@type": "CourseInstance", "courseMode": "online" }
 }
 </script>
 
@@ -403,7 +421,7 @@
   "@type": "BreadcrumbList",
   "itemListElement": [
     { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://warmupexam.com/" },
-    { "@type": "ListItem", "position": 2, "name": <%- ld(listing.exam) %>, "item": "https://warmupexam.com/alltests?exam=<%= encodeURIComponent(listing.exam) %>" },
+    { "@type": "ListItem", "position": 2, "name": <%- ld(category.name) %>, "item": "https://warmupexam.com/categories/<%= encodeURIComponent(category.slug) %>" },
     { "@type": "ListItem", "position": 3, "name": <%- ld(listing.title) %>, "item": "https://warmupexam.com/test/<%= listing.slug %>" }
   ]
 }

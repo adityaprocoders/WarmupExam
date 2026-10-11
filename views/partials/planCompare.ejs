@@ -1,0 +1,170 @@
+<%
+  const _L = (typeof listing !== 'undefined' && listing) ? listing : null;
+  const _cur = _L ? _L.type : null;
+  const _price = (_L && _L.type === 'Paid' && _L.price) ? _L.price : null;
+  const _orig  = (_L && _price && _L.originalPrice && _L.originalPrice > _price) ? _L.originalPrice : null;
+  const _count = (typeof totalTestCount !== 'undefined' && totalTestCount) ? totalTestCount : null;
+
+  const ICON_YES = '<svg class="wx-ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="10" class="wx-ic-bg"/><path d="M5.8 10.4l2.9 2.9 5.5-5.9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const ICON_NO  = '<svg class="wx-ic wx-ic--no" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 10h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+
+  const yes = (t) => '<span class="wx-cell">' + ICON_YES + '<span>' + t + '</span></span>';
+  const no  = (t) => '<span class="wx-cell wx-cell--off">' + ICON_NO + '<span>' + t + '</span></span><span class="wx-sr"> (not included)</span>';
+  const val = (t) => '<span class="wx-cell wx-cell--val"><span>' + t + '</span></span>';
+
+  // Total tests: real number for the series being viewed, typical range for the other plan
+  const freeTests = (_cur === 'Free' && _count) ? (_count + ' tests in this series') : 'Usually 5 to 20 tests';
+  const premTests = (_cur === 'Paid' && _count) ? (_count + ' tests in this series') : 'Usually 100 to 300+ tests';
+%>
+
+<style nonce="<%= cspNonce %>">
+  .wx-cmp{
+    --ink:#1b1a4a; --paper:#fff; --line:#e4e6ef;
+    --text:#1e293b; --muted:#64748b; --mint:#059669; --mint-bg:#d1fae5;
+    --amber:#fbbf24; --amber-ink:#78350f;
+    max-width:56rem; margin:3rem auto 0;
+    color:var(--text); font-family:Inter,system-ui,sans-serif;
+  }
+  .wx-cmp__head{margin-bottom:1.25rem}
+  .wx-cmp__title{font-family:Sora,Inter,sans-serif;font-weight:800;font-size:1.5rem;line-height:1.2;color:#0f172a;margin:0}
+  .wx-cmp__sub{margin:.4rem 0 0;color:var(--muted);font-size:.95rem;line-height:1.5;max-width:42rem}
+
+  .wx-cmp__frame{border:1px solid var(--line);border-radius:20px;overflow:hidden;background:var(--paper);
+    box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 32px -16px rgba(27,26,74,.25)}
+  .wx-cmp__table{width:100%;border-collapse:collapse;table-layout:fixed}
+  .wx-cmp__table th,.wx-cmp__table td{padding:.95rem 1.1rem;text-align:left;vertical-align:middle;font-size:.9rem;line-height:1.4;border-top:1px solid var(--line)}
+  .wx-cmp__table thead th{border-top:0}
+  .wx-cmp__table col.c-feat{width:38%} .wx-cmp__table col.c-free{width:27%} .wx-cmp__table col.c-prem{width:35%}
+
+  .wx-th{vertical-align:bottom;padding-top:1.4rem;padding-bottom:1.1rem}
+  .wx-th__name{display:block;font-family:Sora,Inter,sans-serif;font-weight:700;font-size:1.05rem}
+  .wx-th__note{display:block;margin-top:.15rem;font-size:.78rem;font-weight:500;color:var(--muted)}
+  .wx-tag{display:inline-block;margin-left:.45rem;padding:.12rem .5rem;border-radius:999px;font-size:.68rem;font-weight:700;
+    vertical-align:middle;background:#e0e7ff;color:#3730a3}
+
+  .wx-cmp__table tbody th[scope="row"]{font-weight:600;color:#0f172a}
+
+  /* Premium column: the one dark, memorable element */
+  .wx-prem{background:var(--ink);color:#e0e7ff;border-top-color:rgba(255,255,255,.08)!important}
+  .wx-cmp__table thead th.wx-prem{background:linear-gradient(180deg,#26246b 0%,var(--ink) 100%);color:#fff;position:relative}
+  .wx-cmp__table thead th.wx-prem::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#fbbf24,#f59e0b)}
+  .wx-prem .wx-th__note{color:#a5b4fc}
+  .wx-prem .wx-tag{background:var(--amber);color:var(--amber-ink)}
+
+  .wx-cell{display:flex;align-items:flex-start;gap:.55rem}
+  .wx-cell--val{font-weight:600}
+  .wx-cell--off{color:#94a3b8}
+  .wx-ic{flex:0 0 1.15rem;width:1.15rem;height:1.15rem;margin-top:.05rem;color:var(--mint)}
+  .wx-ic-bg{fill:var(--mint-bg)}
+  .wx-prem .wx-ic{color:var(--ink)} .wx-prem .wx-ic-bg{fill:var(--amber)}
+  .wx-ic--no{color:#cbd5e1}
+  .wx-prem .wx-ic--no{color:#6366f1}
+  .wx-prem .wx-cell--off{color:#818cf8}
+  .wx-price{font-family:Sora,Inter,sans-serif;font-weight:800;font-size:1.15rem}
+  .wx-was{margin-left:.4rem;font-size:.8rem;font-weight:500;text-decoration:line-through;opacity:.6}
+
+  .wx-cmp__foot{margin:.9rem .25rem 0;font-size:.8rem;color:var(--muted);line-height:1.5}
+  .wx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+  @media (max-width:640px){
+    .wx-cmp{margin-top:2rem}
+    .wx-cmp__title{font-size:1.25rem}
+    .wx-cmp__table th,.wx-cmp__table td{padding:.75rem .65rem;font-size:.8rem}
+    .wx-cmp__table col.c-feat{width:34%} .wx-cmp__table col.c-free{width:30%} .wx-cmp__table col.c-prem{width:36%}
+    .wx-th__name{font-size:.95rem}
+    .wx-tag{display:block;margin:.3rem 0 0;width:max-content}
+    .wx-cell{gap:.4rem}
+    .wx-ic{flex-basis:1rem;width:1rem;height:1rem}
+  }
+</style>
+
+<section class="wx-cmp" aria-labelledby="wxCmpTitle">
+  <div class="wx-cmp__head">
+    <h2 class="wx-cmp__title" id="wxCmpTitle">Free or Premium: what changes for you</h2>
+    <p class="wx-cmp__sub">Both give you real mock tests and instant analysis. Premium adds Daily Warmup, full attempt history, answer key downloads and an ad-free screen.</p>
+  </div>
+
+  <div class="wx-cmp__frame">
+    <table class="wx-cmp__table">
+      <caption class="wx-sr">Comparison of Free and Premium test series</caption>
+      <colgroup><col class="c-feat"><col class="c-free"><col class="c-prem"></colgroup>
+      <thead>
+        <tr>
+          <th scope="col" class="wx-th"><span class="wx-sr">Feature</span></th>
+          <th scope="col" class="wx-th">
+            <span class="wx-th__name">Free<% if (_cur === 'Free') { %><span class="wx-tag">This series</span><% } %></span>
+            <span class="wx-th__note">Start practising today</span>
+          </th>
+          <th scope="col" class="wx-th wx-prem">
+            <span class="wx-th__name">Premium<% if (_cur === 'Paid') { %><span class="wx-tag">This series</span><% } %></span>
+            <span class="wx-th__note">The full series</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">How you join</th>
+          <td><%- val('One tap, login needed') %></td>
+          <td class="wx-prem"><%- val('Secure checkout via Razorpay') %></td>
+        </tr>
+        <tr>
+          <th scope="row">Price</th>
+          <td><%- val('<span class="wx-price">₹0</span>') %></td>
+          <td class="wx-prem"><%- val(_price ? ('<span class="wx-price">₹' + _price + '</span>' + (_orig ? '<span class="wx-was">₹' + _orig + '</span>' : '')) : 'One-time price per series') %></td>
+        </tr>
+        <tr>
+          <th scope="row">Access period</th>
+          <td><%- yes('Fixed validity per series') %></td>
+          <td class="wx-prem"><%- yes('Fixed validity per series') %></td>
+        </tr>
+        <tr>
+          <th scope="row">Mock tests, sections and folders</th>
+          <td><%- yes('Included') %></td>
+          <td class="wx-prem"><%- yes('Included') %></td>
+        </tr>
+        <tr>
+          <th scope="row">Total tests</th>
+          <td><%- val(freeTests) %></td>
+          <td class="wx-prem"><%- val(premTests) %></td>
+        </tr>
+        <tr>
+          <th scope="row">Instant analysis and solutions</th>
+          <td><%- yes('Included') %></td>
+          <td class="wx-prem"><%- yes('Included') %></td>
+        </tr>
+        <tr>
+          <th scope="row">Weak area report</th>
+          <td><%- yes('Included') %></td>
+          <td class="wx-prem"><%- yes('Included') %></td>
+        </tr>
+        <tr>
+          <th scope="row">Live Tests and leaderboard</th>
+          <td><%- yes('Included') %></td>
+          <td class="wx-prem"><%- yes('Included') %></td>
+        </tr>
+        <tr>
+          <th scope="row">Daily Warmup</th>
+          <td><%- no('Premium only') %></td>
+          <td class="wx-prem"><%- yes('Every day') %></td>
+        </tr>
+        <tr>
+          <th scope="row">When you re-attempt a test</th>
+          <td><%- val('New result replaces the old one') %></td>
+          <td class="wx-prem"><%- val('Every attempt is saved') %></td>
+        </tr>
+        <tr>
+          <th scope="row">Answer key PDF</th>
+          <td><%- no('Premium only') %></td>
+          <td class="wx-prem"><%- yes('Download any time') %></td>
+        </tr>
+        <tr>
+          <th scope="row">Ads</th>
+          <td><%- val('Ads are shown') %></td>
+          <td class="wx-prem"><%- val('No ads') %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="wx-cmp__foot">Saved attempts and downloads stay available while your access is active. Live Tests need an active series for the same exam.</p>
+</section>

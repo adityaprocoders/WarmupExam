@@ -116,42 +116,50 @@ if (omrGrid) {
 const faqList = document.getElementById('faqList');
 
 if (faqList) {
-  const faqData = [
+    const faqData = [
     {
       q: "Is WarmUpExam free to use?",
-      a: "Yes. Many mock tests are completely free. Premium plans unlock AI-powered analysis, custom mock generation and advanced reports."
+      a: "Yes, you can start free. Free test series are open to every logged-in user, and your first mock needs no card. The Custom Paper Generator is free too. Premium test series are paid, and the price is shown on each series card."
     },
     {
       q: "Does the mock actually apply negative marking?",
-      a: "Yes — exactly as configured for each subject in that series. Positive and negative marks are set once per subject at series level and applied automatically to every question, so your score reflects the real exam's marking scheme, not a rough estimate."
+      a: "Yes. Positive and negative marks are set per subject for each series and applied automatically to every question, so your score follows the real exam's marking scheme."
     },
     {
       q: "Can I attempt on my phone?",
-      a: "Yes, the exam interface — timer, OMR palette, fullscreen mode — works on phone, tablet and laptop. For a full-length mock we'd still recommend a laptop or tablet, purely for screen space, but nothing is phone-restricted."
+      a: "Yes. The exam screen, with its timer, question palette and fullscreen mode, works on phone, tablet and laptop. For a full-length mock we recommend a laptop or tablet for screen space."
     },
     {
       q: "How does AI Analysis work?",
-      a: "After every mock, our AI analyzes your score, accuracy, speed, weak topics, strong topics, expected rank and gives personalized improvement suggestions."
+      a: "After every mock, it analyses your score, accuracy, speed, strong and weak topics, and expected rank, then gives personalised suggestions on what to improve."
     },
     {
       q: "What happens if my internet drops mid-test?",
-      a: "Your responses are saved every time you hit Save & Next or Mark for Review, so a brief drop won't wipe your progress. We do recommend a stable connection for the full duration, since the timer keeps running server-side."
+      a: "Your answers are saved each time you press Save & Next or Mark for Review, so a short drop won't erase your progress. The timer keeps running on our server, so try to stay on a stable connection."
     },
     {
       q: "How is the rank predicted?",
-      a: "It's based on your accuracy and speed trend across your last 5 mocks in that exam category, compared against the overall attempt pool. Treat it as a directional signal for where you stand, not a guaranteed outcome."
+      a: "It uses your accuracy and speed trend across your last 5 mocks in that exam category, compared with other test-takers. Treat it as a direction, not a guaranteed result."
     },
     {
       q: "Can I practice only weak topics?",
-      a: "Absolutely. WarmUpExam automatically identifies your weak areas and creates focused practice tests."
+      a: "Yes. Every wrong answer is tagged by topic, and you get a Daily Warmup, revision tests built from your incorrect, skipped or marked questions, and topic-wise practice tests."
+    },
+    {
+      q: "How do Live Tests work?",
+      a: "Live Tests follow the real exam pattern, timing and marking. Each one stays open for 24 hours, and you get instant analysis, a leaderboard and your rank."
+    },
+    {
+      q: "How long do I get access after enrolling?",
+      a: "Each test series stays open for the number of days shown on its card, counted from enrollment. After you enroll, the card shows \"Access valid until\" with your exact date."
     },
     {
       q: "Can I get a refund if it's not for me?",
-      a: "Yes. Every paid batch carries a 7-day money-back guarantee from the date of purchase — no questions asked. Write to us from Contact Us and it's processed within 3–5 working days."
+      a: "Yes. Every paid test series has a 7-day money-back guarantee from the purchase date. Write to us through Contact Us and it's processed within 3 to 5 working days."
     },
     {
-      q: "Do batches expire?",
-      a: "A batch stays valid until the exam date it's built around, so you're not racing a subscription clock — just the actual exam."
+      q: "My payment failed but money was deducted. What now?",
+      a: "Contact us through Contact Us with your payment reference and we will look into it."
     }
   ];
 

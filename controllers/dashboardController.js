@@ -211,14 +211,23 @@ sections.forEach((sec, idx) => {
             user: req.user._id
         }).sort({ createdAt: -1 });
 
-        const testsAttemptedCount = allAttempts.length;
+        // Stats ke liye har test ka sirf LATEST attempt (allAttempts createdAt: -1 sorted hai)
+        // History (recentActivity, performanceGrowth) neeche allAttempts se hi banegi
+        const latestPerTest = {};
+        allAttempts.forEach(a => {
+            const k = String(a.test);
+            if (!latestPerTest[k]) latestPerTest[k] = a;
+        });
+        const statAttempts = Object.values(latestPerTest);
+
+        const testsAttemptedCount = statAttempts.length;
 
         const avgScore = testsAttemptedCount > 0
-            ? Math.round((allAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / testsAttemptedCount) * 10) / 10
+            ? Math.round((statAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / testsAttemptedCount) * 10) / 10
             : 0;
 
-        const totalCorrect = allAttempts.reduce((sum, a) => sum + (a.correctCount || 0), 0);
-        const totalWrong = allAttempts.reduce((sum, a) => sum + (a.wrongCount || 0), 0);
+        const totalCorrect = statAttempts.reduce((sum, a) => sum + (a.correctCount || 0), 0);
+        const totalWrong = statAttempts.reduce((sum, a) => sum + (a.wrongCount || 0), 0);
         const totalAttemptedQs = totalCorrect + totalWrong;
         const avgAccuracy = totalAttemptedQs > 0
             ? Math.round((totalCorrect / totalAttemptedQs) * 100)
@@ -229,8 +238,19 @@ sections.forEach((sec, idx) => {
         /* — isi se Comparison + Score Distribution + Rank Range dynamic     */
         /* banenge (koi hardcoded 55.32 / 90.00 / ±15% ab nahi)               */
         /* ---------------------------------------------------------------- */
-        const allStudentsAttempts = await Attempt.find({ test: { $in: allTestIds } })
-            .select("user score");
+        const allStudentsAttemptsRaw = await Attempt.find({ test: { $in: allTestIds } })
+            .select("user test score")
+            .sort({ createdAt: -1 });
+
+        // Har student + test ka sirf latest attempt
+        const seenUserTest = new Set();
+        const allStudentsAttempts = allStudentsAttemptsRaw.filter(a => {
+            if (!a.user) return false;
+            const k = `${a.user}_${a.test}`;
+            if (seenUserTest.has(k)) return false;
+            seenUserTest.add(k);
+            return true;
+        });
 
         const attemptsByUser = {};
         allStudentsAttempts.forEach(a => {

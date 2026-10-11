@@ -371,7 +371,7 @@ export const submitAttempt = async (req, res) => {
         safeTime = Math.min(elapsed, allowedSeconds);
     }
 
-    const listingForMarks = await Listing.findById(test.listing).select("marks");
+    const listingForMarks = await Listing.findById(test.listing).select("marks type");
     const qualifyingSubjects = new Set(
         (listingForMarks?.marks || [])
             .filter(m => m.qualifyingOnly)
@@ -470,8 +470,11 @@ export const submitAttempt = async (req, res) => {
         throw err;
     }
 
-    // Naya attempt ban gaya, ab purane delete karo (sirf non-live)
-    if (!test.isLiveTest) {
+    // Free listing test: re-attempt pe purana attempt delete hoga (sirf latest bachega)
+    // Paid listing test: purane attempts rahenge, naya alag record banega
+    // Live test: koi change nahi
+    const isPaidListing = listingForMarks?.type === "Paid";
+    if (!test.isLiveTest && !isPaidListing) {
         await Attempt.deleteMany({ user: req.user._id, test: testId, _id: { $ne: attempt._id } });
     }
 
