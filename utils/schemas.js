@@ -59,6 +59,14 @@ export const verifyResetTokenSchema = Joi.object({
     resetToken: Joi.string().trim().required()
 });
 
+export const verifyResetOtpSchema = Joi.object({
+    email: Joi.string().trim().lowercase().email().required(),
+    otp: Joi.string().length(6).pattern(/^[0-9]+$/).required().messages({
+        "string.length": "OTP must be 6 digits",
+        "string.pattern.base": "OTP must contain only numbers"
+    })
+});
+
 export const updateProfileSchema = Joi.object({
     name: Joi.string().trim().min(2).max(50).required(),
     username: Joi.string().trim().lowercase().pattern(/^[a-z0-9_]{3,20}$/).allow("", null).messages({

@@ -9,7 +9,7 @@ import AIUsage from "../models/AIUsage.js";
 import LiveTestResult from "../models/LiveTestResult.js";
 import CustomAIPaper from "../models/CustomAIPaper.js";
 import CustomTestPayment from "../models/customTestPayment.js";
-
+import { deleteExtraUserData } from "../utils/deleteUserData.js";
 
 // ---------------- SHOW PROFILE ----------------
 export const getProfile = async (req, res) => {
@@ -302,6 +302,22 @@ export const deleteAccount = async (req, res) => {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
+                const { password, confirmText } = req.body || {};
+
+        if (user.authProvider === "google") {
+            if (confirmText !== "DELETE") {
+                return res.status(400).json({ success: false, message: "Please type DELETE to confirm." });
+            }
+        } else {
+            if (typeof password !== "string" || password.length === 0) {
+                return res.status(400).json({ success: false, message: "Please enter your password." });
+            }
+            const isMatch = await user.comparePassword(password);
+            if (!isMatch) {
+                return res.status(403).json({ success: false, message: "Incorrect password." });
+            }
+        }
+
         // Avatar cloudinary se hatao
         const publicId = getPublicIdFromUrl(user.avatar);
         if (publicId) {
@@ -316,6 +332,7 @@ export const deleteAccount = async (req, res) => {
         await LiveTestResult.deleteMany({ user: userId });
         await CustomAIPaper.deleteMany({ user: userId });
         await CustomTestPayment.deleteMany({ user: userId });
+                await deleteExtraUserData(userId);
         await User.findByIdAndDelete(userId);
 
 

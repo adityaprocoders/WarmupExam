@@ -200,7 +200,9 @@ if (testLanguageMode !== "multiple") {
         languages: testLanguages,
         showLanguage: testShowLanguage,
         timeStrategy: body.timeStrategy || "total",
-        duration: body.duration || 60,
+        duration: (body.timeStrategy === "subject" && Array.isArray(body.subjectTime) && body.subjectTime.length > 0)
+            ? body.subjectTime.reduce((s, st) => s + (Number(st.duration) || 0), 0)
+            : (body.duration || 60),
         subjectTime: body.subjectTime || [],
         totalQuestions: Array.isArray(body.questions) ? body.questions.length : (body.totalQuestions || 0),
         totalMarks: calculatedTotalMarks,
@@ -447,7 +449,9 @@ export const updateTestBuilder = async (req, res) => {
         existingTest.languages = testLanguages;
         existingTest.showLanguage = testShowLanguage;
         existingTest.timeStrategy = body.timeStrategy || "total";
-        existingTest.duration = body.duration || 60;
+        existingTest.duration = (body.timeStrategy === "subject" && Array.isArray(body.subjectTime) && body.subjectTime.length > 0)
+            ? body.subjectTime.reduce((s, st) => s + (Number(st.duration) || 0), 0)
+            : (body.duration || 60);
         existingTest.subjectTime = body.subjectTime || [];
         existingTest.totalQuestions = Array.isArray(body.questions) ? body.questions.length : 0;
         existingTest.totalMarks = calculatedTotalMarks;

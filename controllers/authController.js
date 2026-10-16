@@ -7,6 +7,7 @@ import { getDashboardRedirectUrl } from "../utils/authHelpers.js";
 import { logOwnerLogin } from "../utils/loginLogger.js";
 import LoginHistory from "../models/LoginHistory.js";
 import { generateSessionId } from "../utils/sessionHelper.js";
+import { isSafeRedirectPath } from "../utils/safeRedirect.js";
 import crypto from "crypto";
 import { generateOtp, hashSecret, safeEqualHash } from "../utils/secretHash.js";
 
@@ -110,10 +111,10 @@ export const register = async (req, res, next) => {
             req.flash("success", "Account created successfully!");
             const sessionReturnTo = req.session.returnTo;
             const hasSessionReturnTo = sessionReturnTo
-                && sessionReturnTo.startsWith('/')
+                && isSafeRedirectPath(sessionReturnTo)
                 && sessionReturnTo !== '/';
 
-            const redirectUrl = (req.body.returnTo && req.body.returnTo.startsWith('/'))
+            const redirectUrl = (req.body.returnTo && isSafeRedirectPath(req.body.returnTo))
                 ? req.body.returnTo
                 : hasSessionReturnTo
                 ? sessionReturnTo
@@ -152,12 +153,12 @@ export const login = (req, res, next) => {
             const dashboardUrl = await getDashboardRedirectUrl(user);
 
             const hasSpecificReturnTo = req.body.returnTo
-                && req.body.returnTo.startsWith('/')
+                && isSafeRedirectPath(req.body.returnTo)
                 && req.body.returnTo !== '/';
 
             const sessionReturnTo = req.session.returnTo;
             const hasSessionReturnTo = sessionReturnTo
-                && sessionReturnTo.startsWith('/')
+                && isSafeRedirectPath(sessionReturnTo)
                 && sessionReturnTo !== '/';
 
             const redirectUrl = hasSpecificReturnTo
@@ -198,7 +199,7 @@ export const googleCallback = (req, res, next) => {
 
             const sessionReturnTo = req.session.returnTo;
             const hasSessionReturnTo = sessionReturnTo
-                && sessionReturnTo.startsWith('/')
+                && isSafeRedirectPath(sessionReturnTo)
                 && sessionReturnTo !== '/';
 
             const redirectUrl = hasSessionReturnTo
@@ -249,10 +250,10 @@ export const forgotPassword = async (req, res) => {
         const user = await User.findOne({ email: cleaned, authProvider: "local" });
 
         if (!user) {
-            return res.json({ success: true, message: "If an account exists for this email address, an OTP has been sent." });
+            return res.json({ success: true, message: "OTP sent to your email", expiresIn: 300 });
         }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = generateOtp();
         const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
         const resetToken = crypto.randomBytes(32).toString("hex");
@@ -260,9 +261,10 @@ export const forgotPassword = async (req, res) => {
 
         const resetLink = `${process.env.BASE_URL}/?resetEmail=${encodeURIComponent(cleaned)}&resetToken=${resetToken}`;
 
-        user.resetOtp = otp;
+        user.resetOtp = hashSecret(otp);
         user.resetOtpExpiry = otpExpiry;
-        user.resetToken = resetToken;
+        user.resetOtpAttempts = 0;
+        user.resetToken = hashSecret(resetToken);
         user.resetTokenExpiry = resetTokenExpiry;
         await user.save();
 
@@ -320,7 +322,7 @@ export const verifyResetToken = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid or expired link" });
         }
 
-        if (user.resetToken !== resetToken) {
+        if (!safeEqualHash(user.resetToken, resetToken)) {
             return res.status(400).json({ success: false, message: "Invalid or expired link" });
         }
 
@@ -366,7 +368,22 @@ export const resetPassword = async (req, res) => {
         if (!user.resetOtp || !user.resetOtpExpiry) {
             return res.status(400).json({ success: false, message: "Invalid request. Please request a new OTP." });
         }
-        if (user.resetOtp !== otp) {
+
+        // Max 5 koshish. Counter atomic hai, to ek saath 100 request bhejne se bypass nahi hoga
+        const tracked = await User.findOneAndUpdate(
+            { _id: user._id },
+            { $inc: { resetOtpAttempts: 1 } },
+            { new: true }
+        );
+        if (tracked.resetOtpAttempts > 5) {
+            await User.updateOne(
+                { _id: user._id },
+                { $set: { resetOtp: null, resetOtpExpiry: null, resetOtpAttempts: 0 } }
+            );
+            return res.status(429).json({ success: false, message: "Too many incorrect attempts. Please request a new OTP." });
+        }
+
+        if (!safeEqualHash(user.resetOtp, otp)) {
             return res.status(400).json({ success: false, message: "Incorrect OTP" });
         }
         if (new Date() > user.resetOtpExpiry) {
@@ -380,7 +397,7 @@ export const resetPassword = async (req, res) => {
         if (!user.resetToken || !user.resetTokenExpiry) {
             return res.status(400).json({ success: false, message: "Invalid or expired link" });
         }
-        if (user.resetToken !== resetToken) {
+        if (!safeEqualHash(user.resetToken, resetToken)) {
             return res.status(400).json({ success: false, message: "Invalid or expired link" });
         }
         if (new Date() > user.resetTokenExpiry) {
@@ -394,6 +411,7 @@ export const resetPassword = async (req, res) => {
     // Naya password set karo — pre('save') hook khud hash kar dega
     user.password = newPassword;
     user.activeSessionId = generateSessionId(); // purane saare sessions logout ho jayenge
+    user.resetOtpAttempts = 0;
     user.resetOtp = null;
     user.resetOtpExpiry = null;
     user.resetToken = null;
@@ -401,4 +419,69 @@ export const resetPassword = async (req, res) => {
     await user.save();
 
     res.json({ success: true, message: "Password reset successful" });
+};
+
+
+// Step 1: sirf OTP verify karo. Sahi ho to password step ke liye naya one-time resetToken do
+export const verifyResetOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.status(400).json({ success: false, message: "Email and OTP are required." });
+        }
+
+        const cleaned = email.trim().toLowerCase();
+        const user = await User.findOne({ email: cleaned, authProvider: "local" });
+
+        if (!user || !user.resetOtp || !user.resetOtpExpiry) {
+            return res.status(400).json({ success: false, message: "Invalid request. Please request a new OTP." });
+        }
+
+        // Max 5 koshish (atomic counter)
+        const tracked = await User.findOneAndUpdate(
+            { _id: user._id },
+            { $inc: { resetOtpAttempts: 1 } },
+            { new: true }
+        );
+        if (tracked.resetOtpAttempts > 5) {
+            await User.updateOne(
+                { _id: user._id },
+                { $set: { resetOtp: null, resetOtpExpiry: null, resetOtpAttempts: 0 } }
+            );
+            return res.status(429).json({ success: false, message: "Too many incorrect attempts. Please request a new OTP." });
+        }
+
+        if (!safeEqualHash(user.resetOtp, otp)) {
+            return res.status(400).json({ success: false, message: "Incorrect OTP" });
+        }
+
+        if (new Date() > user.resetOtpExpiry) {
+            await User.updateOne(
+                { _id: user._id },
+                { $set: { resetOtp: null, resetOtpExpiry: null, resetOtpAttempts: 0 } }
+            );
+            return res.status(400).json({ success: false, message: "The OTP has expired. Please request a new one." });
+        }
+
+        // OTP sahi: OTP ek hi baar chalega (delete), aur password step ke liye naya token
+        const newResetToken = crypto.randomBytes(32).toString("hex");
+        await User.updateOne(
+            { _id: user._id },
+            {
+                $set: {
+                    resetOtp: null,
+                    resetOtpExpiry: null,
+                    resetOtpAttempts: 0,
+                    resetToken: hashSecret(newResetToken),
+                    resetTokenExpiry: new Date(Date.now() + 5 * 60 * 1000)
+                }
+            }
+        );
+
+        res.json({ success: true, message: "OTP verified", email: cleaned, resetToken: newResetToken });
+    } catch (err) {
+        console.error("❌ Verify reset OTP error:", err.message);
+        res.status(500).json({ success: false, message: "Something went wrong. Please try again." });
+    }
 };

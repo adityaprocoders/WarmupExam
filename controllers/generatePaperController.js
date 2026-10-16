@@ -5,6 +5,9 @@ import TestQuestion from "../models/TestQuestion.js";
 import Section from "../models/Section.js";
 import mongoose from "mongoose";
 import ExpressError from "../utils/ExpressError.js";
+import Category from "../models/Category.js";
+import Folder from "../models/Folder.js";
+import File from "../models/File.js";
 
 
 function getMarksForSubject(subjectsConfig, subjectName) {
@@ -23,12 +26,111 @@ function getMarksForSubject(subjectsConfig, subjectName) {
    where" batata hai, shared/reused questions ko miss kar deta hai.
 ============================================================ */
 async function getTestIdsForListing(listingId, sectionIds) {
-    const match = { listing: new mongoose.Types.ObjectId(listingId) };
+    if (!mongoose.Types.ObjectId.isValid(String(listingId))) return [];
+
+    const match = { listing: new mongoose.Types.ObjectId(String(listingId)) };
+
     if (Array.isArray(sectionIds) && sectionIds.length > 0) {
-        match.section = { $in: sectionIds };
+        const validSectionIds = sectionIds
+            .map(String)
+            .filter(id => mongoose.Types.ObjectId.isValid(id));
+        match.section = { $in: validSectionIds };
     }
+
     const tests = await Test.find(match).select("_id");
     return tests.map(t => t._id);
+}
+
+/* ============================================================
+   SECTION -> FOLDER/FILE TREE (explorer + scope)
+   Folder/File/Test teeno me parentType + parentId hota hai.
+   Root items (parentType = "section") ko section id se bucket karte hain.
+============================================================ */
+async function loadListingTree(listingId) {
+    const lid = new mongoose.Types.ObjectId(String(listingId));
+
+    const [folders, files, tests] = await Promise.all([
+        Folder.find({ listing: lid }).select("title section parentType parentId createdAt").lean(),
+        File.find({ listing: lid }).select("title section parentType parentId createdAt").lean(),
+        Test.find({ listing: lid }).select("section parentType parentId").lean()
+    ]);
+
+    const childrenOf = new Map();
+    const addChild = (kind, item) => {
+        const key = item.parentType === "section"
+            ? `section:${item.section}`
+            : `${item.parentType}:${item.parentId}`;
+        if (!childrenOf.has(key)) childrenOf.set(key, { folders: [], files: [], tests: [] });
+        childrenOf.get(key)[kind].push(item);
+    };
+    folders.forEach(f => addChild("folders", f));
+    files.forEach(f => addChild("files", f));
+    tests.forEach(t => addChild("tests", t));
+
+    const folderMap = new Map(folders.map(f => [String(f._id), f]));
+    const fileMap = new Map(files.map(f => [String(f._id), f]));
+
+    return { childrenOf, folderMap, fileMap };
+}
+
+// Kisi node (section/folder/file) ke andar ke saare Tests (recursive)
+function collectTestIdsFromTree(tree, nodeType, nodeId) {
+    const result = [];
+    const visited = new Set();
+
+    const walk = (type, id) => {
+        const key = `${type}:${id}`;
+        if (visited.has(key)) return;
+        visited.add(key);
+
+        const kids = tree.childrenOf.get(key);
+        if (!kids) return;
+
+        kids.tests.forEach(t => result.push(t._id));
+        kids.folders.forEach(f => walk("folder", String(f._id)));
+        kids.files.forEach(f => walk("file", String(f._id)));
+    };
+
+    walk(nodeType, String(nodeId));
+    return result;
+}
+
+// Frontend se aaya scope sirf folder/file ho sakta hai (section ke liye purana tareeka chalta hai)
+function normalizeScope(scope) {
+    if (!scope || typeof scope !== "object") return null;
+    const type = scope.type;
+    const id = String(scope.id || "");
+    if (!["folder", "file"].includes(type) || !mongoose.Types.ObjectId.isValid(id)) return null;
+    return { type, id };
+}
+
+async function getTestIdsForScope(listingId, scope) {
+    if (!scope || !mongoose.Types.ObjectId.isValid(String(listingId))) return [];
+    const tree = await loadListingTree(listingId);
+    const exists = scope.type === "folder" ? tree.folderMap.has(scope.id) : tree.fileMap.has(scope.id);
+    if (!exists) return [];   // dusri listing ka ya galat id
+    return collectTestIdsFromTree(tree, scope.type, scope.id);
+}
+
+/* ============================================================
+   Question source resolve: "This Listing" ya "Other" (dusri listing)
+   - sourceListingId khaali ya current jaisa ho -> current listing
+   - warna valid ObjectId + listing exist honi chahiye
+============================================================ */
+async function resolveSourceListingId(currentListingId, sourceListingId) {
+    const current = String(currentListingId);
+
+    if (!sourceListingId || String(sourceListingId) === current) {
+        return { id: current };
+    }
+    if (!mongoose.Types.ObjectId.isValid(String(sourceListingId))) {
+        return { error: "Invalid source listing.", status: 400 };
+    }
+    const exists = await Listing.exists({ _id: String(sourceListingId) });
+    if (!exists) {
+        return { error: "Source listing not found.", status: 404 };
+    }
+    return { id: String(sourceListingId) };
 }
 
 
@@ -126,13 +228,16 @@ export const getListingSubjects = async (req, res) => {
 ============================================================ */
 export const getQuestionFilters = async (req, res) => {
     const { id } = req.params;
-    const { subject, section, qsection, topic } = req.query;
+    const { subject, section, qsection, topic, scopeType, scopeId } = req.query;
 
     const sectionIds = section
         ? section.split(',').map(s => s.trim()).filter(Boolean)
         : [];
 
-    const testIds = await getTestIdsForListing(id, sectionIds);
+    const scope = normalizeScope({ type: scopeType, id: scopeId });
+    const testIds = scope
+        ? await getTestIdsForScope(id, scope)
+        : await getTestIdsForListing(id, sectionIds);
     if (testIds.length === 0) {
         return res.status(200).json({ success: true, data: { qsections: [], topics: [], subTopics: [] } });
     }
@@ -190,9 +295,32 @@ export const generatePaper = async (req, res) => {
     const maxRepeat = Math.max(1, Number(body.maxRepeat) || 2);
     const visibility = body.visibility === "public" ? "public" : "private";
 
-    const globalSectionIds = Array.isArray(body.sections) ? body.sections.filter(Boolean) : [];
-    const testIds = await getTestIdsForListing(body.listingId, globalSectionIds.length > 0 ? globalSectionIds : null);
+       const sourceResolved = await resolveSourceListingId(body.listingId, body.sourceListingId);
+    if (sourceResolved.error) {
+        return res.status(sourceResolved.status).json({ success: false, message: sourceResolved.error });
+    }
+    const sourceListingId = sourceResolved.id;
 
+    // Other mode = questions dusri listing se, subject current listing ka
+    const isOtherSource = sourceListingId !== String(body.listingId);
+
+    if (isOtherSource) {
+        for (let i = 0; i < body.criteria.length; i++) {
+            const subj = body.criteria[i] && body.criteria[i].subject;
+            if (!subj || !subjectsConfig.some(s => s.subject === subj)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Row ${i + 1}: please choose a subject of this listing.`
+                });
+            }
+        }
+    }
+
+    const globalSectionIds = Array.isArray(body.sections) ? body.sections.filter(Boolean) : [];
+    const scope = normalizeScope(body.scope);
+    const testIds = scope
+        ? await getTestIdsForScope(sourceListingId, scope)
+        : await getTestIdsForListing(sourceListingId, globalSectionIds.length > 0 ? globalSectionIds : null);
     if (testIds.length === 0) {
         return res.status(400).json({
             success: false,
@@ -270,14 +398,31 @@ export const generatePaper = async (req, res) => {
         const minCount = override ? override.minCount : Math.max(1, Number(c.minCount) || 1);
         const maxCount = override ? override.maxCount : Math.max(minCount, Number(c.maxCount) || minCount);
         const tqMatch = { test: { $in: testIds } };
-        if (c.subject) tqMatch.subject = c.subject;
+        // Other mode me source ke question ka subject matter nahi karta
+        if (c.subject && !isOtherSource) tqMatch.subject = c.subject;
         if (Array.isArray(c.section) && c.section.length > 0) tqMatch.section = { $in: c.section };
         if (Array.isArray(c.topic) && c.topic.length > 0) tqMatch.topic = { $in: c.topic };
         if (Array.isArray(c.subTopic) && c.subTopic.length > 0) tqMatch.subTopic = { $in: c.subTopic };
 
         // 👇 TestQuestion se distinct question IDs nikalo (ye asli pool ke candidates hain)
-        const matchingTQs = await TestQuestion.find(tqMatch).select("question");
-        const uniqueQIds = [...new Set(matchingTQs.map(tq => tq.question.toString()))];
+        const matchingTQs = await TestQuestion.find(tqMatch)
+            .select("question subject topic subTopic section")
+            .lean();
+
+        // Har question ka asli (TestQuestion wala) subject/topic/section yaad rakho
+        const tqMetaByQ = new Map();
+        for (const tq of matchingTQs) {
+            const key = tq.question.toString();
+            if (!tqMetaByQ.has(key)) {
+                tqMetaByQ.set(key, {
+                    subject: isOtherSource ? (c.subject || "") : (tq.subject || ""),
+                    topic: tq.topic || "",
+                    subTopic: tq.subTopic || "",
+                    section: tq.section || ""
+                });
+            }
+        }
+        const uniqueQIds = [...tqMetaByQ.keys()];
 
         const label = `${c.subject || 'Subject'}${(c.topic && c.topic.length) ? ' / ' + c.topic.join(', ') : ''}`;
 
@@ -294,7 +439,11 @@ export const generatePaper = async (req, res) => {
             questionMatch.difficulty = { $in: c.difficulty };
         }
 
+         questionMatch.status = { $ne: "Disabled" };
+
         const pool = await Question.find(questionMatch).lean();
+  
+         pool.forEach(q => { q._meta = tqMetaByQ.get(q._id.toString()) || null; });
 
         if (pool.length === 0) {
             return res.status(400).json({
@@ -352,8 +501,10 @@ export const generatePaper = async (req, res) => {
             }
         }
 
+        const subjectOf = (q) => (q._meta && q._meta.subject) || q.subject;
+
         const calculatedTotalMarks = pickedQuestions.reduce(
-            (sum, q) => sum + getMarksForSubject(subjectsConfig, q.subject).positiveMarks, 0
+            (sum, q) => sum + getMarksForSubject(subjectsConfig, subjectOf(q)).positiveMarks, 0
         );
 
         const baseTitle = (body.title && body.title.trim()) ? body.title.trim() : "Generated Paper";
@@ -388,15 +539,17 @@ export const generatePaper = async (req, res) => {
         const savedTest = await testDoc.save();
 
         const mappingDocs = pickedQuestions.map((q, i) => {
-            const marks = getMarksForSubject(subjectsConfig, q.subject);
+            const m = q._meta || {};
+            const subj = subjectOf(q);
+            const marks = getMarksForSubject(subjectsConfig, subj);
             return {
                 test: savedTest._id,
                 question: q._id,
                 order: i + 1,
-                subject: q.subject || "",
-                topic: q.topic || "",
-                subTopic: q.subTopic || "",
-                section: q.section || "",
+                subject: subj || "",
+                topic: m.topic || q.topic || "",
+                subTopic: m.subTopic || q.subTopic || "",
+                section: m.section || q.section || "",
                 positiveMarks: marks.positiveMarks,
                 negativeMarks: marks.negativeMarks
             };
@@ -492,4 +645,136 @@ export const getListingLanguages = async (req, res) => {
 
     const languages = Array.from(languageSet).sort();
     res.status(200).json({ success: true, data: languages });
+};
+
+
+/* ============================================================
+   "OTHER" SOURCE — Category -> Exam -> Listing
+============================================================ */
+export const getSourceCategories = async (req, res) => {
+    const categories = await Category.find({}).select("name").sort({ name: 1 }).lean();
+    res.status(200).json({
+        success: true,
+        data: categories.map(c => ({ id: c._id.toString(), name: c.name }))
+    });
+};
+
+export const getSourceExams = async (req, res) => {
+    const { category } = req.query;
+    if (typeof category !== "string" || !mongoose.Types.ObjectId.isValid(category)) {
+        return res.status(400).json({ success: false, message: "Invalid category id" });
+    }
+
+    const exams = (await Listing.distinct("exam", { category: new mongoose.Types.ObjectId(category) }))
+        .filter(e => e && String(e).trim() !== "")
+        .sort();
+
+    res.status(200).json({ success: true, data: exams });
+};
+
+export const getSourceListings = async (req, res) => {
+    const { category, exam } = req.query;
+    if (typeof category !== "string" || !mongoose.Types.ObjectId.isValid(category)) {
+        return res.status(400).json({ success: false, message: "Invalid category id" });
+    }
+    if (typeof exam !== "string" || exam.trim() === "") {
+        return res.status(400).json({ success: false, message: "Exam is required" });
+    }
+
+    const listings = await Listing.find({
+        category: new mongoose.Types.ObjectId(category),
+        exam: exam
+    }).select("title").sort({ title: 1 }).lean();
+
+    res.status(200).json({
+        success: true,
+        data: listings.map(l => ({ id: l._id.toString(), title: l.title }))
+    });
+};
+
+// Current listing ke marks me jo subjects hain (Other mode me Subject dropdown yahin se aayega)
+export const getMarksSubjects = async (req, res) => {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: "Invalid listing id" });
+    }
+
+    const listing = await Listing.findById(id).select("marks").lean();
+    if (!listing) return res.status(404).json({ success: false, message: "Listing not found" });
+
+    const seen = new Set();
+    const data = [];
+    for (const m of (listing.marks || [])) {
+        if (m.subject && !seen.has(m.subject)) {
+            seen.add(m.subject);
+            data.push({ subject: m.subject });
+        }
+    }
+
+    res.status(200).json({ success: true, data });
+};
+
+
+
+/* ============================================================
+   GET /api/listing/:id/explorer?nodeType=section|folder|file&nodeId=
+   -> Us position ke andar ke folders + files (har ek me kitne tests),
+      aur us position ke total tests / distinct questions.
+============================================================ */
+export const getExplorerNode = async (req, res) => {
+    const { id } = req.params;
+    const { nodeType, nodeId } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: "Invalid listing id" });
+    }
+    if (!["section", "folder", "file"].includes(nodeType) ||
+        typeof nodeId !== "string" || !mongoose.Types.ObjectId.isValid(nodeId)) {
+        return res.status(400).json({ success: false, message: "Invalid node" });
+    }
+
+    const tree = await loadListingTree(id);
+
+    let title = "";
+    if (nodeType === "section") {
+        const sec = await Section.findOne({ _id: nodeId, listing: id }).select("title").lean();
+        if (!sec) return res.status(404).json({ success: false, message: "Section not found" });
+        title = sec.title;
+    } else {
+        const node = (nodeType === "folder" ? tree.folderMap : tree.fileMap).get(nodeId);
+        if (!node) return res.status(404).json({ success: false, message: "Location not found" });
+        title = node.title;
+    }
+
+    const kids = tree.childrenOf.get(`${nodeType}:${nodeId}`) || { folders: [], files: [], tests: [] };
+
+    const byCreated = (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+    const toItem = (type) => (n) => ({
+        id: String(n._id),
+        title: n.title,
+        testCount: collectTestIdsFromTree(tree, type, n._id).length
+    });
+
+    const folders = [...kids.folders].sort(byCreated).map(toItem("folder"));
+    const files = [...kids.files].sort(byCreated).map(toItem("file"));
+
+    // Section root par purana tareeka (Test.section), baaki jagah tree se
+    const scopeTestIds = nodeType === "section"
+        ? await getTestIdsForListing(id, [nodeId])
+        : collectTestIdsFromTree(tree, nodeType, nodeId);
+
+    const questionCount = scopeTestIds.length > 0
+        ? (await TestQuestion.distinct("question", { test: { $in: scopeTestIds } })).length
+        : 0;
+
+    res.status(200).json({
+        success: true,
+        data: {
+            node: { type: nodeType, id: nodeId, title },
+            folders,
+            files,
+            testCount: scopeTestIds.length,
+            questionCount
+        }
+    });
 };

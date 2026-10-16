@@ -10,7 +10,7 @@ import { calculateRankFromPredictor, calculateRankRange } from "../utils/rankHel
 import { getTestStatus, formatDateTime } from "../utils/testStatus.js";
 import { getLiveTestRank } from "../utils/liveRankHelper.js";
 import { getAccuracyComparison } from "../utils/testStatsHelper.js";
-import { isOwnerUser } from "../utils/authHelpers.js";
+import { getInstructionStrings, getLanguageLabel, htmlLangCode, buildInstructionBundle } from "../utils/instructionI18n.js";
 
 
 function buildClientQuestions(mappings, lang) {
@@ -127,8 +127,9 @@ export const startAttempt = async (req, res) => {
     let session = null;
     if (test.isLiveTest) {
         session = await AttemptSession.findOne({ test: testId, user: req.user._id });
-        if (session && session.exited) {
+        if (session) {
             session.exited = false;
+            session.language = lang;
             await session.save();
         }
     } else {
@@ -216,7 +217,11 @@ if (availableLanguages.length === 1) {
         layout: false, test, listing, questions,
         subjectBreakdown: Object.values(subjectMap),
         availableLanguages,
-        lang
+        lang,
+        t: getInstructionStrings(lang),
+        ...buildInstructionBundle(availableLanguages),
+        getLanguageLabel,
+        htmlLang: htmlLangCode(lang)
     });
 };
 

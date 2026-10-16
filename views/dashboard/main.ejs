@@ -71,8 +71,8 @@
   <div class="py-4 first:pt-0 border-b border-slate-50 last:border-0">
 
     <div class="flex items-center gap-1.5 mb-1.5">
-      <span class="w-2 h-2 rounded-full <%= item.sectionColor.dot %>"></span>
-      <span class="text-[10px] font-bold uppercase tracking-wide <%= item.sectionColor.text %>">
+      <span class="w-2 h-2 rounded-full" style="background: <%= item.sectionColor.main %>"></span>
+      <span class="text-[10px] font-bold uppercase tracking-wide" style="color: <%= item.sectionColor.text %>">
         <%= item.sectionName %>
       </span>
     </div>

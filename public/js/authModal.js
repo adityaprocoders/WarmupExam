@@ -36,6 +36,13 @@ function enterTokenMode(email, token) {
     document.getElementById('resetOtp').required = false;
 
     document.getElementById('resendOtpBtn').classList.add('hidden'); // token-mode mein resend-OTP relevant nahi
+
+    // Step 2 UI: ab sirf New Password dikhao
+    document.getElementById('newPasswordGroup').classList.remove('hidden');
+    document.getElementById('newPassword').required = true;
+    document.getElementById('resetSubmitBtn').textContent = "Reset Password";
+    document.getElementById('resetOtpText').classList.add('hidden');
+    document.getElementById('resetPwText').classList.remove('hidden');
 }
 
 function exitTokenMode() {
@@ -46,6 +53,13 @@ function exitTokenMode() {
     document.getElementById('resetOtp').required = true;
 
     document.getElementById('resendOtpBtn').classList.remove('hidden');
+
+    // Step 1 UI: wapas sirf OTP dikhao
+    document.getElementById('newPasswordGroup').classList.add('hidden');
+    document.getElementById('newPassword').required = false;
+    document.getElementById('resetSubmitBtn').textContent = "Verify OTP";
+    document.getElementById('resetOtpText').classList.remove('hidden');
+    document.getElementById('resetPwText').classList.add('hidden');
 }
 
 
@@ -225,6 +239,49 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('resetSubmitBtn');
             const msgEl = document.getElementById('resetMsg');
 
+
+            
+            // ===== STEP 1: sirf OTP verify karo (password abhi nahi) =====
+            if (!currentResetToken) {
+                if (!/^[0-9]{6}$/.test(otp)) {
+                    msgEl.classList.remove('hidden');
+                    msgEl.className = "text-center text-sm text-red-600";
+                    msgEl.textContent = "Please enter the 6-digit OTP.";
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = "Verifying...";
+                msgEl.classList.add('hidden');
+
+                try {
+                    const vres = await fetch('/verify-reset-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, otp })
+                    });
+                    const vdata = await vres.json();
+
+                    if (vdata.success && vdata.resetToken) {
+                        document.getElementById('resetOtp').value = '';
+                        enterTokenMode(email, vdata.resetToken);   // ab New Password wala step khulega
+                        document.getElementById('newPassword').focus();
+                    } else {
+                        msgEl.classList.remove('hidden');
+                        msgEl.className = "text-center text-sm text-red-600";
+                        msgEl.textContent = vdata.message || "Incorrect OTP";
+                        btn.textContent = "Verify OTP";
+                    }
+                } catch (err) {
+                    msgEl.classList.remove('hidden');
+                    msgEl.className = "text-center text-sm text-red-600";
+                    msgEl.textContent = "Network error, try again";
+                    btn.textContent = "Verify OTP";
+                }
+                btn.disabled = false;
+                return;
+            }
+
             btn.disabled = true;
             btn.textContent = "Resetting...";
 
@@ -264,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             btn.disabled = false;
-            btn.textContent = "Reset Password";
+            btn.textContent = currentResetToken ? "Reset Password" : "Verify OTP";
         });
     }
 });

@@ -23,7 +23,7 @@
         const inputs = document.querySelectorAll(".field-input");
         const avatarInput = document.getElementById("avatarInput");
         const avatarPreview = document.getElementById("avatarPreview");
-
+        let originalAvatarSrc = avatarPreview.src;
         const usernameInput = document.getElementById("usernameInput");
         const usernameIcon = document.getElementById("usernameIcon");
         const usernameHint = document.getElementById("usernameHint");
@@ -53,7 +53,7 @@
 
         cancelBtn.addEventListener("click", () => {
             document.getElementById("profileForm").reset();
-            avatarPreview.src = "<%= currentUser.avatar || '/images/default-avatar.png' %>";
+             avatarPreview.src = originalAvatarSrc;
             headerUsernameText.textContent = originalUsername;
             headerEmailText.textContent = originalEmail;
             if (usernameInput) resetFieldState(usernameInput, usernameIcon, usernameHint, "3-20 characters: letters, numbers, underscore");
@@ -61,7 +61,6 @@
             usernameValid = true;
             emailValid = true;
             saveBtn.disabled = false;
-            resetPasswordSection();
                         resetExamChips();
             setEditMode(false);
             setEditMode(false);
@@ -139,6 +138,7 @@
 
                         if (data.success) {
                             avatarPreview.src = data.avatarUrl + "?t=" + Date.now(); // cache-bust
+                            originalAvatarSrc = avatarPreview.src;
                             closeCropModal();
                         } else {
                             cropErrorMsg.textContent = data.message || "Could not update avatar.";
@@ -497,16 +497,34 @@
     });
 }
      
-    // ===== NAYA: Delete Account =====
+        // ===== Delete Account (password / "DELETE" confirm ke saath) =====
     const deleteAccountModal = document.getElementById("deleteAccountModal");
     const deleteCancelBtn = document.getElementById("deleteCancelBtn");
     const deleteConfirmBtn = document.getElementById("deleteConfirmBtn");
     const deleteAccountMsg = document.getElementById("deleteAccountMsg");
+    const deleteConfirmInput = document.getElementById("deleteConfirmInput");
+    const DELETE_BTN_LABEL = "Delete My Account";
+
+    function showDeleteMsg(text) {
+        deleteAccountMsg.textContent = text;
+        deleteAccountMsg.classList.remove("hidden");
+        deleteAccountMsg.classList.add("bg-red-50", "text-red-700");
+    }
+
+    function refreshDeleteBtnState() {
+        if (!deleteConfirmInput || !deleteConfirmBtn) return;
+        const v = deleteConfirmInput.value;
+        const ok = deleteConfirmInput.dataset.mode === "google" ? v === "DELETE" : v.length > 0;
+        deleteConfirmBtn.disabled = !ok;
+    }
 
     function closeDeleteModal() {
         deleteAccountModal.classList.add("hidden");
         deleteAccountModal.classList.remove("flex");
         deleteAccountMsg.classList.add("hidden");
+        if (deleteConfirmInput) deleteConfirmInput.value = "";
+        deleteConfirmBtn.textContent = DELETE_BTN_LABEL;
+        refreshDeleteBtnState();
     }
 
     if (menuDeleteAccount) {
@@ -514,43 +532,57 @@
             settingsMenu.classList.add("hidden");
             deleteAccountModal.classList.remove("hidden");
             deleteAccountModal.classList.add("flex");
+            refreshDeleteBtnState();
+            if (deleteConfirmInput) deleteConfirmInput.focus();
         });
     }
 
     if (deleteCancelBtn) deleteCancelBtn.addEventListener("click", closeDeleteModal);
 
+    if (deleteConfirmInput) {
+        deleteConfirmInput.addEventListener("input", refreshDeleteBtnState);
+        deleteConfirmInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !deleteConfirmBtn.disabled) deleteConfirmBtn.click();
+        });
+    }
+
     if (deleteConfirmBtn) {
         deleteConfirmBtn.addEventListener("click", async () => {
+            if (!deleteConfirmInput) return;
+            const isGoogle = deleteConfirmInput.dataset.mode === "google";
+            const payload = isGoogle
+                ? { confirmText: deleteConfirmInput.value }
+                : { password: deleteConfirmInput.value };
+
             deleteConfirmBtn.disabled = true;
             deleteConfirmBtn.textContent = "Deleting...";
+            deleteAccountMsg.classList.add("hidden");
             try {
                 const res = await fetch("/profile/delete-account?_method=DELETE", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "x-csrf-token": document.querySelector('meta[name="csrf-token"]').content
-    }
-});
-                const data = await res.json();
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-csrf-token": document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json().catch(() => ({}));
 
                 if (data.success) {
                     window.location.href = "/";
                 } else {
-                    deleteAccountMsg.textContent = data.message || "Failed to delete account.";
-                    deleteAccountMsg.classList.remove("hidden");
-                    deleteAccountMsg.classList.add("bg-red-50", "text-red-700");
-                    deleteConfirmBtn.disabled = false;
-                    deleteConfirmBtn.textContent = "Ok, Delete";
+                    showDeleteMsg(data.message || "Failed to delete account.");
+                    deleteConfirmBtn.textContent = DELETE_BTN_LABEL;
+                    refreshDeleteBtnState();
                 }
             } catch (err) {
-                deleteAccountMsg.textContent = "Something went wrong, try again.";
-                deleteAccountMsg.classList.remove("hidden");
-                deleteAccountMsg.classList.add("bg-red-50", "text-red-700");
-                deleteConfirmBtn.disabled = false;
-                deleteConfirmBtn.textContent = "Ok, Delete";
+                showDeleteMsg("Something went wrong, try again.");
+                deleteConfirmBtn.textContent = DELETE_BTN_LABEL;
+                refreshDeleteBtnState();
             }
         });
     }
+     
 
         // ===== Target Exam (multi-value chips) =====
     const examChips = document.getElementById("examChips");

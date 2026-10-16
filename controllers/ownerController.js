@@ -19,6 +19,7 @@ import mongoose from "mongoose";
 import { calculateRankFromPredictor } from "../utils/rankHelper.js";
 import { getUsageSummary } from "../utils/aiUsageTracker.js";
 import { cascadeDeleteListing } from "../utils/deleteHelpers.js";
+import { deleteExtraUserData } from "../utils/deleteUserData.js";
 import CustomPaperAttempt from "../models/CustomPaperAttempt.js";
 import AIUsage from "../models/AIUsage.js";
 import LiveTestResult from "../models/LiveTestResult.js";
@@ -365,6 +366,7 @@ export const deleteUser = async (req, res) => {
         await LiveTestResult.deleteMany({ user: id });
         await CustomAIPaper.deleteMany({ user: id });
         await CustomTestPayment.deleteMany({ user: id });
+                await deleteExtraUserData(id);
         await User.findByIdAndDelete(id);
 
         res.json({ success: true, message: "User deleted successfully." });

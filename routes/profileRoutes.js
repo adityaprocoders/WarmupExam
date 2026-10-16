@@ -5,6 +5,7 @@ import { uploadAvatar } from "../middleware/upload.js";
 import { validateBody } from "../middleware/validate.js";
 import { updateProfileSchema, changePasswordSchema } from "../utils/schemas.js";
 import { doubleCsrfProtection } from "../config/csrf.js";
+import { deleteAccountLimiter } from "../middleware/rateLimiters.js";
 import * as profileController from "../controllers/profileController.js";
 
 const router = express.Router();
@@ -48,6 +49,7 @@ router.patch(
 router.delete(
     "/profile/delete-account",
     isLoggedIn,
+    deleteAccountLimiter,
     doubleCsrfProtection,
     wrapAsync(profileController.deleteAccount)
 );

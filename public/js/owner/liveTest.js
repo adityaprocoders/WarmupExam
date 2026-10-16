@@ -61,12 +61,13 @@ let editingSubjectTimeIndex = null;
             return;
         }
 
-        const statusBadge = {
-    live: '<span class="px-2.5 py-1 rounded-full bg-green-50 text-green-600 text-xs font-bold">LIVE</span>',
-    upcoming: '<span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 text-xs font-bold">UPCOMING</span>',
-    completed: '<span class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 text-xs font-bold">COMPLETED</span>',
-    not_scheduled: '<span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-bold">NOT SCHEDULED</span>'
-};
+              const statusBadge = {
+            live: '<span class="px-2.5 py-1 rounded-full bg-green-50 text-green-600 text-xs font-bold">LIVE</span>',
+            upcoming: '<span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 text-xs font-bold">UPCOMING</span>',
+            completed: '<span class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 text-xs font-bold">COMPLETED</span>',
+            not_scheduled: '<span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-bold">NOT SCHEDULED</span>',
+            pending: '<span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold">PENDING</span>'
+        };
 
         tbody.innerHTML = rows.map(r => `
             <tr class="border-b border-gray-50 hover:bg-gray-50">
@@ -403,7 +404,7 @@ function handleTimeStrategyUI(prefillTotal) {
         container.innerHTML = `
             <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Choose Subject(s)</label>
             <div id="ltTimeSubjectCheckboxes" class="flex flex-wrap gap-2 mb-2 max-h-32 overflow-y-auto border rounded-lg p-2"></div>
-            <input type="number" id="ltTimeMinutesInput" min="1" placeholder="Minutes (the same value applies to all subjects)" class="w-full border rounded-lg px-3 py-2 text-sm mb-2">
+            <input type="number" id="ltTimeMinutesInput" min="1" placeholder="Minutes for this section (all ticked subjects share this time)" class="w-full border rounded-lg px-3 py-2 text-sm mb-2">
             <button type="button" id="ltAddTimeBtn" data-action="lt-add-subject-time" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold py-2 rounded-lg text-sm mb-2">Add</button>
             <div id="ltTimeList" class="space-y-1.5"></div>
         `;
@@ -458,19 +459,25 @@ function addSubjectTime() {
 
     if (selectedSubjects.length === 0 || !minutes) return;
 
+    // kisi subject ko do alag sections me nahi daal sakte
+    const used = new Set();
+    subjectTimeList.forEach((st, i) => {
+        if (i !== editingSubjectTimeIndex) st.subject.split(' + ').forEach(s => used.add(s.trim()));
+    });
+    const clash = selectedSubjects.find(s => used.has(s));
+    if (clash) {
+        showToast(`"${clash}" is already part of another section.`, 'error');
+        return;
+    }
+
+    const entry = { subject: selectedSubjects.join(' + '), minutes };
+
     if (editingSubjectTimeIndex !== null) {
-        subjectTimeList[editingSubjectTimeIndex] = { subject: selectedSubjects[0], minutes };
+        subjectTimeList[editingSubjectTimeIndex] = entry;
         editingSubjectTimeIndex = null;
         $('#ltAddTimeBtn').textContent = 'Add';
     } else {
-        selectedSubjects.forEach(subject => {
-            const existingIdx = subjectTimeList.findIndex(st => st.subject === subject);
-            if (existingIdx !== -1) {
-                subjectTimeList[existingIdx] = { subject, minutes };
-            } else {
-                subjectTimeList.push({ subject, minutes });
-            }
-        });
+        subjectTimeList.push(entry);
     }
 
     renderSubjectTimeList();
@@ -483,7 +490,7 @@ function editSubjectTime(index) {
     const entry = subjectTimeList[index];
     if (!entry) return;
     editingSubjectTimeIndex = index;
-    renderTimeSubjectCheckboxes(new Set([entry.subject]));
+    renderTimeSubjectCheckboxes(new Set(entry.subject.split(' + ').map(s => s.trim())));
     $('#ltTimeMinutesInput').value = entry.minutes;
     $('#ltAddTimeBtn').textContent = 'Update';
 }

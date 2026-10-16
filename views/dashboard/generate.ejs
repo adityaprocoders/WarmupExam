@@ -52,6 +52,43 @@
                 <!-- DYNAMIC TIME CONTAINER -->
                 <div id="timeDynamicContainer" class="p-4 sm:p-6 border border-gray-100 rounded-xl bg-gray-50 mb-6"></div>
 
+                                <!-- QUESTION SOURCE (This Listing / Other) -->
+                <div class="p-4 sm:p-6 border border-gray-100 rounded-xl bg-gray-50 mb-6">
+                    <label class="block text-sm font-bold mb-2">Question Source</label>
+                    <select id="sourceMode" data-action="source-mode-change"
+                        class="w-full p-3 border border-gray-200 rounded-xl bg-white text-sm font-bold">
+                        <option value="this" selected>This Listing</option>
+                        <option value="other">Other</option>
+                    </select>
+
+                    <div id="otherSourceContainer" style="display:none" class="mt-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="min-w-0">
+                                <span class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Category</span>
+                                <select id="sourceCategory" data-action="source-category-change"
+                                    class="w-full p-3 border border-gray-200 rounded-xl bg-white text-sm">
+                                    <option value="" disabled selected>Choose category</option>
+                                </select>
+                            </div>
+                            <div class="min-w-0">
+                                <span class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Exam</span>
+                                <select id="sourceExam" data-action="source-exam-change" disabled
+                                    class="w-full p-3 border border-gray-200 rounded-xl bg-white text-sm">
+                                    <option value="" disabled selected>Choose category first</option>
+                                </select>
+                            </div>
+                            <div class="min-w-0">
+                                <span class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Listing</span>
+                                <select id="sourceListing" data-action="source-listing-change" disabled
+                                    class="w-full p-3 border border-gray-200 rounded-xl bg-white text-sm">
+                                    <option value="" disabled selected>Choose exam first</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
                 <!-- GLOBAL SECTION SELECTOR (Question.section field) -->
                 <div class="p-4 sm:p-6 border border-gray-100 rounded-xl bg-gray-50 mb-6">
                     <label class="block text-sm font-bold mb-2">Section (questions will be picked from here)</label>
@@ -61,6 +98,9 @@
                         <option value="" disabled selected>Loading sections...</option>
                     </select>
                 </div>
+
+                                <!-- SECTION EXPLORER (folders & files) -->
+                <div id="sectionExplorer" class="gpx-card" style="display:none" aria-live="polite"></div>
 
                 <!-- CRITERIA TABLE -->
                 <div class="border border-gray-100 rounded-2xl overflow-hidden">

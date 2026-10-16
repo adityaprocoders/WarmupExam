@@ -97,8 +97,12 @@ function normalizeName(s) {
 }
 
 function splitSubjectLabel(label) {
+    const whole = normalizeName(label);
+    // Poora label hi ek subject ka naam ho (jaise "Reasoning & General Intelligence") to todna nahi
+    if (subjectsOrder.some(s => normalizeName(s) === whole)) return [whole];
+    // Builder / Live Test config multiple subjects ko " + " se jodte hain
     return (label || '').toString()
-        .split(/[+,&]/)
+        .split(/\s\+\s/)
         .map(normalizeName)
         .filter(Boolean);
 }
@@ -167,7 +171,10 @@ function renderSubjectTabs() {
         btn.type = 'button';
         btn.dataset.sectionTab = idx;
         btn.className = 'subject-tab whitespace-nowrap px-4 py-2.5 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-indigo-500 active:scale-95 transition';
-        btn.textContent = sec.label;
+                const ico = document.createElement('i');
+        ico.className = 'fa-solid fa-layer-group mr-2 text-xs opacity-70';
+        btn.appendChild(ico);
+        btn.appendChild(document.createTextNode(sec.label));
         btn.addEventListener('click', () => switchSection(idx));
         bar.appendChild(btn);
     });
@@ -829,5 +836,13 @@ async function exitTest() {
 window.addEventListener('pageshow', function (e) {
     if (e.persisted && testSubmitted) {
         window.location.replace(returnUrl);
+    }
+});
+
+document.addEventListener('input', function (e) {
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+    if (target.dataset.action === 'save-integer-answer') {
+        saveIntegerAnswer();
     }
 });

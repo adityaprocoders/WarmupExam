@@ -26,9 +26,388 @@ let totalQuestionCountState = 0;
 let subjectQuestionCountList = [];
 let editingSubjectQuestionIndex = null;
 
+
+/* ===================== QUESTION SOURCE (This Listing / Other) ===================== */
+let sourceMode = 'this';      // 'this' | 'other'
+let sourceListingId = '';     // 'other' mode me chuni hui source listing
+let sourceLoadSeq = 0;        // race-condition guard
+
+function escapeHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Questions kis listing se aayenge
+function getQuestionListingId() {
+    if (sourceMode === 'other') return sourceListingId; // jab tak choose na ho, '' rahega
+    return contextData.listingId;
+}
+
+async function fetchSourceJson(url) {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        const result = await res.json();
+        return result.success ? result.data : [];
+    } catch (err) {
+        console.error("Source fetch error:", err);
+        return [];
+    }
+}
+
+function fillSourceSelect(selectId, placeholder, items, disabled) {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    sel.innerHTML = `<option value="" disabled selected>${escapeHtml(placeholder)}</option>` +
+        items.map(i => `<option value="${escapeHtml(i.value)}">${escapeHtml(i.label)}</option>`).join('');
+    sel.disabled = !!disabled;
+}
+
+async function loadSourceCategories() {
+    fillSourceSelect('sourceCategory', 'Loading categories...', [], true);
+    const data = await fetchSourceJson('/api/generate-paper/source/categories');
+    fillSourceSelect(
+        'sourceCategory',
+        data.length ? 'Choose category' : 'No category found',
+        data.map(c => ({ value: c.id, label: c.name })),
+        data.length === 0
+    );
+}
+
+function resetCriteriaRows() {
+    const container = document.getElementById('criteriaRowsContainer');
+    if (container) container.innerHTML = '';
+    criteriaRowState = {};
+    addCriteriaRow();
+}
+
+// Source badalne par subjects, languages, sections, rows sab dobara load
+async function refreshQuestionSource() {
+    selectedGlobalSections.clear();
+    renderGlobalSectionTags();
+    explorerReset();
+    testShowLanguage = 'all';
+
+    await Promise.all([loadSubjects(), loadLanguages(), loadGlobalSections()]);
+    renderShowLanguageUI();
+
+    // Subject-wise time / question-count me purane subject names invalid ho sakte hain
+    if (document.getElementById('timeStrategy').value === 'subject') {
+        subjectTimeList = [];
+        selectedSubjects.clear();
+        handleTimeUI();
+    }
+    if (document.getElementById('questionCountStrategy').value === 'subject') {
+        subjectQuestionCountList = [];
+        handleQuestionCountUI();
+    }
+
+    resetCriteriaRows();
+}
+
+async function handleSourceModeChange() {
+    sourceMode = document.getElementById('sourceMode').value === 'other' ? 'other' : 'this';
+    sourceListingId = '';
+    sourceLoadSeq++;
+
+    const box = document.getElementById('otherSourceContainer');
+    if (box) box.style.display = sourceMode === 'other' ? '' : 'none';
+
+    if (sourceMode === 'other') {
+        fillSourceSelect('sourceExam', 'Choose category first', [], true);
+        fillSourceSelect('sourceListing', 'Choose exam first', [], true);
+        await loadSourceCategories();
+    }
+
+    await refreshQuestionSource();
+}
+
+async function handleSourceCategoryChange() {
+    const category = document.getElementById('sourceCategory').value;
+    if (!category) return;
+
+    const seq = ++sourceLoadSeq;
+    const hadSource = !!sourceListingId;
+    sourceListingId = '';
+
+    fillSourceSelect('sourceListing', 'Choose exam first', [], true);
+    fillSourceSelect('sourceExam', 'Loading exams...', [], true);
+
+    const exams = await fetchSourceJson(`/api/generate-paper/source/exams?category=${encodeURIComponent(category)}`);
+    if (seq !== sourceLoadSeq) return;
+
+    fillSourceSelect(
+        'sourceExam',
+        exams.length ? 'Choose exam' : 'No exam found',
+        exams.map(e => ({ value: e, label: e })),
+        exams.length === 0
+    );
+
+    if (hadSource) await refreshQuestionSource();
+}
+
+async function handleSourceExamChange() {
+    const category = document.getElementById('sourceCategory').value;
+    const exam = document.getElementById('sourceExam').value;
+    if (!category || !exam) return;
+
+    const seq = ++sourceLoadSeq;
+    const hadSource = !!sourceListingId;
+    sourceListingId = '';
+
+    fillSourceSelect('sourceListing', 'Loading listings...', [], true);
+
+    const listings = await fetchSourceJson(
+        `/api/generate-paper/source/listings?category=${encodeURIComponent(category)}&exam=${encodeURIComponent(exam)}`
+    );
+    if (seq !== sourceLoadSeq) return;
+
+    fillSourceSelect(
+        'sourceListing',
+        listings.length ? 'Choose listing' : 'No listing found',
+        listings.map(l => ({ value: l.id, label: l.title })),
+        listings.length === 0
+    );
+
+    if (hadSource) await refreshQuestionSource();
+}
+
+async function handleSourceListingChange() {
+    sourceListingId = document.getElementById('sourceListing').value || '';
+    await refreshQuestionSource();
+}
+/* ===================== /QUESTION SOURCE ===================== */
+
+
+/* ===================== SECTION EXPLORER (folders & files) ===================== */
+let explorerPath = [];        // [{ type: 'section'|'folder'|'file', id, title }]        // [{ type: 'section'|'folder'|'file', id, title }]
+let explorerData = null;      // current position ka server response
+let explorerLoading = false;
+let explorerError = false;
+let explorerSeq = 0;          // race-condition guard
+let scopeNode = null;         // null = poora section | { type: 'folder'|'file', id }
+
+// Row filters / generate ko batata hai ki questions kis folder/file se lene hain
+function getScopeQuery() {
+    return scopeNode
+        ? `&scopeType=${encodeURIComponent(scopeNode.type)}&scopeId=${encodeURIComponent(scopeNode.id)}`
+        : '';
+}
+
+function explorerReset() {
+    explorerSeq++;
+    explorerPath = [];
+    explorerData = null;
+    explorerLoading = false;
+    explorerError = false;
+    scopeNode = null;
+    renderExplorer();
+}
+
+async function loadExplorerNode() {
+    const listingId = getQuestionListingId();
+    const current = explorerPath[explorerPath.length - 1];
+    if (!listingId || !current) {
+        renderExplorer();
+        return;
+    }
+
+    const seq = ++explorerSeq;
+    explorerLoading = true;
+    explorerError = false;
+    renderExplorer();
+
+    try {
+        const res = await fetch(
+            `/api/listing/${listingId}/explorer?nodeType=${encodeURIComponent(current.type)}&nodeId=${encodeURIComponent(current.id)}`
+        );
+        if (!res.ok) throw new Error(`Explorer request failed: ${res.status}`);
+        const result = await res.json();
+        if (seq !== explorerSeq) return;
+        explorerData = result.success ? result.data : null;
+        explorerError = !result.success;
+    } catch (err) {
+        console.error("Explorer fetch error:", err);
+        if (seq !== explorerSeq) return;
+        explorerData = null;
+        explorerError = true;
+    }
+
+    explorerLoading = false;
+    renderExplorer();
+}
+
+function renderExplorer() {
+    const box = document.getElementById('sectionExplorer');
+    if (!box) return;
+
+    const selectedCount = selectedGlobalSections.size;
+    if (selectedCount === 0) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+    }
+    box.style.display = '';
+
+    const canGoBack = explorerPath.length > 1;
+    const head = `
+        <div class="gpx-head">
+            <span class="gpx-head-icon"><i data-lucide="folder-open"></i></span>
+            <div class="gpx-head-text">
+                <div class="gpx-head-title">Browse Section</div>
+                <div class="gpx-head-sub">Open a folder or file. Questions are picked from wherever you stop.</div>
+            </div>
+            ${canGoBack ? `<button type="button" class="gpx-back" data-action="explorer-back"><i data-lucide="arrow-left"></i><span>Back</span></button>` : ''}
+        </div>`;
+
+    // Multiple sections: browse nahi, poore selected sections se questions
+    if (selectedCount > 1) {
+        box.innerHTML = head + `
+            <div class="gpx-empty">
+                <span class="gpx-empty-icon"><i data-lucide="layers"></i></span>
+                <div class="gpx-empty-title">Multiple sections selected</div>
+                <div class="gpx-empty-sub">Questions will be picked from all selected sections. Keep only one section to browse inside its folders and files.</div>
+            </div>`;
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
+
+    const lastIndex = explorerPath.length - 1;
+    const crumbsHtml = explorerPath.map((p, i) => {
+        const icon = p.type === 'section' ? 'layers' : (p.type === 'folder' ? 'folder' : 'file-text');
+        const inner = `<i data-lucide="${icon}"></i><span>${escapeHtml(p.title)}</span>`;
+        const crumb = i === lastIndex
+            ? `<span class="gpx-crumb is-current" aria-current="page">${inner}</span>`
+            : `<button type="button" class="gpx-crumb" data-action="explorer-crumb" data-index="${i}">${inner}</button>`;
+        return (i > 0 ? `<i data-lucide="chevron-right" class="gpx-crumb-sep"></i>` : '') + crumb;
+    }).join('');
+
+    const pathText = explorerPath.map(p => escapeHtml(p.title)).join(' &rsaquo; ');
+    const showCounts = explorerData && !explorerLoading;
+    const qCount = showCounts ? (Number(explorerData.questionCount) || 0) : 0;
+    const tCount = showCounts ? (Number(explorerData.testCount) || 0) : 0;
+    const badges = showCounts
+        ? `<span class="gpx-badge">${qCount} ${qCount === 1 ? 'question' : 'questions'}</span><span class="gpx-badge">${tCount} ${tCount === 1 ? 'test' : 'tests'}</span>`
+        : '';
+
+    const tileHtml = (type, item) => {
+        const n = Number(item.testCount) || 0;
+        return `
+        <button type="button" class="gpx-tile" data-action="explorer-open" data-type="${type}" data-id="${escapeHtml(item.id)}" data-title="${escapeHtml(item.title)}">
+            <span class="gpx-tile-icon ${type === 'folder' ? 'is-folder' : 'is-file'}"><i data-lucide="${type === 'folder' ? 'folder' : 'file-text'}"></i></span>
+            <span class="gpx-tile-body">
+                <span class="gpx-tile-name" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</span>
+                <span class="gpx-tile-meta">${n} ${n === 1 ? 'test' : 'tests'}</span>
+            </span>
+            <i data-lucide="chevron-right" class="gpx-tile-arrow"></i>
+        </button>`;
+    };
+
+    let bodyHtml;
+    if (explorerLoading) {
+        bodyHtml = `<div class="gpx-grid"><div class="gpx-skel"></div><div class="gpx-skel"></div><div class="gpx-skel"></div><div class="gpx-skel"></div></div>`;
+    } else if (explorerError) {
+        bodyHtml = `
+            <div class="gpx-empty">
+                <span class="gpx-empty-icon is-error"><i data-lucide="info"></i></span>
+                <div class="gpx-empty-title">Could not load this location</div>
+                <button type="button" class="gpx-retry" data-action="explorer-retry">Try again</button>
+            </div>`;
+    } else {
+        const folders = (explorerData && explorerData.folders) || [];
+        const files = (explorerData && explorerData.files) || [];
+
+        if (folders.length + files.length === 0) {
+            bodyHtml = `
+                <div class="gpx-empty">
+                    <span class="gpx-empty-icon"><i data-lucide="inbox"></i></span>
+                    <div class="gpx-empty-title">No more folders or files here</div>
+                    <div class="gpx-empty-sub">${tCount > 0
+                        ? `All ${tCount} ${tCount === 1 ? 'test' : 'tests'} in this location will be used.`
+                        : 'There are no tests in this location yet.'}</div>
+                </div>`;
+        } else {
+            bodyHtml = '';
+            if (folders.length) {
+                bodyHtml += `<div class="gpx-group-label">Folders <span>${folders.length}</span></div>
+                    <div class="gpx-grid">${folders.map(f => tileHtml('folder', f)).join('')}</div>`;
+            }
+            if (files.length) {
+                bodyHtml += `<div class="gpx-group-label">Files <span>${files.length}</span></div>
+                    <div class="gpx-grid">${files.map(f => tileHtml('file', f)).join('')}</div>`;
+            }
+        }
+    }
+
+    box.innerHTML = head + `
+        <nav class="gpx-crumbs" aria-label="Current location">${crumbsHtml}</nav>
+        <div class="gpx-status">
+            <span class="gpx-status-label">Questions from</span>
+            <span class="gpx-status-path">${pathText}</span>
+            <span class="gpx-badges">${badges}</span>
+        </div>
+        ${bodyHtml}`;
+
+    if (window.lucide) lucide.createIcons();
+}
+
+// Section selection badli: explorer reset, agar sirf 1 section hai to uska root kholo
+async function syncExplorerWithSections() {
+    explorerReset();
+    if (selectedGlobalSections.size !== 1) return;
+
+    const sid = Array.from(selectedGlobalSections)[0];
+    const sec = globalSectionsList.find(s => s.sectionId === sid);
+    explorerPath = [{ type: 'section', id: sid, title: sec ? sec.section : 'Section' }];
+    await loadExplorerNode();
+}
+
+// Saare rows ke Section/Topic/Sub-Topic options naye scope ke hisaab se dobara load
+async function refreshAllRowFilters() {
+    const rowIds = Object.keys(criteriaRowState);
+    await Promise.all(rowIds.map(id => handleRowSubjectChange(id)));
+}
+
+async function onGlobalSectionsChanged() {
+    await syncExplorerWithSections();
+    await refreshAllRowFilters();
+}
+
+async function goToExplorerPath(newPath) {
+    explorerPath = newPath;
+    const last = explorerPath[explorerPath.length - 1];
+    scopeNode = last && last.type !== 'section' ? { type: last.type, id: last.id } : null;
+    await Promise.all([loadExplorerNode(), refreshAllRowFilters()]);
+}
+
+function openExplorerChild(type, id, title) {
+    if (explorerPath.length === 0 || !['folder', 'file'].includes(type) || !id) return Promise.resolve();
+    return goToExplorerPath([...explorerPath, { type, id, title }]);
+}
+
+function openExplorerCrumb(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= explorerPath.length - 1) return Promise.resolve();
+    return goToExplorerPath(explorerPath.slice(0, index + 1));
+}
+
+function explorerBack() {
+    if (explorerPath.length <= 1) return Promise.resolve();
+    return goToExplorerPath(explorerPath.slice(0, -1));
+}
+/* ===================== /SECTION EXPLORER ===================== */
+
 async function loadSubjects() {
     try {
-        const res = await fetch(`/api/listing/${contextData.listingId}/subjects`);
+        // Other mode: subjects current listing ke marks se (taaki marks mismatch na ho)
+        const url = sourceMode === 'other'
+            ? `/api/listing/${contextData.listingId}/marks-subjects`
+            : `/api/listing/${contextData.listingId}/subjects`;
+
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`Subjects request failed: ${res.status}`);
         const result = await res.json();
         subjectsList = result.success ? result.data : [];
@@ -39,8 +418,13 @@ async function loadSubjects() {
 }
 
 async function loadLanguages() {
+    const listingId = getQuestionListingId();
+    if (!listingId) {
+        availableLanguagesList = [];
+        return;
+    }
     try {
-        const res = await fetch(`/api/listing/${contextData.listingId}/languages`);
+        const res = await fetch(`/api/listing/${listingId}/languages`);
         if (!res.ok) throw new Error(`Languages request failed: ${res.status}`);
         const result = await res.json();
         availableLanguagesList = result.success ? result.data : [];
@@ -51,8 +435,14 @@ async function loadLanguages() {
 }
 
 async function loadGlobalSections() {
+    const listingId = getQuestionListingId();
+    if (!listingId) {
+        globalSectionsList = [];
+        renderGlobalSectionDropdown();
+        return;
+    }
     try {
-        const res = await fetch(`/api/listing/${contextData.listingId}/sections`);
+        const res = await fetch(`/api/listing/${listingId}/sections`);
         const result = await res.json();
         globalSectionsList = result.success ? result.data : [];
         renderGlobalSectionDropdown();
@@ -68,11 +458,17 @@ function renderGlobalSectionDropdown() {
     if (!dropdown) return;
     const remaining = globalSectionsList.filter(s => !selectedGlobalSections.has(s.sectionId));
     if (remaining.length === 0) {
-        dropdown.innerHTML = `<option value="" disabled selected>${globalSectionsList.length === 0 ? 'No section found' : 'All sections selected'}</option>`;
+        let msg;
+        if (sourceMode === 'other' && !sourceListingId) {
+            msg = 'Choose source listing first';
+        } else {
+            msg = globalSectionsList.length === 0 ? 'No section found' : 'All sections selected';
+        }
+        dropdown.innerHTML = `<option value="" disabled selected>${msg}</option>`;
         return;
     }
     dropdown.innerHTML = `<option value="" disabled selected>Choose section</option>` +
-        remaining.map(s => `<option value="${s.sectionId}">${s.section} (${s.count} Q)</option>`).join('');
+        remaining.map(s => `<option value="${s.sectionId}">${escapeHtml(s.section)} (${s.count} Q)</option>`).join('');
 }
 
 function addGlobalSectionTag() {
@@ -82,11 +478,19 @@ function addGlobalSectionTag() {
         selectedGlobalSections.add(val);
         renderGlobalSectionTags();
         renderGlobalSectionDropdown();
+        onGlobalSectionsChanged();
     }
     dropdown.value = "";
 }
 
-function renderGlobalSectionTags() {
+function removeGlobalSectionTag(val) {
+    selectedGlobalSections.delete(val);
+    renderGlobalSectionTags();
+    renderGlobalSectionDropdown();
+    onGlobalSectionsChanged();
+}
+
+ function renderGlobalSectionTags() {
     const container = document.getElementById('globalSectionTags');
     if (!container) return;
     container.innerHTML = Array.from(selectedGlobalSections).map(sid => {
@@ -94,16 +498,10 @@ function renderGlobalSectionTags() {
         const label = sec ? sec.section : sid;
         return `
         <span class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2">
-            ${label}
-            <button type="button" data-action="remove-global-section-tag" data-value="${sid}" class="hover:text-red-200 font-bold">✕</button>
+            ${escapeHtml(label)}
+            <button type="button" data-action="remove-global-section-tag" data-value="${escapeHtml(sid)}" class="hover:text-red-200 font-bold">✕</button>
         </span>`;
     }).join('');
-}
-
-function removeGlobalSectionTag(val) {
-    selectedGlobalSections.delete(val);
-    renderGlobalSectionTags();
-    renderGlobalSectionDropdown();
 }
 
 
@@ -433,14 +831,18 @@ function removeCriteriaRow(rowId) {
 
 
 async function fetchRowFilters(rowId) {
-    const subject = document.getElementById(`critSubject_${rowId}`).value || '';
+    const listingId = getQuestionListingId();
+    if (!listingId) return null;   // Other mode me source choose nahi hua
+
+    // Other mode me source ke questions subject se filter nahi hote
+    const subject = sourceMode === 'other' ? '' : (document.getElementById(`critSubject_${rowId}`).value || '');
 
     const state = criteriaRowState[rowId];
     const sectionQuery = Array.from(selectedGlobalSections).join(',');
     const qsectionQuery = Array.from(state.qsections).join(',');
     const topicQuery = Array.from(state.topics).join(',');
 
-    const url = `/api/listing/${contextData.listingId}/question-filters?subject=${encodeURIComponent(subject)}&section=${encodeURIComponent(sectionQuery)}&qsection=${encodeURIComponent(qsectionQuery)}&topic=${encodeURIComponent(topicQuery)}`;
+        const url = `/api/listing/${listingId}/question-filters?subject=${encodeURIComponent(subject)}&section=${encodeURIComponent(sectionQuery)}&qsection=${encodeURIComponent(qsectionQuery)}&topic=${encodeURIComponent(topicQuery)}${getScopeQuery()}`;
 
     try {
         const res = await fetch(url);
@@ -454,6 +856,7 @@ async function fetchRowFilters(rowId) {
 
 async function handleRowSubjectChange(rowId) {
     const state = criteriaRowState[rowId];
+    if (!state) return;
     state.qsections.clear();
     state.topics.clear();
     state.subTopics.clear();
@@ -610,6 +1013,15 @@ async function generateTest() {
         return;
     }
 
+        if (sourceMode === 'other' && !sourceListingId) {
+        showToast("Please choose Category, Exam and Listing for the question source.", "error");
+        return;
+    }
+
+        if (sourceMode === 'other' && criteria.some(c => !c.subject)) {
+        showToast("Please choose a subject (of this listing) in every row.", "error");
+        return;
+    }
     const timeStrategy = document.getElementById('timeStrategy').value;
 
     const payload = {
@@ -633,13 +1045,15 @@ async function generateTest() {
         maxRepeat: Number(document.getElementById('maxRepeatInput').value) || 2,
         visibility: document.getElementById('visibilityInput')?.value || 'private',
         listingId: contextData.listingId,
+        sourceListingId: sourceMode === 'other' ? sourceListingId : '',
+        scope: scopeNode ? { type: scopeNode.type, id: scopeNode.id } : null,
         sectionId: contextData.sectionId,
         parentType: contextData.parentType,
         parentId: contextData.parentId
     };
 
      
-    window.debugPayload = payload;
+     
 
     try {
         const res = await fetch('/api/generate-paper', {
@@ -704,8 +1118,20 @@ document.addEventListener('click', function (e) {
         case 'edit-subject-question-count':
             editSubjectQuestionCount(Number(target.dataset.index));
             break;
-        case 'remove-subject-question-count':
+                case 'remove-subject-question-count':
             removeSubjectQuestionCount(Number(target.dataset.index));
+            break;
+        case 'explorer-open':
+            openExplorerChild(target.dataset.type, target.dataset.id, target.dataset.title);
+            break;
+        case 'explorer-crumb':
+            openExplorerCrumb(Number(target.dataset.index));
+            break;
+        case 'explorer-back':
+            explorerBack();
+            break;
+        case 'explorer-retry':
+            loadExplorerNode();
             break;
     }
 });
@@ -726,7 +1152,8 @@ document.addEventListener('change', function (e) {
             addTag();
             break;
         case 'row-subject-change':
-            handleRowSubjectChange(target.dataset.rowId);
+            // Other mode me subject sirf marks ke liye hai, section/topic selection ko reset nahi karna
+            if (sourceMode !== 'other') handleRowSubjectChange(target.dataset.rowId);
             break;
         case 'row-qsection-change':
             handleRowQsectionChange(target.dataset.rowId);
@@ -746,10 +1173,26 @@ document.addEventListener('change', function (e) {
         case 'global-section-change':
             addGlobalSectionTag();
             break;
+        case 'source-mode-change':
+            handleSourceModeChange();
+            break;
+        case 'source-category-change':
+            handleSourceCategoryChange();
+            break;
+        case 'source-exam-change':
+            handleSourceExamChange();
+            break;
+        case 'source-listing-change':
+            handleSourceListingChange();
+            break;
     }
 });
 
+
 async function init() {
+    const sourceModeSelect = document.getElementById('sourceMode');
+    if (sourceModeSelect) sourceModeSelect.value = 'this';   // back/forward cache me purani value na rahe
+
     await loadSubjects();
     await loadLanguages();
     await loadGlobalSections();
@@ -760,3 +1203,4 @@ async function init() {
     if (window.lucide) lucide.createIcons();
 }
 init();
+ 

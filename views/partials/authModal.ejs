@@ -202,8 +202,11 @@
             </div>
 
             <h2 class="font-display text-2xl font-extrabold text-ink">Reset Password</h2>
-            <p class="text-slate-500 text-sm mt-1 mb-7">
+            <p id="resetOtpText" class="text-slate-500 text-sm mt-1 mb-7">
                 Enter the OTP sent to <span id="resetEmailDisplay" class="font-semibold text-slate-700"></span>
+            </p>
+            <p id="resetPwText" class="hidden text-slate-500 text-sm mt-1 mb-7">
+                OTP verified. Now set your new password.
             </p>
 
             <form id="resetPasswordForm" class="space-y-4">
@@ -215,11 +218,11 @@
                         class="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand transition tracking-[0.5em] text-center font-bold text-lg">
                 </div>
 
-                <div>
+                                <div id="newPasswordGroup" class="hidden">
                     <label class="text-xs font-semibold tracking-wide text-slate-500 uppercase">New Password</label>
                     <div class="relative mt-1.5">
                         <i data-lucide="lock" class="w-4.5 h-4.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="password" id="newPassword" required minlength="6" autocomplete="new-password"
+                        <input type="password" id="newPassword" minlength="6" autocomplete="new-password"
                             class="w-full rounded-xl border border-slate-200 pl-11 pr-11 py-3 text-sm outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand transition">
                         <button type="button" data-action="toggle-password" data-field="newPassword" data-icon="eyeIconReset"
                             class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
@@ -233,7 +236,7 @@
 
                 <button type="submit" id="resetSubmitBtn"
                     class="w-full bg-brand hover:bg-brandDeep text-white font-semibold rounded-xl py-3.5 shadow-lg shadow-brand/25 hover:shadow-brand/40 transition active:scale-[0.98]">
-                    Reset Password
+                    Verify OTP
                 </button>
 
                 <p id="resetMsg" class="text-center text-sm hidden"></p>

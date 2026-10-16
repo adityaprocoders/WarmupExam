@@ -31,12 +31,12 @@ export async function cleanupExpiredBatchData(userId, listingId, { force = false
     }
 
     // Saari entries expired hain (ya refund se force): data permanently delete.
-    const testIds = await Test.find({ listing: listingId, isLiveTest: { $ne: true } }).distinct("_id");
+        const testIds = await Test.find({ listing: listingId }).distinct("_id");
     const liveTestIds = await Test.find({ listing: listingId, isLiveTest: true }).distinct("_id");
 
     await Attempt.deleteMany({
         user: userId,
-        test: { $nin: liveTestIds },
+ 
         $or: [{ listing: listingId }, { test: { $in: testIds } }]
     });
 

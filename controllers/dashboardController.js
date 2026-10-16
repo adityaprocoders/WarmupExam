@@ -10,7 +10,7 @@ import LiveTestResult from "../models/LiveTestResult.js";
 import { checkEnrollment, isOwnerUser } from "../utils/authHelpers.js";
 import { calculateRankFromPredictor } from "../utils/rankHelper.js";
 import { getTestStatus } from "../utils/testStatus.js";
-import { buildTestLocationPath, getSectionColor } from "../utils/locationPath.js";
+import { buildTestLocationPath, buildSectionColorMap, LIVE_COLOR, WARMUP_COLOR, DEFAULT_COLOR } from "../utils/locationPath.js";
 import { cascadeDeleteSection } from "../utils/deleteHelpers.js";
 
 /* ------------------------------------------------------------------ */
@@ -135,12 +135,9 @@ export const showSeries = async (req, res) => {
     const statsFilterSections = sections;
 
 
-    const sectionColorMap = {};
-const sectionNameMap = {};
-sections.forEach((sec, idx) => {
-    sectionColorMap[String(sec._id)] = getSectionColor(idx);
-    sectionNameMap[String(sec._id)] = sec.title;
-});
+    const sectionColorMap = buildSectionColorMap(sections, listing._id);
+    const sectionNameMap = {};
+    sections.forEach(sec => { sectionNameMap[String(sec._id)] = sec.title; });
 
     let currentSection = null;
     if (section) {
@@ -200,7 +197,7 @@ sections.forEach((sec, idx) => {
         testQuery.section = statsSection;
     }
         
-        const allTests = await Test.find(testQuery).select("_id title totalMarks section parentType parentId");
+        const allTests = await Test.find(testQuery).select("_id title totalMarks section parentType parentId isDailyWarmup");
         const allTestIds = allTests.map(t => t._id);
         const testMap = {};
         allTests.forEach(t => { testMap[String(t._id)] = t; });
@@ -371,6 +368,7 @@ async function getLocationForTest(test) {
 recentActivity = await Promise.all(allAttempts.map(async (a) => {
     const test = testMap[String(a.test)];
     const sectionId = test?.section ? String(test.section) : null;
+    const isWarmup = !!test?.isDailyWarmup;
     const locationPath = test ? await getLocationForTest(test) : [];
 
     return {
@@ -379,8 +377,8 @@ recentActivity = await Promise.all(allAttempts.map(async (a) => {
         date: a.createdAt,
         score: a.score,
         totalMarks: a.totalMarks,
-        sectionName: sectionId ? (sectionNameMap[sectionId] || "General") : "General",
-        sectionColor: sectionId ? (sectionColorMap[sectionId] || getSectionColor(0)) : getSectionColor(0),
+        sectionName: isWarmup ? "Daily Warmup" : (sectionId ? (sectionNameMap[sectionId] || "General") : "General"),
+        sectionColor: isWarmup ? WARMUP_COLOR : ((sectionId && sectionColorMap[sectionId]) || DEFAULT_COLOR),
         locationPath
     };
 }));
@@ -409,7 +407,7 @@ recentActivity = await Promise.all(allAttempts.map(async (a) => {
                 score: r.score,
                 totalMarks: r.totalMarks,
                 sectionName: "Live Test",
-                sectionColor: { dot: "bg-red-500", text: "text-red-500" },
+                sectionColor: LIVE_COLOR,
                 locationPath: [],
                 isLive: true,
                 analysisAvailable: new Date(r.analysisExpiresAt) > nowTs,
@@ -644,8 +642,6 @@ tests = tests.map(t => ({
 };
 
 
-
-
 export const exportAllAttempts = async (req, res) => {
     const { slug } = req.params;
     const { statsSection } = req.query;
@@ -655,23 +651,48 @@ export const exportAllAttempts = async (req, res) => {
         return res.status(404).json({ success: false, message: "Listing not found" });
     }
 
-    const testQuery = { listing: listing._id, isLiveTest: { $ne: true } };
-    if (statsSection && statsSection !== "all") {
-        testQuery.section = statsSection;
+    // Dashboard jaisa hi order (createdAt) — taaki PDF ke colors dashboard se match karein
+    const sections = await Section.find({ listing: listing._id }).sort({ createdAt: 1 });
+    const sectionColorMap = buildSectionColorMap(sections, listing._id);
+    const sectionTitleMap = {};
+    sections.forEach(sec => { sectionTitleMap[String(sec._id)] = sec.title; });
+
+    const isSectionFilter = !!statsSection && statsSection !== "all";
+    const selectedSection = isSectionFilter
+        ? sections.find(s => String(s._id) === String(statsSection))
+        : null;
+    if (isSectionFilter && !selectedSection) {
+        return res.status(404).json({ success: false, message: "Section not found" });
     }
 
-    const allTests = await Test.find(testQuery).select("_id title section totalMarks");
+    // Best Score / Best Rank sirf tab: owner ne is section ke liye rank predictor ON kiya ho
+    // aur listing me rank predictor data bhara ho
+    const rankEnabled = !!(selectedSection?.showInStatsFilter && listing.rankPredictorData?.length);
+
+    const testQuery = { listing: listing._id, isLiveTest: { $ne: true } };
+    if (isSectionFilter) {
+        testQuery.section = selectedSection._id;
+    }
+
+    const allTests = await Test.find(testQuery).select("_id");
     const allTestIds = allTests.map(t => t._id);
 
     const attempts = await Attempt.find({ test: { $in: allTestIds }, user: req.user._id })
-        .populate({
-            path: "test",
-            select: "title section totalMarks",
-            populate: { path: "section", select: "title" }
-        })
+        .populate({ path: "test", select: "title section totalMarks isDailyWarmup parentType parentId" })
         .sort({ createdAt: -1 });
 
-    const data = attempts.map(a => {
+    // Test kis folder/file ke andar hai (Recent Activity jaisa path) — same test dobara ho to cache se
+    const locationCache = {};
+    const getLocation = async (test) => {
+        if (!test) return [];
+        const key = String(test._id);
+        if (locationCache[key] === undefined) {
+            locationCache[key] = await buildTestLocationPath(test, Folder, File);
+        }
+        return locationCache[key];
+    };
+
+    const data = await Promise.all(attempts.map(async a => {
         const correct = a.correctCount || 0;
         const wrong = a.wrongCount || 0;
         const attempted = correct + wrong;
@@ -684,23 +705,29 @@ export const exportAllAttempts = async (req, res) => {
 
         const { rank } = calculateRankFromPredictor(score, listing.rankPredictorData);
 
+        const sectionId = a.test?.section ? String(a.test.section) : null;
+        const isWarmup = !!a.test?.isDailyWarmup;
+        const locationPath = isWarmup ? [] : await getLocation(a.test);
+
         return {
             testName: a.test?.title || "Untitled Test",
-            category: a.test?.section?.title || "General",
+            locationPath,
+            category: isWarmup ? "Daily Warmup" : ((sectionId && sectionTitleMap[sectionId]) || "General"),
+            color: isWarmup ? WARMUP_COLOR : ((sectionId && sectionColorMap[sectionId]) || DEFAULT_COLOR),
             date: a.createdAt,
             attempted,
             correct,
             wrong,
             maxMarks,
             score,
-            rank: rank ?? "--",
+            rank: (rank === "" || rank == null) ? "--" : rank,
             accuracy,
-            time: a.duration ?? a.timeTaken ?? "--"
+            time: a.timeTaken ?? "--"
         };
-    });
+    }));
 
-        // Live test ke permanent results bhi PDF me jodo
-    if (listing.exam && (!statsSection || statsSection === "all")) {
+    // Live test ke permanent results bhi PDF me jodo (sirf "All Tests" me)
+    if (listing.exam && !isSectionFilter) {
         const liveResults = await LiveTestResult.find({ user: req.user._id, exam: listing.exam }).lean();
 
         liveResults.forEach(r => {
@@ -710,7 +737,9 @@ export const exportAllAttempts = async (req, res) => {
 
             data.push({
                 testName: r.testTitle,
+                locationPath: [],
                 category: "Live Test",
+                color: LIVE_COLOR,
                 date: r.attemptedAt,
                 attempted,
                 correct,
@@ -726,9 +755,23 @@ export const exportAllAttempts = async (req, res) => {
         data.sort((a, b) => new Date(b.date) - new Date(a.date));
     }
 
-    res.json({ success: true, listingTitle: listing.title, data });
-};
- 
+    // Best Rank = predictor se mile sabse chhote (behtar) rank
+    let bestRank = null;
+    if (rankEnabled) {
+        const nums = data.map(d => Number(d.rank)).filter(n => Number.isFinite(n) && n > 0);
+        if (nums.length) bestRank = Math.min(...nums);
+    }
+
+    res.json({
+        success: true,
+        listingTitle: listing.title,
+        examName: listing.exam || "",
+        sectionTitle: selectedSection ? selectedSection.title : null,
+        rankEnabled,
+        bestRank,
+        data
+    });
+};;
 
 
 export const updateStatsVisibility = async (req, res) => {

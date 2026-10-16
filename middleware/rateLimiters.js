@@ -73,3 +73,25 @@ export const customTestGenerateLimiter = rateLimit({
     keyGenerator: userOrIpKey,
     handler: jsonRateLimitHandler("Too many papers generated. Please try again in a few minutes."),
 });
+
+
+export const verifyOtpLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 15,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: emailAndIpKeyGenerator,
+    handler: jsonRateLimitHandler("Too many attempts. Please try again after 15 minutes."),
+});
+
+
+
+
+export const deleteAccountLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: userOrIpKey,
+    handler: jsonRateLimitHandler("Too many attempts. Please try again after 15 minutes."),
+});
