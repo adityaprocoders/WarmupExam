@@ -179,7 +179,7 @@ export async function generateLiveTestForExam(exam) {
     if (!Array.isArray(config.criteria) || config.criteria.length === 0) return;
 
     // saari included listings ke Tests
-    const testIds = await Test.find({ listing: { $in: config.includedListings }, isLiveTest: { $ne: true } }).distinct("_id");
+    const testIds = await Test.find({ listing: { $in: config.includedListings }, isLiveTest: { $ne: true }, isDailyWarmup: { $ne: true } }).distinct("_id");
     if (testIds.length === 0) return;
 
     // question -> source listing map (marks lookup ke liye)
@@ -219,7 +219,7 @@ allMappings.forEach(m => {
         const uniqueQIds = [...qMeta.keys()];
         if (uniqueQIds.length === 0) { rowPools.push({ row, pool: [] }); continue; }
           
-        const qFilter = { _id: { $in: uniqueQIds } };
+        const qFilter = { _id: { $in: uniqueQIds }, status: { $ne: "Disabled" } };
 if (Array.isArray(row.difficulty) && row.difficulty.length > 0) {
     qFilter.difficulty = { $in: row.difficulty };
 }

@@ -15,6 +15,18 @@ export const enrollListing = async (req, res) => {
 
     const userId = req.user._id;
 
+
+        const suspended = await User.exists({
+        _id: userId,
+        enrolledListings: { $elemMatch: { listing: listingId, suspendedByOwner: true } }
+    });
+    if (suspended) {
+        return res.status(403).json({
+            success: false,
+            message: "Your access to this series is suspended. Please contact support."
+        });
+    }
+
     // Agar purani entry expire ho chuki hai (cron se pehle), to pehle uska data saaf karo.
     // Valid entry ho to ye kuch delete nahi karega.
     await cleanupExpiredBatchData(userId, listingId);

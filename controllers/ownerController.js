@@ -25,6 +25,8 @@ import AIUsage from "../models/AIUsage.js";
 import LiveTestResult from "../models/LiveTestResult.js";
 import CustomAIPaper from "../models/CustomAIPaper.js";
 import CustomTestPayment from "../models/customTestPayment.js";
+import ExamSyllabus from "../models/ExamSyllabus.js";
+
 
 
 // ---------------- DASHBOARD STATS ----------------
@@ -174,6 +176,10 @@ export const getAllTestSeriesOwner = async (req, res) => {
         const enrolledMap = new Map(enrolledAgg.map(e => [String(e._id), e.count]));
         const purchasedMap = new Map(purchasedAgg.map(p => [String(p._id), p.count]));
 
+                // 👇 NAYA: kin exams ka syllabus (Add Content) add ho chuka hai
+        const syllabusDocs = await ExamSyllabus.find({}).select("category exam").lean();
+        const syllabusSet = new Set(syllabusDocs.map(s => `${s.category}|${String(s.exam).trim()}`));
+
         res.json({
             success: true,
             listings: listings.map(l => ({
@@ -189,7 +195,8 @@ export const getAllTestSeriesOwner = async (req, res) => {
                 validityDays: l.validityDays,
                 createdAt: l.createdAt,
                 enrolledCount: enrolledMap.get(String(l._id)) || 0,    
-                purchasedCount: purchasedMap.get(String(l._id)) || 0   
+                purchasedCount: purchasedMap.get(String(l._id)) || 0, 
+                hasSyllabus: syllabusSet.has(`${l.category}|${String(l.exam || "").trim()}`)   
             }))
         });
     } catch (err) {
@@ -1250,20 +1257,38 @@ export const getCategoriesOwner = async (req, res) => {
 export const getListingMarksForExam = async (req, res) => {
     try {
         const { category, exam } = req.query;
+
         if (!category || !exam) {
             return res.status(400).json({ success: false, message: "Category and exam are required." });
         }
 
+        // 👇 NAYA — pehle isi category+exam ki multi-part (Tier / Part / Prelims-Mains ...) listing dhoondo
+        const multiListing = await Listing.findOne({
+            category, exam, examStructure: "multi", "tiers.1": { $exists: true }
+        }).select("marks tiers").lean();
+
+        if (multiListing) {
+            const sorted = [...multiListing.tiers].sort((a, b) => (a.order || 0) - (b.order || 0));
+            const parts = sorted.map((t, i) => ({
+                key: t.key,
+                name: t.name,
+                // pehle part ka marks listing ke purane field me hota hai, baaki parts ka tiers[i].marks me
+                marks: i === 0 ? (multiListing.marks || []) : (t.marks || [])
+            }));
+            return res.json({ success: true, marks: parts[0].marks, parts });
+        }
+
+        // Single exam: purana logic bilkul waisa hi
         // Isi category+exam ki koi bhi listing dhoondo jiske paas marks config ho
         const listing = await Listing.findOne({ category, exam, "marks.0": { $exists: true } })
             .select("marks")
             .lean();
 
         if (!listing) {
-            return res.json({ success: true, marks: [] });
+            return res.json({ success: true, marks: [], parts: [] });
         }
 
-        res.json({ success: true, marks: listing.marks || [] });
+        res.json({ success: true, marks: listing.marks || [], parts: [] });
     } catch (err) {
         console.error("Get listing marks for exam error:", err);
         res.status(500).json({ success: false, message: "Failed to load marks." });
@@ -1271,46 +1296,114 @@ export const getListingMarksForExam = async (req, res) => {
 };
 
 // ---------------- SAVE EXAM PATTERN SUMMARY (upsert on category+exam) ----------------
+ 
+// 👇 NAYA helper — ek part ke rows + time ko saaf karta hai
+function normalizePatternPart(p) {
+    const strategy = p.timeStrategy === "sectional" ? "sectional" : "total";
+    return {
+        rows: (Array.isArray(p.rows) ? p.rows : []).map(r => ({
+            subject: String(r.subject || "").trim(),
+            questions: Number(r.questions) || 0,
+            positiveMarks: Number(r.positiveMarks) || 0,
+            negativeMarks: Number(r.negativeMarks) || 0
+        })),
+        timeStrategy: strategy,
+        totalDuration: strategy === "total" ? (Number(p.totalDuration) || 60) : 60,
+        sectionTime: strategy === "sectional"
+            ? (Array.isArray(p.sectionTime) ? p.sectionTime.map(st => ({
+                subjects: Array.isArray(st.subjects) ? st.subjects : [],
+                duration: Number(st.duration) || 0
+            })) : [])
+            : []
+    };
+}
+
 export const saveExamPatternSummary = async (req, res) => {
     try {
-        const { category, exam, rows, timeStrategy, totalDuration, sectionTime } = req.body;
+        const { category, exam, rows, timeStrategy, totalDuration, sectionTime, parts } = req.body;
 
         if (!category || !exam) {
             return res.status(400).json({ success: false, message: "Category and exam are required." });
         }
-        if (!Array.isArray(rows) || rows.length === 0) {
-            return res.status(400).json({ success: false, message: "At least one subject row is required." });
-        }
 
-        for (const r of rows) {
-            if (!r.subject || !r.subject.trim()) {
-                return res.status(400).json({ success: false, message: "Each row must have a subject." });
+        let updateData;
+
+        // 👇 NAYA — multi-part exam (modal ke tabs): kam se kam 2 parts aaye
+        if (Array.isArray(parts) && parts.length >= 2) {
+            const cleanParts = parts.slice(0, 6).map((p, i) => ({
+                key: String(p.key || "").trim() || `part-${i + 1}`,
+                name: String(p.name || "").trim() || `Part ${i + 1}`,
+                ...normalizePatternPart(p)
+            }));
+
+            let totalRows = 0;
+            for (const p of cleanParts) {
+                for (const r of p.rows) {
+                    if (!r.subject) {
+                        return res.status(400).json({ success: false, message: `${p.name}: each row must have a subject.` });
+                    }
+                    if (r.questions < 0) {
+                        return res.status(400).json({ success: false, message: `${p.name} - ${r.subject}: the question count is invalid.` });
+                    }
+                    totalRows++;
+                }
             }
-            if (r.questions === undefined || Number(r.questions) < 0) {
-                return res.status(400).json({ success: false, message: `${r.subject}: the question count is invalid.` });
+            // Koi ek part khali ho sakta hai, par poore exam me kam se kam ek subject chahiye
+            if (totalRows === 0) {
+                return res.status(400).json({ success: false, message: "At least one subject row is required." });
             }
+
+            const [first, ...rest] = cleanParts;
+            updateData = {
+                category,
+                exam,
+                // pehle part ka data purane fields me (Custom Test / purana code waisa hi chalta hai)
+                rows: first.rows,
+                timeStrategy: first.timeStrategy,
+                totalDuration: first.totalDuration,
+                sectionTime: first.sectionTime,
+                firstPart: { key: first.key, name: first.name },
+                parts: rest
+            };
+        } else {
+            // Single exam: purana logic bilkul waisa hi
+            if (!Array.isArray(rows) || rows.length === 0) {
+                return res.status(400).json({ success: false, message: "At least one subject row is required." });
+            }
+
+            for (const r of rows) {
+                if (!r.subject || !r.subject.trim()) {
+                    return res.status(400).json({ success: false, message: "Each row must have a subject." });
+                }
+                if (r.questions === undefined || Number(r.questions) < 0) {
+                    return res.status(400).json({ success: false, message: `${r.subject}: the question count is invalid.` });
+                }
+            }
+
+            const finalTimeStrategy = timeStrategy === "sectional" ? "sectional" : "total";
+
+            updateData = {
+                category,
+                exam,
+                rows: rows.map(r => ({
+                    subject: r.subject.trim(),
+                    questions: Number(r.questions) || 0,
+                    positiveMarks: Number(r.positiveMarks) || 0,
+                    negativeMarks: Number(r.negativeMarks) || 0
+                })),
+                timeStrategy: finalTimeStrategy,
+                totalDuration: finalTimeStrategy === "total" ? (Number(totalDuration) || 60) : 60,
+                sectionTime: finalTimeStrategy === "sectional"
+                    ? (Array.isArray(sectionTime) ? sectionTime.map(st => ({
+                        subjects: Array.isArray(st.subjects) ? st.subjects : [],
+                        duration: Number(st.duration) || 0
+                    })) : [])
+                    : [],
+                // 👇 NAYA — single exam me parts saaf (pehle multi tha to ab nahi)
+                firstPart: {},
+                parts: []
+            };
         }
-
-        const finalTimeStrategy = timeStrategy === "sectional" ? "sectional" : "total";
-
-        const updateData = {
-            category,
-            exam,
-            rows: rows.map(r => ({
-                subject: r.subject.trim(),
-                questions: Number(r.questions) || 0,
-                positiveMarks: Number(r.positiveMarks) || 0,
-                negativeMarks: Number(r.negativeMarks) || 0
-            })),
-            timeStrategy: finalTimeStrategy,
-            totalDuration: finalTimeStrategy === "total" ? (Number(totalDuration) || 60) : 60,
-            sectionTime: finalTimeStrategy === "sectional"
-                ? (Array.isArray(sectionTime) ? sectionTime.map(st => ({
-                    subjects: Array.isArray(st.subjects) ? st.subjects : [],
-                    duration: Number(st.duration) || 0
-                })) : [])
-                : []
-        };
 
         const doc = await ExamPatternSummary.findOneAndUpdate(
             { category, exam },
@@ -1324,7 +1417,6 @@ export const saveExamPatternSummary = async (req, res) => {
         res.status(500).json({ success: false, message: err.message || "Failed to save." });
     }
 };
-
 
 // ---------------- GET ALL EXAM PATTERN SUMMARIES (list, optional category filter) ----------------
 export const getAllExamPatternSummaries = async (req, res) => {
@@ -1459,5 +1551,160 @@ export const getUserAIUsageOwner = async (req, res) => {
     } catch (err) {
         console.error("Owner AI usage error:", err);
         res.status(500).json({ success: false, message: "Failed to load AI usage." });
+    }
+};
+
+
+
+
+
+
+// ================= EXAM SYLLABUS (Add Content) =================
+
+const SYLLABUS_MAX_PARTS = 6;
+const SYLLABUS_MAX_ROWS = 30;
+
+function isValidSyllabusQuery(category, exam) {
+    return mongoose.Types.ObjectId.isValid(category) && exam.length > 0 && exam.length <= 200;
+}
+
+// Listing ke Exam Structure se parts nikalta hai
+// Default => 1 part (naam khali) | Tier/Part/Prelims-Mains/... => listing ke tiers ke naam
+async function getSyllabusStructure(category, exam) {
+    const multiListing = await Listing.findOne({
+        category, exam, examStructure: "multi", "tiers.1": { $exists: true }
+    }).select("structureType tiers").lean();
+
+    if (multiListing) {
+        const parts = [...multiListing.tiers]
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .slice(0, SYLLABUS_MAX_PARTS)
+            .map((t, i) => ({ key: t.key, name: t.name, order: i }));
+        return { examStructure: "multi", structureType: multiListing.structureType || "", parts };
+    }
+
+    const anyListing = await Listing.exists({ category, exam });
+    if (!anyListing) return null;
+
+    return {
+        examStructure: "single",
+        structureType: "",
+        parts: [{ key: "default", name: "", order: 0 }]
+    };
+}
+
+export const getExamSyllabus = async (req, res) => {
+    try {
+        const category = String(req.query.category || "");
+        const exam = String(req.query.exam || "").trim();
+
+        if (!isValidSyllabusQuery(category, exam)) {
+            return res.status(400).json({ success: false, message: "Category and exam are required." });
+        }
+
+        const structure = await getSyllabusStructure(category, exam);
+        if (!structure) {
+            return res.status(404).json({ success: false, message: "No test series found for this exam." });
+        }
+
+        const saved = await ExamSyllabus.findOne({ category, exam }).lean();
+        const savedParts = (saved && saved.parts) || [];
+
+        const parts = structure.parts.map((p) => {
+            let match = savedParts.find(sp => sp.key === p.key);
+            if (!match && structure.examStructure === "single") match = savedParts[0];
+            return {
+                key: p.key,
+                name: p.name,
+                rows: ((match && match.rows) || []).map(r => ({ subject: r.subject, topics: r.topics || "" }))
+            };
+        });
+
+        res.json({
+            success: true,
+            exam,
+            examStructure: structure.examStructure,
+            structureType: structure.structureType,
+            parts,
+            hasSaved: !!saved
+        });
+    } catch (err) {
+        console.error("Get exam syllabus error:", err);
+        res.status(500).json({ success: false, message: "Failed to load syllabus." });
+    }
+};
+
+export const saveExamSyllabus = async (req, res) => {
+    try {
+        const category = String(req.body.category || "");
+        const exam = String(req.body.exam || "").trim();
+        const incoming = Array.isArray(req.body.parts) ? req.body.parts : [];
+
+        if (!isValidSyllabusQuery(category, exam)) {
+            return res.status(400).json({ success: false, message: "Category and exam are required." });
+        }
+
+        // Structure hamesha listing se lo (client pe bharosa nahi)
+        const structure = await getSyllabusStructure(category, exam);
+        if (!structure) {
+            return res.status(404).json({ success: false, message: "No test series found for this exam." });
+        }
+
+        let totalRows = 0;
+        const cleanParts = [];
+
+        for (const sp of structure.parts) {
+            const inPart = incoming.find(p => p && p.key === sp.key);
+            const rawRows = Array.isArray(inPart && inPart.rows) ? inPart.rows : [];
+            const label = sp.name || "Syllabus";
+
+            if (rawRows.length > SYLLABUS_MAX_ROWS) {
+                return res.status(400).json({
+                    success: false,
+                    message: `${label}: maximum ${SYLLABUS_MAX_ROWS} subjects allowed.`
+                });
+            }
+
+            const rows = [];
+            for (const r of rawRows) {
+                const subject = String((r && r.subject) ?? "").trim().slice(0, 80);
+                const topics = String((r && r.topics) ?? "").replace(/\r\n?/g, "\n").trim().slice(0, 1500);
+
+                if (!subject && !topics) continue;
+                if (!subject) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `${label}: subject name is required for every row.`
+                    });
+                }
+                rows.push({ subject, topics });
+            }
+
+            totalRows += rows.length;
+            cleanParts.push({ key: sp.key, name: sp.name, order: sp.order, rows });
+        }
+
+        // Sab khali => syllabus hata do (green badge bhi hat jayega)
+        if (totalRows === 0) {
+            await ExamSyllabus.deleteOne({ category, exam });
+            return res.json({ success: true, removed: true, hasSyllabus: false, message: "Syllabus removed." });
+        }
+
+        await ExamSyllabus.findOneAndUpdate(
+            { category, exam },
+            {
+                category,
+                exam,
+                examStructure: structure.examStructure,
+                structureType: structure.structureType,
+                parts: cleanParts
+            },
+            { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+        );
+
+        res.json({ success: true, hasSyllabus: true, message: "Syllabus saved successfully." });
+    } catch (err) {
+        console.error("Save exam syllabus error:", err);
+        res.status(500).json({ success: false, message: "Failed to save syllabus." });
     }
 };

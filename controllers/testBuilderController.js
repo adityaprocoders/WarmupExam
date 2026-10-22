@@ -5,6 +5,8 @@ import Test from "../models/Test.js";
 import Question, { computeContentHash } from "../models/Question.js";   // 👈 CHANGED
 import TestQuestion from "../models/TestQuestion.js";
 import ExpressError from "../utils/ExpressError.js";
+import { getTierList, getTierConfig, resolveTestTier } from "../utils/tierHelper.js";
+import Attempt from "../models/TestAttempt.js";
 
 
 function normalizeOptions(optionsArr) {
@@ -47,32 +49,27 @@ function pickSingleSource(q) {
     return withContent || q.translations[0] || q;
 }
 
-async function getOrCreateQuestionId(questionPayload, hash, currentQuestionId = null, session = null) {
+export async function getOrCreateQuestionId(questionPayload, hash, currentQuestionId = null, session = null) {
     questionPayload.contentHash = hash;
 
+    // EDIT: pehle se bana question hai
     if (currentQuestionId) {
         const clash = await Question.findOne({ contentHash: hash, _id: { $ne: currentQuestionId } }).session(session);
-        if (clash) {
-            return clash._id;
-        }
-        await Question.findByIdAndUpdate(currentQuestionId, questionPayload, { session });
+        if (clash) return clash._id; // edit ke baad content kisi doosre existing question jaisa ho gaya -> uska reference
+
+        // listing "first created" info hai, isliye overwrite nahi karte
+        const { listing: _ignoreListing, ...updatable } = questionPayload;
+        // Wahi question update hota hai, to ye jis jis test me hai sab jagah update dikhega
+        await Question.findByIdAndUpdate(currentQuestionId, updatable, { session, runValidators: true });
         return currentQuestionId;
     }
 
-    try {
-        const doc = await Question.findOneAndUpdate(
-            { contentHash: hash },
-            { $setOnInsert: questionPayload },
-            { upsert: true, new: true, session }
-        );
-        return doc._id;
-    } catch (err) {
-        if (err.code === 11000) {
-            const existing = await Question.findOne({ contentHash: hash }).session(session);
-            return existing._id;
-        }
-        throw err;
-    }
+    // NAYA: same question (text + correct answer) pehle se hai to sirf uska reference, naya nahi banta
+    const existing = await Question.findOne({ contentHash: hash }).session(session);
+    if (existing) return existing._id;
+
+    const [doc] = await Question.create([questionPayload], { session });
+    return doc._id;
 }
 
 
@@ -99,15 +96,18 @@ export const renderTestBuilder = async (req, res) => {
         parentId: parentId || "",
         returnUrl: returnUrl || "/",
         editId: editId || "",
+        tierList: getTierList(listing),
         robots: "noindex, nofollow"
     });
 };
 
 export const getListingSubjects = async (req, res) => {
     const { id } = req.params;
-    const listing = await Listing.findById(id).select("marks");
+    const listing = await Listing.findById(id).select("marks examStructure tiers");
     if (!listing) return res.status(404).json({ success: false, message: "Listing not found" });
-    res.status(200).json({ success: true, data: listing.marks });
+
+    const tierKey = resolveTestTier(listing, req.query.tier);
+    res.status(200).json({ success: true, data: getTierConfig(listing, tierKey).marks });
 };
 
 export const createTestBuilder = async (req, res) => {
@@ -117,8 +117,9 @@ export const createTestBuilder = async (req, res) => {
     if (!body.title) return res.status(400).json({ success: false, message: "Test title is required." });
     if (!body.listingId) return res.status(400).json({ success: false, message: "listingId is missing." });
 
-    const listingDoc = await Listing.findById(body.listingId).select("marks");
-    const subjectsConfig = listingDoc?.marks || [];
+    const listingDoc = await Listing.findById(body.listingId).select("marks examStructure tiers");
+    const resolvedTier = resolveTestTier(listingDoc, body.tier);
+    const subjectsConfig = getTierConfig(listingDoc, resolvedTier).marks || [];
 
     const allowedVisibility = ["public", "private", "scheduled"];
     const visibility = allowedVisibility.includes(body.visibility) ? body.visibility : "private";
@@ -194,6 +195,7 @@ if (testLanguageMode !== "multiple") {
         title: body.title,
         listing: body.listingId,
         section: body.sectionId || null,
+        tier: resolvedTier,
         parentType: body.parentType || "section",
         parentId: body.parentId || null,
         languageMode: testLanguageMode,
@@ -362,8 +364,9 @@ export const updateTestBuilder = async (req, res) => {
         if (!body.title) return res.status(400).json({ success: false, message: "Test title is required." });
 
         const listingId = body.listingId || existingTest.listing;
-        const listingDoc = await Listing.findById(listingId).select("marks");
-        const subjectsConfig = listingDoc?.marks || [];
+        const listingDoc = await Listing.findById(listingId).select("marks examStructure tiers");
+        const resolvedTier = resolveTestTier(listingDoc, body.tier !== undefined ? body.tier : existingTest.tier);
+        const subjectsConfig = getTierConfig(listingDoc, resolvedTier).marks || [];
 
         const allowedVisibility = ["public", "private", "scheduled"];
         const visibility = allowedVisibility.includes(body.visibility) ? body.visibility : existingTest.visibility;
@@ -456,6 +459,7 @@ export const updateTestBuilder = async (req, res) => {
         existingTest.totalQuestions = Array.isArray(body.questions) ? body.questions.length : 0;
         existingTest.totalMarks = calculatedTotalMarks;
         existingTest.visibility = visibility;
+        existingTest.tier = resolvedTier;
         existingTest.publishAt = visibility === "scheduled" ? new Date(body.publishAt) : null;
 
         const oldMappings = await TestQuestion.find({ test: id }).sort({ order: 1 });
@@ -539,11 +543,12 @@ export const updateTestBuilder = async (req, res) => {
                     }
 
                     for (const qId of oldQuestionIds) {
-                        const stillUsed = await TestQuestion.exists({ question: qId }).session(session);
-                        if (!stillUsed) {
-                            await Question.findByIdAndDelete(qId, { session });
-                        }
-                    }
+    const stillUsed = await TestQuestion.exists({ question: qId }).session(session);
+    const usedInAttempt = await Attempt.exists({ "answers.question": qId }).session(session);
+    if (!stillUsed && !usedInAttempt) {
+        await Question.findByIdAndDelete(qId, { session });
+    }
+}
                 }
             });
         } finally {

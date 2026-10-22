@@ -13,6 +13,7 @@ import ExamPatternSummary from "../models/ExamPatternSummary.js";
 import Section from "../models/Section.js";
 import { getUsageSummary } from "../utils/aiUsageTracker.js";
 import { AI_LIMITS } from "../utils/aiLimits.js";
+import { isSafeRedirectPath } from "../utils/safeRedirect.js";
 
 
 const escapeRegex = (str) => String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -417,6 +418,32 @@ export const getWeakAreas = async (req, res) => {
     }
 };
 
+
+// 👇 NAYA — multi-part exam pattern: chuna hua part (key) ke rows + time wala doc banata hai.
+// Single pattern (parts nahi) => doc waisa hi (partList khali). partKey khali/unknown => pehla part jisme rows hon.
+function resolvePatternPart(doc, partKey) {
+    if (!doc) return doc;
+    if (!Array.isArray(doc.parts) || !doc.parts.length) return { ...doc, partList: [] };
+
+    const first = {
+        key: (doc.firstPart && doc.firstPart.key) || "part-1",
+        name: (doc.firstPart && doc.firstPart.name) || "Part 1",
+        rows: doc.rows || [], timeStrategy: doc.timeStrategy,
+        totalDuration: doc.totalDuration, sectionTime: doc.sectionTime
+    };
+    const all = [first, ...doc.parts];
+    const partList = all.map((p) => ({ key: p.key, name: p.name, hasRows: (p.rows || []).length > 0 }));
+    const chosen = all.find((p) => p.key === partKey) || all.find((p) => (p.rows || []).length) || first;
+
+    return {
+        ...doc,
+        rows: chosen.rows || [], timeStrategy: chosen.timeStrategy,
+        totalDuration: chosen.totalDuration, sectionTime: chosen.sectionTime,
+        partList, activePart: chosen.key
+    };
+}
+
+
 /* ------------------------------------------------------------
    GET /api/custom-test/patterns?exams=A
    Exam ke real tests se pattern nikalta hai (Pro / Pro Max only)
@@ -433,7 +460,7 @@ export const getWeakAreas = async (req, res) => {
         const doc = await ExamPatternSummary.findOne({ category: categoryId, exam: exams[0] }).lean();
         if (!doc) return res.json({ pattern: null });
 
-        res.json({ pattern: doc });
+                res.json({ pattern: resolvePatternPart(doc, req.query.part) });
     } catch (err) {
         console.error("getPatterns error:", err);
         res.status(500).json({ pattern: null });
@@ -467,7 +494,7 @@ async function generateExamPatternPaper(req, res) {
         if (!isPaidCustomTestTier(getCustomTestTier(req))) {
             return res.status(403).json({ success: false, error: "UPGRADE_REQUIRED", requiredTier: "pro" });
         }
-        const { exams = [], categoryId, topicSelections = {}, difficulty = { easy: 25, medium: 50, hard: 25 } } = req.body || {};
+        const { exams = [], categoryId, topicSelections = {}, difficulty = { easy: 25, medium: 50, hard: 25 }, partKey } = req.body || {};
         if (!exams.length || !categoryId) {
             return res.status(400).json({ success: false, message: "Exam or category is missing." });
         }
@@ -477,7 +504,8 @@ async function generateExamPatternPaper(req, res) {
             return res.status(400).json({ success: false, message: "Difficulty percentages must add up to 100%." });
         }
 
-        const patternDoc = await ExamPatternSummary.findOne({ category: categoryId, exam: exams[0] }).lean();
+        const rawPatternDoc = await ExamPatternSummary.findOne({ category: categoryId, exam: exams[0] }).lean();
+        const patternDoc = resolvePatternPart(rawPatternDoc, partKey);
         if (!patternDoc || !patternDoc.rows || !patternDoc.rows.length) {
             return res.status(404).json({ success: false, message: "No pattern is configured for this exam." });
         }
@@ -502,8 +530,9 @@ async function generateExamPatternPaper(req, res) {
                 medium: Math.round((Number(difficulty.medium) / 100) * totalNeed),
                 hard: 0,
             };
-            want.hard = Math.max(0, totalNeed - want.easy - want.medium);
-
+            if (want.easy > totalNeed) want.easy = totalNeed;
+if (want.easy + want.medium > totalNeed) want.medium = totalNeed - want.easy;
+want.hard = Math.max(0, totalNeed - want.easy - want.medium);
             const selectedTopics = Array.isArray(topicSelections[row.subject]) ? topicSelections[row.subject] : [];
             const excludeIds = () => picked.map((p) => p._id);
 
@@ -796,7 +825,7 @@ export const customTestAttempt = async (req, res, next) => {
         res.render("pages/custompaper/customAttempt", {
             layout: false,    
             paperId: req.params.paperId,
-            returnUrl: req.query.from || (isPaid ? "/dashboard/custom-test" : "/custom-test"),
+            returnUrl: isSafeRedirectPath(req.query.from) ? req.query.from : (isPaid ? "/dashboard/custom-test" : "/custom-test"),
             title: "Custom Practice Paper | WarmupExam",
             robots: "noindex, nofollow",
             tier,
@@ -813,7 +842,7 @@ export const customTestAnalysisPage = async (req, res, next) => {
         res.render("pages/custompaper/customAnalysis", {
             layout: false,
             paperId: req.params.paperId,
-            returnUrl: req.query.from || (isPaid ? "/dashboard/custom-test" : "/custom-test"),
+            returnUrl: isSafeRedirectPath(req.query.from) ? req.query.from : (isPaid ? "/dashboard/custom-test" : "/custom-test"),
             title: "Custom Practice Paper - Analysis | WarmupExam",
             robots: "noindex, nofollow",
             tier,   
@@ -1081,7 +1110,7 @@ export const customTestUpgradePage = async (req, res) => {
     promax,
     activePlan: ["pro", "promax"].includes(req.query.plan) ? req.query.plan : "pro",
     currentTier: req.user?.customTestTier || "free",
-    returnUrl: req.query.returnTo || "/custom-test",
+    returnUrl: isSafeRedirectPath(req.query.returnTo) ? req.query.returnTo : "/custom-test",
     title: "Upgrade Your Plan | WarmupExam",
     robots: "noindex, nofollow"
 });
@@ -1120,7 +1149,7 @@ export const pricingPage = async (req, res) => {
                 backUrl = referer.replace(baseUrl, "");
             }
         }
-        if (!backUrl || !backUrl.startsWith("/")) backUrl = "/custom-test";
+        if (!backUrl || !isSafeRedirectPath(backUrl)) backUrl = "/custom-test";
 
         const proPrice = pricingDoc?.pro?.find(r => r.months === 1)?.price ?? 299;
         const promaxPrice = pricingDoc?.promax?.find(r => r.months === 1)?.price ?? 699;

@@ -222,6 +222,30 @@ export const createListingSchema = Joi.object({
         })
     ).default([]),
 
+        examStructure: Joi.string().valid("single", "multi").optional(),
+    structureType: Joi.string().valid("", "tier", "part", "prelims_mains", "main_advanced", "custom").allow(null).optional(),
+    tiers: Joi.array().items(
+        Joi.object({
+            key: Joi.string().trim().allow("", null).optional(),
+            name: Joi.string().trim().allow("", null).optional(),
+            order: Joi.number().optional(),
+            marks: Joi.array().items(
+                Joi.object({
+                    subject: Joi.string().trim().allow("").optional(),
+                    positiveMarks: Joi.alternatives().try(Joi.number(), Joi.string().allow("")).optional(),
+                    negativeMarks: Joi.alternatives().try(Joi.number(), Joi.string().allow("")).optional(),
+                    qualifyingOnly: Joi.boolean().truthy("true").falsy("false", "").default(false)
+                })
+            ).default([]),
+            rankPredictorData: Joi.array().items(
+                Joi.object({
+                    marks: Joi.alternatives().try(Joi.number(), Joi.string().allow("")).optional(),
+                    rank: Joi.alternatives().try(Joi.number(), Joi.string().allow("")).optional()
+                })
+            ).default([])
+        })
+    ).optional(),
+
     validityDays: Joi.number().integer().min(1).default(365),
 
     visibility: Joi.string().valid("private", "public").default("private")

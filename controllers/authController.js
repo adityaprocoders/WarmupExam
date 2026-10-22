@@ -185,7 +185,7 @@ export const googleCallback = (req, res, next) => {
         }
 
         if (!user) {
-            req.flash("error", "Google sign-in was cancelled or has expired.");
+            req.flash("error", info?.message || "Google sign-in was cancelled or has expired.");
             return req.session.save(() => res.redirect("/?showLogin=true"));
         }
 

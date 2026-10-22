@@ -218,19 +218,22 @@ grid.addEventListener('submit', (e) => {
             </div>` : '';
  
 
-            let actionHtml;
-if (test.isOwner) {
-    actionHtml = `<a href="/test/${test._id}" class="flex-1 min-w-[100px] text-center border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold text-sm py-2.5 rounded-xl transition">EXPLORE</a>
+                         let actionHtml;
+            const exploreBtn = `<a href="/test/${test.slug}" class="flex-1 min-w-[100px] text-center border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold text-sm py-2.5 rounded-xl transition">EXPLORE</a>`;
+
+            if (test.isOwner || test.canAccess) {
+                actionHtml = `${exploreBtn}
                    <a href="/series/${test.slug}" class="flex-1 min-w-[100px] text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">🚀 Start Test</a>`;
-} else if (test.canAccess) {
-    actionHtml = `<a href="/series/${test.slug}" class="w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">🚀 Start Test</a>`;
-} else {
-    actionHtml = `<a href="/test/${test._id}" class="flex-1 min-w-[100px] text-center border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold text-sm py-2.5 rounded-xl transition">EXPLORE</a>
+            } else if (test.isSuspended) {
+                actionHtml = `${exploreBtn}
+                   <button type="button" disabled class="flex-1 min-w-[100px] text-center bg-gray-200 text-gray-500 cursor-not-allowed font-semibold text-sm py-2.5 rounded-xl">SUSPENDED</button>`;
+            } else {
+                actionHtml = `${exploreBtn}
        <button data-action="${test.type === 'Free' ? 'enroll' : 'buy'}" data-id="${test._id}" data-logged-in="${!!test.currentUser}"
             class="flex-1 min-w-[100px] text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition">
             ${test.type === 'Free' ? 'ENROLL NOW' : 'BUY NOW'}
        </button>`;
-}
+            }
 
         return `
         <div class="group bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
@@ -446,7 +449,7 @@ if (moreExamsBtn) {
         const hasSeries = data.series.length > 0;
 
         if (!hasExams && !hasSeries) {
-            searchDropdown.innerHTML = `<div class="p-4 text-sm text-slate-400">"${escapeHtml(q)}"No results found.</div>`;
+                       searchDropdown.innerHTML = `<div class="p-4 text-sm text-slate-400">No results found for "${escapeHtml(q)}".</div>`;
             searchDropdown.classList.remove('hidden');
             return;
         }

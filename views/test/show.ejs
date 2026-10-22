@@ -117,74 +117,98 @@
     </div>
 </section>
 
-    <%- include('../owner/contentBlocks', { listing, isOwner, allBlocks }) %>
+     <%- include('../partials/examSyllabus', { syllabusParts, listingExam: listing.exam, cspNonce }) %>
 
-    <% if (examPattern && examPattern.rows && examPattern.rows.length) { %>
+    <%
+        // 👇 NAYA — pattern ke parts: pehla part (purane fields) + baaki parts (examPattern.parts).
+        // Tier-wise (multi) listing => saare parts. Single listing => sirf pehla part, bina naam ke (bilkul purana look).
+        const _listingMulti = !!(listing && listing.examStructure === 'multi');
+        const _patParts = [];
+        if (examPattern) {
+            const _showParts = _listingMulti && !!(examPattern.parts && examPattern.parts.length);
+            _patParts.push({
+                name: _showParts ? ((examPattern.firstPart && examPattern.firstPart.name) || 'Part 1') : null,
+                rows: examPattern.rows || [], timeStrategy: examPattern.timeStrategy,
+                totalDuration: examPattern.totalDuration, sectionTime: examPattern.sectionTime
+            });
+            if (_showParts) {
+                examPattern.parts.forEach(p => _patParts.push({
+                    name: p.name, rows: p.rows || [], timeStrategy: p.timeStrategy,
+                    totalDuration: p.totalDuration, sectionTime: p.sectionTime
+                }));
+            }
+        }
+        const _patVisible = _patParts.filter(p => p.rows.length);
+    %>
+    <% if (_patVisible.length) { %>
     <div class="border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-6 rounded-xl bg-white">
-        <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Marks Configuration</h2>
+        <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Exam Pattern</h2>
 
-        <div class="overflow-x-auto rounded-xl border border-gray-200 -mx-4 sm:mx-0 px-4 sm:px-0">
-            <table class="w-full text-xs sm:text-sm min-w-[500px] sm:min-w-0">
-                <thead>
-                    <tr class="bg-indigo-50 text-gray-700">
-                        <th class="text-left font-bold py-2.5 sm:py-3 px-3 sm:px-4">Subject</th>
-                        <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Questions</th>
-                        <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Positive</th>
-                        <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Negative</th>
-                        <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <%
-                        const totalQ = examPattern.rows.reduce((s, r) => s + (r.questions || 0), 0);
-                        const totalPos = examPattern.rows.reduce((s, r) => s + (r.positiveMarks || 0) * (r.questions || 0), 0);
-                        const isSectional = examPattern.timeStrategy === "sectional" && examPattern.sectionTime && examPattern.sectionTime.length;
-
-                        const totalTime = isSectional
-                            ? examPattern.sectionTime.reduce((s, st) => s + (Number(st.duration) || 0), 0)
-                            : (examPattern.totalDuration || 0);
-
-                        function findGroupIndex(subject) {
-                            if (!isSectional) return -1;
-                            return examPattern.sectionTime.findIndex(st => (st.subjects || []).includes(subject));
-                        }
-
-                        const renderedGroups = new Set();
-                    %>
-                    <% examPattern.rows.forEach(r => {
-                        const groupIdx = findGroupIndex(r.subject);
-                        const isFirstInGroup = groupIdx === -1 || !renderedGroups.has(groupIdx);
-                        if (groupIdx !== -1) renderedGroups.add(groupIdx);
-                        const groupSize = groupIdx !== -1 ? examPattern.sectionTime[groupIdx].subjects.length : 1;
-                    %>
-                        <tr class="border-t border-gray-100">
-                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 font-semibold text-gray-800 whitespace-nowrap"><%= r.subject %></td>
-                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-700"><%= r.questions %></td>
-                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-green-600 font-semibold">+<%= r.positiveMarks %></td>
-                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-red-600 font-semibold">-<%= r.negativeMarks %></td>
-                            <% if (isSectional) { %>
-                                <% if (isFirstInGroup) { %>
-                                    <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-500" rowspan="<%= groupSize %>">
-                                        <%= examPattern.sectionTime[groupIdx].duration %> min
-                                    </td>
-                                <% } %>
-                            <% } else { %>
-                                <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-500"></td>
-                            <% } %>
+        <% _patVisible.forEach(function (pt) { %>
+        <% if (pt.name) { %><span class="inline-block bg-indigo-50 text-gray-900 font-bold text-sm sm:text-base px-3 py-1 rounded-lg mb-2"><%= pt.name %></span><% } %>
+            <div class="overflow-x-auto rounded-xl border border-gray-200 -mx-4 sm:mx-0 px-4 sm:px-0<%= pt.name ? ' mb-4 sm:mb-6' : '' %>">
+                <table class="w-full text-xs sm:text-sm min-w-[500px] sm:min-w-0">
+                    <thead>
+                        <tr class="bg-indigo-50 text-gray-700">
+                            <th class="text-left font-bold py-2.5 sm:py-3 px-3 sm:px-4">Subject</th>
+                            <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Questions</th>
+                            <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Positive</th>
+                            <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Negative</th>
+                            <th class="text-center font-bold py-2.5 sm:py-3 px-3 sm:px-4">Time</th>
                         </tr>
-                    <% }) %>
-                    <tr class="border-t border-gray-200 bg-gray-100 font-bold">
-                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-gray-900">Total</td>
-                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-900"><%= totalQ %></td>
-                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-green-700">+<%= totalPos %></td>
-                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center">—</td>
-                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-900 whitespace-nowrap">
-                            <%= totalTime %> Minutes
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        <%
+                            const totalQ = pt.rows.reduce((s, r) => s + (r.questions || 0), 0);
+                            const totalPos = pt.rows.reduce((s, r) => s + (r.positiveMarks || 0) * (r.questions || 0), 0);
+                            const isSectional = pt.timeStrategy === "sectional" && pt.sectionTime && pt.sectionTime.length;
+
+                            const totalTime = isSectional
+                                ? pt.sectionTime.reduce((s, st) => s + (Number(st.duration) || 0), 0)
+                                : (pt.totalDuration || 0);
+
+                            function findGroupIndex(subject) {
+                                if (!isSectional) return -1;
+                                return pt.sectionTime.findIndex(st => (st.subjects || []).includes(subject));
+                            }
+
+                            const renderedGroups = new Set();
+                        %>
+                        <% pt.rows.forEach(r => {
+                            const groupIdx = findGroupIndex(r.subject);
+                            const isFirstInGroup = groupIdx === -1 || !renderedGroups.has(groupIdx);
+                            if (groupIdx !== -1) renderedGroups.add(groupIdx);
+                            const groupSize = groupIdx !== -1 ? pt.sectionTime[groupIdx].subjects.length : 1;
+                        %>
+                            <tr class="border-t border-gray-100">
+                                <td class="py-2.5 sm:py-3 px-3 sm:px-4 font-semibold text-gray-800 whitespace-nowrap"><%= r.subject %></td>
+                                <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-700"><%= r.questions %></td>
+                                <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-green-600 font-semibold">+<%= r.positiveMarks %></td>
+                                <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-red-600 font-semibold">-<%= r.negativeMarks %></td>
+                                <% if (isSectional) { %>
+                                    <% if (isFirstInGroup) { %>
+                                        <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-500" rowspan="<%= groupSize %>">
+                                            <%= pt.sectionTime[groupIdx].duration %> min
+                                        </td>
+                                    <% } %>
+                                <% } else { %>
+                                    <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-500"></td>
+                                <% } %>
+                            </tr>
+                        <% }) %>
+                        <tr class="border-t border-gray-200 bg-gray-100 font-bold">
+                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-gray-900">Total</td>
+                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-900"><%= totalQ %></td>
+                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-green-700">+<%= totalPos %></td>
+                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center">—</td>
+                            <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-900 whitespace-nowrap">
+                                <%= totalTime %> Minutes
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        <% }) %>
     </div>
     <% } %>
 

@@ -102,6 +102,30 @@ const listingSchema = new mongoose.Schema({
         }
     ],
 
+        examStructure: { type: String, enum: ["single", "multi"], default: "single" },
+    structureType: { type: String, enum: ["", "tier", "part", "prelims_mains", "main_advanced", "custom"], default: "" },
+    tiers: [
+        {
+            key: { type: String, required: true, trim: true },
+            name: { type: String, required: true, trim: true },
+            order: { type: Number, default: 0 },
+            marks: [
+                {
+                    subject: { type: String, required: true },
+                    positiveMarks: { type: Number, required: true, default: 0 },
+                    negativeMarks: { type: Number, required: true, default: 0 },
+                    qualifyingOnly: { type: Boolean, default: false }
+                }
+            ],
+            rankPredictorData: [
+                {
+                    marks: { type: Number, required: true },
+                    rank: { type: Number, required: true }
+                }
+            ]
+        }
+    ],
+
     // Validity — enrollment ke baad kitne din tak access rahega
     validityDays: {
         type: Number,

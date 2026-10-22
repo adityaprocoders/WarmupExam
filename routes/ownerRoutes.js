@@ -31,7 +31,9 @@ import {
     getCategoriesOwner,
     getAllExamPatternSummaries,
      deleteExamPatternSummary,
-    getUserAIUsageOwner
+    getUserAIUsageOwner,
+    getExamSyllabus,
+    saveExamSyllabus
 } from "../controllers/ownerController.js";
 import { isOwner } from "../middleware/isLoggedIn.js";
 import { getLoginHistory, deleteLoginHistory, deleteAllLoginHistory } from "../controllers/ownerController.js";
@@ -56,6 +58,8 @@ router.get("/api/owner/listing-marks", isOwner, getListingMarksForExam);
 router.get("/api/owner/exam-pattern/list", isOwner, getAllExamPatternSummaries);
 router.delete("/api/owner/exam-pattern/:id", isOwner, deleteExamPatternSummary);
 
+router.get("/api/owner/exam-syllabus", isOwner, getExamSyllabus);
+router.put("/api/owner/exam-syllabus", isOwner, saveExamSyllabus);
 
 router.get("/api/owner/users", isOwner, getAllUsersOwner);
 router.patch("/api/owner/users/:id/toggle", isOwner, toggleUserSubscription);  

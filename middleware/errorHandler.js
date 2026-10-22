@@ -4,6 +4,16 @@ const errorHandler = (err, req, res, next) => {
     return res.redirect(req.get("Referer") || "/");
   }
 
+  if (err.name === "CastError") {
+    err.statusCode = 404;
+    err.message = "Not found";
+  } else if (err.name === "MulterError") {
+    err.statusCode = 400;
+    err.message = err.code === "LIMIT_FILE_SIZE" ? "File is too large (max 5MB)." : "Invalid file upload.";
+  } else if (err.message && /^(Invalid file type|Cover image must|E-Book file must|Unexpected field)/.test(err.message)) {
+    err.statusCode = 400;
+  }
+
   const statusCode = err.statusCode || 500;
   const message = err.message || "Something went wrong";
 

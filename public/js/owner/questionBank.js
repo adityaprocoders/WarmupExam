@@ -8,9 +8,9 @@
   }
   function truncate(str, n) { return str && str.length > n ? str.slice(0, n) + '…' : (str || ''); }
 
-  window.loadQuestionBank = function () {
+    window.loadQuestionBank = async function () {
     loadQbStats();
-    loadQbFilters();
+    await loadQbFilters();
     fetchQbQuestions();
   };
 
@@ -26,48 +26,67 @@
     } catch (err) { console.error(err); }
   }
 
-  document.getElementById('qbStatReported').closest('.bg-white').style.cursor = 'pointer';
-document.getElementById('qbStatReported').closest('.bg-white').addEventListener('click', () => {
-    document.getElementById('qbFilterStatus').value = 'Reported';
+ 
+  function qbSetStatusFilter(value) {
+    const sel = document.getElementById('qbFilterStatus');
+    if (![...sel.options].some(o => o.value === value)) {
+      sel.insertAdjacentHTML('beforeend', `<option value="${value}">${value}</option>`);
+    }
+    sel.value = value;
     qbPage = 1;
     fetchQbQuestions();
-});
+  }
 
-document.getElementById('qbStatActive').closest('.bg-white').style.cursor = 'pointer';
-document.getElementById('qbStatActive').closest('.bg-white').addEventListener('click', () => {
-    document.getElementById('qbFilterStatus').value = 'Active';
-    qbPage = 1;
-    fetchQbQuestions();
-});
+  [['qbStatReported', 'Reported'], ['qbStatActive', 'Active'], ['qbStatTotal', 'all']].forEach(([id, status]) => {
+    const card = document.getElementById(id).closest('.bg-white');
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => qbSetStatusFilter(status));
+  });
 
-document.getElementById('qbStatTotal').closest('.bg-white').style.cursor = 'pointer';
-document.getElementById('qbStatTotal').closest('.bg-white').addEventListener('click', () => {
-    document.getElementById('qbFilterStatus').value = 'all';
-    qbPage = 1;
-    fetchQbQuestions();
-});
+  const QB_FILTER_ORDER = ['qbFilterListing', 'qbFilterSubject', 'qbFilterTopic', 'qbFilterDifficulty', 'qbFilterStatus'];
 
+  function qbVal(id) { return document.getElementById(id).value; }
+
+  function qbFillSelect(id, allLabel, items) {
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    sel.innerHTML = `<option value="all">${allLabel}</option>` +
+      items.map(i => `<option value="${escapeHtml(i.value)}">${escapeHtml(i.label)}</option>`).join('');
+    sel.value = items.some(i => i.value === current) ? current : 'all';
+  }
 
   async function loadQbFilters() {
     try {
-      const res = await fetch('/api/owner/question-bank/filters');
+      const params = new URLSearchParams({
+        listing: qbVal('qbFilterListing'),
+        subject: qbVal('qbFilterSubject'),
+        topic: qbVal('qbFilterTopic'),
+        difficulty: qbVal('qbFilterDifficulty')
+      });
+      const res = await fetch(`/api/owner/question-bank/filters?${params}`);
       const data = await res.json();
       if (!data.success) return;
 
-      const listingSel = document.getElementById('qbFilterListing');
-      data.listings.forEach(l => listingSel.insertAdjacentHTML('beforeend', `<option value="${l._id}">${escapeHtml(l.title)}</option>`));
-
-      const subjectSel = document.getElementById('qbFilterSubject');
-      data.subjects.forEach(s => subjectSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`));
-
-      const topicSel = document.getElementById('qbFilterTopic');
-      data.topics.forEach(t => topicSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`));
+      qbFillSelect('qbFilterListing', 'All Exams', data.listings.map(l => ({ value: String(l._id), label: l.title })));
+      qbFillSelect('qbFilterSubject', 'All Subjects', data.subjects.map(s => ({ value: s, label: s })));
+      qbFillSelect('qbFilterTopic', 'All Topics', data.topics.map(t => ({ value: t, label: t })));
+      qbFillSelect('qbFilterDifficulty', 'All Difficulty', data.difficulties.map(d => ({ value: d, label: d })));
+      qbFillSelect('qbFilterStatus', 'All Status', data.statuses.map(s => ({ value: s, label: s })));
     } catch (err) { console.error(err); }
   }
 
-  ['qbFilterListing', 'qbFilterSubject', 'qbFilterTopic', 'qbFilterDifficulty', 'qbFilterStatus'].forEach(id => {
-    document.getElementById(id).addEventListener('change', () => { qbPage = 1; fetchQbQuestions(); });
+  // Jo filter badla, uske baad wale sab filters reset -> naye options load -> list refresh
+  QB_FILTER_ORDER.forEach((id, idx) => {
+    document.getElementById(id).addEventListener('change', async () => {
+      QB_FILTER_ORDER.slice(idx + 1).forEach(rid => { document.getElementById(rid).value = 'all'; });
+      qbPage = 1;
+      await loadQbFilters();
+      fetchQbQuestions();
+    });
   });
+ 
+
+ 
 
   let qbSearchTimeout = null;
   document.getElementById('qbSearchInput').addEventListener('input', function () {
@@ -329,7 +348,7 @@ document.querySelectorAll('.qbFormTabBtn').forEach(btn => {
         document.getElementById('qbTabManual').classList.toggle('hidden', tab !== 'manual');
         document.getElementById('qbTabJson').classList.toggle('hidden', tab !== 'json');
         if (tab === 'json') syncManualToJson();
-        else syncJsonToManual();
+        else if (document.getElementById('qbJsonTextarea').value.trim()) syncJsonToManual();
     });
 });
 
@@ -490,6 +509,7 @@ function resetQbForm() {
     document.getElementById('qbMultiContentBlock').classList.add('hidden');
     document.getElementById('qbOptionsBlock').classList.remove('hidden');
     document.getElementById('qbIntegerBlock').classList.add('hidden');
+        document.getElementById('qbJsonTextarea').value = '';
     document.getElementById('qbJsonError').classList.add('hidden');
     qbFormLanguages = [];
     qbMultiOptionCount = 4;
@@ -821,7 +841,7 @@ document.getElementById('qbMultiSolutionImageFile').addEventListener('change', (
 
 // ---- Build payload matching Question schema ----
 function buildQbPayload() {
-    saveActiveLangFields();
+
     const type = document.getElementById('qbFormType').value;
     const langMode = document.getElementById('qbFormLangMode').value;
 
@@ -872,7 +892,7 @@ function buildQbPayload() {
         payload.solution = { text: '', image: document.getElementById('qbMultiSolutionImage').value || null };
 
         if (type === 'integer') {
-            payload.numericAnswer = Number(document.getElementById('qbMultiNumericAnswer').value);
+            { const rawNum = document.getElementById('qbMultiNumericAnswer').value.trim(); payload.numericAnswer = rawNum === '' ? null : Number(rawNum); }
         } else {
             document.querySelectorAll('.qbMultiCorrect:checked').forEach(el => payload.correctAnswers.push(Number(el.value)));
         }
@@ -887,7 +907,7 @@ function buildQbPayload() {
 
         if (type === 'integer') {
             payload.options = [];
-            payload.numericAnswer = Number(document.getElementById('qbFormNumericAnswer').value);
+            { const rawNum = document.getElementById('qbFormNumericAnswer').value.trim(); payload.numericAnswer = rawNum === '' ? null : Number(rawNum); }
         } else {
             const rows = Array.from(document.querySelectorAll('.qbOptionRow'));
             payload.options = rows.map(r => ({
@@ -941,6 +961,14 @@ document.getElementById('qbFormSaveBtn').addEventListener('click', async () => {
     if (!payload.listing) return showToast('Please select a listing.', 'error');
     if (!payload.subject || !payload.topic) return showToast('Subject and Topic are required.', 'error');
 
+        if (payload.type === 'integer') {
+        if (payload.numericAnswer === null || payload.numericAnswer === undefined || Number.isNaN(Number(payload.numericAnswer))) {
+            return showToast('Please enter the numeric answer.', 'error');
+        }
+    } else if (!Array.isArray(payload.correctAnswers) || payload.correctAnswers.length === 0) {
+        return showToast('Please select the correct answer.', 'error');
+    }
+
     const url = qbFormMode === 'edit'
         ? `/api/owner/question-bank/questions/${qbFormEditId}`
         : `/api/owner/question-bank/questions`;
@@ -954,6 +982,7 @@ document.getElementById('qbFormSaveBtn').addEventListener('click', async () => {
         });
         const data = await res.json();
         if (data.success) {
+            if (data.existing || data.merged) showToast(data.message, 'success');
             qbFormModalOverlay.classList.add('hidden');
             fetchQbQuestions();
             loadQbStats();

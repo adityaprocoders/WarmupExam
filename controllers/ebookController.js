@@ -13,9 +13,10 @@ export const list = async (req, res) => {
 
     const filter = isOwner ? {} : { visibility: "public" };
     if (search) {
+        const safeSearch = escapeRegex(String(search).slice(0, 100));
         filter.$or = [
-            { title: { $regex: search, $options: "i" } },
-            { exam: { $regex: search, $options: "i" } },
+            { title: { $regex: safeSearch, $options: "i" } },
+            { exam: { $regex: safeSearch, $options: "i" } },
         ];
     }
     if (category && category !== "all") filter.category = category;

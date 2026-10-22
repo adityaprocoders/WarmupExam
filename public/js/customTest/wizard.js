@@ -43,6 +43,7 @@
     weakGroups: [],
 weakSel: [], 
 pattern: null,
+partKey: null,
 topicSelections: {},
     subjects: [],
     subjectCounts: {},
@@ -201,8 +202,9 @@ function goToStep(index, opts) {
 
   if (lvl <= 2) { state.mode = null; setModeUI(null); }
   state.subjects = []; state.topics = [];
+  state.topicGroups = []; refreshTopicSearch();
   state.weakGroups = []; state.weakSel = [];
-  state.pattern = null; state.topicSelections = {};
+    state.pattern = null; state.topicSelections = {}; state.partKey = null;
   state.questionCount = null; state.timeLimit = null; state.language = null;
   clearSettingsUI();
   rebuildSteps();
@@ -446,8 +448,9 @@ function renderWeakAreas() {
 /* ---------------- EXAM PATTERN ---------------- */
 async function loadPatterns() {
   try {
-    const d = await api(`/api/custom-test/patterns?exams=${encodeURIComponent(state.exams.join("|"))}&categoryId=${encodeURIComponent(state.categoryId)}`);
+    const d = await api(`/api/custom-test/patterns?exams=${encodeURIComponent(state.exams.join("|"))}&categoryId=${encodeURIComponent(state.categoryId)}&part=${encodeURIComponent(state.partKey || "")}`);
     state.pattern = d.pattern || null;
+    if (state.pattern && state.pattern.activePart) state.partKey = state.pattern.activePart;
   } catch (_) { state.pattern = null; }
 
   if (!state.topicSelections) state.topicSelections = {};
@@ -479,10 +482,42 @@ function escAttr(str) {
     .replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+
+// 👇 NAYA — multi-part exam: part chunne ke tabs (Tier 1 | Tier 2 ...). Single pattern par kuch nahi dikhta.
+function renderPatternParts(box) {
+  let bar = $("pattern-part-tabs");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "pattern-part-tabs";
+    box.parentNode.insertBefore(bar, box);
+  }
+  const parts = ((state.pattern && state.pattern.partList) || []).filter((p) => p.hasRows);
+  if (parts.length < 2) { bar.className = "hidden"; bar.innerHTML = ""; return; }
+
+  bar.className = "flex flex-wrap gap-2 mb-3";
+  bar.innerHTML = parts.map((p) => {
+    const on = p.key === state.partKey;
+    return `<button type="button" data-pattern-part="${escAttr(p.key)}" class="text-sm font-semibold px-4 py-2 rounded-xl ${on ? "bg-indigo-600 text-white" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}">${escAttr(p.name)}</button>`;
+  }).join("");
+
+  bar.querySelectorAll("[data-pattern-part]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const key = btn.dataset.patternPart;
+      if (key === state.partKey) return;
+      state.partKey = key;
+      state.topicSelections = {};
+      await loadPatterns();
+    });
+  });
+}
+
+
 function renderPatterns() {
   $("pattern-empty")?.classList.toggle("hidden", !!state.pattern);
   const box = $("pattern-list");
   if (!box) return;
+  
+  renderPatternParts(box);
 
   if (!state.pattern) { box.innerHTML = ""; return; }
 
@@ -623,6 +658,8 @@ if (tg) tg.innerHTML = "";
     } else {
       state.topics = [];
       $("topic-groups").innerHTML = "";
+      state.topicGroups = [];
+      refreshTopicSearch();
     }
     updateSummary();
     validateReady();
@@ -648,6 +685,7 @@ if (tg) tg.innerHTML = "";
     const container = $("topic-groups");
     if (!groups.length) {
       container.innerHTML = `<p class="text-sm text-slate-400">No topic tags are available for this selection; questions will be drawn from the entire subject.</p>`;
+      refreshTopicSearch();
       return;
     }
     container.innerHTML = groups
@@ -658,7 +696,7 @@ if (tg) tg.innerHTML = "";
             ${g.topics
               .map(
                 (t) => `<label class="topic-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs cursor-pointer hover:border-indigo-300">
-                  <input type="checkbox" class="topic-check hidden" value="${t.name}" />
+                  <input type="checkbox" class="topic-check hidden" data-subject="${escAttr(g.subject)}" value="${t.name}" />
                   <span>${t.name} <span class="text-slate-400">${t.count}</span></span>
                 </label>`
               )
@@ -668,6 +706,7 @@ if (tg) tg.innerHTML = "";
       )
       .join("");
 
+    refreshTopicSearch();
     container.querySelectorAll(".topic-check").forEach((cb) =>
       cb.addEventListener("change", () => {
         cb.closest(".topic-chip").classList.toggle("border-indigo-400", cb.checked);
@@ -683,6 +722,9 @@ if (tg) tg.innerHTML = "";
 
   function initClearTopics() {
     $("clear-topics")?.addEventListener("click", () => {
+      const ts = $("topic-search"); if (ts) ts.value = "";
+      $("topic-search-clear")?.classList.add("hidden");
+      closeTopicResults();
       document.querySelectorAll(".topic-check").forEach((cb) => {
         cb.checked = false;
         cb.dispatchEvent(new Event("change"));
@@ -690,7 +732,180 @@ if (tg) tg.innerHTML = "";
     });
   }
 
+  /* ---------------- 5b. TOPIC SEARCH (type karo -> dropdown se topic chuno) ---------------- */
+  let topicSearchActive = -1;
+  let topicSearchItems = [];
+
+  function findTopicCheckbox(subject, name) {
+    return Array.from(document.querySelectorAll("#topic-groups .topic-check"))
+      .find((c) => c.value === name && c.dataset.subject === subject) || null;
+  }
+
+  function closeTopicResults() {
+    const box = $("topic-search-results");
+    if (box) { box.classList.add("hidden"); box.innerHTML = ""; }
+    topicSearchActive = -1;
+    topicSearchItems = [];
+  }
+
+  // Search box tabhi dikhao jab subjects chune hon aur unke topics available hon
+  function refreshTopicSearch() {
+    const wrap = $("topic-search-wrap");
+    if (!wrap) return;
+    const has = state.subjects.length > 0 && (state.topicGroups || []).some((g) => g.topics && g.topics.length);
+    wrap.classList.toggle("hidden", !has);
+    closeTopicResults();
+    if (!has) {
+      const input = $("topic-search");
+      if (input) input.value = "";
+      $("topic-search-clear")?.classList.add("hidden");
+    }
+  }
+
+    function highlightTopicResult() {
+    const rows = document.querySelectorAll("#topic-search-results .topic-search-item");
+    rows.forEach((r, i) => r.classList.toggle("bg-indigo-50", i === topicSearchActive));
+    rows[topicSearchActive]?.scrollIntoView({ block: "nearest" });
+  }
+
+    function renderTopicResults(query) {
+    const box = $("topic-search-results");
+    if (!box) return;
+    const q = String(query || "").trim().toLowerCase();
+    if (!q) { closeTopicResults(); return; }
+
+    const matches = [];
+    (state.topicGroups || []).forEach((g) => {
+      (g.topics || []).forEach((t) => {
+        const name = String(t.name || "");
+        const at = name.toLowerCase().indexOf(q);
+        if (at === -1) return;
+        matches.push({ subject: g.subject, name, count: t.count, rank: at === 0 ? 0 : 1 });
+      });
+    });
+    matches.sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+    const shown = matches.slice(0, 12);
+
+    topicSearchActive = -1;
+    topicSearchItems = [];
+
+    if (!shown.length) {
+      box.innerHTML = `<div class="flex flex-col items-center gap-1 px-3 py-6 text-center">
+        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+        </span>
+        <p class="text-sm font-medium text-slate-600">No matching topic found</p>
+        <p class="text-xs text-slate-400">Try a different keyword</p>
+      </div>`;
+      box.classList.remove("hidden");
+      return;
+    }
+
+    const mark = (name) => {
+      const at = name.toLowerCase().indexOf(q);
+      if (at === -1) return escAttr(name);
+      return escAttr(name.slice(0, at)) +
+        '<span class="font-semibold text-indigo-600">' + escAttr(name.slice(at, at + q.length)) + "</span>" +
+        escAttr(name.slice(at + q.length));
+    };
+
+    const header = `<div class="px-3 pb-1.5 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">${matches.length} topic${matches.length > 1 ? "s" : ""} found</div>`;
+
+    const rows = shown.map((it) => {
+      const letter = escAttr(String(it.subject || "?").charAt(0).toUpperCase());
+      const cb = findTopicCheckbox(it.subject, it.name);
+      if (cb && cb.checked) {
+        return `<div class="flex items-center gap-3 rounded-xl px-3 py-2.5 opacity-70">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-600">${letter}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-medium text-slate-500">${escAttr(it.name)}</span>
+            <span class="block truncate text-[11px] text-slate-400">${escAttr(it.subject)}</span>
+          </span>
+          <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-600">✓ Added</span>
+        </div>`;
+      }
+      topicSearchItems.push(it);
+      const idx = topicSearchItems.length - 1;
+      return `<button type="button" data-ts="${idx}" class="topic-search-item group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-indigo-50">
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-600">${letter}</span>
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-sm font-medium text-slate-800">${mark(it.name)}</span>
+          <span class="block truncate text-[11px] text-slate-400">${escAttr(it.subject)}</span>
+        </span>
+        <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500 transition-colors group-hover:bg-white group-hover:text-indigo-600">${Number(it.count) || 0} Q</span>
+      </button>`;
+    }).join("");
+
+    const footer = `<div class="hidden items-center gap-3 border-t border-slate-100 px-3 pb-1 pt-2 text-[10px] text-slate-400 sm:flex">
+      <span>↑↓ navigate</span><span>Enter select</span><span>Esc close</span>
+    </div>`;
+
+    box.innerHTML = header + rows + footer;
+    box.classList.remove("hidden");
+  }
+
+  function pickTopic(item) {
+    const cb = findTopicCheckbox(item.subject, item.name);
+    if (!cb) return;
+    if (!cb.checked) {
+      cb.checked = true;
+      cb.dispatchEvent(new Event("change"));   // chip highlight + state.topics + availability + summary + persist
+    }
+    const input = $("topic-search");
+    if (input) { input.value = ""; input.focus(); }
+    $("topic-search-clear")?.classList.add("hidden");
+    closeTopicResults();
+    cb.closest(".topic-chip")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function initTopicSearch() {
+    const input = $("topic-search");
+    const box = $("topic-search-results");
+    const clearBtn = $("topic-search-clear");
+    if (!input || !box) return;
+
+    input.addEventListener("input", () => {
+      clearBtn?.classList.toggle("hidden", !input.value);
+      renderTopicResults(input.value);
+    });
+    input.addEventListener("focus", () => {
+      if (input.value.trim()) renderTopicResults(input.value);
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        const n = topicSearchItems.length;
+        if (!n) return;
+        e.preventDefault();
+        topicSearchActive = e.key === "ArrowDown" ? (topicSearchActive + 1) % n : (topicSearchActive - 1 + n) % n;
+        highlightTopicResult();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const it = topicSearchItems[topicSearchActive >= 0 ? topicSearchActive : 0];
+        if (it) pickTopic(it);
+      } else if (e.key === "Escape") {
+        closeTopicResults();
+      }
+    });
+    box.addEventListener("mousedown", (e) => {
+      const row = e.target.closest(".topic-search-item");
+      if (!row) return;
+      e.preventDefault();
+      const it = topicSearchItems[Number(row.dataset.ts)];
+      if (it) pickTopic(it);
+    });
+    clearBtn?.addEventListener("click", () => {
+      input.value = "";
+      clearBtn.classList.add("hidden");
+      closeTopicResults();
+      input.focus();
+    });
+    document.addEventListener("click", (e) => {
+      if (!$("topic-search-wrap")?.contains(e.target)) closeTopicResults();
+    });
+  }
+
   /* ---------------- 6. DIFFICULTY ---------------- */
+  
   const QUICK_DIFF_PRESETS = {
     easy:   { easy: 100, medium: 0,   hard: 0 },
     medium: { easy: 0,   medium: 100, hard: 0 },
@@ -1180,6 +1395,7 @@ if (diffTotal !== 100) return { ok: false, msg: "Difficulty percentages must add
   mode: state.mode,
   categoryId: state.categoryId,
   topicSelections: state.topicSelections,
+    partKey: state.partKey,
 };
 
       const data = await api("/api/custom-test/generate", { method: "POST", body: payload });
@@ -1381,6 +1597,7 @@ if (state.exams.length) {
     initMode();
     initSelectAllSubjects();
     initClearTopics();
+    initTopicSearch();
     initDifficulty();
     initSettings();
     initGenerateButtons();

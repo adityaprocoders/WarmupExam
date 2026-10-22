@@ -11,6 +11,9 @@ import User from "../models/usersShema.js";
 export const createItem = async (req, res) => {
     try {
         const { type, title, icon, listingId, sectionId, parentType, parentId, questions, marks, minutes } = req.body;
+                if (!title || !String(title).trim()) {
+            return res.status(400).json({ success: false, message: "Title is required" });
+        }
         const slug = slugify(title, { lower: true, strict: true });
 
         let newItem;

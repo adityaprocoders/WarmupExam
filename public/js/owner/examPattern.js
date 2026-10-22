@@ -23,6 +23,10 @@
   let subjectTimeList = [];           // allocated groups
   let editingSubjectTimeIndex = null;
 
+  let partsState = [];       
+  let activePartIdx = 0;
+
+
   function escapeHtml(str) {
     if (str === null || str === undefined) return "";
     return String(str)
@@ -55,6 +59,9 @@
     subjectTimeList = [];
     editingSubjectTimeIndex = null;
     timeStrategySelect.value = "total";
+        partsState = [];
+    activePartIdx = 0;
+    renderPartTabs();
   }
 
   // ---------- Step 1: Categories ----------
@@ -107,6 +114,11 @@
     selectedSubjects.clear();
     subjectTimeList = [];
     editingSubjectTimeIndex = null;
+        partsState = [];
+    activePartIdx = 0;
+    renderPartTabs();
+    let listingParts = [];
+    let savedDoc = null;
 
     if (!categoryId || !exam) {
       marksSection.classList.add("hidden");
@@ -121,6 +133,7 @@
       currentMarksRows = (data.success && Array.isArray(data.marks)) ? data.marks.map(m => ({
         subject: m.subject, positiveMarks: m.positiveMarks, negativeMarks: m.negativeMarks, questions: 0
       })) : [];
+            listingParts = (data.success && Array.isArray(data.parts)) ? data.parts : [];
     } catch (err) {
       console.error("Load marks failed:", err);
       currentMarksRows = [];
@@ -132,6 +145,7 @@
       const data2 = await res2.json();
       if (data2.success && data2.data) {
         const doc = data2.data;
+                savedDoc = doc;
         (doc.rows || []).forEach(savedRow => {
           const match = currentMarksRows.find(r => r.subject === savedRow.subject);
           if (match) match.questions = savedRow.questions;
@@ -160,10 +174,126 @@
       renderTimeUI();
     }
 
+        // 👇 NAYA — multi-part exam (listing tier-wise): tabs banao, pehla part kholo
+    if (listingParts.length >= 2) {
+      buildPartsState(listingParts, savedDoc);
+      loadPart(0);
+    }
+
     renderMarksTable();
     marksSection.classList.remove("hidden");
     timeSection.classList.remove("hidden");
   });
+
+
+    // =========================================================
+  // 👇 NAYA — MULTI-PART EXAM (Tier 1 / Tier 2, Prelims / Mains ...)
+  // Har part ka apna Questions + Time. Tab badalne par current part ka state save hota hai.
+  // =========================================================
+  function buildPartsState(listingParts, doc) {
+    partsState = listingParts.map((lp, i) => {
+      const rows = (lp.marks || []).map(m => ({
+        subject: m.subject, positiveMarks: m.positiveMarks, negativeMarks: m.negativeMarks, questions: 0
+      }));
+      const part = { key: lp.key, name: lp.name, rows, strategy: "total", totalTime: 60, timeList: [] };
+      let saved = null;
+      if (doc) {
+        saved = i === 0
+          ? { rows: doc.rows, timeStrategy: doc.timeStrategy, totalDuration: doc.totalDuration, sectionTime: doc.sectionTime }
+          : (doc.parts || []).find(sp => sp.key === lp.key) || null;
+      }
+      if (saved) {
+        (saved.rows || []).forEach(sr => {
+          const m = rows.find(r => r.subject === sr.subject);
+          if (m) m.questions = sr.questions; else rows.push({ ...sr });
+        });
+        part.strategy = saved.timeStrategy === "sectional" ? "subject" : "total";
+        part.totalTime = saved.totalDuration || 60;
+        part.timeList = (saved.sectionTime || []).map(st => ({ subject: (st.subjects || []).join(" + "), duration: st.duration }));
+      }
+      return part;
+    });
+    activePartIdx = 0;
+  }
+
+  function snapshotActivePart() {
+    const p = partsState[activePartIdx];
+    if (!p) return;
+    p.rows = currentMarksRows;
+    p.strategy = timeStrategySelect.value;
+    p.totalTime = $("epTotalTimeInput") ? $("epTotalTimeInput").value : p.totalTime;
+    p.timeList = subjectTimeList;
+  }
+
+  function loadPart(i) {
+    const p = partsState[i];
+    if (!p) return;
+    activePartIdx = i;
+    currentMarksRows = p.rows;
+    subjectTimeList = p.timeList;
+    selectedSubjects.clear();
+    editingSubjectTimeIndex = null;
+    timeStrategySelect.value = p.strategy;
+    renderTimeUI();
+    if (p.strategy === "total" && $("epTotalTimeInput")) $("epTotalTimeInput").value = p.totalTime || 60;
+    renderMarksTable();
+    renderPartTabs();
+  }
+
+  function renderPartTabs() {
+    let bar = $("epPartTabs");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "epPartTabs";
+      marksSection.parentNode.insertBefore(bar, marksSection);
+    }
+    if (partsState.length < 2) { bar.className = "hidden"; bar.innerHTML = ""; return; }
+    bar.className = "flex flex-wrap gap-2";
+    bar.innerHTML = partsState.map((p, i) => `
+      <button type="button" data-part="${i}" class="epPartTab ${i === activePartIdx
+        ? "bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold"
+        : "bg-white text-gray-600 border px-4 py-1.5 rounded-lg text-sm font-bold"}">${escapeHtml(p.name)}</button>`).join("");
+    bar.querySelectorAll(".epPartTab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const i = Number(btn.dataset.part);
+        if (i === activePartIdx) return;
+        snapshotActivePart();
+        loadPart(i);
+      });
+    });
+  }
+
+  function buildPartsPayload(category, exam) {
+    snapshotActivePart();
+    const parts = [];
+    for (const p of partsState) {
+      const rows = p.rows.map(r => ({
+        subject: r.subject,
+        questions: Number(r.questions) || 0,
+        positiveMarks: r.positiveMarks,
+        negativeMarks: r.negativeMarks
+      }));
+      const part = { key: p.key, name: p.name, rows, timeStrategy: p.strategy === "subject" ? "sectional" : "total" };
+      if (p.strategy === "total") {
+        part.totalDuration = Number(p.totalTime) || 60;
+      } else {
+        if (rows.length && !p.timeList.length) {
+          showToast(p.name + ": please add at least one time-group for sectional timing.", "error");
+          return null;
+        }
+        part.sectionTime = p.timeList.map(st => ({
+          subjects: st.subject.split(" + ").map(s => s.trim()),
+          duration: st.duration
+        }));
+      }
+      parts.push(part);
+    }
+    if (!parts.some(p => p.rows.length)) {
+      showToast("No subjects/marks found for this exam.", "error");
+      return null;
+    }
+    return { category, exam, parts };
+  }
 
   // ---------- Marks table render (Questions editable, marks read-only) ----------
   function renderMarksTable() {
@@ -348,33 +478,42 @@
        showToast("Please select both a Category and an Exam.", "error");
       return;
     }
-    if (!currentMarksRows.length) {
-      showToast("No subjects/marks found for this exam.", "error");
-      return;
-    }
-
-    const rows = currentMarksRows.map(r => ({
-      subject: r.subject,
-      questions: Number(r.questions) || 0,
-      positiveMarks: r.positiveMarks,
-      negativeMarks: r.negativeMarks
-    }));
-
-    const strategy = timeStrategySelect.value;
-    const payload = { category, exam, rows, timeStrategy: strategy === "subject" ? "sectional" : "total" };
-
-    if (strategy === "total") {
-      payload.totalDuration = Number($("epTotalTimeInput")?.value) || 60;
+    
+        let payload;
+    if (partsState.length >= 2) {
+      // 👇 NAYA — multi-part exam: saare parts ek saath
+      payload = buildPartsPayload(category, exam);
+      if (!payload) return;
     } else {
-      if (!subjectTimeList.length) {
-        showToast("Please add at least one time-group for sectional timing.", "error");
+      if (!currentMarksRows.length) {
+        showToast("No subjects/marks found for this exam.", "error");
         return;
       }
-      payload.sectionTime = subjectTimeList.map(st => ({
-        subjects: st.subject.split(" + ").map(s => s.trim()),
-        duration: st.duration
+
+      const rows = currentMarksRows.map(r => ({
+        subject: r.subject,
+        questions: Number(r.questions) || 0,
+        positiveMarks: r.positiveMarks,
+        negativeMarks: r.negativeMarks
       }));
+
+      const strategy = timeStrategySelect.value;
+      payload = { category, exam, rows, timeStrategy: strategy === "subject" ? "sectional" : "total" };
+
+      if (strategy === "total") {
+        payload.totalDuration = Number($("epTotalTimeInput")?.value) || 60;
+      } else {
+        if (!subjectTimeList.length) {
+          showToast("Please add at least one time-group for sectional timing.", "error");
+          return;
+        }
+        payload.sectionTime = subjectTimeList.map(st => ({
+          subjects: st.subject.split(" + ").map(s => s.trim()),
+          duration: st.duration
+        }));
+      }
     }
+
 
     saveBtn.disabled = true;
     const originalText = saveBtn.textContent;
@@ -489,6 +628,7 @@
           <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">${totalQuestions} Qs</span>
           <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">${timingLabel}</span>
         </div>
+                ${(p.parts && p.parts.length) ? `<div class="flex flex-wrap gap-1.5 mb-3">${[p.firstPart?.name || "Part 1", ...p.parts.map(x => x.name)].map(n => `<span class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600">${escapeHtml(n)}</span>`).join("")}</div>` : ""}
         <div class="flex gap-2">
           <button data-category="${p.category?._id || ""}" data-exam="${escapeAttr(p.exam)}"
             class="epmEditBtn flex-1 text-center border-2 border-indigo-600 text-indigo-600 text-sm font-semibold py-2 rounded-lg hover:bg-indigo-50">

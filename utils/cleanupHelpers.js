@@ -34,9 +34,9 @@ export async function cleanupExpiredBatchData(userId, listingId, { force = false
         const testIds = await Test.find({ listing: listingId }).distinct("_id");
     const liveTestIds = await Test.find({ listing: listingId, isLiveTest: true }).distinct("_id");
 
-    await Attempt.deleteMany({
+        await Attempt.deleteMany({
         user: userId,
- 
+        test: { $nin: liveTestIds },
         $or: [{ listing: listingId }, { test: { $in: testIds } }]
     });
 
@@ -76,18 +76,24 @@ export async function cleanupExpiredBatchData(userId, listingId, { force = false
 export function getValidEnrollments(user) {
     const enrolledIds = [];
     const enrolledExpiryMap = {};
+    const suspendedIds = [];
 
     if (user && user.enrolledListings) {
         const now = new Date();
         user.enrolledListings.forEach(e => {
-            const isValid = !e.suspendedByOwner && (!e.expiresAt || new Date(e.expiresAt) > now);
-            if (isValid) {
-                const id = e.listing && e.listing._id ? e.listing._id : e.listing;
+            const id = e.listing && e.listing._id ? e.listing._id : e.listing;
+            if (!id) return;
+
+            if (e.suspendedByOwner) {
+                suspendedIds.push(String(id));
+                return;
+            }
+            if (!e.expiresAt || new Date(e.expiresAt) > now) {
                 enrolledIds.push(String(id));
                 enrolledExpiryMap[String(id)] = e.expiresAt;
             }
         });
     }
 
-    return { enrolledIds, enrolledExpiryMap };
+    return { enrolledIds, enrolledExpiryMap, suspendedIds };
 }

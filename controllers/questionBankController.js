@@ -1,8 +1,32 @@
+import mongoose from "mongoose";
 import Listing from "../models/listing.js";
 import Question, { computeContentHash } from "../models/Question.js";
 import TestQuestion from "../models/TestQuestion.js";
 import QuestionReport from "../models/QuestionReport.js";
 import User from "../models/usersShema.js";
+import Attempt from "../models/TestAttempt.js";
+import Test from "../models/Test.js";
+
+const EDITABLE_FIELDS = [
+    "listing", "type", "section", "difficulty", "languageMode", "subject", "topic", "subTopic",
+    "question", "questionImage", "options", "solution", "translations",
+    "correctAnswers", "numericAnswer"
+];
+
+// Mapping hatne/badalne ke baad Test.totalQuestions ko sahi count par laata hai
+async function recountTests(testIds, session = null) {
+    for (const t of testIds) {
+        const count = await TestQuestion.countDocuments({ test: t }).session(session);
+        await Test.updateOne({ _id: t }, { $set: { totalQuestions: count } }, { session });
+    }
+}
+
+
+function pickEditable(body) {
+    const out = {};
+    for (const k of EDITABLE_FIELDS) if (body[k] !== undefined) out[k] = body[k];
+    return out;
+}
 
 function getQuestionDisplayText(q) {
     if (q.languageMode === "multiple") {
@@ -48,16 +72,46 @@ export const getQuestionBankStats = async (req, res) => {
 };
 
 // ---------------- FILTER OPTIONS (exam/subject/topic dropdowns) ----------------
+// ---------------- FILTER OPTIONS (cascading: exam -> subject -> topic -> difficulty -> status) ----------------
 export const getFilterOptions = async (req, res) => {
     try {
-        const { listing } = req.query;
-        const listingFilter = listing && listing !== "all" ? { listing } : {};
+        const { listing, subject, topic, difficulty } = req.query;
+        const has = (v) => v && v !== "all";
 
         const listings = await Listing.find({}).select("title").sort({ title: 1 }).lean();
-        const subjects = await Question.distinct("subject", { ...listingFilter, subject: { $ne: "" } });
-        const topics = await Question.distinct("topic", { ...listingFilter, topic: { $ne: "" } });
 
-        res.json({ success: true, listings, subjects, topics });
+        // 1) Exam select hone par sirf usi exam ke subjects
+        const base = {};
+        if (has(listing)) base.listing = listing;
+
+        const subjects = (await Question.distinct("subject", { ...base, subject: { $ne: "" } })).filter(Boolean);
+
+        // 2) Subject select hone par sirf usi subject ke topics
+        const topicFilter = { ...base, topic: { $ne: "" } };
+        if (has(subject)) topicFilter.subject = subject;
+        const topics = (await Question.distinct("topic", topicFilter)).filter(Boolean);
+
+        // 3) Topic select hone par sirf usi topic ki difficulty
+        const diffFilter = { ...base };
+        if (has(subject)) diffFilter.subject = subject;
+        if (has(topic)) diffFilter.topic = topic;
+        const diffFound = await Question.distinct("difficulty", diffFilter);
+        const difficulties = ["Easy", "Medium", "Hard"].filter(d => diffFound.includes(d));
+
+        // 4) Difficulty select hone par sirf usi combination ke status
+        const statusFilter = { ...diffFilter };
+        if (has(difficulty)) statusFilter.difficulty = difficulty;
+        const statusFound = await Question.distinct("status", statusFilter);
+        const statuses = ["Active", "Reported", "Disabled"].filter(s => statusFound.includes(s));
+
+        res.json({
+            success: true,
+            listings,
+            subjects: subjects.sort(),
+            topics: topics.sort(),
+            difficulties,
+            statuses
+        });
     } catch (err) {
         console.error("Filter options error:", err);
         res.status(500).json({ success: false, message: "Failed to load filters." });
@@ -75,7 +129,10 @@ export const getQuestions = async (req, res) => {
         if (topic && topic !== "all") filter.topic = topic;
         if (difficulty && difficulty !== "all") filter.difficulty = difficulty;
         if (status && status !== "all") filter.status = status;
-        if (search && search.trim()) filter.question = { $regex: search.trim(), $options: "i" };
+        if (search && search.trim()) {
+            const rx = { $regex: search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+            filter.$or = [{ question: rx }, { "translations.question": rx }];
+        }
 
         const totalMatching = await Question.countDocuments(filter);
         const skip = (Number(page) - 1) * Number(limit);
@@ -148,11 +205,27 @@ export const createQuestion = async (req, res) => {
         if (!body.listing) return res.status(400).json({ success: false, message: "Listing is required." });
         if (!body.subject || !body.topic) return res.status(400).json({ success: false, message: "Subject and topic are required." });
 
+                if (body.type === "integer") {
+            if (body.numericAnswer === null || body.numericAnswer === undefined || Number.isNaN(Number(body.numericAnswer))) {
+                return res.status(400).json({ success: false, message: "Numeric answer is required." });
+            }
+        } else if (!Array.isArray(body.correctAnswers) || body.correctAnswers.length === 0) {
+            return res.status(400).json({ success: false, message: "Please select the correct answer." });
+        }
+        
         const hash = computeContentHash(body);
         const existing = await Question.findOne({ contentHash: hash });
         if (existing) return res.status(409).json({ success: false, message: "This question already exists (duplicate content)." });
 
-        const newQ = await Question.create({ ...body, contentHash: hash });
+        let newQ;
+        try {
+            newQ = await Question.create({ ...pickEditable(body), contentHash: hash });
+        } catch (e) {
+            if (e.code === 11000) {
+                return res.status(409).json({ success: false, message: "This question already exists (duplicate content)." });
+            }
+            throw e;
+        }
         res.json({ success: true, question: newQ, message: "Question created successfully." });
     } catch (err) {
         console.error("Create question error:", err);
@@ -167,37 +240,63 @@ export const updateQuestion = async (req, res) => {
         const existing = await Question.findById(id);
         if (!existing) return res.status(404).json({ success: false, message: "Question not found." });
 
-        const hash = computeContentHash(req.body);
+        // Partial body aaye to bhi sahi hash bane, isliye purane doc ke upar merge karke hash nikalte hain
+        const changes = pickEditable(req.body);
+        const merged = { ...existing.toObject(), ...changes };
+        const hash = computeContentHash(merged);
 
-        // Agar naya content kisi doosre existing question se hubahu match kar gaya,
-        // to crash/block karne ke bajaye us existing question ko hi authoritative maan lo.
-        const clash = await Question.findOne({ contentHash: hash, _id: { $ne: id } });
-
-        if (clash) {
-            // Is question (jo edit kiya ja raha tha) ko jitne tests use kar rahe the,
-            // unko ab clash-wale (existing) question pe point kar do.
-            await TestQuestion.updateMany(
-                { question: id },
-                { $set: { question: clash._id } }
-            );
-
-            // Purana (ab orphan/duplicate) doc — agar kahin use nahi ho raha reh gaya, delete kar do.
-            const stillUsed = await TestQuestion.exists({ question: id });
-            if (!stillUsed) {
-                await Question.findByIdAndDelete(id);
-            }
-
-            return res.json({
-                success: true,
-                question: clash,
-                merged: true,
-                message: "This content matched an existing question, so the two have been merged."
-            });
+                
+        try {
+            await new Question(merged).validate();
+        } catch (e) {
+            return res.status(400).json({ success: false, message: e.message });
         }
 
-        const updated = await Question.findByIdAndUpdate(id, { ...req.body, contentHash: hash }, { new: true, runValidators: true });
+        const clash = await Question.findOne({ contentHash: hash, _id: { $ne: id } });
 
-        res.json({ success: true, question: updated, message: "Question updated successfully." });
+        if (!clash) {
+            const updated = await Question.findByIdAndUpdate(
+                id, { ...changes, contentHash: hash }, { new: true, runValidators: true }
+            );
+            return res.json({ success: true, question: updated, message: "Question updated successfully." });
+        }
+
+        // Naya content kisi doosre existing question jaisa ho gaya -> is question ko clash me merge karo (transaction me)
+        const session = await mongoose.startSession();
+        try {
+                        await session.withTransaction(async () => {
+                const mappings = await TestQuestion.find({ question: id }).session(session);
+                const touchedTests = [];
+                for (const m of mappings) {
+                    const alreadyThere = await TestQuestion.exists({ test: m.test, question: clash._id }).session(session);
+                    if (alreadyThere) {
+                        await TestQuestion.deleteOne({ _id: m._id }, { session });
+                        touchedTests.push(m.test);
+                    } else {
+                        await TestQuestion.updateOne({ _id: m._id }, { $set: { question: clash._id } }, { session });
+                    }
+                }
+                await recountTests(touchedTests, session);
+
+                await Attempt.updateMany(
+                    { "answers.question": id },
+                    { $set: { "answers.$[a].question": clash._id } },
+                    { arrayFilters: [{ "a.question": id }], session }
+                );
+
+                await QuestionReport.deleteOne({ question: id }, { session });
+                await Question.findByIdAndDelete(id, { session });
+            });
+        } finally {
+            await session.endSession();
+        }
+
+        return res.json({
+            success: true,
+            question: clash,
+            merged: true,
+            message: "This content matched an existing question, so the two have been merged."
+        });
     } catch (err) {
         console.error("Update question error:", err);
         res.status(500).json({ success: false, message: err.message || "Failed to update." });
@@ -274,7 +373,10 @@ export const deleteQuestion = async (req, res) => {
             });
         }
 
-        if (usedInTests.length > 0) await TestQuestion.deleteMany({ question: id });
+        if (usedInTests.length > 0) {
+            await TestQuestion.deleteMany({ question: id });
+            await recountTests(usedInTests);
+        }
         await QuestionReport.deleteOne({ question: id });
         await Question.findByIdAndDelete(id);
 
@@ -292,13 +394,28 @@ export const duplicateQuestion = async (req, res) => {
         const original = await Question.findById(id).lean();
         if (!original) return res.status(404).json({ success: false, message: "Question not found." });
 
-        const copy = { ...original };
-        delete copy._id; delete copy.createdAt; delete copy.updatedAt; delete copy.contentHash;
-        copy.question = (copy.question || "") + " (Copy)";
-        copy.status = "Active";
-        copy.contentHash = computeContentHash(copy);
+        let created = null;
+        for (let n = 1; n <= 20 && !created; n++) {
+            const label = n === 1 ? " (Copy)" : ` (Copy ${n})`;
+            const copy = { ...original };
+            delete copy._id; delete copy.createdAt; delete copy.updatedAt; delete copy.contentHash;
+            copy.status = "Active";
 
-        const created = await Question.create(copy);
+            if (original.languageMode === "multiple") {
+                copy.translations = (original.translations || []).map(t => ({ ...t, question: (t.question || "") + label }));
+            } else {
+                copy.question = (original.question || "") + label;
+            }
+            copy.contentHash = computeContentHash(copy);
+
+            try {
+                created = await Question.create(copy);
+            } catch (e) {
+                if (e.code !== 11000) throw e; // is label wali copy pehle se hai -> agla number try karo
+            }
+        }
+        if (!created) return res.status(409).json({ success: false, message: "Too many copies of this question already exist." });
+
         res.json({ success: true, question: created, message: "Question duplicated successfully." });
     } catch (err) {
         console.error("Duplicate question error:", err);

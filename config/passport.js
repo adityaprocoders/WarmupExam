@@ -59,9 +59,17 @@ passport.use(
 
                 if (!user) {
                     // Naya Google user: Google photo, nahi hai to default
+                    const googleEmail = profile.emails?.[0]?.value?.toLowerCase();
+                    if (!googleEmail) {
+                        return done(null, false, { message: "Your Google account has no email address." });
+                    }
+                    const emailTaken = await User.findOne({ email: googleEmail });
+                    if (emailTaken) {
+                        return done(null, false, { message: "This email is already registered with a password. Please login with email and password." });
+                    }
                     user = await User.create({
                         name: profile.displayName,
-                        email: profile.emails[0].value,
+                        email: googleEmail,
                         googleId: profile.id,
                         avatar: googlePhoto || DEFAULT_AVATAR,
                         authProvider: "google",

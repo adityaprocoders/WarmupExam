@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Listing from "../models/listing.js";
 import Section from "../models/Section.js";
 import Test from "../models/Test.js";
@@ -49,6 +50,10 @@ export const getLeaderboardData = async (req, res) => {
 
     const { section: sectionId, period } = req.query; // period: 'today' | 'yesterday'
 
+        if (sectionId && sectionId !== "all" && !mongoose.isValidObjectId(sectionId)) {
+        return res.status(400).json({ success: false, message: "Invalid section" });
+    }
+    
     // ---- Block check yahi bhi zaroori hai (API directly hit ho sakta hai) ----
     if (sectionId && sectionId !== "all") {
         const section = await Section.findOne({ _id: sectionId, listing: listing._id });

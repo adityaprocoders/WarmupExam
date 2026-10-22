@@ -14,6 +14,14 @@
       <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Test Title</label>
       <input type="text"  id="testTitleInput" placeholder="e.g. Mock Test #1" class="w-full p-3 border rounded-xl">
     </div>
+        <% if (typeof tierList !== 'undefined' && tierList.length > 1) { %>
+    <div>
+      <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Tier / Part</label>
+      <select id="tierSelect" class="w-full p-3 border rounded-xl bg-gray-50 font-bold">
+        <% tierList.forEach(t => { %><option value="<%= t.key %>"><%= t.name %></option><% }) %>
+      </select>
+    </div>
+    <% } %>
     <div>
       <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Full Marks</label>
       <input type="number" id="testFullMarksInput" readonly class="w-full p-3 border rounded-xl bg-gray-100 font-bold text-indigo-600">

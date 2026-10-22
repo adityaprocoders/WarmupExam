@@ -1,10 +1,11 @@
 import express from "express";
 import { upload } from "../middleware/upload.js";
 import { isOwner } from "../middleware/isLoggedIn.js";
+import { doubleCsrfProtection } from "../config/csrf.js";
 
 const router = express.Router();
 
-router.post("/api/upload-image", isOwner, upload.single("image"), (req, res) => {
+router.post("/api/upload-image", isOwner, doubleCsrfProtection, upload.single("image"), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ success: false, message: "Image file zaroori hai" });
     }

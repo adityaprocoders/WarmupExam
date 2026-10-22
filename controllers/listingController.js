@@ -6,10 +6,11 @@ import Test from "../models/Test.js";
 import Attempt from "../models/TestAttempt.js";
 import User from "../models/usersShema.js";
 import ExpressError from "../utils/ExpressError.js";
+import { cleanTiers, MIN_TIERS } from "../utils/tierHelper.js";
 import TestQuestion from "../models/TestQuestion.js";
 import slugify from "slugify";
 import cloudinary from "../config/cloudinary.js";
-import ContentBlock from "../models/ContentBlock.js";
+   import ExamSyllabus from "../models/ExamSyllabus.js";
 import Category from "../models/Category.js";
 import { generatePlaceholderImage } from "../utils/placeholderImage.js";
 import { notifyNewTestSeries } from "../utils/notifyNewTestSeries.js";
@@ -18,6 +19,7 @@ import { getValidEnrollments } from "../utils/cleanupHelpers.js";
 import { buildAboutTestSeries } from "../utils/aboutTestSeries.js";
 import { cascadeDeleteListing } from "../utils/deleteHelpers.js";
 import ExamPatternSummary from "../models/ExamPatternSummary.js";
+import { isSafeRedirectPath } from "../utils/safeRedirect.js";
 
 const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -71,7 +73,7 @@ export const allTests = async (req, res) => {
     matchedListings.forEach(l => { l.totalTestCount = testCountMap[String(l._id)] || 0; });
     allListings.forEach(l => { l.totalTestCount = testCountMap[String(l._id)] || 0; });
 
-    const { enrolledIds, enrolledExpiryMap } = getValidEnrollments(req.user);
+    const { enrolledIds, enrolledExpiryMap, suspendedIds } = getValidEnrollments(req.user);
 
     const languages = (await Listing.distinct("language")).filter(Boolean).sort();
 
@@ -140,6 +142,7 @@ seoKeywords = [
         categories,
         csrfToken: req.csrfToken ? req.csrfToken() : "",
         enrolledIds,
+        suspendedIds,
         enrolledExpiryMap,
         title: seoTitle,
         description: seoDescription,
@@ -169,26 +172,27 @@ export const searchTests = async (req, res) => {
     res.json(tests);
 };
 
+ 
 export const showTest = async (req, res) => {
     const { slug } = req.params;
     const isOwner = req.user && req.user.role === "owner";
 
     let query = { slug };
     if (!isOwner) query.visibility = "public";
-    let data = await Listing.findOne(query).populate("contentBlocks");
+    let data = await Listing.findOne(query);
 
     // Backward compatibility — agar purana ID-wala URL hit hua (Google index mein already hai)
     if (!data && mongoose.Types.ObjectId.isValid(slug)) {
         let idQuery = { _id: slug };
         if (!isOwner) idQuery.visibility = "public";
-        data = await Listing.findOne(idQuery).populate("contentBlocks");
+        data = await Listing.findOne(idQuery);
         if (data) {
             return res.redirect(301, `/test/${data.slug}`);
         }
     }
 
     if (!data) throw new ExpressError(404, "Test Not Found");
-
+     
 
         // 🔍 Automatic alternate-language detection — same title + same exam + different language
     const alternateListing = await Listing.findOne({
@@ -200,34 +204,7 @@ export const showTest = async (req, res) => {
     }).select("slug language").lean();
 
 
-    const allBlocks = isOwner
-        ? await ContentBlock.find().sort({ name: 1 })
-        : [];
-
-    // ✅ NEW: "Copy To..." modal ke liye — saari listings (id, title, exam) + exam-wise grouping
-    let allListingsForCopy = [];
-let examGroups = [];
-if (isOwner) {
-    // Exam Categories — SAARI listings se ban raha hai (poora coverage, search yahan bhi kaam karega)
-    const everyListing = await Listing.find()
-        .select("exam")
-        .lean();
-
-    const examCountMap = {};
-    everyListing.forEach(l => {
-        examCountMap[l.exam] = (examCountMap[l.exam] || 0) + 1;
-    });
-    examGroups = Object.keys(examCountMap)
-        .sort()
-        .map(exam => ({ name: exam, count: examCountMap[exam] }));
-
-    // Individual Test Series — sirf latest 5 (quick-access shortcut)
-    allListingsForCopy = await Listing.find()
-        .select("title exam")
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .lean();
-}
+ 
 
     const { enrolledIds } = getValidEnrollments(req.user);
 
@@ -235,6 +212,27 @@ const totalTestCount = await Test.countDocuments({ listing: data._id, isLiveTest
 const aboutTestSeries = await buildAboutTestSeries(data._id, Section, Test, data.type); 
 const examPattern = await ExamPatternSummary.findOne({ category: data.category, exam: data.exam }).lean();
 const category = data.category ? await Category.findById(data.category).lean() : null;
+
+       // Syllabus (Add Content) - isi category + exam ki saari listings me same dikhega
+       const syllabusDoc = await ExamSyllabus.findOne({
+           category: data.category,
+           exam: String(data.exam || "").trim()
+       }).lean();
+    const listingTiers = (data.examStructure === "multi" && Array.isArray(data.tiers))
+        ? [...data.tiers].sort((a, b) => (a.order || 0) - (b.order || 0))
+        : [];
+
+    const syllabusParts = syllabusDoc
+        ? [...(syllabusDoc.parts || [])]
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .map((p, i) => {
+                // Naam hamesha listing ke current part name se (dynamic); na mile to saved naam
+                const tier = listingTiers.find(t => t.key === p.key)
+                    || (syllabusDoc.examStructure === "multi" ? listingTiers[i] : null);
+                return { ...p, name: tier ? tier.name : p.name };
+            })
+            .filter(p => p.rows && p.rows.length)
+        : [];
 
     const isPublic = data.visibility === "public";
     const ogImg = data.image && !data.image.startsWith("data:")
@@ -254,16 +252,14 @@ const category = data.category ? await Category.findById(data.category).lean() :
         enrolledIds,
         isOwner,
         totalTestCount,
-        allBlocks,
          aboutTestSeries,
+         syllabusParts,
           examPattern,  
-        category,
-        allListingsForCopy, 
-        examGroups,    
+        category,   
         alternateListing,  
         title: `${data.title}${data.language ? ` (${data.language})` : ''} | WarmupExam`,
         description: metaDesc,
-        keywords: `${data.title} live test, ${data.title} mock test, ${data.title} PYQ, ${data.title} AIR test, ${data.title} daily warmup, ${data.exam} live test series`,
+           keywords: `${data.title} live test, ${data.title} mock test, ${data.title} PYQ, ${data.title} AIR test, ${data.title} daily warmup, ${data.exam} live test series, ${data.exam} syllabus, ${data.title} syllabus`,
         canonicalUrl: `https://warmupexam.com/test/${data.slug}`,
         ogImage: ogImg,
         robots: isPublic ? "index, follow" : "noindex, nofollow"
@@ -284,6 +280,29 @@ function cleanRankPredictorData(raw) {
         .map(r => ({ marks: Number(r.marks), rank: Number(r.rank) }));
 }
 
+
+
+function applyExamStructure(data) {
+    if (data.examStructure === undefined) {
+        delete data.tiers;
+        delete data.structureType;
+        return null;
+    }
+    if (data.examStructure === "multi" && data.structureType) {
+        const tiers = cleanTiers(data.tiers);
+        if (tiers.length < MIN_TIERS) {
+            return `A multi-part exam needs at least ${MIN_TIERS} parts, each with a name.`;
+        }
+        data.tiers = tiers;
+        return null;
+    }
+    data.examStructure = "single";
+    data.structureType = "";
+    data.tiers = [];
+    return null;
+}
+
+
 export const createTest = async (req, res) => {
     const data = req.body.listing;
     data.originalPrice = Number(data.originalPrice) || 0;
@@ -292,6 +311,13 @@ export const createTest = async (req, res) => {
     data.validityDays = Number(data.validityDays) || 365;
     data.rankPredictorData = cleanRankPredictorData(data.rankPredictorData);
     data.qualify = data.qualify || false;
+
+    
+    const tierError = applyExamStructure(data);
+    if (tierError) {
+        req.flash("error", tierError);
+        return res.redirect("/tests/new");
+    }
 
     if (req.file) {
         data.image = req.file.path;
@@ -343,6 +369,13 @@ export const updateTest = async (req, res) => {
     data.validityDays = Number(data.validityDays) || 365;
     data.rankPredictorData = cleanRankPredictorData(data.rankPredictorData);
 
+    
+    const tierError = applyExamStructure(data);
+    if (tierError) {
+        req.flash("error", tierError);
+        return res.redirect(`/tests/${id}/edit`);
+    }
+    
     if (req.file) {
         data.image = req.file.path;
     } else {
@@ -366,7 +399,8 @@ export const deleteTest = async (req, res) => {
     await cascadeDeleteListing(id);
     await Listing.findByIdAndDelete(id);
 
-    const backUrl = req.body.returnUrl || req.query.returnUrl || "/alltests";
+    const rawBack = req.body.returnUrl || req.query.returnUrl;
+    const backUrl = isSafeRedirectPath(rawBack) ? rawBack : "/alltests";
     res.redirect(backUrl);
 };
 

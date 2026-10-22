@@ -7,6 +7,8 @@ import { recordPayment } from "../utils/paymentLedger.js";
 import ExpressError from "../utils/ExpressError.js";
 import { validateAndCalculateCoupon } from "../utils/couponHelper.js";
 import { cleanupExpiredBatchData } from "../utils/cleanupHelpers.js";
+import { isSafeRedirectPath } from "../utils/safeRedirect.js";
+
 
 // Signature compare timing-safe tareeke se
 const safeEqual = (a, b) => {
@@ -32,7 +34,7 @@ export const showOrderSummary = async (req, res) => {
         if (referer && referer.startsWith(baseUrl)) backUrl = referer.replace(baseUrl, "");
     }
     // sirf apna internal path allow karo (open redirect se bachav), aur order page khud na ho
-    if (!backUrl || !backUrl.startsWith("/") || backUrl.startsWith("//") || backUrl.startsWith("/order-summary")) {
+    if (!isSafeRedirectPath(backUrl) || backUrl.startsWith("/order-summary")) {
         backUrl = "/alltests";
     }
 
@@ -64,7 +66,7 @@ export const applyCoupon = async (req, res) => {
 };
 
 // Coupon usage atomic tareeke se (lost-update nahi hoga)
-async function consumeCoupon(couponId, userId) {
+export async function consumeCoupon(couponId, userId) {
     await Coupon.updateOne({ _id: couponId }, { $inc: { usedCount: 1 } });
     const upd = await Coupon.updateOne(
         { _id: couponId, "usedBy.user": userId },

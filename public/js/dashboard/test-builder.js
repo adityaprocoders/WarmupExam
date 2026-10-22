@@ -133,7 +133,8 @@ function scheduleNextPreviewLoad() {
 --------------------------------------------------------- */
 async function loadSubjects() {
     try {
-        const res = await fetch(`/api/listing/${contextData.listingId}/subjects`);
+        const _tierSel = document.getElementById('tierSelect');
+        const res = await fetch(`/api/listing/${contextData.listingId}/subjects${_tierSel ? '?tier=' + encodeURIComponent(_tierSel.value) : ''}`);
         const result = await res.json();
 
         if (result.success) {
@@ -1089,6 +1090,7 @@ function buildPayload() {
   payload.questions = questions;
   payload.listingId = contextData.listingId;
   payload.sectionId = contextData.sectionId;
+    payload.tier = (document.getElementById('tierSelect') || {}).value || null;
   payload.parentType = contextData.parentType;
   payload.parentId = contextData.parentId;
   payload.visibility = visibility;
@@ -1507,6 +1509,9 @@ async function loadExistingTest() {
         document.getElementById('testTitleInput').value = test.title || '';
         document.getElementById('timeStrategy').value = test.timeStrategy || 'total';
         document.getElementById('visibilitySelect').value = test.visibility || 'private';
+ 
+                const _tierSelEdit = document.getElementById('tierSelect');
+        if (_tierSelEdit && test.tier) { _tierSelEdit.value = test.tier; await loadSubjects(); }
 
         // Language state pehle set karo, questions render hone se pehle
         document.getElementById('languageMode').value = test.languageMode || 'single';
@@ -1615,6 +1620,12 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
     }
   }
 
+    const _tierSelWarn = document.getElementById('tierSelect');
+  if (_tierSelWarn && subjectsList.length === 0) {
+    const _name = _tierSelWarn.options[_tierSelWarn.selectedIndex].text;
+    if (!window.confirm(`Marks for "${_name}" are empty in this listing, so all questions will get 0 marks. Save anyway?`)) return;
+  }
+
   let payload;
 
   if (currentViewMode === 'json') {
@@ -1667,6 +1678,7 @@ document.getElementById('testBuilderForm').addEventListener('submit', async func
 
   payload.listingId = contextData.listingId;
   payload.sectionId = contextData.sectionId;
+    payload.tier = (document.getElementById('tierSelect') || {}).value || null;
   payload.parentType = contextData.parentType;
   payload.parentId = contextData.parentId;
   payload.visibility = visibility;
@@ -1840,10 +1852,21 @@ window.addEventListener('pageshow', function (event) {
 /* ---------------------------------------------------------
    INIT
 --------------------------------------------------------- */
+async function onTierChange() {
+  await loadSubjects();
+  document.querySelectorAll('[id^="qSubject_"]').forEach(sel => {
+    sel.innerHTML = getSubjectOptionsHtml(sel.value);
+  });
+  calculateTotalMarks();
+}
+
 async function init() {
   await loadSubjects();
   renderView('manual');
   handleLanguageUI();
+
+  const _tierSelectEl = document.getElementById('tierSelect');
+  if (_tierSelectEl) _tierSelectEl.addEventListener('change', onTierChange);
 
   if (isEditMode) {
     await loadExistingTest();

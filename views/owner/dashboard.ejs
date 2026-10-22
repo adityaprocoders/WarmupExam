@@ -1317,7 +1317,50 @@
 </div>
 
 
+<!-- ============ Exam Syllabus (Add Content) Modal ============ -->
+<div id="syllabusModalOverlay" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full h-full sm:h-auto sm:rounded-2xl sm:w-full sm:max-w-4xl sm:max-h-[90vh] overflow-y-auto shadow-2xl">
 
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 sticky top-0 bg-white z-10">
+            <div class="min-w-0">
+                <h2 class="text-lg font-bold text-gray-900">Add Content - Syllabus</h2>
+                <p class="text-xs text-gray-500 mt-0.5 truncate">Exam: <span id="syExamName" class="font-semibold text-gray-700">-</span></p>
+            </div>
+            <button id="syCloseBtn" type="button" class="text-gray-400 hover:text-gray-700 text-xl leading-none p-1">✕</button>
+        </div>
+
+        <div class="px-6 py-5 space-y-4">
+            <p id="syInfo" class="text-xs text-gray-500"></p>
+            <div id="syTabs" class="hidden flex flex-wrap gap-2"></div>
+            <p id="syLoading" class="text-center text-gray-400 py-8">Loading...</p>
+            <div id="syRows" class="space-y-3"></div>
+
+            <button type="button" id="syAddRowBtn"
+                class="hidden w-full sm:w-auto px-4 py-2.5 rounded-lg border-2 border-dashed border-indigo-300 text-indigo-600 text-sm font-semibold hover:bg-indigo-50 disabled:opacity-50">
+                + Add Subject &amp; Topic
+            </button>
+
+            <p id="syError" class="hidden text-sm font-semibold text-red-600"></p>
+        </div>
+
+        <div class="flex gap-3 px-6 py-4 border-t border-gray-100 sticky bottom-0 bg-white">
+            <button type="button" id="syCancelBtn"
+                class="flex-1 py-2.5 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50">
+                Cancel
+            </button>
+            <button type="button" id="sySaveBtn" disabled
+                class="flex-1 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60">
+                Save
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<script src="/js/owner/examSyllabus.js" defer></script>
 <script src="/js/owner/owner-dashboard.js" defer></script>
 <script src="/js/owner/questionBank.js" defer></script>
 <script src="/js/owner/examPattern.js" defer></script>

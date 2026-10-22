@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Listing from "../models/listing.js";
 import Section from "../models/Section.js";
 import Folder from "../models/Folder.js";
@@ -110,6 +111,11 @@ async function enrichFilesWithProgress(files, userId) {
 export const showSeries = async (req, res) => {
     const { slug } = req.params;
     const { section, statsSection } = req.query;
+
+        if ((section && !mongoose.isValidObjectId(section)) ||
+        (statsSection && statsSection !== "all" && !mongoose.isValidObjectId(statsSection))) {
+        throw new ExpressError(404, "Section Not Found");
+    }
 
     if (req.user.role !== "owner" && typeof req.user.populate === "function") {
         await req.user.populate([

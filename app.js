@@ -41,7 +41,6 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import listingRoutes from "./routes/listingRoutes.js";
 import ebookRoutes from "./routes/ebookRoutes.js";
-import contentBlockRoutes from "./routes/contentBlockRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js";
 import testBuilderRoutes from "./routes/testBuilderRoutes.js";
@@ -208,9 +207,9 @@ app.use(cookieParser());
 
 
 app.use((req, res, next) => {
-    const richTextRoutes = ['/tests', '/owner/content-library', '/api/test-builder'];
+    const richTextRoutes = ['/tests', '/api/test-builder', '/api/owner/question-bank'];
     const isRichTextRoute = richTextRoutes.some(prefix =>
-        req.path.startsWith(prefix) && ['POST', 'PUT'].includes(req.method)
+        req.path.startsWith(prefix) && ['POST', 'PUT', 'PATCH'].includes(req.method)
     );
     if (isRichTextRoute) return next();
     sanitizeMiddleware(req, res, next);
@@ -335,8 +334,6 @@ app.use((req, res, next) => {
         "/attempt",    
         "/api/attempt",
         "/api/custom-test/attempt",
-        "/content-blocks",
-        "/owner/content-library",
         "/api/questions",
         "/api/custom-test/payment/webhook",
         
@@ -451,7 +448,6 @@ app.use(questionBankRoutes);
 app.use(listingRoutes);
 app.use(customTestPageRoutes);
 app.use(ebookRoutes);
-app.use(contentBlockRoutes);
 app.use(enrollRoutes);
 app.use(paymentRoutes);
 app.use(couponRoutes); 

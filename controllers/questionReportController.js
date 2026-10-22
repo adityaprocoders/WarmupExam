@@ -1,6 +1,9 @@
 import Question from "../models/Question.js";
 import QuestionReport from "../models/QuestionReport.js";
 import Listing from "../models/listing.js";
+import Test from "../models/Test.js";
+import TestQuestion from "../models/TestQuestion.js";
+
 
 export const submitReport = async (req, res) => {
     try {
@@ -16,9 +19,14 @@ export const submitReport = async (req, res) => {
         const question = await Question.findById(questionId);
         if (!question) return res.status(404).json({ success: false, message: "Question not found." });
 
-        // 👇 Sirf Listing.type check — "Paid" (exact enum value, capital P)
-        const listing = await Listing.findById(question.listing).select("type");
-        if (!listing || listing.type !== "Paid") {
+               // Question.listing sirf "pehli baar jisne banaya" hai. Dedup ke baad question kai listings me use hota hai,
+        // isliye jin tests me ye question hai unki listings me se koi bhi Paid ho to report allowed.
+        const testIds = await TestQuestion.find({ question: questionId }).distinct("test");
+        const listingIds = testIds.length ? await Test.find({ _id: { $in: testIds } }).distinct("listing") : [];
+        if (!listingIds.length && question.listing) listingIds.push(question.listing);
+
+        const hasPaidListing = await Listing.exists({ _id: { $in: listingIds }, type: "Paid" });
+        if (!hasPaidListing) {
             return res.status(403).json({
                 success: false,
                 message: "Report is available only for questions in paid test series."
@@ -28,12 +36,19 @@ export const submitReport = async (req, res) => {
         let report = await QuestionReport.findOne({ question: questionId });
 
         if (!report) {
-            report = await QuestionReport.create({
-                question: questionId,
-                reportedBy: userId,
-                reason,
-                description: reason === "Other" ? (description || "") : ""
-            });
+            try {
+                report = await QuestionReport.create({
+                    question: questionId,
+                    reportedBy: userId,
+                    reason,
+                    description: reason === "Other" ? (description || "") : ""
+                });
+            } catch (e) {
+                if (e.code !== 11000) throw e;
+                // Dusre user ne usi pal pehla report bana diya -> is user ko "also reported" me daalo
+                await QuestionReport.updateOne({ question: questionId, reportedBy: { $ne: userId } }, { $addToSet: { alsoReportedBy: userId } });
+                return res.json({ success: true, alreadyReported: false, message: "Thanks for reporting! Our team will review this within 24-48 hours." });
+            }
             if (question.status !== "Disabled") {
                 question.status = "Reported";
                 await question.save();

@@ -247,8 +247,9 @@ function testSeriesCard(s) {
             <button
               data-category="${escapeHtml(s.category || '')}"
               data-exam="${escapeHtml(s.exam || '')}"
-              class="addContentBtn w-full text-center border-2 border-gray-200 text-gray-600 text-sm font-semibold py-2 rounded-lg hover:bg-gray-50">
-              <i class="fa-solid fa-table-list mr-1"></i> Add Content
+              data-has-syllabus="${s.hasSyllabus ? '1' : '0'}"
+              class="addContentBtn w-full text-center border-2 text-sm font-semibold py-2 rounded-lg ${s.hasSyllabus ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}">
+              ${s.hasSyllabus ? '<i class="fa-solid fa-circle-check mr-1"></i> Content Added' : '<i class="fa-solid fa-table-list mr-1"></i> Add Content'}
             </button>
           </div>
         </div>

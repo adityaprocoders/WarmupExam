@@ -119,6 +119,7 @@ showLanguage: {
         type: Date,
         default: null
     },
+        tier: { type: String, default: null, index: true },
     isDailyWarmup: { type: Boolean, default: false },
 dailyWarmupUser: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
 dailyWarmupDayKey: { type: String, default: null },

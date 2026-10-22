@@ -11,6 +11,10 @@ import { getTestStatus, formatDateTime } from "../utils/testStatus.js";
 import { getLiveTestRank } from "../utils/liveRankHelper.js";
 import { getAccuracyComparison } from "../utils/testStatsHelper.js";
 import { getInstructionStrings, getLanguageLabel, htmlLangCode, buildInstructionBundle } from "../utils/instructionI18n.js";
+import { getTierConfigForTest } from "../utils/tierHelper.js";
+import { isOwnerUser } from "../utils/authHelpers.js";
+import { isSafeRedirectPath } from "../utils/safeRedirect.js";
+ 
 
 
 function buildClientQuestions(mappings, lang) {
@@ -232,7 +236,7 @@ export const showAttempt = async (req, res) => {
     if (!test) throw new ExpressError(404, "Test Not Found");
 
     const from = req.query.from;
-    const safeFrom = (typeof from === "string" && from.startsWith("/") && !from.startsWith("//")) ? from : null;
+    const safeFrom = isSafeRedirectPath(from) ? from : null;
 
     const { status, publishAt } = getTestStatus(test);
     if (status === "upcoming") {
@@ -346,6 +350,10 @@ export const submitAttempt = async (req, res) => {
         });
     }
 
+        if (test.isLiveTest && test.liveTestExpiresAt && new Date(test.liveTestExpiresAt) <= new Date()) {
+        return res.status(403).json({ success: false, message: "This Live Test has ended." });
+    }
+
     if (test.isLiveTest) {
         const alreadyAttempted = await Attempt.findOne({ test: testId, user: req.user._id });
         if (alreadyAttempted) {
@@ -376,9 +384,9 @@ export const submitAttempt = async (req, res) => {
         safeTime = Math.min(elapsed, allowedSeconds);
     }
 
-    const listingForMarks = await Listing.findById(test.listing).select("marks type");
+    const listingForMarks = await Listing.findById(test.listing).select("marks type examStructure tiers");
     const qualifyingSubjects = new Set(
-        (listingForMarks?.marks || [])
+        (getTierConfigForTest(listingForMarks, test).marks || [])
             .filter(m => m.qualifyingOnly)
             .map(m => m.subject)
     );
@@ -392,7 +400,7 @@ export const submitAttempt = async (req, res) => {
         const q = m.question;
         if (!q) return;
 
-        const userAns = answers.find(a => a.questionId === String(q._id));
+        const userAns = answers.find(a => a && a.questionId === String(q._id));
 
         let cleanSel = [];
         let isCorrect = false, attempted = false;
@@ -425,8 +433,8 @@ export const submitAttempt = async (req, res) => {
         savedAnswers.push({
             question: q._id,
             selectedOptions: cleanSel,
-            numericAnswer: userAns?.numericAnswer ?? null,
-            status: userAns?.status || "notVisited"
+            numericAnswer: Number.isFinite(Number(userAns?.numericAnswer)) && userAns?.numericAnswer !== null && userAns?.numericAnswer !== "" ? Number(userAns.numericAnswer) : null,
+            status: ["notVisited", "notAnswered", "answered", "markedNotAnswered", "markedAnswered"].includes(userAns?.status) ? userAns.status : "notVisited"
         });
     });
 
@@ -522,9 +530,17 @@ export const showAnalysis = async (req, res) => {
     if (!test) throw new ExpressError(404, "Test Not Found");
     const listing = await Listing.findById(attempt.listing);
 
+        if (test.isLiveTest && test.liveTestExpiresAt && new Date(test.liveTestExpiresAt) <= new Date()) {
+        req.flash("error", "Live Test analysis has expired.");
+        return res.redirect("/dashboard");
+    }
+
+    const tierCfg = getTierConfigForTest(listing, test);
+    const tierRankData = tierCfg.rankPredictorData || [];
+
     // ✅ Listing ke marks config se qualifying-only subjects nikal lo
     const qualifyingSubjects = new Set(
-        (listing?.marks || [])
+        (tierCfg.marks || [])
             .filter(m => m.qualifyingOnly)
             .map(m => m.subject)
     );
@@ -646,8 +662,8 @@ isCorrect = attempted && Number(v) === Number(q.numericAnswer);
         };
     });
 
-    const { rank: predictorRank } = calculateRankFromPredictor(attempt.score, listing?.rankPredictorData);
-const { rank: liveRank, totalUsers: liveTotalUsers } = await getLiveTestRank(attempt.test, attempt.score, test.isLiveTest ? (attempt.timeTaken || 0) : 0);
+    const { rank: predictorRank } = calculateRankFromPredictor(attempt.score, tierRankData);
+const { rank: liveRank, totalUsers: liveTotalUsers } = await getLiveTestRank(attempt.test, attempt.score, test.isLiveTest ? (attempt.timeTaken || 0) : 0, req.user._id);
 
      // 🆕 NAYA — Rank Predictor Card (gate + range)
 let rankPredictorCard = { show: false };
@@ -663,11 +679,11 @@ if (test.section) {
 
 const isAllowed = test.isLiveTest || sectionAllows;
 
-if (isAllowed && listing?.rankPredictorData?.length > 0) {
-    const rankRange = calculateRankRange(attempt.score, listing.rankPredictorData, attempt.totalMarks);
+if (isAllowed && tierRankData.length > 0) {
+    const rankRange = calculateRankRange(attempt.score, tierRankData, attempt.totalMarks);
     rankPredictorCard = {
         show: true,
-        rankPredictorData: listing.rankPredictorData,
+        rankPredictorData: tierRankData,
         userScore: attempt.score,
         userRank: predictorRank,
         rankRange

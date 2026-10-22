@@ -20,6 +20,10 @@ const escapeRegex = (str) => {
     return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 };
 
+
+// Express 5 me res.redirect("back") nahi chalta, isliye ye helper
+const goBack = (req, res) => res.redirect(req.get("Referrer") || "/categories");
+
 // GET /categories  -> saari categories dikhane wala page
 export const getAllCategories = async (req, res, next) => {
     try {
@@ -56,7 +60,7 @@ export const createCategory = async (req, res) => {
 
         if (!name || !icon || !description) {
             req.flash("error", "All fields are required");
-            return res.redirect("back");
+            return goBack(req, res);
         }
 
         const slug = generateSlug(name);
@@ -64,7 +68,7 @@ export const createCategory = async (req, res) => {
         const existing = await Category.findOne({ slug });
         if (existing) {
             req.flash && req.flash("error", "A category with this name already exists");
-            return res.redirect("back");
+            return goBack(req, res);
         }
 
         await Category.create({
@@ -79,7 +83,7 @@ export const createCategory = async (req, res) => {
     } catch (err) {
         console.error(err);
         req.flash && req.flash("error", "Something went wrong");
-        res.redirect("back");
+        goBack(req, res);
     }
 };
 
@@ -121,13 +125,19 @@ export const updateCategory = async (req, res) => {
     } catch (err) {
         console.error(err);
         req.flash && req.flash("error", "Something went wrong");
-        res.redirect("back");
+        goBack(req, res);
     }
 };
 
 // DELETE /categories/:id  -> category delete karta hai
 export const deleteCategory = async (req, res) => {
     try {
+        const listingCount = await Listing.countDocuments({ category: req.params.id });
+        if (listingCount > 0) {
+            req.flash("error", `Is category me ${listingCount} test series hain. Pehle unhe doosri category me move ya delete karo.`);
+            return res.redirect("/");
+        }
+
         await Category.findByIdAndDelete(req.params.id);
         req.flash && req.flash("success", "Category deleted successfully");
         res.redirect("/");
@@ -179,7 +189,7 @@ export const showCategory = async (req, res, next) => {
             l.totalTestCount = testCountMap[String(l._id)] || 0;
         });
 
-        const { enrolledIds, enrolledExpiryMap } = getValidEnrollments(req.user);
+                const { enrolledIds, enrolledExpiryMap, suspendedIds } = getValidEnrollments(req.user);
 
         const seoTitle = `${category.name} Mock Test Series - ${totalListingsCount} Test Series | WarmupExam`;
 
@@ -205,6 +215,7 @@ export const showCategory = async (req, res, next) => {
             totalTestsCount,
             enrolledIds,
             enrolledExpiryMap,
+            suspendedIds,
             isOwner,
             languages: languages.filter(Boolean).sort(),
             exams: exams.filter(Boolean).sort(),
@@ -268,7 +279,7 @@ function getDailySeed(extraKey = "") {
 export const getCategoryTestsApi = async (req, res) => {
     try {
         const { slug } = req.params;
-        const { filter = "all", search = "", page = 1, limit, language = "", exam = "" } = req.query; // 👈 fix yahi hai
+        const { filter = "all", search = "", page = 1, limit, language = "", exam = "" } = req.query;
         const perPage = limit ? parseInt(limit, 10) : 8;
         const pageNum = parseInt(page, 10) || 1;
 
@@ -316,12 +327,13 @@ export const getCategoryTestsApi = async (req, res) => {
         const testCountMap = {};
         testCounts.forEach((t) => { testCountMap[String(t._id)] = t.count; });
 
-        const { enrolledIds } = getValidEnrollments(req.user);
+        const { enrolledIds, suspendedIds } = getValidEnrollments(req.user);
 
         const listings = paginated.map((l) => ({
             ...l,
             totalTestCount: testCountMap[String(l._id)] || 0,
             canAccess: isOwner || enrolledIds.includes(String(l._id)),
+            isSuspended: !isOwner && suspendedIds.includes(String(l._id)),
             isOwner,
             currentUser: !!req.user,
         }));

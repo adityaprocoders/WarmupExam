@@ -6,7 +6,7 @@ import CustomTestPayment from "../models/customTestPayment.js";
 import Coupon from "../models/coupon.js";
 import { recordPayment, applyRefund } from "../utils/paymentLedger.js";
 import { validateCustomTestCoupon } from "../utils/couponHelper.js";
-import { activateEnrollment } from "./paymentController.js";
+import { activateEnrollment, consumeCoupon } from "./paymentController.js";
 
 const safeEqual = (a, b) => {
     const A = Buffer.from(String(a));
@@ -103,7 +103,22 @@ async function activateSubscription({ razorpayOrderId, razorpayPaymentId, source
         { new: true }
     );
     if (!claimed) {
-        if (!(await CustomTestPayment.exists({ razorpayOrderId }))) throw new Error("Payment record not found");
+        const existing = await CustomTestPayment.findOne({ razorpayOrderId });
+        if (!existing) throw new Error("Payment record not found");
+        if (existing.status === "paid") {
+            const u = await User.findById(existing.user);
+            if (u) {
+                await recordPayment({
+                    user: u, kind: "customtest", itemId: null,
+                    itemTitle: `Custom Test ${existing.plan === "promax" ? "Pro Max" : "Pro"} (${existing.months} month${existing.months > 1 ? "s" : ""})`,
+                    plan: existing.plan, months: existing.months, validityDays: existing.months * 30,
+                    baseAmount: existing.baseAmount ?? existing.amount,
+                    couponCode: existing.couponCode || "", couponDiscount: existing.couponDiscount || 0,
+                    donation: existing.donation || 0, amount: existing.amount,
+                    orderId: razorpayOrderId, paymentId: razorpayPaymentId, expiresAt: u.customTestExpiresAt
+                });
+            }
+        }
         return { alreadyProcessed: true };
     }
 
@@ -150,16 +165,9 @@ async function activateSubscription({ razorpayOrderId, razorpayPaymentId, source
         expiresAt: user.customTestExpiresAt
     });
 
-    if (claimed.couponId) {
+        if (claimed.couponId) {
         try {
-            await Coupon.updateOne({ _id: claimed.couponId }, { $inc: { usedCount: 1 } });
-            const upd = await Coupon.updateOne(
-                { _id: claimed.couponId, "usedBy.user": user._id },
-                { $inc: { "usedBy.$.count": 1 } }
-            );
-            if (!upd.modifiedCount) {
-                await Coupon.updateOne({ _id: claimed.couponId }, { $push: { usedBy: { user: user._id, count: 1 } } });
-            }
+            await consumeCoupon(claimed.couponId, user._id);
         } catch (e) {
             console.error("coupon consume failed:", claimed.couponId, e);
         }
@@ -256,12 +264,20 @@ export const razorpayWebhook = async (req, res) => {
         const order = await razorpayInstance.orders.fetch(payment.order_id);
               // Test series order (createOrder ke notes me listingId hota hai)
         if (order.notes?.listingId && order.notes?.userId) {
-            await activateEnrollment({
-                userId: order.notes.userId,
-                listingId: order.notes.listingId,
-                order,
-                paymentId: payment.id
-            });
+            try {
+                await activateEnrollment({
+                    userId: order.notes.userId,
+                    listingId: order.notes.listingId,
+                    order,
+                    paymentId: payment.id
+                });
+            } catch (e) {
+                if (e?.statusCode === 404) {
+                    console.error("webhook: listing/user missing", e.message);
+                    return res.json({ success: true });
+                }
+                throw e;
+            }
             return res.json({ success: true });
         }
 
