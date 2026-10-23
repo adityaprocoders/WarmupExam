@@ -217,8 +217,74 @@ if (availableLanguages.length === 1) {
         subjectMap[q.subject].count += 1;
     });
 
+
+        // ===== Paper Pattern table (section-wise) =====
+    // Logic attempt.js ke buildSections() jaisa hi hai, taaki instructions me jo dikhe wahi test me chale
+    const DEFAULT_SUBJECT_MINUTES = 20;
+    const norm = (s) => String(s || "").trim().toLowerCase();
+    const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+    const subjStats = {};
+    const subjOrder = [];
+    questions.forEach(q => {
+        const name = q.subject || "General";
+        if (!subjStats[name]) {
+            subjStats[name] = { subject: name, count: 0, marks: 0 };
+            subjOrder.push(name);
+        }
+        subjStats[name].count += 1;
+        subjStats[name].marks += Number(q.positiveMarks) || 0;
+    });
+
+    const makeRow = (names, minutes) => {
+        const list = names.map(n => ({ subject: n, count: subjStats[n].count }));
+        return {
+            name: names.join(" + "),
+            subjects: list,
+            questions: list.reduce((s, x) => s + x.count, 0),
+            marks: round2(names.reduce((s, n) => s + subjStats[n].marks, 0)),
+            minutes
+        };
+    };
+
+    const hasSubjectTiming = test.timeStrategy === "subject"
+        && Array.isArray(test.subjectTime) && test.subjectTime.length > 0;
+    const paperSections = [];
+
+    if (hasSubjectTiming) {
+        const used = new Set();
+        test.subjectTime.forEach(entry => {
+            const whole = norm(entry.subject);
+            const wanted = subjOrder.some(s => norm(s) === whole)
+                ? [whole]
+                : String(entry.subject || "").split(/\s\+\s/).map(norm).filter(Boolean);
+            const matched = subjOrder.filter(s => wanted.includes(norm(s)) && !used.has(s));
+            if (!matched.length) return;
+            matched.forEach(s => used.add(s));
+            const mins = Number(entry.duration) > 0 ? Number(entry.duration) : DEFAULT_SUBJECT_MINUTES;
+            paperSections.push(makeRow(matched, mins));
+        });
+        subjOrder.forEach(s => {
+            if (!used.has(s)) paperSections.push(makeRow([s], DEFAULT_SUBJECT_MINUTES));
+        });
+    } else {
+        subjOrder.forEach(s => paperSections.push(makeRow([s], null)));
+    }
+
+    const paperTotals = {
+        questions: paperSections.reduce((s, r) => s + r.questions, 0),
+        marks: round2(paperSections.reduce((s, r) => s + r.marks, 0)),
+        minutes: hasSubjectTiming
+            ? paperSections.reduce((s, r) => s + r.minutes, 0)
+            : (Number(test.duration) || 0),
+        perSection: hasSubjectTiming
+    };
+
+
+
     res.render("dashboard/instructions", {
         layout: false, test, listing, questions,
+        paperSections, paperTotals,
         subjectBreakdown: Object.values(subjectMap),
         availableLanguages,
         lang,
