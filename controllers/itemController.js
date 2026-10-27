@@ -3,10 +3,11 @@ import File from "../models/File.js";
 import Test from "../models/Test.js";
 import TestQuestion from "../models/TestQuestion.js";
 import slugify from "slugify";
-import { cascadeDeleteFolder, cascadeDeleteFile, cascadeDeleteTest } from "../utils/deleteHelpers.js";
+import { cascadeDeleteSection, cascadeDeleteFolder, cascadeDeleteFile, cascadeDeleteTest } from "../utils/deleteHelpers.js";
 import Listing from "../models/listing.js";
 import User from "../models/usersShema.js";
- 
+import { startNdjson, createProgress, countDeleteUnits } from "../utils/bulkProgress.js";
+
 
 export const createItem = async (req, res) => {
     try {
@@ -119,3 +120,88 @@ export const deleteItem = async (req, res) => {
         res.status(500).json({ success: false, message: err.message || "Unable to delete the item. Please try again." });
     }
 };
+
+
+
+/**
+ * Bulk delete: selected Section / Folder / File / Test.
+ * Har item par WAHI cascade functions chalte hain jo manual delete me chalte hain,
+ * isliye andar ka sab kuch pura delete hota hai.
+ * Parent aur uske andar ka child dono select ho to bhi safe hai.
+ * stream:true => live progress (%) line-by-line bhejte hain, warna purana single JSON response.
+ */
+export const bulkDeleteItems = async (req, res) => {
+    const { items } = req.body || {};
+    const wantsStream = !!req.body && req.body.stream === true;
+
+    if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ success: false, message: "No item selected." });
+    }
+    if (items.length > 300) {
+        return res.status(400).json({ success: false, message: "Too many items selected at once (max 300)." });
+    }
+
+    const handlers = {
+        section: cascadeDeleteSection,
+        folder: cascadeDeleteFolder,
+        file: cascadeDeleteFile,
+        test: cascadeDeleteTest
+    };
+    const priority = { section: 0, folder: 1, file: 2, test: 3 };
+
+    const seen = new Set();
+    const clean = [];
+    for (const it of items) {
+        const type = it && it.type;
+        const id = it && String(it.id || "");
+        if (!handlers[type] || !/^[0-9a-fA-F]{24}$/.test(id)) {
+            return res.status(400).json({ success: false, message: "Invalid item in selection." });
+        }
+        const key = type + ":" + id;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        clean.push({ type, id });
+    }
+    clean.sort((a, b) => priority[a.type] - priority[b.type]);
+
+    // ---- live progress setup (sirf stream mode me) ----
+    let send = null;
+    let progress = null;
+    const cumulative = [];
+    if (wantsStream) {
+        send = startNdjson(res);
+        let total = 0;
+        for (const it of clean) {
+            try { total += await countDeleteUnits(it.type, it.id); } catch (e) { /* count fail => % thoda kam accurate */ }
+            cumulative.push(total);
+        }
+        progress = createProgress(total, send);
+        send({ type: "start", total });
+    }
+    const onUnit = progress ? (n) => progress.step(n) : null;
+
+    let deleted = 0;
+    let failed = 0;
+    for (let i = 0; i < clean.length; i++) {
+        const it = clean[i];
+        try {
+            await handlers[it.type](it.id, onUnit);
+            deleted++;
+        } catch (err) {
+            console.error("Bulk delete error:", it.type, it.id, err);
+            failed++;
+        }
+        // parent ke andar ka child pehle hi delete ho chuka ho (overlap) to bhi % sahi jaye
+        if (progress) progress.setAtLeast(cumulative[i]);
+    }
+
+    if (wantsStream) {
+        progress.setAtLeast(progress.total);
+        progress.flush();
+        send({ type: "done", success: failed === 0, deleted, failed });
+        return res.end();
+    }
+
+    res.json({ success: failed === 0, deleted, failed });
+};
+ 

@@ -48,6 +48,9 @@ const paymentRecordSchema = new mongoose.Schema(
         refunds: { type: [refundSchema], default: [] },
         accessRevoked: { type: Boolean, default: false },                      // full refund par access ek hi baar hatana
 
+                // Purchase confirmation email kab gayi (null = abhi nahi gayi / fail hui)
+        emailSentAt: { type: Date, default: null },
+        
         source: { type: String, default: "razorpay" },
         paidAt: { type: Date, default: Date.now },
         expiresAt: { type: Date, default: null }

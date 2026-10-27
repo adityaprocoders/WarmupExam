@@ -227,6 +227,8 @@ import "./cron/notificationCron.js";
 import "./cron/expiredEnrollmentCleanupCron.js";
 import "./cron/otpCleanupCron.js";
 import "./cron/dailyWarmupCleanupCron.js";
+import "./cron/purchaseEmailRetryCron.js";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

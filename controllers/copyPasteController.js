@@ -5,6 +5,7 @@ import File from "../models/File.js";
 import Test from "../models/Test.js";
 import ExpressError from "../utils/ExpressError.js";
 import { copyNode } from "../utils/copyHelpers.js";
+import { startNdjson, createProgress, countCopyUnits } from "../utils/bulkProgress.js";
 
 export const searchSeries = async (req, res) => {
     const keyword = req.query.keyword?.trim();
@@ -212,8 +213,16 @@ export const bulkCopySections = async (req, res) => {
 
 
 export const bulkCopyItems = async (req, res) => {
-    const { items, destListingIds, selectedLanguage, destSectionId, destParentType, destParentId } = req.body;
+    const {
+        items, destListingIds, selectedLanguage,
+        destSectionId, destParentType, destParentId,
+        includeTests
+    } = req.body;
 
+    const wantsStream = req.body.stream === true;
+    const withTests = includeTests !== false && includeTests !== "false";
+
+    // ---- validation: stream shuru hone se PEHLE (normal JSON error) ----
     if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ success: false, message: "No item selected." });
     }
@@ -221,29 +230,55 @@ export const bulkCopyItems = async (req, res) => {
         return res.status(400).json({ success: false, message: "No destination test series selected." });
     }
 
-    // 👇 FIXED — sirf tab section required hai jab koi non-section item ho
-    // (section apna khud ka naya Section banata hai, usko destSectionId ki zaroorat nahi)
-    const hasNonSectionItem = items.some(it => it.type !== 'section');
+    const itemsToCopy = withTests ? items : items.filter(it => it.type !== "test");
+    if (itemsToCopy.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: "Only tests were selected, so nothing is left to copy in 'without tests' mode."
+        });
+    }
+
+    const hasNonSectionItem = itemsToCopy.some(it => it.type !== "section");
     if (hasNonSectionItem && !destSectionId) {
         return res.status(400).json({ success: false, message: "Please select a destination section." });
     }
 
     const overrideLanguage = (selectedLanguage && selectedLanguage !== "All") ? selectedLanguage : null;
 
+    // ---- live progress setup ----
+    let send = null;
+    let progress = null;
+    const cumulative = [];
+    if (wantsStream) {
+        send = startNdjson(res);
+        let total = 0;
+        for (const item of itemsToCopy) {
+            try {
+                total += (await countCopyUnits(item.type, item.id, withTests)) * destListingIds.length;
+            } catch (e) { /* count fail => % thoda kam accurate */ }
+            cumulative.push(total);
+        }
+        progress = createProgress(total, send);
+        send({ type: "start", total });
+    }
+    const onProgress = progress ? (n) => progress.step(n) : null;
+
     let copied = 0;
     let failed = 0;
     const fallbackLog = [];
 
-    for (const item of items) {
+    for (let i = 0; i < itemsToCopy.length; i++) {
+        const item = itemsToCopy[i];
         for (const listingId of destListingIds) {
             try {
-                // section item ke liye destSectionId use hi nahi hota copyNode ke andar (ignore ho jata hai)
                 await copyNode(
                     item.type, item.id, listingId,
-                    item.type === 'section' ? null : destSectionId,
+                    item.type === "section" ? null : destSectionId,
                     destParentType || "section",
                     destParentId || null,
-                    overrideLanguage, "", fallbackLog
+                    overrideLanguage, "", fallbackLog,
+                    withTests,
+                    onProgress                      // 11th param
                 );
                 copied++;
             } catch (err) {
@@ -251,6 +286,14 @@ export const bulkCopyItems = async (req, res) => {
                 failed++;
             }
         }
+        if (progress) progress.setAtLeast(cumulative[i]);
+    }
+
+    if (wantsStream) {
+        progress.setAtLeast(progress.total);
+        progress.flush();
+        send({ type: "done", success: true, copied, failed, fallbacks: fallbackLog });
+        return res.end();
     }
 
     res.json({ success: true, copied, failed, fallbacks: fallbackLog });

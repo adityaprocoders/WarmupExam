@@ -10,6 +10,7 @@ import { generateSessionId } from "../utils/sessionHelper.js";
 import { isSafeRedirectPath } from "../utils/safeRedirect.js";
 import crypto from "crypto";
 import { generateOtp, hashSecret, safeEqualHash } from "../utils/secretHash.js";
+import { buildOtpEmail } from "../utils/emailTemplates/otpEmail.js";
 
 const guardAsync = (next, fn) => (err) => {
     if (err) return next(err);
@@ -268,30 +269,20 @@ export const forgotPassword = async (req, res) => {
         user.resetTokenExpiry = resetTokenExpiry;
         await user.save();
 
-        const { data, error } = await resend.emails.send({
-    from: `WarmupExam <${process.env.CONTACT_SENDER_EMAIL}>`,
-    to: [cleaned],         
-    subject: "Your WarmupExam Password Reset OTP",
-    html: `
-        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px;">
-            <h2 style="color:#4f46e5; margin-bottom: 8px;">Password Reset Request</h2>
-            <p style="color:#334155; font-size: 14px;">Click the button below to reset your password directly. This link is valid for 5 minutes.</p>
+                 const { subject, html, text } = buildOtpEmail({
+            otp,
+            resetLink,
+            expiresInMinutes: 5,
+            name: user.name
+        });
 
-            <div style="text-align:center; margin: 24px 0;">
-                <a href="${resetLink}" style="background:#4f46e5; color:#ffffff; padding:12px 32px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block; font-size:15px;">
-                    Reset Password
-                </a>
-            </div>
-
-            <p style="color:#64748b; font-size: 13px; text-align:center;">Or enter this OTP manually on the site:</p>
-            <div style="background:#f8fafc; border-radius:8px; padding: 16px; text-align:center; margin: 12px 0;">
-                <span style="font-size: 28px; font-weight: bold; letter-spacing: 6px; color:#4f46e5;">${otp}</span>
-            </div>
-
-            <p style="color:#94a3b8; font-size: 12px;">If you didn't request this, you can safely ignore this email.</p>
-        </div>
-    `
-});
+        const { error } = await resend.emails.send({
+            from: `WarmupExam <${process.env.CONTACT_SENDER_EMAIL}>`,
+            to: [cleaned],
+            subject,
+            html,
+            text
+        });
 
         if (error) {
             console.error("❌ OTP mail error:", error);

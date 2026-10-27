@@ -9,11 +9,21 @@ function toggleItemSelectMode() {
         el.classList.toggle('hidden', !selectionMode);
     });
 
-    const btn = document.getElementById('selectModeToggleBtn');
+       const btn = document.getElementById('selectModeToggleBtn');
     if (btn) {
-        btn.classList.toggle('bg-indigo-600', selectionMode);
-        btn.classList.toggle('text-white', selectionMode);
-        btn.classList.toggle('border-indigo-600', selectionMode);
+        const label = btn.querySelector('.select-btn-label');
+        if (label) label.textContent = selectionMode ? 'Cancel' : 'Select';
+
+        btn.classList.toggle('bg-red-50', selectionMode);
+        btn.classList.toggle('bg-white', !selectionMode);
+        btn.classList.toggle('text-red-500', selectionMode);
+        btn.classList.toggle('text-indigo-600', !selectionMode);
+    }
+
+        const allBtn = document.getElementById('selectAllItemsBtn');
+    if (allBtn) {
+        allBtn.classList.toggle('hidden', !selectionMode);
+        allBtn.classList.toggle('flex', selectionMode);
     }
 
     if (!selectionMode) clearSelection();
@@ -25,10 +35,18 @@ function clearSelection() {
     updateSelectionBar();
 }
 
+
 function updateSelectionBar() {
     const bar = document.getElementById('selectionActionBar');
     document.getElementById('selectionCountText').textContent = `${selectedItemsMap.size} selected`;
     bar.classList.toggle('hidden', selectedItemsMap.size === 0);
+
+        const boxes = document.querySelectorAll('[data-action="select-item"]');
+    const label = document.getElementById('selectAllItemsLabel');
+    if (label) {
+        const allChecked = boxes.length > 0 && selectedItemsMap.size === boxes.length;
+        label.textContent = allChecked ? 'Deselect All' : 'Select All';
+    }
 }
 
 function onItemCheckboxChange(el) {
@@ -41,6 +59,25 @@ function getSelectedMixedItems() {
     return Array.from(selectedItemsMap.entries()).map(([id, type]) => ({ id, type }));
 }
 
+
+function toggleSelectAllItems() {
+    const boxes = Array.from(document.querySelectorAll('[data-action="select-item"]'));
+    const allChecked = boxes.length > 0 && selectedItemsMap.size === boxes.length;
+
+    boxes.forEach(cb => {
+        cb.checked = !allChecked;
+        if (cb.checked) selectedItemsMap.set(cb.dataset.itemId, cb.dataset.itemType);
+        else selectedItemsMap.delete(cb.dataset.itemId);
+    });
+    updateSelectionBar();
+}
+
+
+function exitItemSelectMode() {
+    if (selectionMode) toggleItemSelectMode();
+    else clearSelection();
+}
+
 document.addEventListener('click', function (e) {
     const el = e.target.closest('[data-action]');
     if (!el) return;
@@ -50,10 +87,13 @@ document.addEventListener('click', function (e) {
             toggleItemSelectMode();   // 👈 RENAMED call
             break;
         case 'cancel-select-mode':
-            toggleItemSelectMode();   // 👈 RENAMED call
+            exitItemSelectMode();
             break;
         case 'bulk-copy-selected-items':
             startItemBulkCopyWithLanguageCheck();
+            break;
+        case 'select-all-items':
+            toggleSelectAllItems();
             break;
     }
 });

@@ -67,7 +67,19 @@ function confirmLanguageNext() {
 // jo pehle seedha openBulkCopyModal(mode) call karta tha, ab isko call kare)
 async function startBulkCopyWithLanguageCheck(mode) {
     const sectionIds = getSelectedSectionIds();
-    if (sectionIds.length === 0) return;
+        if (sectionIds.length === 0) return;
+        // 👇 NAYA: With tests / Without tests choice (cancel = kuch nahi hoga)
+    const withTests = await askCopyWithTests();
+    if (withTests === null) return;
+    copyIncludeTests = withTests;
+    pendingMixedBulkItems = null;   // sidebar se hamesha sirf sections copy hote hain
+
+    if (!withTests) {
+        // without tests me language puchhne ki zaroorat nahi, seedha destination modal
+        selectedShowLanguage = null;
+        openBulkCopyModal(mode);
+        return;
+    }
 
     const languages = await fetchLanguagesForSections(sectionIds);
 
@@ -125,7 +137,20 @@ async function startItemBulkCopyWithLanguageCheck() {
     const items = getSelectedMixedItems();
     if (items.length === 0) return;
 
+    // 👇 NAYA: With tests / Without tests choice (cancel = kuch nahi hoga)
+    const withTests = await askCopyWithTests();
+    if (withTests === null) return;
+    copyIncludeTests = withTests;
+
     pendingMixedBulkItems = items;
+
+    if (!withTests) {
+        // without tests me language puchhne ki zaroorat nahi, seedha destination modal
+        selectedShowLanguage = null;
+        openCopyModal('mixed', null);
+        return;
+    }
+
     const languages = await fetchLanguagesForItems(items);
 
     if (languages.length === 0) {

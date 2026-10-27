@@ -199,11 +199,17 @@
 
 
 <% if (currentUser.role === 'owner' && (folders.length > 0 || files.length > 0 || tests.length > 0)) { %>
-<div class="flex justify-end mb-4">
+<div class="flex justify-between items-center mb-4">
+    <button type="button" id="selectAllItemsBtn" data-action="select-all-items"
+        class="hidden items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-indigo-700 transition">
+        <i class="fa-solid fa-check-double text-xs"></i>
+        <span id="selectAllItemsLabel">Select All</span>
+    </button>
+
     <button type="button" id="selectModeToggleBtn" data-action="toggle-item-select-mode"
-    class="flex items-center gap-2 bg-white border border-indigo-200 text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-indigo-50 hover:border-indigo-300 transition">
+        class="flex items-center gap-2 bg-white border border-indigo-200 text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-indigo-50 hover:border-indigo-300 transition">
         <i data-lucide="check-square" class="w-4 h-4"></i>
-        Select
+        <span class="select-btn-label">Select</span>
     </button>
 </div>
 <% } %>
@@ -457,6 +463,7 @@
 <div id="selectionActionBar" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 z-[999] bg-slate-900 text-white rounded-2xl shadow-2xl shadow-slate-900/30 ring-1 ring-white/10 px-5 py-3 flex items-center gap-4">
     <span id="selectionCountText" class="text-sm font-semibold">0 selected</span>
     <button type="button" data-action="bulk-copy-selected-items" class="bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-95 px-4 py-2 rounded-xl text-sm font-bold">Copy Selected</button>
+        <button type="button" data-action="bulk-delete-selected-items" class="ba-delete-btn px-4 py-2 rounded-xl text-sm font-bold">Delete Selected</button>
     <button type="button" data-action="cancel-select-mode" class="text-slate-300 hover:text-white text-sm">Cancel</button>
 </div>
 

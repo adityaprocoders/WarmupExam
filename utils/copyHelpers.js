@@ -7,6 +7,9 @@ import crypto from "crypto";
 import Listing from "../models/listing.js";
 import Question from "../models/Question.js";
 
+// Optional progress callback: onProgress() = "ek item copy ho gaya". Callback na ho to kuch nahi hota.
+const tick = (cb) => { if (typeof cb === "function") cb(1); };
+
 function getMarksForSubject(subjectsConfig, subjectName) {
     const found = subjectsConfig.find(s => s.subject === subjectName);
     return found
@@ -44,25 +47,41 @@ async function copyQuestionMapping(oldTestId, newTestId, destListingId) {
 }
 
 // overrideLanguage: null/undefined => keep original showLanguage as default
-export async function copyNode(sourceType, sourceId, destListingId, destSectionId, destParentType, destParentId, overrideLanguage = null, pathLabel = "", fallbackLog = []) {
+export async function copyNode(sourceType, sourceId, destListingId, destSectionId, destParentType, destParentId, overrideLanguage = null, pathLabel = "", fallbackLog = [], includeTests = true, onProgress = null) {
 
        if (sourceType === "test") {
+        // includeTests=false: "without tests" copy — test kabhi copy nahi hota
+        if (!includeTests) return null;
+
         const oldTest = await Test.findById(sourceId);
         if (!oldTest) {
             console.warn(`⚠️ Test ${sourceId} not found; skipped during copy`);
             return null;
         }
 
-        // 👇 NAYA — showLanguage ko is test ki apni languages/mode ke hisaab se safe banao
-        let safeShowLanguage = overrideLanguage || oldTest.showLanguage || "all";
+        // showLanguage ko test ki apni languages ke hisaab se safe banao (case-insensitive)
+        const norm = (s) => String(s || "").trim().toLowerCase();
+        const testLangs = Array.isArray(oldTest.languages) ? oldTest.languages : [];
+        const isMulti = norm(oldTest.languageMode).startsWith("multi") || testLangs.length > 1;
+
+        let safeShowLanguage = "all";
         let didFallback = false;
 
-        if (oldTest.languageMode !== "multiple") {
-            if (overrideLanguage && overrideLanguage !== "all") didFallback = true;
-            safeShowLanguage = "all";
-        } else if (safeShowLanguage !== "all" && !oldTest.languages.includes(safeShowLanguage)) {
-            didFallback = true;
-            safeShowLanguage = "all";
+        if (overrideLanguage && norm(overrideLanguage) !== "all") {
+            const matched = testLangs.find(l => norm(l) === norm(overrideLanguage));
+
+            if (!matched) {
+                didFallback = isMulti;              // test me ye language sach me nahi hai
+                safeShowLanguage = "all";
+            } else if (isMulti) {
+                safeShowLanguage = matched;      // DB wali exact spelling
+            } else {
+                safeShowLanguage = "all";        // single-language test, fallback nahi
+            }
+        } else {
+            const orig = oldTest.showLanguage || "all";
+            const origMatched = testLangs.find(l => norm(l) === norm(orig));
+            safeShowLanguage = (norm(orig) === "all" || !isMulti || !origMatched) ? "all" : origMatched;
         }
 
         if (didFallback) {
@@ -95,10 +114,12 @@ export async function copyNode(sourceType, sourceId, destListingId, destSectionI
         await copyQuestionMapping(oldTest._id, newTest._id, destListingId);
 
         const newMappings = await TestQuestion.find({ test: newTest._id });
-        const recalculatedTotalMarks = newMappings.reduce((sum, m) => sum + m.positiveMarks, 0);
-        newTest.totalMarks = recalculatedTotalMarks;
-        await newTest.save();
+if (newMappings.length > 0) {
+    newTest.totalMarks = newMappings.reduce((sum, m) => sum + (m.positiveMarks || 0), 0);
+    await newTest.save();
+}
 
+        tick(onProgress);
         return newTest;
     }
 
@@ -118,57 +139,66 @@ export async function copyNode(sourceType, sourceId, destListingId, destSectionI
             size: oldFile.size
         });
 
-        const childTests = await Test.find({ parentType: "file", parentId: oldFile._id });
+        tick(onProgress);
+
+        const childTests = includeTests ? await Test.find({ parentType: "file", parentId: oldFile._id }) : [];
         for (const t of childTests) {
-            await copyNode("test", t._id, destListingId, destSectionId, "file", newFile._id, overrideLanguage, `${pathLabel ? pathLabel + " > " : ""}${oldFile.title}`, fallbackLog);
+            await copyNode("test", t._id, destListingId, destSectionId, "file", newFile._id, overrideLanguage, `${pathLabel ? pathLabel + " > " : ""}${oldFile.title}`, fallbackLog, includeTests, onProgress);
         }
 
         return newFile;
     }
 
     if (sourceType === "folder") {
-        const oldFolder = await Folder.findById(sourceId);
-        if (!oldFolder) { console.warn(`⚠️ Folder ${sourceId} not found`); return null; }
+    const oldFolder = await Folder.findById(sourceId);
+    if (!oldFolder) { console.warn(`⚠️ Folder ${sourceId} not found`); return null; }
 
-        const newFolder = await Folder.create({
-            title: oldFolder.title,
-            slug: `${oldFolder.slug}-${crypto.randomBytes(4).toString("hex")}`,
-            icon: oldFolder.icon,
-            listing: destListingId,
-            section: destSectionId,
-            parentType: destParentType,
-            parentId: destParentId
-        });
+    // create se PEHLE snapshot (same folder me paste karne par loop nahi banega)
+    const childFolders = await Folder.find({ parentType: "folder", parentId: oldFolder._id });
+    const childFiles = await File.find({ parentType: "folder", parentId: oldFolder._id });
+    const childTests = includeTests
+        ? await Test.find({ parentType: "folder", parentId: oldFolder._id })
+        : [];
 
-        const nextPath = `${pathLabel ? pathLabel + " > " : ""}${oldFolder.title}`;
+    const newFolder = await Folder.create({
+        title: oldFolder.title,
+        slug: `${oldFolder.slug}-${crypto.randomBytes(4).toString("hex")}`,
+        icon: oldFolder.icon,
+        listing: destListingId,
+        section: destSectionId,
+        parentType: destParentType,
+        parentId: destParentId
+    });
 
-        const childFolders = await Folder.find({ parentType: "folder", parentId: oldFolder._id });
-        for (const f of childFolders) {
-            await copyNode("folder", f._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage, nextPath, fallbackLog);
-        }
+    tick(onProgress);
 
-        const childFiles = await File.find({ parentType: "folder", parentId: oldFolder._id });
-        for (const f of childFiles) {
-            await copyNode("file", f._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage, nextPath, fallbackLog);
-        }
+    const nextPath = `${pathLabel ? pathLabel + " > " : ""}${oldFolder.title}`;
 
-        const childTests = await Test.find({ parentType: "folder", parentId: oldFolder._id });
-        for (const t of childTests) {
-            await copyNode("test", t._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage, nextPath, fallbackLog);
-        }
-
-        return newFolder;
+    for (const f of childFolders) {
+        await copyNode("folder", f._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage, nextPath, fallbackLog, includeTests, onProgress);
     }
+    for (const f of childFiles) {
+        await copyNode("file", f._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage, nextPath, fallbackLog, includeTests, onProgress);
+    }
+    for (const t of childTests) {
+        await copyNode("test", t._id, destListingId, destSectionId, "folder", newFolder._id, overrideLanguage, nextPath, fallbackLog, includeTests, onProgress);
+    }
+
+    return newFolder;
+}
 
     if (sourceType === "section") {
         const oldSection = await Section.findById(sourceId);
         if (!oldSection) { console.warn(`⚠️ Section ${sourceId} not found`); return null; }
 
-        const newSection = await Section.create({
-            title: oldSection.title,
-            icon: oldSection.icon,
-            listing: destListingId
-        });
+       const newSection = await Section.create({
+    title: oldSection.title,
+    icon: oldSection.icon,
+    unit: oldSection.unit,
+    listing: destListingId
+});
+
+        tick(onProgress);
 
         const nextPath = `${pathLabel ? pathLabel + " > " : ""}${oldSection.title}`;
 
@@ -176,21 +206,21 @@ export async function copyNode(sourceType, sourceId, destListingId, destSectionI
             listing: oldSection.listing, section: oldSection._id, parentType: "section", parentId: null
         });
         for (const f of rootFolders) {
-            await copyNode("folder", f._id, destListingId, newSection._id, "section", null, overrideLanguage, nextPath, fallbackLog);
+            await copyNode("folder", f._id, destListingId, newSection._id, "section", null, overrideLanguage, nextPath, fallbackLog, includeTests, onProgress);
         }
 
         const rootFiles = await File.find({
             listing: oldSection.listing, section: oldSection._id, parentType: "section", parentId: null
         });
         for (const f of rootFiles) {
-            await copyNode("file", f._id, destListingId, newSection._id, "section", null, overrideLanguage, nextPath, fallbackLog);
+            await copyNode("file", f._id, destListingId, newSection._id, "section", null, overrideLanguage, nextPath, fallbackLog, includeTests, onProgress);
         }
 
-        const rootTests = await Test.find({
+        const rootTests = includeTests ? await Test.find({
             listing: oldSection.listing, section: oldSection._id, parentType: "section", parentId: null
-        });
+        }) : [];
         for (const t of rootTests) {
-            await copyNode("test", t._id, destListingId, newSection._id, "section", null, overrideLanguage, nextPath, fallbackLog);
+            await copyNode("test", t._id, destListingId, newSection._id, "section", null, overrideLanguage, nextPath, fallbackLog, includeTests, onProgress);
         }
 
         return newSection;

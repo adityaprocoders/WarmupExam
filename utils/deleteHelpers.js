@@ -8,6 +8,9 @@ import AttemptSession from "../models/AttemptSession.js";
 import Section from "../models/Section.js";
 import User from "../models/usersShema.js";
 
+// Optional progress callback: onUnit(n) = "n item delete ho gaye". Callback na ho to kuch nahi hota.
+const tick = (cb, n = 1) => { if (typeof cb === "function" && n > 0) cb(n); };
+
 /**
  * Ek Test ko poori tarah delete karta hai:
  * - TestQuestion mappings
@@ -19,7 +22,7 @@ import User from "../models/usersShema.js";
  * Folder/File/Section/Listing cascade — sab isi function ko reuse karte hain,
  * taaki logic kahin duplicate na ho aur naya related model (jaise kal koi aur) miss na ho.
  */
-export async function cascadeDeleteTest(testId) {
+export async function cascadeDeleteTest(testId, onUnit) {
     const mappings = await TestQuestion.find({ test: testId }).select("question");
     const questionIds = [...new Set(mappings.map(m => m.question.toString()))];
 
@@ -35,52 +38,56 @@ export async function cascadeDeleteTest(testId) {
             await Question.findByIdAndDelete(qId);
         }
     }
+
+    tick(onUnit);
 }
 
 /**
  * Folder ke andar jo bhi ho (sub-folders, sub-files, tests — kisi bhi depth tak recursively) —
  * sabko delete karta hai, fir folder khud delete hota hai.
  */
-export async function cascadeDeleteFolder(folderId) {
+export async function cascadeDeleteFolder(folderId, onUnit) {
     const childTests = await Test.find({ parentType: "folder", parentId: folderId }).select("_id");
     for (const t of childTests) {
-        await cascadeDeleteTest(t._id);
+        await cascadeDeleteTest(t._id, onUnit);
     }
 
     const childFiles = await File.find({ parentType: "folder", parentId: folderId }).select("_id");
     for (const f of childFiles) {
-        await cascadeDeleteFile(f._id);
+        await cascadeDeleteFile(f._id, onUnit);
     }
 
     const childFolders = await Folder.find({ parentType: "folder", parentId: folderId }).select("_id");
     for (const sub of childFolders) {
-        await cascadeDeleteFolder(sub._id);
+        await cascadeDeleteFolder(sub._id, onUnit);
     }
 
     await Folder.findByIdAndDelete(folderId);
+    tick(onUnit);
 }
 
 /**
  * File ke andar jo bhi ho (sub-folders, sub-files, tests — kisi bhi depth tak recursively) —
  * sabko delete karta hai, fir file khud delete hoti hai.
  */
-export async function cascadeDeleteFile(fileId) {
+export async function cascadeDeleteFile(fileId, onUnit) {
     const childTests = await Test.find({ parentType: "file", parentId: fileId }).select("_id");
     for (const t of childTests) {
-        await cascadeDeleteTest(t._id);
+        await cascadeDeleteTest(t._id, onUnit);
     }
 
     const childFolders = await Folder.find({ parentType: "file", parentId: fileId }).select("_id");
     for (const f of childFolders) {
-        await cascadeDeleteFolder(f._id);
+        await cascadeDeleteFolder(f._id, onUnit);
     }
 
     const childFiles = await File.find({ parentType: "file", parentId: fileId }).select("_id");
     for (const sub of childFiles) {
-        await cascadeDeleteFile(sub._id);
+        await cascadeDeleteFile(sub._id, onUnit);
     }
 
     await File.findByIdAndDelete(fileId);
+    tick(onUnit);
 }
 
 /**
@@ -89,21 +96,24 @@ export async function cascadeDeleteFile(fileId) {
  * kyunki har Test/File/Folder ka `section` field top-level Section ki id hi rakhta hai,
  * chahe wo kitni bhi depth par nested ho.
  */
-export async function cascadeDeleteSection(sectionId) {
+export async function cascadeDeleteSection(sectionId, onUnit) {
     // 1. Section ke andar ke SAARE Test (kisi bhi depth par)
     const sectionTests = await Test.find({ section: sectionId }).select("_id");
     for (const t of sectionTests) {
-        await cascadeDeleteTest(t._id);
+        await cascadeDeleteTest(t._id, onUnit);
     }
 
     // 2. Section ke andar ke SAARE Folder aur File (kisi bhi depth par) — flat delete
     //    (inke andar ke tests already step 1 me clear ho chuke, kyunki section field
     //    depth-independent hai)
-    await Folder.deleteMany({ section: sectionId });
-    await File.deleteMany({ section: sectionId });
+    const delFolders = await Folder.deleteMany({ section: sectionId });
+    tick(onUnit, delFolders && delFolders.deletedCount);
+    const delFiles = await File.deleteMany({ section: sectionId });
+    tick(onUnit, delFiles && delFiles.deletedCount);
 
     // 3. Section khud
     await Section.findByIdAndDelete(sectionId);
+    tick(onUnit);
 }
 
 /**

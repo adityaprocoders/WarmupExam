@@ -90,35 +90,23 @@ async function confirmBulkCopy() {
     btn.disabled = true;
     btn.textContent = 'Copying...';
 
-    try {
-        const res = await fetch('/api/bulk-copy-items', {   // 👈 URL badla
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                items,   // 👈 sectionIds ki jagah items
+      try {
+        // 👇 NAYA: live progress (%) popup ke saath copy
+        const job = await runBulkJob({
+            kind: 'copy',
+            url: '/api/bulk-copy-items',
+            payload: {
+                items,   // sectionIds ki jagah items
                 destListingIds,
-                selectedLanguage: selectedShowLanguage
-            })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            let message = `${data.copied} copy operations successful` + (data.failed ? `, ${data.failed} failed` : '');
-
-            // 👇 NAYA — agar kisi test me language fallback hua ho ("all" pe set hua ho),
-            // to uska path dikhao taaki pata chale kaha aisa hua
-            if (data.fallbacks && data.fallbacks.length > 0) {
-                const fallbackDetails = data.fallbacks
-                    .map(f => `• ${f.path} (the selected language "${f.requestedLanguage}" was not available in this test, so it was set to "All")`)
-                    .join('\n');
-                message += `\n\nNote: ${data.fallbacks.length} test(s) me language "All" par set ho gayi:\n${fallbackDetails}`;
+                selectedLanguage: selectedShowLanguage,
+                includeTests: copyIncludeTests
             }
+        });
 
-            showToast(message, "error");
-            pendingMixedBulkItems = null; 
+        if (job.proceed) {
+            pendingMixedBulkItems = null;
             location.reload();
         } else {
-            showToast(data.message || 'Failed to copy.', 'error');
             btn.disabled = false;
             btn.textContent = 'Copy Now';
         }

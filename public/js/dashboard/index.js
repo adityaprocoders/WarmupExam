@@ -504,7 +504,11 @@ function openCopyModal(type, id) {
 
 function closeCopyModal() {
     document.getElementById("copyModalOverlay").classList.add("hidden");
+    // 👇 NAYA: modal band hone par bulk state saaf (cancel ke baad single copy par purana bulk selection na chale)
+    pendingMixedBulkItems = null;
+    copyIncludeTests = true;
 }
+
 
 function renderBreadcrumb() {
     const bc = document.getElementById("copyBreadcrumb");
@@ -724,33 +728,23 @@ function updatePasteFooterBtn() {
 async function doPaste(destListingId, destSectionId, destParentType, destParentId) {
 
     // 👇 NAYA — agar mixed bulk items pending hain, to unhe is destination pe bulk-copy karo
-    if (pendingMixedBulkItems) {
-        const res = await fetch("/api/bulk-copy-items", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+       if (pendingMixedBulkItems) {
+        // 👇 NAYA: live progress (%) popup ke saath copy
+        const job = await runBulkJob({
+            kind: 'copy',
+            url: '/api/bulk-copy-items',
+            payload: {
                 items: pendingMixedBulkItems,
                 destListingIds: [destListingId],
                 destSectionId,
                 destParentType: destParentType || "section",
                 destParentId: destParentId || null,
-                selectedLanguage: selectedShowLanguage || null
-            })
+                selectedLanguage: selectedShowLanguage || null,
+                includeTests: copyIncludeTests
+            }
         });
 
-        const result = await res.json();
-
-        if (result.success) {
-            let message = `${result.copied} copy operations successful` + (result.failed ? `, ${result.failed} failed` : '');
-
-            if (result.fallbacks && result.fallbacks.length > 0) {
-                const fallbackDetails = result.fallbacks
-                    .map(f => `• ${f.path} (the selected language "${f.requestedLanguage}" was not available in this test, so it was set to "All")`)
-                    .join('\n');
-                message += `\n\nNote: ${result.fallbacks.length} test(s) me language "All" par set ho gayi:\n${fallbackDetails}`;
-            }
-
-            showToast(message, "error");
+        if (job.proceed) {
             pendingMixedBulkItems = null;
             closeCopyModal();
 
@@ -763,8 +757,6 @@ async function doPaste(destListingId, destSectionId, destParentType, destParentI
             } else {
                 window.location.href = `/series/${copyNav.slug}`;
             }
-        } else {
-            showToast("Copy failed: " + (result.message || "Unknown error"), "error");
         }
         return; // 👈 mixed flow yahin khatam, neeche wala single-item code na chale
     }

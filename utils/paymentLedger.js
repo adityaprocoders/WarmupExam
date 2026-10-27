@@ -2,6 +2,7 @@ import PaymentRecord from "../models/PaymentRecord.js";
 import User from "../models/usersShema.js";
 import razorpayInstance from "./razorpay.js";
 import { cleanupExpiredBatchData } from "./cleanupHelpers.js";
+import { sendPurchaseEmail } from "./sendPurchaseEmail.js";
 
 // ---------- chhota invoice number: WE + 10 digits ----------
 export function generateInvoiceNo() {
@@ -49,7 +50,7 @@ export async function recordPayment({ user, ...fields }) {
 
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
-                await PaymentRecord.updateOne(
+                const result = await PaymentRecord.updateOne(
                     { orderId: fields.orderId },
                     {
                         $setOnInsert: {
@@ -67,6 +68,15 @@ export async function recordPayment({ user, ...fields }) {
                     },
                     { upsert: true }
                 );
+
+                // Email sirf tab jab record NAYA bana (verify + webhook dono chalein to bhi ek hi baar).
+                // Background me chalta hai: checkout slow nahi hota, aur fail hone par bhi kuch nahi rukta.
+                const isNew = result?.upsertedCount === 1 || Boolean(result?.upsertedId);
+                if (isNew) {
+                    sendPurchaseEmail(fields.orderId).catch((e) =>
+                        console.error("[PurchaseEmail] unexpected:", e?.message)
+                    );
+                }
                 return;
             } catch (err) {
                 // duplicate key: ya to record pehle se hai (theek), ya invoiceNo collide hua (naya bana ke retry)

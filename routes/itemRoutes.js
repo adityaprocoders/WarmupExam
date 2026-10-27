@@ -9,5 +9,6 @@ router.post("/api/create-item", isLoggedIn, isOwner, wrapAsync(itemController.cr
 router.get("/api/item/:type/:id", isLoggedIn, isOwner, wrapAsync(itemController.getItem));
 router.put("/api/update-item/:id", isLoggedIn, isOwner, wrapAsync(itemController.updateItem));
 router.delete("/api/delete-item/:id", isLoggedIn, isOwner, wrapAsync(itemController.deleteItem));
+router.post("/api/bulk-delete-items", isLoggedIn, isOwner, wrapAsync(itemController.bulkDeleteItems));
 
 export default router;
