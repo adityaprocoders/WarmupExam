@@ -1,4 +1,4 @@
-const CACHE_NAME = "warmupexam-v3";
+const CACHE_NAME = "warmupexam-v4";
 const urlsToCache = ["/css/output.css", "/images/logo.svg", "/offline.html"];
 
 self.addEventListener("install", (event) => {

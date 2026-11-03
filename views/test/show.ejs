@@ -184,7 +184,7 @@
                                 <td class="py-2.5 sm:py-3 px-3 sm:px-4 font-semibold text-gray-800 whitespace-nowrap"><%= r.subject %></td>
                                 <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-700"><%= r.questions %></td>
                                 <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-green-600 font-semibold">+<%= r.positiveMarks %></td>
-                                <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-red-600 font-semibold">-<%= r.negativeMarks %></td>
+                                <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center font-semibold <%= Number(r.negativeMarks) > 0 ? 'text-red-600' : 'text-gray-500' %>"><%= Number(r.negativeMarks) > 0 ? '-' + r.negativeMarks : '0' %></td>
                                 <% if (isSectional) { %>
                                     <% if (isFirstInGroup) { %>
                                         <td class="py-2.5 sm:py-3 px-3 sm:px-4 text-center text-gray-500" rowspan="<%= groupSize %>">
