@@ -8,39 +8,39 @@
      data-i18n-all="<%= JSON.stringify(i18nAll) %>"
      data-lang-labels="<%= JSON.stringify(langLabels) %>"
      data-html-langs="<%= JSON.stringify(htmlLangs) %>"
-     class="fixed inset-0 bg-slate-900/70 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-3 backdrop-blur-md">
+     class="fixed inset-0 bg-[#0F1033]/75 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-3 backdrop-blur-md">
 
-    <div class="bg-white w-full max-w-[1400px] h-[100dvh] sm:h-[96vh] sm:rounded-3xl flex flex-col shadow-[0_30px_80px_-20px_rgba(43,54,116,0.45)] ring-1 ring-black/5 overflow-hidden">
+    <div class="bg-white w-full max-w-[1400px] h-[100dvh] sm:h-[96vh] sm:rounded-3xl flex flex-col shadow-[0_30px_80px_-20px_rgba(46,24,160,0.55)] ring-1 ring-indigo-200/40 overflow-hidden">
 
         <!-- Header -->
-        <div class="px-5 py-5 sm:px-8 sm:py-6 border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-white to-white flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 shrink-0">
+        <div class="relative z-20 px-4 py-4 sm:px-8 sm:py-6 border-b border-indigo-100 bg-gradient-to-r from-[#EEF0FF] via-white to-[#F5F0FF] flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 sm:gap-4 shrink-0">
             <div class="min-w-0">
-                <h3 class="text-xl sm:text-3xl font-extrabold tracking-tight text-[#2B3674] truncate"><%= test.title %></h3>
-                <p class="text-[11px] uppercase tracking-[0.18em] text-indigo-400 font-bold mt-1"><%- T('instructionsTitle') %></p>
+                <h3 class="text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[#1B1F4B] break-words lg:truncate"><%= test.title %></h3>
+                <p class="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-[#6D4CFF] font-bold mt-1"><%- T('instructionsTitle') %></p>
             </div>
 
-            <div class="flex flex-col-reverse sm:flex-row sm:items-end gap-3 sm:gap-4 shrink-0">
+            <div class="flex flex-col-reverse sm:flex-row sm:items-end gap-3 sm:gap-4 lg:shrink-0">
 
                 <% if (test.languageMode === 'multiple' && availableLanguages && availableLanguages.length > 1) { %>
                 <div class="relative w-full sm:w-56" id="languageDropdown">
-                    <label class="block text-[10px] uppercase tracking-[0.18em] font-bold text-indigo-400 mb-1.5">
+                    <label class="block text-[10px] uppercase tracking-[0.18em] font-bold text-[#6D4CFF] mb-1.5">
                         <%- T('chooseLanguage') %>
                     </label>
 
                     <button type="button" data-action="toggle-language-dropdown"
-                        class="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-indigo-100 bg-white shadow-sm hover:border-[#4318FF] hover:shadow-md transition">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="languages" class="w-5 h-5 text-[#4318FF]"></i>
-                            <span id="selectedLanguage" class="font-bold text-[#4318FF]"><%= getLanguageLabel(lang) %></span>
+                        class="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-indigo-100 bg-white shadow-sm hover:border-[#4318FF] hover:shadow-md hover:shadow-indigo-200/50 transition">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <i data-lucide="languages" class="w-5 h-5 text-[#4318FF] shrink-0"></i>
+                            <span id="selectedLanguage" class="font-bold text-[#4318FF] truncate"><%= getLanguageLabel(lang) %></span>
                         </div>
-                        <i id="languageArrow" data-lucide="chevron-down" class="w-4 h-4 transition"></i>
+                        <i id="languageArrow" data-lucide="chevron-down" class="w-4 h-4 transition shrink-0 text-[#4318FF]"></i>
                     </button>
 
                     <div id="languageMenu"
-                         class="hidden absolute left-0 top-full mt-2 w-full bg-white rounded-2xl border border-slate-100 shadow-2xl overflow-hidden z-50">
+                         class="hidden absolute left-0 top-full mt-2 w-full max-h-60 overflow-y-auto bg-white rounded-2xl border border-indigo-100 shadow-2xl shadow-indigo-300/40 z-50">
                         <% availableLanguages.forEach(l => { %>
                         <button type="button" data-action="select-language" data-lang="<%= l %>"
-                            class="w-full px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-indigo-50 flex justify-between items-center">
+                            class="w-full px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-[#EEF0FF] hover:text-[#4318FF] flex justify-between items-center">
                             <span><%= getLanguageLabel(l) %></span>
                             <i data-lucide="check"
                                class="<%= l === lang ? '' : 'hidden' %> check-<%= l %> w-4 h-4 text-[#4318FF]"></i>
@@ -52,8 +52,8 @@
 
                 <input type="hidden" id="effectiveTestLanguage" value="<%= lang %>">
 
-                <div class="inline-flex items-center justify-center bg-white border border-indigo-100 rounded-2xl px-5 py-3 shadow-sm">
-                    <span class="text-sm font-bold text-[#4318FF]">
+                <div class="inline-flex w-full sm:w-auto items-center justify-center bg-gradient-to-r from-[#4318FF] to-[#7551FF] rounded-2xl px-5 py-3 shadow-md shadow-indigo-300/50">
+                    <span class="text-sm font-bold text-white whitespace-nowrap">
                         <%= test.duration %> <%- T('minutesDuration') %>
                     </span>
                 </div>
@@ -61,23 +61,23 @@
         </div>
 
         <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-10 sm:py-8 text-sm sm:text-[15px] text-slate-600 leading-7 bg-slate-50/50">
+        <div class="flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-8 lg:px-10 sm:py-8 text-sm sm:text-[15px] text-slate-600 leading-7 bg-gradient-to-b from-[#F6F7FF] to-white break-words">
 
-            <div class="bg-gradient-to-r from-red-50 to-white border border-red-100 border-l-4 border-l-red-500 rounded-2xl p-4 sm:p-5 mb-8 shadow-sm">
-                <p class="text-red-600 text-[11px] font-extrabold uppercase tracking-widest mb-1.5"><%- T('attention') %></p>
-                <p><%- T('readLead') %> <b>"<%- T('proceed') %>"</b> <%- T('readTail') %></p>
+            <div class="bg-gradient-to-r from-rose-50 via-white to-white border border-rose-100 border-l-4 border-l-rose-500 rounded-2xl p-4 sm:p-5 mb-6 sm:mb-8 shadow-sm shadow-rose-100">
+                <p class="text-rose-600 text-[11px] font-extrabold uppercase tracking-widest mb-1.5"><%- T('attention') %></p>
+                <p class="text-slate-700"><%- T('readLead') %> <b class="text-[#1B1F4B]">"<%- T('proceed') %>"</b> <%- T('readTail') %></p>
             </div>
 
-            <div class="space-y-6 sm:space-y-8">
+            <div class="space-y-5 sm:space-y-8">
 
-                                <!-- 1. Paper pattern -->
-                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6">
-                    <h4 class="flex items-center gap-2 font-extrabold text-[#2B3674] text-base sm:text-lg pb-3 border-b border-slate-100 w-full"><%- T('sec1') %></h4>
+                <!-- 1. Paper pattern -->
+                <div class="bg-white rounded-2xl border border-indigo-100/70 shadow-[0_10px_30px_-18px_rgba(67,24,255,0.35)] p-4 sm:p-6">
+                    <h4 class="flex items-center gap-2 font-extrabold text-[#1B1F4B] text-base sm:text-lg pb-3 border-b border-indigo-100/70 w-full"><%- T('sec1') %></h4>
 
-                    <div class="mt-5 rounded-2xl border border-indigo-100 overflow-hidden">
+                    <div class="mt-4 sm:mt-5 rounded-2xl border border-indigo-100 overflow-hidden">
 
                         <!-- Table head (sirf tablet/desktop par) -->
-                        <div class="hidden sm:grid sm:grid-cols-[minmax(0,2.2fr)_1fr_1fr_1fr] bg-gradient-to-r from-indigo-50 to-slate-50 text-[11px] font-extrabold uppercase tracking-wider text-[#2B3674]">
+                        <div class="hidden sm:grid sm:grid-cols-[minmax(0,2.2fr)_1fr_1fr_1fr] bg-gradient-to-r from-[#EEF0FF] to-[#F5F0FF] text-[11px] font-extrabold uppercase tracking-wider text-[#1B1F4B]">
                             <div class="px-5 py-3.5"><%- T('colSection') %></div>
                             <div class="px-4 py-3.5 text-center"><%- T('colQuestions') %></div>
                             <div class="px-4 py-3.5 text-center"><%- T('colMaxScore') %></div>
@@ -86,24 +86,24 @@
 
                         <!-- Rows -->
                         <% paperSections.forEach((sec, i) => { %>
-                            <div class="grid grid-cols-3 sm:grid-cols-[minmax(0,2.2fr)_1fr_1fr_1fr] items-center border-t border-slate-100 <%= i % 2 ? 'bg-slate-50/60' : 'bg-white' %> hover:bg-indigo-50/40 transition">
+                            <div class="grid grid-cols-3 sm:grid-cols-[minmax(0,2.2fr)_1fr_1fr_1fr] items-center border-t border-indigo-50 <%= i % 2 ? 'bg-[#F8F9FF]' : 'bg-white' %> hover:bg-indigo-50/60 transition">
 
                                 <div class="col-span-3 sm:col-span-1 px-4 sm:px-5 pt-4 pb-2 sm:py-4">
-                                    <p class="font-bold text-[#2B3674] text-sm sm:text-[15px] break-words"><%= sec.name %></p>
+                                    <p class="font-bold text-[#1B1F4B] text-sm sm:text-[15px] break-words"><%= sec.name %></p>
                                 </div>
 
-                                <div class="px-4 pb-4 sm:py-4 sm:text-center">
-                                    <p class="sm:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-0.5 truncate"><%- T('questions') %></p>
+                                <div class="min-w-0 px-4 pb-4 sm:py-4 sm:text-center">
+                                    <p class="sm:hidden text-[10px] uppercase tracking-wider font-bold text-[#6D4CFF]/70 mb-0.5 truncate"><%- T('questions') %></p>
                                     <p class="font-extrabold text-slate-800"><%= sec.questions %></p>
                                 </div>
 
-                                <div class="px-4 pb-4 sm:py-4 sm:text-center">
-                                    <p class="sm:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-0.5 truncate"><%- T('colMaxScore') %></p>
+                                <div class="min-w-0 px-4 pb-4 sm:py-4 sm:text-center">
+                                    <p class="sm:hidden text-[10px] uppercase tracking-wider font-bold text-[#6D4CFF]/70 mb-0.5 truncate"><%- T('colMaxScore') %></p>
                                     <p class="font-extrabold text-slate-800"><%= sec.marks %></p>
                                 </div>
 
-                                <div class="px-4 pb-4 sm:py-4 sm:text-center">
-                                    <p class="sm:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-0.5 truncate"><%- T('colTime') %></p>
+                                <div class="min-w-0 px-4 pb-4 sm:py-4 sm:text-center">
+                                    <p class="sm:hidden text-[10px] uppercase tracking-wider font-bold text-[#6D4CFF]/70 mb-0.5 truncate"><%- T('colTime') %></p>
                                     <p class="font-extrabold text-slate-800">
                                         <% if (sec.minutes) { %><%= sec.minutes %> <%- T('mins') %><% } else { %>—<% } %>
                                     </p>
@@ -112,56 +112,56 @@
                         <% }) %>
 
                         <!-- TOTAL row -->
-                        <div class="grid grid-cols-3 sm:grid-cols-[minmax(0,2.2fr)_1fr_1fr_1fr] items-center border-t-2 border-indigo-100 bg-gradient-to-r from-indigo-50 to-white">
+                        <div class="grid grid-cols-3 sm:grid-cols-[minmax(0,2.2fr)_1fr_1fr_1fr] items-center border-t-2 border-indigo-200 bg-gradient-to-r from-[#EEF0FF] to-[#F5F0FF]">
                             <div class="col-span-3 sm:col-span-1 px-4 sm:px-5 pt-4 pb-2 sm:py-4 font-extrabold uppercase tracking-wide text-[#4318FF]"><%- T('totalLabel') %></div>
-                            <div class="px-4 pb-4 sm:py-4 sm:text-center font-extrabold text-[#4318FF]"><%= paperTotals.questions %></div>
-                            <div class="px-4 pb-4 sm:py-4 sm:text-center font-extrabold text-[#4318FF]"><%= paperTotals.marks %></div>
-                            <div class="px-4 pb-4 sm:py-4 sm:text-center font-extrabold text-[#4318FF]"><%= paperTotals.minutes %> <%- T('mins') %></div>
+                            <div class="min-w-0 px-4 pb-4 sm:py-4 sm:text-center font-extrabold text-[#4318FF]"><%= paperTotals.questions %></div>
+                            <div class="min-w-0 px-4 pb-4 sm:py-4 sm:text-center font-extrabold text-[#4318FF]"><%= paperTotals.marks %></div>
+                            <div class="min-w-0 px-4 pb-4 sm:py-4 sm:text-center font-extrabold text-[#4318FF]"><%= paperTotals.minutes %> <%- T('mins') %></div>
                         </div>
                     </div>
 
                     <p class="mt-3 flex items-start gap-2 text-xs text-slate-500">
-                        <i data-lucide="clock" class="w-4 h-4 shrink-0 mt-0.5 text-indigo-400"></i>
+                        <i data-lucide="clock" class="w-4 h-4 shrink-0 mt-0.5 text-[#6D4CFF]"></i>
                         <span><%- T(paperTotals.perSection ? 'timerSection' : 'timerOverall') %></span>
                     </p>
                 </div>
 
                 <!-- 2. Palette -->
-                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6">
-                    <h4 class="flex items-center gap-2 font-extrabold text-[#2B3674] text-base sm:text-lg pb-3 border-b border-slate-100 w-full"><%- T('sec2') %></h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
-                        <div class="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+                <div class="bg-white rounded-2xl border border-indigo-100/70 shadow-[0_10px_30px_-18px_rgba(67,24,255,0.35)] p-4 sm:p-6">
+                    <h4 class="flex items-center gap-2 font-extrabold text-[#1B1F4B] text-base sm:text-lg pb-3 border-b border-indigo-100/70 w-full"><%- T('sec2') %></h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 sm:mt-5">
+                        <div class="flex items-center gap-3 rounded-xl border border-indigo-100/70 bg-[#F8F9FF] px-3 py-2.5">
                             <span class="w-10 h-10 shadow-sm shrink-0 flex items-center justify-center rounded border bg-gray-100 font-bold">1</span>
-                            <span class="text-xs sm:text-sm"><%- T('palNotVisited') %></span>
+                            <span class="text-xs sm:text-sm min-w-0"><%- T('palNotVisited') %></span>
                         </div>
-                        <div class="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+                        <div class="flex items-center gap-3 rounded-xl border border-indigo-100/70 bg-[#F8F9FF] px-3 py-2.5">
                             <span class="w-10 h-10 shadow-sm shrink-0 flex items-center justify-center rounded-t-lg bg-[#EE5D50] text-white font-bold">2</span>
-                            <span class="text-xs sm:text-sm"><%- T('palNotAnswered') %></span>
+                            <span class="text-xs sm:text-sm min-w-0"><%- T('palNotAnswered') %></span>
                         </div>
-                        <div class="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+                        <div class="flex items-center gap-3 rounded-xl border border-indigo-100/70 bg-[#F8F9FF] px-3 py-2.5">
                             <span class="w-10 h-10 shadow-sm shrink-0 flex items-center justify-center rounded-b-lg bg-[#05CD99] text-white font-bold">3</span>
-                            <span class="text-xs sm:text-sm"><%- T('palAnswered') %></span>
+                            <span class="text-xs sm:text-sm min-w-0"><%- T('palAnswered') %></span>
                         </div>
-                        <div class="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+                        <div class="flex items-center gap-3 rounded-xl border border-indigo-100/70 bg-[#F8F9FF] px-3 py-2.5">
                             <span class="w-10 h-10 shadow-sm shrink-0 flex items-center justify-center rounded-full bg-[#4318FF] text-white font-bold">4</span>
-                            <span class="text-xs sm:text-sm"><%- T('palMarked') %></span>
+                            <span class="text-xs sm:text-sm min-w-0"><%- T('palMarked') %></span>
                         </div>
                     </div>
                 </div>
 
                 <!-- 3. Important instructions -->
-                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6">
-                    <h4 class="flex items-center gap-2 font-extrabold text-[#2B3674] text-base sm:text-lg pb-3 border-b border-slate-100 w-full"><%- T('sec3') %></h4>
-                    <ul class="list-disc pl-5 marker:text-[#4318FF] mt-4 space-y-3 text-sm leading-6">
-                        <li><%- T('totalQuestions') %> <b><%= test.totalQuestions %></b></li>
-                        <li><%- T('totalMarks') %> <b><%= test.totalMarks %></b></li>
+                <div class="bg-white rounded-2xl border border-indigo-100/70 shadow-[0_10px_30px_-18px_rgba(67,24,255,0.35)] p-4 sm:p-6">
+                    <h4 class="flex items-center gap-2 font-extrabold text-[#1B1F4B] text-base sm:text-lg pb-3 border-b border-indigo-100/70 w-full"><%- T('sec3') %></h4>
+                    <ul class="list-disc pl-5 marker:text-[#6D4CFF] mt-4 space-y-3 text-sm leading-6">
+                        <li><%- T('totalQuestions') %> <b class="text-[#1B1F4B]"><%= test.totalQuestions %></b></li>
+                        <li><%- T('totalMarks') %> <b class="text-[#1B1F4B]"><%= test.totalMarks %></b></li>
                         <li><%- T('rule1') %></li>
                         <li><%- T('rule2') %></li>
                         <li><%- T('rule3') %></li>
                         <li><%- T('rule4') %></li>
                         <li>
-                            <%- T('progressLead') %> <b><%- T('saveNext') %></b>
-                            <%- T('progressOr') %> <b><%- T('markNext') %></b> <%- T('progressTail') %>
+                            <%- T('progressLead') %> <b class="text-[#1B1F4B]"><%- T('saveNext') %></b>
+                            <%- T('progressOr') %> <b class="text-[#1B1F4B]"><%- T('markNext') %></b> <%- T('progressTail') %>
                         </li>
                         <li><%- T('rule6') %></li>
                         <li><%- T('rule7') %></li>
@@ -169,32 +169,32 @@
                     </ul>
                 </div>
 
-                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 text-amber-900">
+                <div class="bg-gradient-to-r from-amber-50 via-[#FFFBEB] to-white border border-amber-200 rounded-2xl p-4 sm:p-5 text-amber-900 shadow-sm shadow-amber-100">
                     <b><%- T('noteLabel') %></b> <%- T('noteLead') %> <%= examName %> <%- T('noteTail') %>
                 </div>
             </div>
         </div>
 
         <!-- Agreement -->
-        <div class="border-t border-slate-100 bg-white px-5 sm:px-10 pt-4 shrink-0">
-            <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex items-start gap-3 sm:gap-4">
+        <div class="border-t border-indigo-100 bg-white px-4 sm:px-10 pt-3 sm:pt-4 shrink-0">
+            <div class="bg-gradient-to-r from-[#EEF0FF] to-[#F5F0FF] border border-indigo-100 rounded-2xl p-3 sm:p-4 flex items-start gap-3 sm:gap-4">
                 <input id="agree" type="checkbox" data-action="toggle-proceed"
                        class="w-5 h-5 mt-0.5 accent-[#4318FF] shrink-0 cursor-pointer">
-                <label for="agree" class="text-xs sm:text-sm text-slate-700 leading-6 font-medium cursor-pointer">
+                <label for="agree" class="text-xs sm:text-sm text-slate-700 leading-5 sm:leading-6 font-medium cursor-pointer">
                     <%- T('agree') %>
                 </label>
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="bg-white px-5 sm:px-10 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex flex-col-reverse sm:flex-row sm:justify-end gap-3 shrink-0">
+        <div class="bg-white px-4 sm:px-10 py-3 sm:py-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 shrink-0">
             <button type="button" data-action="close-instructions"
-                class="w-full sm:w-auto px-8 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition">
+                class="w-full sm:w-auto px-8 py-3 rounded-xl font-bold text-slate-500 hover:bg-[#EEF0FF] hover:text-[#4318FF] transition">
                 <%- T('cancel') %>
             </button>
 
             <button id="proceedBtn" disabled data-action="start-test" data-test-id="<%= test._id %>"
-                class="w-full sm:w-auto px-12 py-3 rounded-xl bg-gradient-to-r from-[#4318FF] to-[#7551FF] text-white font-bold shadow-lg shadow-indigo-300/50 hover:shadow-xl hover:-translate-y-0.5 transition opacity-50 cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0">
+                class="w-full sm:w-auto px-12 py-3 rounded-xl bg-gradient-to-r from-[#3A12E8] via-[#5B3BFF] to-[#8B5CF6] text-white font-bold shadow-lg shadow-indigo-400/40 hover:shadow-xl hover:-translate-y-0.5 transition opacity-50 cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:translate-y-0">
                 <%- T('proceed') %>
             </button>
         </div>
