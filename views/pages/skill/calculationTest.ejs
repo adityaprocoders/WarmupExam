@@ -1,184 +1,93 @@
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-[104px] sm:pt-[120px] pb-10">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-[104px] sm:pt-[120px] pb-12">
 
-    <div class="mb-6 sm:mb-8">
-        <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-            Free Calculation Speed Test
-        </h1>
-        <p class="text-sm sm:text-base text-slate-500 mt-1.5">
-            Sharpen your mental math — track speed and accuracy in real time.
-        </p>
-    </div>
+    <!-- 1. HERO -->
+    <%- include('./partials/skillHero') %>
 
-    <!-- ================= SETTINGS BAR ================= -->
-    <div class="relative z-20 bg-white/80 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-[0_2px_20px_-4px_rgba(15,23,42,0.08)] p-4 sm:p-6 mb-6">
-        <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-4 sm:gap-5">
-
-            <!-- Operation -->
-            <div class="flex flex-col gap-1.5 min-w-[140px] ct-dropdown relative z-10" data-select="ctOperation">
-                <label class="text-xs font-semibold text-slate-500 flex items-center gap-1.5 uppercase tracking-wide">
-                    <i class="fa-solid fa-calculator text-indigo-400"></i> Operation
-                </label>
-                <select id="ctOperation" class="hidden">
-                    <option value="mixed" selected>Mixed</option>
-                    <option value="add">Addition</option>
-                    <option value="sub">Subtraction</option>
-                    <option value="mul">Multiplication</option>
-                    <option value="div">Division</option>
-                </select>
-                <div class="relative">
-                    <button type="button" class="ct-trigger w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-white hover:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all cursor-pointer flex items-center justify-between gap-2" aria-haspopup="listbox" aria-label="Select operation">
-                        <span class="ct-trigger-label">Mixed</span>
-                        <i class="fa-solid fa-chevron-down text-slate-400 text-xs ct-chevron transition-transform"></i>
-                    </button>
-                    <div class="ct-menu hidden absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/60 py-1.5 z-50 overflow-hidden">
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="mixed">Mixed <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="add">Addition <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="sub">Subtraction <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="mul">Multiplication <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="div">Division <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                    </div>
-                </div>
+    <!-- 2. TEST CONFIGURATION -->
+    <section id="configure" class="scroll-mt-28" aria-label="Test configuration">
+        <div class="relative z-20 rounded-3xl bg-white/80 backdrop-blur-xl ring-1 ring-slate-200/70 shadow-[0_8px_40px_-12px_rgba(79,70,229,0.25)] p-4 sm:p-6 mb-6 animate-fade-up">
+            <div class="flex items-center gap-2 mb-5">
+                <span class="w-1.5 h-5 rounded-full bg-gradient-to-b from-indigo-500 to-violet-500"></span>
+                <h2 class="text-sm sm:text-base font-bold text-slate-800">Customize Your Calculation Test</h2>
             </div>
 
-            <!-- Time -->
-            <div class="flex flex-col gap-1.5 min-w-[120px] ct-dropdown relative z-10" data-select="ctTime">
-                <label class="text-xs font-semibold text-slate-500 flex items-center gap-1.5 uppercase tracking-wide">
-                    <i class="fa-solid fa-clock text-indigo-400"></i> Time
-                </label>
-                <select id="ctTime" class="hidden">
-                    <option value="2" selected>2 Minutes</option>
-                    <option value="3">3 Minutes</option>
-                    <option value="5">5 Minutes</option>
-                    <option value="10">10 Minutes</option>
-                    <option value="custom">Custom</option>
-                </select>
-                <div class="relative">
-                    <button type="button" class="ct-trigger w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-white hover:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all cursor-pointer flex items-center justify-between gap-2" aria-haspopup="listbox" aria-label="Select time duration">
-                        <span class="ct-trigger-label">2 Minutes</span>
-                        <i class="fa-solid fa-chevron-down text-slate-400 text-xs ct-chevron transition-transform"></i>
-                    </button>
-                    <div class="ct-menu hidden absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/60 py-1.5 z-50 overflow-hidden max-h-56 overflow-y-auto">
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="2">2 Minutes <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="3">3 Minutes <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="5">5 Minutes <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="10">10 Minutes <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="custom">Custom <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                    </div>
-                </div>
-                <input type="number" id="ctTimeCustom" min="1" placeholder="Minutes"
-                    class="hidden mt-1 px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all" />
-            </div>
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-4 sm:gap-5">
 
-            <!-- Difficulty -->
-            <div class="flex flex-col gap-1.5 min-w-[120px] ct-dropdown relative z-10" data-select="ctDifficulty">
-                <label class="text-xs font-semibold text-slate-500 flex items-center gap-1.5 uppercase tracking-wide">
-                    <i class="fa-solid fa-chart-simple text-indigo-400"></i> Difficulty
-                </label>
-                <select id="ctDifficulty" class="hidden">
-                    <option value="easy">Easy</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
-                <div class="relative">
-                    <button type="button" class="ct-trigger w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-white hover:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all cursor-pointer flex items-center justify-between gap-2" aria-haspopup="listbox" aria-label="Select difficulty">
-                        <span class="ct-trigger-label">Medium</span>
-                        <i class="fa-solid fa-chevron-down text-slate-400 text-xs ct-chevron transition-transform"></i>
-                    </button>
-                    <div class="ct-menu hidden absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/60 py-1.5 z-50 overflow-hidden">
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="easy">Easy <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="medium">Medium <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                        <div class="ct-option px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer flex items-center justify-between transition-colors" data-value="hard">Hard <i class="fa-solid fa-check text-indigo-500 text-xs ct-check" style="display:none;"></i></div>
-                    </div>
-                </div>
-            </div>
+                <%- include('./partials/skillDropdown', {
+                    prefix: 'ct', id: 'ctOperation', label: 'Operation', icon: 'fa-calculator', selected: 'mixed', minWidth: 'min-w-[140px]',
+                    opts: [{ v: 'mixed', l: 'Mixed' }, { v: 'add', l: 'Addition' }, { v: 'sub', l: 'Subtraction' }, { v: 'mul', l: 'Multiplication' }, { v: 'div', l: 'Division' }]
+                }) %>
 
-            <!-- Generate -->
-            <button id="ctGenerateBtn"
-                class="col-span-2 sm:col-span-1 sm:ml-auto w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold text-sm hover:from-indigo-700 hover:to-indigo-600 active:scale-[0.98] transition-all shadow-md shadow-indigo-200">
-                <i class="fa-solid fa-arrows-rotate mr-1.5"></i> Generate
-            </button>
-        </div>
-    </div>
+                <%- include('./partials/skillDropdown', {
+                    prefix: 'ct', id: 'ctTime', label: 'Time', icon: 'fa-clock', selected: '2', minWidth: 'min-w-[120px]',
+                    customId: 'ctTimeCustom', customMin: 1, customPlaceholder: 'Minutes',
+                    opts: [{ v: '2', l: '2 Minutes' }, { v: '3', l: '3 Minutes' }, { v: '5', l: '5 Minutes' }, { v: '10', l: '10 Minutes' }, { v: 'custom', l: 'Custom' }]
+                }) %>
 
-    <!-- ================= TEST AREA ================= -->
-    <div id="ctTestSection" class="relative z-0 bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-[0_2px_20px_-4px_rgba(15,23,42,0.08)] p-5 sm:p-8 mb-6">
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <h2 class="font-semibold text-slate-800 flex items-center gap-2 text-sm sm:text-base">
-                <span class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                    <i class="fa-solid fa-brain text-indigo-500"></i>
-                </span>
-                <span id="ctInstructionText">Configure settings above and click Generate</span>
-            </h2>
-            <div id="ctTimerDisplay" class="hidden items-center gap-1.5 font-mono font-bold text-slate-700 bg-slate-100 px-3.5 py-2 rounded-xl text-sm sm:text-base">
-                <i class="fa-solid fa-stopwatch text-indigo-500"></i>
-                <span id="ctTimerValue">02:00</span>
-            </div>
-        </div>
+                <%- include('./partials/skillDropdown', {
+                    prefix: 'ct', id: 'ctDifficulty', label: 'Difficulty', icon: 'fa-chart-simple', selected: 'medium', minWidth: 'min-w-[120px]',
+                    opts: [{ v: 'easy', l: 'Easy' }, { v: 'medium', l: 'Medium' }, { v: 'hard', l: 'Hard' }]
+                }) %>
 
-        <!-- Question card -->
-        <div class="flex flex-col items-center justify-center py-6 sm:py-10">
-            <div class="bg-gradient-to-br from-indigo-50 via-white to-white border border-indigo-100 rounded-2xl px-6 py-8 sm:px-14 sm:py-10 mb-6 w-full max-w-md text-center shadow-[0_4px_24px_-6px_rgba(99,102,241,0.15)]">
-                <p id="ctQuestion" class="text-3xl sm:text-5xl font-extrabold text-slate-800 font-mono tracking-wide break-all">— &nbsp;+&nbsp; —</p>
-            </div>
-
-            <input id="ctAnswerInput" type="text" inputmode="numeric" autocomplete="off" autocorrect="off"
-                autocapitalize="off" spellcheck="false" placeholder="?"
-                class="w-full max-w-xs text-center text-2xl sm:text-3xl font-mono font-bold px-4 py-3.5 rounded-xl border-2 border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all" />
-            <p class="text-xs text-slate-400 mt-3 flex items-center gap-1.5">
-                <i class="fa-solid fa-circle-info"></i> Type your answer and press Enter
-            </p>
-
-            <!-- Feedback flash -->
-            <p id="ctFeedback" class="h-5 mt-2 text-sm font-semibold"></p>
-        </div>
-    </div>
-
-    <!-- ================= RESULTS ================= -->
-    <div id="ctResults" class="hidden">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
-            <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-[0_2px_20px_-4px_rgba(15,23,42,0.08)] p-5">
-                <h3 class="font-semibold text-slate-800 mb-4 flex items-center gap-2 text-sm sm:text-base">
-                    <i class="fa-solid fa-chart-pie text-indigo-500"></i> Calculation Performance
-                </h3>
-
-                <div class="text-center py-2 mb-3">
-                    <p id="ctFinalQpm" class="text-5xl font-extrabold bg-gradient-to-b from-slate-800 to-slate-600 bg-clip-text text-transparent">0</p>
-                    <p class="text-xs text-slate-500 font-medium mt-1">Questions Per Minute</p>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-50 rounded-xl p-3 text-center">
-                        <p id="ctFinalAccuracy" class="text-lg font-bold text-slate-800">0%</p>
-                        <p class="text-xs text-slate-500">Accuracy</p>
-                    </div>
-                    <div class="bg-slate-50 rounded-xl p-3 text-center">
-                        <p id="ctFinalCorrect" class="text-lg font-bold text-slate-800">0</p>
-                        <p class="text-xs text-slate-500">Correct</p>
-                    </div>
-                    <div class="bg-slate-50 rounded-xl p-3 text-center">
-                        <p id="ctFinalWrong" class="text-lg font-bold text-rose-500">0</p>
-                        <p class="text-xs text-slate-500">Wrong</p>
-                    </div>
-                    <div class="bg-slate-50 rounded-xl p-3 text-center">
-                        <p id="ctFinalTimeUsed" class="text-lg font-bold text-slate-800">0:00</p>
-                        <p class="text-xs text-slate-500">Time Used</p>
-                    </div>
-                </div>
-
-                <button id="ctTryAgainBtn"
-                    class="w-full mt-5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold text-sm hover:from-indigo-700 hover:to-indigo-600 active:scale-[0.98] transition-all shadow-md shadow-indigo-200">
-                    <i class="fa-solid fa-rotate-right mr-1.5"></i> Try Again
+                <button id="ctGenerateBtn"
+                    class="group col-span-2 sm:col-span-1 sm:ml-auto w-full sm:w-auto px-7 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 bg-[length:200%_100%] hover:bg-right text-white font-bold text-sm shadow-lg shadow-indigo-300/50 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-500">
+                    <i class="fa-solid fa-arrows-rotate mr-1.5 group-hover:rotate-180 transition-transform duration-500"></i> Generate
                 </button>
             </div>
+        </div>
+    </section>
 
-            <div class="lg:col-span-2 bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-[0_2px_20px_-4px_rgba(15,23,42,0.08)] p-5">
-                <p class="text-xs font-semibold text-slate-400 tracking-wide mb-3 uppercase">Questions Per Minute</p>
-                <div class="w-full overflow-x-auto">
-                    <canvas id="ctResultChart" height="220" class="min-w-[280px]"></canvas>
+    <!-- 3. ACTUAL TEST INTERFACE -->
+    <section aria-label="Calculation test area">
+        <div id="ctTestSection" class="relative z-0 mb-6 rounded-3xl p-[1.5px] bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 shadow-xl shadow-indigo-200/60 animate-fade-up [animation-delay:100ms]">
+            <div class="rounded-[22px] bg-white p-5 sm:p-8">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                    <p class="font-semibold text-slate-800 flex items-center gap-2 text-sm sm:text-base" aria-live="polite">
+                        <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-md shadow-indigo-200">
+                            <i class="fa-solid fa-brain text-white"></i>
+                        </span>
+                        <span id="ctInstructionText">Configure settings above and click Generate</span>
+                    </p>
+                    <div id="ctTimerDisplay" class="hidden items-center gap-2 font-mono font-bold text-indigo-700 bg-indigo-50 ring-1 ring-indigo-100 px-4 py-2 rounded-xl text-sm sm:text-base">
+                        <i class="fa-solid fa-stopwatch text-indigo-500"></i>
+                        <span id="ctTimerValue">02:00</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center justify-center py-4 sm:py-8">
+                    <div class="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-violet-50 border border-indigo-100 rounded-3xl px-6 py-8 sm:px-14 sm:py-10 mb-6 w-full max-w-md text-center shadow-[0_8px_32px_-8px_rgba(99,102,241,0.25)]">
+                        <div class="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-violet-300/30 blur-2xl animate-pulse"></div>
+                        <p id="ctQuestion" class="relative text-3xl sm:text-5xl font-extrabold text-slate-800 font-mono tracking-wide break-all">— &nbsp;+&nbsp; —</p>
+                    </div>
+
+                    <input id="ctAnswerInput" type="text" inputmode="numeric" autocomplete="off" autocorrect="off"
+                        autocapitalize="off" spellcheck="false" placeholder="?"
+                        class="w-full max-w-xs text-center text-2xl sm:text-3xl font-mono font-bold px-4 py-3.5 rounded-2xl border-2 border-slate-200 shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all" />
+                    <p class="text-xs text-slate-400 mt-3 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info"></i> Type your answer and press Enter
+                    </p>
+
+                    <p id="ctFeedback" class="h-5 mt-2 text-sm font-semibold"></p>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
+
+    <!-- 4. TEST RESULT DASHBOARD -->
+    <%- include('./partials/skillResult', {
+        resultsId: 'ctResults', resultHeading: 'Calculation Performance',
+        scoreId: 'ctFinalQpm', scoreLabel: 'Questions Per Minute',
+        tiles: [
+            { id: 'ctFinalAccuracy', label: 'Accuracy', init: '0%' },
+            { id: 'ctFinalCorrect', label: 'Correct', init: '0' },
+            { id: 'ctFinalWrong', label: 'Wrong', init: '0', danger: true },
+            { id: 'ctFinalTimeUsed', label: 'Time Used', init: '0:00' }
+        ],
+        btnId: 'ctTryAgainBtn', chartId: 'ctResultChart', chartLabel: 'Questions Per Minute'
+    }) %>
+
+    <!-- 5 to 11. INFO SECTIONS + SEO SCHEMA -->
+    <%- include('./partials/skillSections') %>
 
 </div>
 

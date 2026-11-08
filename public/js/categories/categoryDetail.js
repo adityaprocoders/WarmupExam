@@ -179,10 +179,9 @@ grid.addEventListener('submit', (e) => {
     }
 
     function renderTestCard(test) {
-        const typeBadge = test.type === 'Free'
-            ? `<span class="bg-green-50 text-green-600 border-green-300 absolute top-3 right-3 text-xs font-bold px-3 py-1.5 rounded-full border">FREE</span>`
-            : `<span class="bg-amber-50 text-amber-600 border-amber-300 absolute top-3 right-3 text-xs font-bold px-3 py-1.5 rounded-full border shadow-[0_0_12px_rgba(251,146,60,0.8)]">PREMIUM</span>`;
-
+                const typeBadge = test.type === 'Free'
+            ? `<span class="absolute top-3 right-3 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full py-1 pl-1.5 pr-3 text-[10px] sm:text-xs font-bold tracking-wider backdrop-blur-sm bg-white/95 text-emerald-700 ring-1 ring-emerald-200 shadow-md shadow-emerald-900/10"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><i class="fa-solid fa-gift text-[10px]"></i></span>FREE</span>`
+            : `<span class="absolute top-3 right-3 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full py-1 pl-1.5 pr-3 text-[10px] sm:text-xs font-bold tracking-wider backdrop-blur-sm bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-amber-200 ring-1 ring-amber-400/60 shadow-lg shadow-amber-500/25"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-amber-950"><i class="fa-solid fa-crown text-[10px]"></i></span>PAID</span>`;
         const priceHtml = test.type === 'Free'
     ? `<div class="text-indigo-700 font-bold text-base sm:text-lg">FREE</div>`
     : `<div class="flex flex-wrap items-center justify-between gap-2 w-full">

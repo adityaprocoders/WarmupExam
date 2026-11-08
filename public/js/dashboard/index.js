@@ -474,20 +474,50 @@ let copyNav = { level: null, exam: null, slug: null, listingId: null, sectionId:
 
 // naya wrapper — pehle language check karega, phir asli copy modal khulega
 async function startSingleCopyWithLanguageCheck(type, id) {
-    try {
-        const res = await fetch(`/api/copy/languages?sourceType=${type}&sourceId=${id}`);
-        const data = await res.json();
+    const withTests = await askCopyWithTests();
+    if (withTests === null) return;
 
-        if (data.success && data.languages && data.languages.length > 0) {
-            openShowLanguageModal(data.languages, null); // mode null hai kyunki single-copy flow hai
-            pendingSingleCopySource = { type, id }; // language confirm hone ke baad ye use hoga
-        } else {
-            openCopyModal(type, id); // koi test/language nahi mili, seedha copy modal
+    copyIncludeTests = withTests;
+    copyRandomConfig = null;
+    copyRandomMode = false;
+    selectedShowLanguage = null;
+    pendingSingleCopySource = null;
+
+    // test akela + without tests: kuch copy karne ko bacha hi nahi
+    if (type === 'test' && !withTests) {
+        showToast('Sirf test select hai, "without tests" me kuch copy nahi hoga.', 'error');
+        return;
+    }
+
+    pendingMixedBulkItems = [{ id, type }];
+
+    if (!withTests) {
+        openCopyModal(type, id);
+        return;
+    }
+
+    // random sirf section / folder / file ke liye. Akela test same-to-same.
+    if (type !== 'test') {
+        const cm = await askCopyMode(pendingMixedBulkItems);
+        if (cm === null) { pendingMixedBulkItems = null; return; }
+        if (cm.mode === 'random') {
+            copyRandomMode = true;
+            copyRandomConfig = null;
+            openCopyModal(type, id);
+            return;
+        }
+    }
+
+    try {
+        const languages = await fetchLanguagesForItems(pendingMixedBulkItems);
+        if (languages.length > 0) {
+            openShowLanguageModal(languages, 'single');
+            return;
         }
     } catch (err) {
         console.error('Language fetch error:', err);
-        openCopyModal(type, id); // error aaye to bhi purana flow chalta rahe
     }
+    openCopyModal(type, id);
 }
 
 let pendingSingleCopySource = null;
@@ -507,6 +537,7 @@ function closeCopyModal() {
     // 👇 NAYA: modal band hone par bulk state saaf (cancel ke baad single copy par purana bulk selection na chale)
     pendingMixedBulkItems = null;
     copyIncludeTests = true;
+    copyRandomConfig = null;
 }
 
 
@@ -643,7 +674,9 @@ async function loadFolderList() {
         label: it.title,
         icon: it.icon,
         onOpen: () => navigateInside(it.kind, it._id, it.title),
-        canPaste: canPasteRow,
+        // file ke andar sirf test paste ho sakta hai (folder/file/section nahi)
+        canPaste: canPasteRow && (it.kind !== "file" || copySource.type === "test" ||
+            (Array.isArray(pendingMixedBulkItems) && pendingMixedBulkItems.length > 0 && pendingMixedBulkItems.every(i => i.type === "test"))),
         onPaste: () => doPaste(listingId, sectionId, it.kind, it._id)
     })), "This location is empty");
 
@@ -698,7 +731,13 @@ function renderRows(rows, emptyMsg) {
     list.querySelectorAll("[data-paste]").forEach(el => {
         el.addEventListener("click", (e) => {
             e.stopPropagation();
-            rows[el.dataset.paste].onPaste();
+            if (el.dataset.busy === "1") return;          // double click se duplicate copy nahi
+            el.dataset.busy = "1";
+            el.disabled = true;
+            Promise.resolve(rows[el.dataset.paste].onPaste()).finally(() => {
+                el.dataset.busy = "0";
+                el.disabled = false;
+            });
         });
     });
 
@@ -717,11 +756,27 @@ function updatePasteFooterBtn() {
         }
     } else {
         enabled = (copyNav.level === "section" || copyNav.level === "folder") && !!copyNav.sectionId;
+        // file ke andar sirf test paste ho sakta hai
+        if (enabled && copyNav.parentType === "file") {
+            const onlyTests = copySource.type === "test" ||
+                (Array.isArray(pendingMixedBulkItems) && pendingMixedBulkItems.length > 0 && pendingMixedBulkItems.every(i => i.type === "test"));
+            if (!onlyTests) enabled = false;
+        }
         if (enabled) btn.textContent = "Paste Here";
     }
 
     btn.disabled = !enabled;
-    btn.onclick = () => doPaste(copyNav.listingId, copyNav.sectionId, copyNav.parentType, copyNav.parentId);
+    btn.onclick = async () => {
+        if (btn.dataset.busy === "1") return;
+        btn.dataset.busy = "1";
+        btn.disabled = true;
+        try {
+            await doPaste(copyNav.listingId, copyNav.sectionId, copyNav.parentType, copyNav.parentId);
+        } finally {
+            btn.dataset.busy = "0";
+            btn.disabled = !enabled;
+        }
+    };
 }
 
 
@@ -730,6 +785,13 @@ async function doPaste(destListingId, destSectionId, destParentType, destParentI
     // 👇 NAYA — agar mixed bulk items pending hain, to unhe is destination pe bulk-copy karo
        if (pendingMixedBulkItems) {
         // 👇 NAYA: live progress (%) popup ke saath copy
+                // Random: destination pata chal gaya, ab us series ke subjects se settings puchho
+        if (copyIncludeTests && copyRandomMode) {
+            const cfg = await askRandomForDestination(pendingMixedBulkItems, [destListingId]);
+            if (!cfg) return;          // cancel: copy modal khula rehta hai
+            copyRandomConfig = cfg;
+        }
+        
         const job = await runBulkJob({
             kind: 'copy',
             url: '/api/bulk-copy-items',
@@ -740,7 +802,8 @@ async function doPaste(destListingId, destSectionId, destParentType, destParentI
                 destParentType: destParentType || "section",
                 destParentId: destParentId || null,
                 selectedLanguage: selectedShowLanguage || null,
-                includeTests: copyIncludeTests
+                includeTests: copyIncludeTests,
+                randomConfig: copyIncludeTests ? copyRandomConfig : null
             }
         });
 

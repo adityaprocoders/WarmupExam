@@ -77,9 +77,11 @@ export const allTests = async (req, res) => {
 
     const languages = (await Listing.distinct("language")).filter(Boolean).sort();
 
-    const categories = await Category.find({}).sort({ createdAt: -1 }).lean();
+    const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" } }).sort({ createdAt: -1 }).lean();
     const listingCounts = await Listing.aggregate([
-        { $group: { _id: "$category", count: { $sum: 1 } } }
+        { $match: { exam: { $nin: [null, ""] }, ...(isOwner ? {} : { visibility: "public" }) } },
+        { $group: { _id: { category: "$category", exam: { $toLower: { $trim: { input: "$exam" } } } } } },
+        { $group: { _id: "$_id.category", count: { $sum: 1 } } }
     ]);
     const countMap = {};
     listingCounts.forEach(c => { countMap[String(c._id)] = c.count; });

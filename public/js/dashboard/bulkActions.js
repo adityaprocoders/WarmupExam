@@ -7,6 +7,8 @@
 // true  = tests ke saath copy (purana behaviour)
 // false = without tests (sirf section / folder / file structure)
 var copyIncludeTests = true;
+var copyRandomConfig = null;   // null = same-to-same, object = random settings
+var copyRandomMode = false;    // true = random chuna hai, config destination chunne ke baad puchha jayega
 
 (function () {
     if (window.__bulkActionsLoaded) return;   // do baar load ho to bhi handlers duplicate na ho
@@ -170,6 +172,338 @@ var copyIncludeTests = true;
                 }
             ]
         });
+    };
+
+        // ---------- 1b) Same to same / Random + random settings ----------
+    const rcStyle = document.createElement('style');
+    rcStyle.textContent = `
+    .rc-box{max-width:520px;max-height:90vh;overflow-y:auto}
+    .rc-label{font-size:12px;font-weight:700;color:#475569;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+    .rc-hint{font-size:11.5px;color:#94a3b8;margin:4px 0 0}
+    .rc-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .rc-chip{padding:7px 14px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;font-size:13px;font-weight:600;color:#334155;cursor:pointer}
+    .rc-chip:hover{background:#eef2ff}
+    .rc-chip.on{background:#4f46e5;border-color:#4f46e5;color:#fff}
+    .rc-input{border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;font-size:13px;width:100%;box-sizing:border-box;background:#fff}
+    .rc-small{width:100px}
+    .rc-card{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-top:10px;background:#f8fafc}
+    .rc-card-title{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:8px}
+    .rc-err{color:#dc2626;font-size:12px;margin-top:10px;min-height:16px}
+    .rc-actions{display:flex;gap:10px;margin-top:12px}
+    .rc-actions .ba-btn{text-align:center}
+    `;
+    document.head.appendChild(rcStyle);
+
+                   function askRandomConfig(subjects, warning, languages, sourceOnly, tiers) {
+        return new Promise((resolve) => {
+            const MAX_TESTS = 200, MAX_QPT = 500;
+            const LEVELS = [['Easy', 'Easy'], ['Medium', 'Moderate'], ['Hard', 'Hard']];
+            const pad = (n) => String(n).padStart(2, '0');
+            const picked = new Set();
+            let count = 2;
+            let diffMode = 'select';
+
+            const overlay = mkEl('div', 'ba-overlay');
+            const box = mkEl('div', 'ba-box rc-box');
+
+            // ===== HEADER: Test name + Subject =====
+            const header = mkEl('div', '');
+            header.style.cssText = 'padding-bottom:12px;border-bottom:1px solid #e2e8f0;margin-bottom:4px';
+            header.appendChild(mkEl('h3', 'ba-title', 'Random tests'));
+
+            header.appendChild(mkEl('div', 'rc-label', 'Test name'));
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text'; nameInput.maxLength = 100;
+            nameInput.placeholder = 'e.g. Mock Test (khaali = file ka naam - Random)';
+            nameInput.className = 'rc-input';
+            header.appendChild(nameInput);
+            const preview = mkEl('p', 'rc-hint', '');
+            header.appendChild(preview);
+
+            let tierSel = null;
+            if (tiers && tiers.length) {
+                header.appendChild(mkEl('div', 'rc-label', 'Tier / Part (naya test kis tier me banega)'));
+                tierSel = document.createElement('select');
+                tierSel.className = 'rc-input';
+                tiers.forEach((t) => {
+                    const o = document.createElement('option');
+                    o.value = t.key;
+                    o.textContent = t.name;
+                    tierSel.appendChild(o);
+                });
+                header.appendChild(tierSel);
+            }
+            header.appendChild(mkEl('div', 'rc-label', 'Subject (destination series ke marks se)'));
+            const subjectSel = document.createElement('select');
+            subjectSel.className = 'rc-input';
+            const noMarks = new Set();
+                        const fillSubjects = (list) => {
+                subjectSel.innerHTML = '';
+                list.forEach((s) => {
+                    const o = document.createElement('option');
+                    o.value = s.name;
+                    o.textContent = s.name + ' (' + s.available + ' questions)';
+                    if (!s.available) o.disabled = true;
+                    subjectSel.appendChild(o);
+                });
+                const first = list.find((s) => s.available > 0);
+                if (first) subjectSel.value = first.name;
+            };
+            const currentSubjects = () => {
+                if (!tierSel) return subjects;
+                const t = tiers.find((x) => x.key === tierSel.value);
+                return t ? t.subjects : [];
+            };
+            fillSubjects(currentSubjects());
+            if (tierSel) tierSel.addEventListener('change', () => fillSubjects(currentSubjects()));
+            header.appendChild(subjectSel);
+            const marksHint = mkEl('p', 'rc-hint', '');
+            marksHint.style.color = '#d97706';
+            header.appendChild(marksHint);
+            const updMarksHint = () => {
+                marksHint.textContent = noMarks.has(subjectSel.value)
+                    ? 'Is subject ke marks destination series me set nahi hain, naye tests me marks 0 honge.'
+                    : '';
+            };
+            subjectSel.addEventListener('change', updMarksHint);
+            updMarksHint();
+            if (warning) header.appendChild(mkEl('p', 'rc-hint', warning));
+                        let langSel = null;
+            if (languages && languages.length > 1) {
+                header.appendChild(mkEl('div', 'rc-label', 'Test language (kaunsi language dikhe)'));
+                langSel = document.createElement('select');
+                langSel.className = 'rc-input';
+                ['All'].concat(languages).forEach((l) => {
+                    const o = document.createElement('option');
+                    o.value = l; o.textContent = l;
+                    langSel.appendChild(o);
+                });
+                header.appendChild(langSel);
+                header.appendChild(mkEl('p', 'rc-hint', 'Language chuno to sirf un tests ke questions aayenge jinme wo language hai.'));
+            }
+
+            box.appendChild(header);
+
+            // ===== Number of tests =====
+            box.appendChild(mkEl('div', 'rc-label', 'Number of tests (har file me)'));
+            const countRow = mkEl('div', 'rc-row');
+            const custom = document.createElement('input');
+            custom.type = 'number'; custom.min = '1'; custom.max = String(MAX_TESTS);
+            custom.placeholder = 'Custom'; custom.className = 'rc-input rc-small';
+            const chips = [];
+            [1, 2, 4].forEach((n) => {
+                const b = mkEl('button', 'rc-chip', String(n));
+                b.type = 'button';
+                b.addEventListener('click', () => { custom.value = ''; setCount(n); });
+                countRow.appendChild(b);
+                chips.push({ n, b });
+            });
+            custom.addEventListener('input', () => {
+                const v = parseInt(custom.value, 10);
+                if (v >= 1 && v <= MAX_TESTS) setCount(v);
+            });
+            countRow.appendChild(custom);
+            box.appendChild(countRow);
+            box.appendChild(mkEl('p', 'rc-hint', 'Jitne questions milenge utne hi poore tests bante hain, adhoora test nahi banta.'));
+
+            // ===== Questions per test =====
+            box.appendChild(mkEl('div', 'rc-label', 'Questions per test'));
+            const qpt = document.createElement('input');
+            qpt.type = 'number'; qpt.min = '1'; qpt.max = String(MAX_QPT); qpt.value = '20';
+            qpt.className = 'rc-input rc-small';
+            box.appendChild(qpt);
+
+            // ===== Difficulty (ek hi baar) =====
+            box.appendChild(mkEl('div', 'rc-label', 'Difficulty'));
+            const modeRow = mkEl('div', 'rc-row');
+            const modeSelect = mkEl('button', 'rc-chip on', 'Select');
+            const modePercent = mkEl('button', 'rc-chip', 'Percentage');
+            modeSelect.type = 'button'; modePercent.type = 'button';
+            modeRow.appendChild(modeSelect);
+            modeRow.appendChild(modePercent);
+            box.appendChild(modeRow);
+
+            // select panel
+            const selPanel = mkEl('div', '');
+            selPanel.appendChild(mkEl('p', 'rc-hint', 'Ek ya zyada chuno. Kuch select na karo to sab difficulty se random aayenge.'));
+            const levelRow = mkEl('div', 'rc-row');
+            levelRow.style.marginTop = '8px';
+            LEVELS.forEach(([val, label]) => {
+                const b = mkEl('button', 'rc-chip', label);
+                b.type = 'button';
+                b.addEventListener('click', () => {
+                    if (picked.has(val)) picked.delete(val); else picked.add(val);
+                    b.classList.toggle('on', picked.has(val));
+                });
+                levelRow.appendChild(b);
+            });
+            selPanel.appendChild(levelRow);
+            box.appendChild(selPanel);
+
+            // percent panel
+            const pctPanel = mkEl('div', '');
+            pctPanel.style.display = 'none';
+            pctPanel.appendChild(mkEl('p', 'rc-hint', 'Total 100 hona chahiye.'));
+            const pctRow = mkEl('div', 'rc-row');
+            pctRow.style.marginTop = '8px';
+            const pctInputs = {};
+            const defaults = { Easy: 34, Medium: 33, Hard: 33 };
+            LEVELS.forEach(([val, label]) => {
+                const wrap = mkEl('div', '');
+                wrap.appendChild(mkEl('div', 'rc-hint', label + ' %'));
+                const inp = document.createElement('input');
+                inp.type = 'number'; inp.min = '0'; inp.max = '100'; inp.value = String(defaults[val]);
+                inp.className = 'rc-input rc-small';
+                inp.addEventListener('input', updatePct);
+                pctInputs[val] = inp;
+                wrap.appendChild(inp);
+                pctRow.appendChild(wrap);
+            });
+            pctPanel.appendChild(pctRow);
+            const pctTotal = mkEl('p', 'rc-hint', '');
+            pctPanel.appendChild(pctTotal);
+            box.appendChild(pctPanel);
+
+            const err = mkEl('div', 'rc-err');
+            box.appendChild(err);
+
+            const actions = mkEl('div', 'rc-actions');
+            const share = mkEl('button', 'ba-btn ba-primary', 'Share');
+            share.type = 'button';
+            const cancel = mkEl('button', 'ba-btn', 'Cancel');
+            cancel.type = 'button';
+            actions.appendChild(share);
+            actions.appendChild(cancel);
+            box.appendChild(actions);
+
+            overlay.appendChild(box);
+
+            function pctSum() {
+                return LEVELS.reduce((s, [v]) => s + (parseInt(pctInputs[v].value, 10) || 0), 0);
+            }
+            function updatePct() {
+                const t = pctSum();
+                pctTotal.textContent = 'Total: ' + t + '%' + (t === 100 ? '' : ' (100 hona chahiye)');
+                pctTotal.style.color = t === 100 ? '#16a34a' : '#dc2626';
+            }
+            function setMode(m) {
+                diffMode = m;
+                modeSelect.classList.toggle('on', m === 'select');
+                modePercent.classList.toggle('on', m === 'percent');
+                selPanel.style.display = m === 'select' ? '' : 'none';
+                pctPanel.style.display = m === 'percent' ? '' : 'none';
+                err.textContent = '';
+                if (m === 'percent') updatePct();
+            }
+            modeSelect.addEventListener('click', () => setMode('select'));
+            modePercent.addEventListener('click', () => setMode('percent'));
+
+            function updatePreview() {
+                const base = nameInput.value.trim() || 'File ka naam - Random';
+                const n = Math.min(count, 3);
+                const names = [];
+                for (let i = 1; i <= n; i++) names.push(base + ' ' + pad(i));
+                preview.textContent = 'Test names: ' + names.join(', ') + (count > 3 ? ' ... ' + base + ' ' + pad(count) : '');
+            }
+            nameInput.addEventListener('input', updatePreview);
+
+            function setCount(n) {
+                count = n;
+                chips.forEach((c) => c.b.classList.toggle('on', c.n === n && !custom.value));
+                updatePreview();
+            }
+
+            function onKey(e) { if (e.key === 'Escape') close(null); }
+            function close(v) {
+                document.removeEventListener('keydown', onKey);
+                overlay.remove();
+                resolve(v);
+            }
+            document.addEventListener('keydown', onKey);
+
+            cancel.addEventListener('click', () => close(null));
+            share.addEventListener('click', () => {
+                const q = parseInt(qpt.value, 10);
+                if (!Number.isInteger(q) || q < 1 || q > MAX_QPT) { err.textContent = 'Questions per test 1 se ' + MAX_QPT + ' ke beech do.'; return; }
+                if (count < 1 || count > MAX_TESTS) { err.textContent = 'Number of tests 1 se ' + MAX_TESTS + ' ke beech do.'; return; }
+
+                let difficulty;
+                if (diffMode === 'percent') {
+                    if (pctSum() !== 100) { err.textContent = 'Difficulty percentage ka total 100 hona chahiye.'; return; }
+                    difficulty = {
+                        mode: 'percent',
+                        easy: parseInt(pctInputs.Easy.value, 10) || 0,
+                        medium: parseInt(pctInputs.Medium.value, 10) || 0,
+                        hard: parseInt(pctInputs.Hard.value, 10) || 0
+                    };
+                } else {
+                    difficulty = { mode: 'select', levels: Array.from(picked) };
+                }
+
+                if (!subjectSel.value) { err.textContent = 'Is tier me koi subject set nahi hai.'; return; }
+                close({
+                    questionsPerTest: q,
+                    numTests: count,
+                    tier: tierSel ? tierSel.value : null,
+                    subject: subjectSel.value,
+                    testName: nameInput.value.trim(),
+                    language: langSel ? langSel.value : 'All',
+                    difficulty
+                });
+            });
+
+            document.body.appendChild(overlay);
+            setCount(2);
+            chips[1].b.classList.add('on');
+        });
+    }
+
+       async function fetchRandomSubjects(items, destListingIds) {
+        try {
+            const res = await fetch('/api/copy/random-subjects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items, destListingIds: destListingIds || [] })
+            });
+            return await res.json();
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // return: { mode:'same' } | { mode:'random' } | null (cancel)
+    window.askCopyMode = async function (items) {
+        const choice = await showPopup({
+            title: 'Share mode',
+            message: 'Tests ko kaise share karna hai?',
+            options: [
+                { label: 'Same to same', hint: 'Tests jaise hain waise hi copy honge.', value: 'same', kind: 'ba-primary' },
+                { label: 'Random', hint: 'Har file ke andar ke questions se naye random tests bante hain.', value: 'random' }
+            ]
+        });
+        if (choice === null) return null;
+        if (choice === 'same') return { mode: 'same' };
+
+        // early check: selection me aisi file hai jisme questions wale tests hon?
+        const info = await fetchRandomSubjects(items, []);
+        if (!info || !info.success) { notify((info && info.message) || 'Subjects load nahi ho paye.', 'error'); return null; }
+        if (!info.subjects || info.subjects.length === 0) {
+            notify('Is selection me aisi koi file nahi mili jisme questions wale tests hon. Random ke liye file ke andar tests chahiye.', 'error');
+            return null;
+        }
+        return { mode: 'random' };
+    };
+
+    // Destination chunne ke BAAD: us series ke subjects se random settings puchho
+    // return: config object | null (cancel)
+    window.askRandomForDestination = async function (items, destListingIds) {
+        const info = await fetchRandomSubjects(items, destListingIds);
+        if (!info || !info.success) { notify((info && info.message) || 'Subjects load nahi ho paye.', 'error'); return null; }
+        if (!info.subjects || info.subjects.length === 0) {
+            notify('Random ke liye koi subject nahi mila.', 'error');
+            return null;
+        }
+                        return askRandomConfig(info.subjects, info.warning || '', info.languages || [], [], info.tiers || []);
     };
 
     // ---------- 2) Premium progress popup ----------
@@ -355,12 +689,18 @@ var copyIncludeTests = true;
         lines.push(data.copied + ' copy ' + (data.copied === 1 ? 'operation' : 'operations') + ' successful' + (data.failed ? ', ' + data.failed + ' failed' : ''));
         return lines.join('\n');
     }
-    function copyDetails(data) {
-        if (!data.fallbacks || data.fallbacks.length === 0) return [];
-        const out = ['Note: ' + data.fallbacks.length + ' test(s) me language "All" par set ho gayi:'];
-        data.fallbacks.forEach((f) => {
-            out.push('• ' + f.path + ' (the selected language "' + f.requestedLanguage + '" was not available in this test, so it was set to "All")');
-        });
+        function copyDetails(data) {
+        const out = [];
+        if (data.notes && data.notes.length) {
+            out.push('Random copy notes:');
+            data.notes.forEach((n) => out.push('• ' + n));
+        }
+        if (data.fallbacks && data.fallbacks.length) {
+            out.push('Note: ' + data.fallbacks.length + ' test(s) me language "All" par set ho gayi:');
+            data.fallbacks.forEach((f) => {
+                out.push('• ' + f.path + ' (the selected language "' + f.requestedLanguage + '" was not available in this test, so it was set to "All")');
+            });
+        }
         return out;
     }
 
@@ -423,7 +763,7 @@ var copyIncludeTests = true;
         } else if (kind === 'copy') {
             const d = finalData;
             if (d.success) {
-                const clean = !d.failed && (!d.fallbacks || d.fallbacks.length === 0);
+                const clean = !d.failed && (!d.fallbacks || d.fallbacks.length === 0) && (!d.notes || d.notes.length === 0);
                 await modal.finish({
                     state: clean ? 'success' : 'warning',
                     title: clean ? 'Copy complete' : 'Copy finished with notes',

@@ -14,15 +14,50 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="icon" href="/favicon.ico" sizes="any">
-
     <link rel="stylesheet" href="/css/output.css">
-</head>
-<body class="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-indigo-50 via-slate-50 to-white" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;">
 
+    <!-- Animations (CSP nonce ke saath) -->
+    <style nonce="<%= cspNonce %>">
+        @keyframes fadeUp   { from { opacity: 0; transform: translateY(24px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes floatA   { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,30px) scale(1.12); } }
+        @keyframes floatB   { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-40px,-30px) scale(1.15); } }
+        @keyframes ringOut  { 0% { transform: scale(.85); opacity: .55; } 100% { transform: scale(1.7); opacity: 0; } }
+        @keyframes iconBob  { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-6px) rotate(-2deg); } }
+        @keyframes shine    { 0% { transform: translateX(-120%) skewX(-20deg); } 60%,100% { transform: translateX(260%) skewX(-20deg); } }
+        @keyframes modalIn  { from { opacity: 0; transform: translateY(16px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+
+        .anim-card   { animation: fadeUp .8s cubic-bezier(.22,1,.36,1) both; }
+        .anim-item   { animation: fadeUp .7s cubic-bezier(.22,1,.36,1) both; }
+        .delay-1     { animation-delay: .15s; }
+        .delay-2     { animation-delay: .27s; }
+        .delay-3     { animation-delay: .39s; }
+        .delay-4     { animation-delay: .51s; }
+        .delay-5     { animation-delay: .63s; }
+        .anim-float-a { animation: floatA 14s ease-in-out infinite; }
+        .anim-float-b { animation: floatB 17s ease-in-out infinite; }
+        .anim-ring    { animation: ringOut 2.6s ease-out infinite; }
+        .anim-ring-2  { animation: ringOut 2.6s ease-out 1.3s infinite; }
+        .anim-bob     { animation: iconBob 4s ease-in-out infinite; }
+        .btn-shine::after {
+            content: ""; position: absolute; inset: 0; width: 40%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+            animation: shine 3.6s ease-in-out infinite;
+        }
+        .anim-modal-bg { animation: fadeIn .25s ease both; }
+        .anim-modal    { animation: modalIn .35s cubic-bezier(.22,1,.36,1) both; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .anim-card, .anim-item, .anim-float-a, .anim-float-b, .anim-ring, .anim-ring-2,
+            .anim-bob, .btn-shine::after, .anim-modal-bg, .anim-modal { animation: none !important; }
+        }
+    </style>
+</head>
+<body class="relative min-h-screen flex items-center justify-center overflow-x-hidden p-4 sm:p-6 bg-gradient-to-br from-indigo-100 via-slate-50 to-violet-100 font-['Inter',sans-serif] antialiased">
 
     <%
-const mailSubject = "Account Access Restriction – Review Request";
-const mailBody =
+    const mailSubject = "Account Access Restriction – Review Request";
+    const mailBody =
 `Hello WarmupExam Support,
 
 My WarmupExam account has been restricted and I would like to request a review of this restriction.
@@ -36,63 +71,70 @@ Please review my account and let me know if any further information is required.
 
 Thank you.`;
 
-const mailtoLink = `mailto:support@warmupexam.com?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
-const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=support@warmupexam.com&su=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
-%>
+    const mailtoLink = `mailto:support@warmupexam.com?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
+    const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=support@warmupexam.com&su=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
+    %>
 
+    <!-- Animated background blobs -->
+    <div aria-hidden="true" class="pointer-events-none fixed inset-0 overflow-hidden">
+        <div class="anim-float-a absolute -top-24 -left-24 h-80 w-80 rounded-full bg-indigo-400/40 blur-3xl sm:h-[26rem] sm:w-[26rem]"></div>
+        <div class="anim-float-b absolute -bottom-28 -right-24 h-80 w-80 rounded-full bg-violet-400/40 blur-3xl sm:h-[26rem] sm:w-[26rem]"></div>
+        <div class="anim-float-a absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-rose-300/25 blur-3xl"></div>
+    </div>
 
-    <!-- Decorative blobs -->
-    <div class="pointer-events-none fixed -top-24 -left-24 w-72 h-72 sm:w-80 sm:h-80 bg-indigo-300/30 rounded-full blur-3xl"></div>
-    <div class="pointer-events-none fixed -bottom-28 -right-20 w-72 h-72 sm:w-80 sm:h-80 bg-violet-300/30 rounded-full blur-3xl"></div>
+    <!-- Glass card -->
+    <main class="anim-card relative z-10 w-full max-w-lg overflow-hidden rounded-3xl bg-gradient-to-b from-white/70 to-white/40 px-6 py-10 text-center shadow-[0_30px_80px_-20px_rgba(79,70,229,0.35)] backdrop-blur-2xl backdrop-saturate-200 sm:px-10 sm:py-12">
 
-    <div class="relative z-10 w-full max-w-lg bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(30,41,59,0.18)] border border-gray-100 px-6 py-10 sm:px-10 sm:py-12 text-center">
+        <!-- top shine line -->
+        <span aria-hidden="true" class="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"></span>
 
         <!-- Icon -->
-        <div class="relative w-24 h-24 mx-auto mb-6">
-            <div class="absolute inset-[-14px] rounded-full bg-indigo-400/15 blur-xl"></div>
-            <div class="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-rose-400 to-rose-600 shadow-lg shadow-rose-500/40 flex items-center justify-center">
-                <i class="fa-solid fa-lock text-white text-3xl"></i>
+        <div class="anim-item relative mx-auto mb-7 h-24 w-24">
+            <span aria-hidden="true" class="anim-ring absolute inset-0 rounded-3xl bg-rose-400/40"></span>
+            <span aria-hidden="true" class="anim-ring-2 absolute inset-0 rounded-3xl bg-rose-400/30"></span>
+            <div class="anim-bob relative flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-rose-400 to-rose-600 shadow-lg shadow-rose-500/40">
+                <i class="fa-solid fa-lock text-3xl text-white"></i>
             </div>
-            <div class="absolute -bottom-1.5 -right-1.5 w-9 h-9 rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center">
-                <i class="fa-solid fa-ban text-red-500 text-base"></i>
+            <div class="absolute -bottom-1.5 -right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur">
+                <i class="fa-solid fa-ban text-base text-red-500"></i>
             </div>
         </div>
 
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-3">
+        <h1 class="anim-item delay-1 mb-3 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
             Account Access Restricted
         </h1>
 
-        <p class="text-sm sm:text-[15px] leading-relaxed text-gray-500 max-w-md mx-auto mb-6">
+        <p class="anim-item delay-2 mx-auto mb-6 max-w-md text-sm leading-relaxed text-slate-600 sm:text-[15px]">
             Your WarmupExam account has been restricted by the administration.
             You currently cannot access Test Series, Custom Test, or other account features.
         </p>
 
         <!-- Reason box -->
-        <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4 sm:p-5 text-left mb-5">
+        <div class="anim-item delay-3 mb-5 rounded-2xl bg-rose-500/10 p-4 text-left backdrop-blur-md sm:p-5">
 
             <div class="flex items-start gap-3">
-                <span class="shrink-0 w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center">
-                    <i class="fa-solid fa-exclamation text-white text-xs"></i>
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500 shadow-md shadow-rose-500/30">
+                    <i class="fa-solid fa-exclamation text-xs text-white"></i>
                 </span>
                 <div>
-                    <p class="text-[11px] font-semibold text-rose-700 uppercase tracking-wide mb-0.5">Reason</p>
-                    <p class="text-sm sm:text-[15px] font-bold text-gray-900"><%= banReasonLabel %></p>
+                    <p class="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-rose-700">Reason</p>
+                    <p class="text-sm font-bold text-slate-900 sm:text-[15px]"><%= banReasonLabel %></p>
                 </div>
             </div>
 
-            <div class="mt-4 pt-4 border-t border-rose-200 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-4">
+            <div class="mt-4 grid grid-cols-1 gap-4 border-t border-rose-300/40 pt-4 sm:grid-cols-2">
                 <div class="flex items-start gap-2">
-                    <i class="fa-regular fa-calendar text-rose-600 text-sm mt-0.5"></i>
+                    <i class="fa-regular fa-calendar mt-0.5 text-sm text-rose-600"></i>
                     <div>
-                        <p class="text-[11px] font-semibold text-rose-700 uppercase tracking-wide mb-0.5">Ban Date</p>
-                        <p class="text-sm font-bold text-gray-900"><%= bannedAtFormatted || '-' %></p>
+                        <p class="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-rose-700">Ban Date</p>
+                        <p class="text-sm font-bold text-slate-900"><%= bannedAtFormatted || '-' %></p>
                     </div>
                 </div>
                 <div class="flex items-start gap-2">
-                    <i class="fa-solid fa-ban text-rose-600 text-sm mt-0.5"></i>
+                    <i class="fa-solid fa-ban mt-0.5 text-sm text-rose-600"></i>
                     <div>
-                        <p class="text-[11px] font-semibold text-rose-700 uppercase tracking-wide mb-0.5">Status</p>
-                        <p class="text-sm font-bold text-gray-900">
+                        <p class="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-rose-700">Status</p>
+                        <p class="text-sm font-bold text-slate-900">
                             <% if (banType === 'permanent') { %>
                                 Permanently Restricted
                             <% } else { %>
@@ -106,85 +148,88 @@ const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=support@warmupe
         </div>
 
         <!-- Info bar -->
-        <div class="flex items-start gap-2.5 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-left mb-7">
-            <i class="fa-solid fa-circle-info text-blue-600 text-sm mt-0.5 shrink-0"></i>
-            <p class="text-xs sm:text-sm text-blue-900 leading-relaxed">
+        <div class="anim-item delay-4 mb-7 flex items-start gap-2.5 rounded-xl bg-sky-500/10 px-4 py-3 text-left backdrop-blur-md">
+            <i class="fa-solid fa-circle-info mt-0.5 shrink-0 text-sm text-sky-600"></i>
+            <p class="text-xs leading-relaxed text-sky-900 sm:text-sm">
                 If you believe this action was taken by mistake, please contact support.
             </p>
         </div>
 
         <!-- Actions -->
-        <div class="flex flex-col sm:flex-row gap-3">
+        <div class="anim-item delay-5 flex flex-col gap-3 sm:flex-row">
             <button type="button" id="openContactModalBtn"
-    class="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-lg shadow-indigo-500/30 hover:from-indigo-700 hover:to-indigo-800 transition">
-    <i class="fa-solid fa-headset"></i> Contact Support
-</button>
-            <form action="/logout" method="POST" class="flex-1 flex">
+                class="btn-shine relative inline-flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition duration-200 hover:-translate-y-0.5 hover:shadow-indigo-500/50 active:translate-y-0">
+                <i class="fa-solid fa-headset"></i> Contact Support
+            </button>
+
+            <form action="/logout" method="POST" class="flex flex-1">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit"
-                    class="w-full inline-flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 text-sm font-semibold px-5 py-3 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition">
+                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/50 px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:bg-white/80 active:translate-y-0">
                     <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </button>
             </form>
         </div>
 
-    </div>
+    </main>
 
     <!-- Contact Support Modal -->
-<div id="contactModalOverlay" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-    <div class="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
+    <div id="contactModalOverlay" class="anim-modal-bg fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
+        <div class="anim-modal w-full max-w-sm overflow-hidden rounded-2xl bg-gradient-to-b from-white/85 to-white/65 shadow-[0_30px_80px_-20px_rgba(15,23,42,0.5)] backdrop-blur-2xl backdrop-saturate-200">
 
-        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h3 class="font-bold text-gray-900">Contact Support</h3>
-            <button type="button" id="closeContactModalBtn" class="text-gray-400 hover:text-gray-700">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+            <div class="flex items-center justify-between border-b border-white/60 px-5 py-4">
+                <h3 class="font-bold text-slate-900">Contact Support</h3>
+                <button type="button" id="closeContactModalBtn" aria-label="Close"
+                    class="flex h-8 w-8 items-center justify-center rounded-full bg-white/60 text-slate-500 transition hover:bg-white hover:text-slate-900">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 p-5">
+                <p class="mb-1 text-xs text-slate-500">Choose how you'd like to reach us</p>
+
+                <a href="<%= gmailLink %>" target="_blank" rel="noopener"
+                    class="group flex items-center gap-3 rounded-xl bg-white/60 px-4 py-3 shadow-sm backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:bg-white/90 hover:shadow-md">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 transition group-hover:scale-110">
+                        <i class="fa-brands fa-google text-red-500"></i>
+                    </span>
+                    <div class="text-left">
+                        <p class="text-sm font-semibold text-slate-900">Open in Gmail</p>
+                        <p class="text-[11px] text-slate-500">support@warmupexam.com</p>
+                    </div>
+                </a>
+
+                <a href="<%= mailtoLink %>"
+                    class="group flex items-center gap-3 rounded-xl bg-white/60 px-4 py-3 shadow-sm backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:bg-white/90 hover:shadow-md">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 transition group-hover:scale-110">
+                        <i class="fa-solid fa-envelope text-indigo-500"></i>
+                    </span>
+                    <div class="text-left">
+                        <p class="text-sm font-semibold text-slate-900">Use Default Mail App</p>
+                        <p class="text-[11px] text-slate-500">Outlook, Apple Mail, etc.</p>
+                    </div>
+                </a>
+
+                <p class="pt-1 text-center text-[11px] text-slate-500">
+                    "Default Mail App" only opens if your device has one configured. If nothing happens, use "Open in Gmail" instead.
+                </p>
+            </div>
+
         </div>
-
-        <div class="p-5 space-y-3">
-            <p class="text-xs text-gray-400 mb-1">Choose how you'd like to reach us</p>
-
-            <a href="<%= gmailLink %>" target="_blank" rel="noopener"
-                class="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 hover:border-indigo-300 hover:bg-indigo-50/50 transition">
-                <span class="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                    <i class="fa-brands fa-google text-red-500"></i>
-                </span>
-                <div class="text-left">
-                    <p class="text-sm font-semibold text-gray-900">Open in Gmail</p>
-                    <p class="text-[11px] text-gray-400">support@warmupexam.com</p>
-                </div>
-            </a>
-
-            <a href="<%= mailtoLink %>"
-                class="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 hover:border-indigo-300 hover:bg-indigo-50/50 transition">
-                <span class="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
-                    <i class="fa-solid fa-envelope text-indigo-500"></i>
-                </span>
-                <div class="text-left">
-                    <p class="text-sm font-semibold text-gray-900">Use Default Mail App</p>
-                    <p class="text-[11px] text-gray-400">Outlook, Apple Mail, etc.</p>
-                </div>
-            </a>
-
-            <p class="text-[11px] text-gray-400 text-center pt-1">
-                "Default Mail App" only opens if your device has one configured. If nothing happens, use "Open in Gmail" instead.
-            </p>
-        </div>
-
     </div>
-</div>
 
-<script nonce="<%= cspNonce %>">
-    document.getElementById('openContactModalBtn')?.addEventListener('click', function () {
-        document.getElementById('contactModalOverlay').classList.remove('hidden');
-    });
-    document.getElementById('closeContactModalBtn')?.addEventListener('click', function () {
-        document.getElementById('contactModalOverlay').classList.add('hidden');
-    });
-    document.getElementById('contactModalOverlay')?.addEventListener('click', function (e) {
-        if (e.target === this) this.classList.add('hidden');
-    });
-</script>
+    <script nonce="<%= cspNonce %>">
+        (function () {
+            var overlay = document.getElementById('contactModalOverlay');
+            function openModal()  { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
+            function closeModal() { overlay.classList.add('hidden');    overlay.classList.remove('flex'); }
+
+            document.getElementById('openContactModalBtn')?.addEventListener('click', openModal);
+            document.getElementById('closeContactModalBtn')?.addEventListener('click', closeModal);
+            overlay?.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+        })();
+    </script>
 
 </body>
 </html>

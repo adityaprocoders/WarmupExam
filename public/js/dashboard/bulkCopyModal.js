@@ -77,7 +77,6 @@ function handleBulkCopySearch(keyword) {
 }
 
 async function confirmBulkCopy() {
-    // 👇 NAYA — agar mixed items (folder/file/test) select kiye hain to unhe use karo, warna purana sections-only tarika
     const items = pendingMixedBulkItems
         ? pendingMixedBulkItems
         : getSelectedSectionIds().map(id => ({ id, type: 'section' }));
@@ -86,20 +85,27 @@ async function confirmBulkCopy() {
 
     if (items.length === 0 || destListingIds.length === 0) return;
 
+    // Random: destination pata chal gaya, ab us series ke subjects se settings puchho
+    if (copyIncludeTests && copyRandomMode) {
+        const cfg = await askRandomForDestination(items, destListingIds);
+        if (!cfg) return;              // cancel: destination modal khula rehta hai
+        copyRandomConfig = cfg;
+    }
+
     const btn = document.getElementById('bulkCopyConfirmBtn');
     btn.disabled = true;
     btn.textContent = 'Copying...';
 
-      try {
-        // 👇 NAYA: live progress (%) popup ke saath copy
+    try {
         const job = await runBulkJob({
             kind: 'copy',
             url: '/api/bulk-copy-items',
             payload: {
-                items,   // sectionIds ki jagah items
+                items,
                 destListingIds,
                 selectedLanguage: selectedShowLanguage,
-                includeTests: copyIncludeTests
+                includeTests: copyIncludeTests,
+                randomConfig: copyIncludeTests ? copyRandomConfig : null
             }
         });
 

@@ -1,0 +1,335 @@
+<%
+    const rv = 'animate-fade-up [animation-timeline:view()] [animation-range:entry_0%_cover_30%]';
+    const grads = [
+        'from-indigo-500 to-violet-500', 'from-sky-500 to-indigo-500', 'from-fuchsia-500 to-pink-500',
+        'from-amber-400 to-orange-500', 'from-emerald-400 to-teal-500', 'from-rose-500 to-orange-400'
+    ];
+    const tints = [
+        'bg-indigo-50 text-indigo-600', 'bg-violet-50 text-violet-600', 'bg-sky-50 text-sky-600',
+        'bg-emerald-50 text-emerald-600', 'bg-amber-50 text-amber-600', 'bg-rose-50 text-rose-600'
+    ];
+    function head(eyebrow, title, lead) {
+        return '<div class="text-center max-w-2xl mx-auto mb-9 sm:mb-12 ' + rv + '">'
+            + '<span class="inline-block text-xs font-semibold text-indigo-700 bg-indigo-50 ring-1 ring-indigo-100 px-3 py-1 rounded-full mb-4">' + eyebrow + '</span>'
+            + '<h2 class="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight">' + title + '</h2>'
+            + (lead ? '<p class="text-sm sm:text-base text-slate-500 mt-3 leading-relaxed">' + lead + '</p>' : '')
+            + '</div>';
+    }
+%>
+
+<style <%- locals.cspNonce ? 'nonce="' + cspNonce + '"' : '' %>>
+    /* ---------- Shared card ---------- */
+    .ss-card {
+        position: relative; background: #fff; border-radius: 1.25rem;
+        box-shadow: 0 0 0 1px rgba(226,232,240,.9), 0 1px 2px rgba(15,23,42,.04);
+        transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease;
+    }
+    .ss-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 0 1px #c7d2fe, 0 24px 44px -26px rgba(79,70,229,.4);
+    }
+
+    /* Step card: hover par top accent line */
+    .ss-step::before {
+        content: ''; position: absolute; left: 1.25rem; right: 1.25rem; top: 0; height: 2px; border-radius: 0 0 4px 4px;
+        background: linear-gradient(90deg, #6366f1, #8b5cf6); opacity: 0; transition: opacity .3s ease;
+    }
+    .ss-step:hover::before { opacity: 1; }
+
+    /* Icon chip */
+    .ss-chip { display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform .35s cubic-bezier(.22,1,.36,1); }
+    .ss-card:hover .ss-chip { transform: scale(1.06); }
+
+    /* Benefits panel */
+    .ss-panel { background: linear-gradient(180deg, #f8faff, #fff 60%); box-shadow: 0 0 0 1px #e0e7ff, 0 30px 60px -40px rgba(79,70,229,.35); }
+
+    /* Dark exam panel */
+    .ss-dark-card { background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); transition: background .3s ease, transform .35s cubic-bezier(.22,1,.36,1); }
+    .ss-dark-card:hover { background: rgba(255,255,255,.1); transform: translateY(-3px); }
+
+    /* Final CTA button sheen */
+    .ss-cta-btn { position: relative; overflow: hidden; isolation: isolate; }
+    .ss-cta-btn::after {
+        content: ''; position: absolute; inset: 0 auto 0 -40%; width: 35%; z-index: -1;
+        background: linear-gradient(90deg, transparent, rgba(99,102,241,.22), transparent);
+        transform: skewX(-20deg); transition: transform .9s cubic-bezier(.22,1,.36,1);
+    }
+    .ss-cta-btn:hover::after { transform: translateX(520%) skewX(-20deg); }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ss-card:hover, .ss-dark-card:hover { transform: none; }
+        .ss-cta-btn::after { display: none; }
+        .ss-card, .ss-chip, .ss-dark-card, .ss-step::before { transition-duration: .01ms !important; }
+    }
+</style>
+
+<!-- ============ 5. HOW TO USE ============ -->
+<section class="mt-20" aria-label="How to use this test">
+    <%- head('Step by step', 'How to Use This ' + skill.name, 'Four quick steps from setup to your final report.') %>
+    <ol class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <% skill.steps.forEach(function (s, i) { %>
+            <li class="ss-card ss-step p-6 pt-9 <%= rv %>">
+                <span class="absolute -top-4 left-6 h-9 w-9 rounded-xl bg-gradient-to-br <%= grads[i % 6] %> text-white text-sm font-bold flex items-center justify-center shadow-[0_10px_20px_-8px_rgba(79,70,229,.6)] ring-4 ring-white"><%= i + 1 %></span>
+                <h3 class="text-base font-semibold text-slate-900"><%= s.title %></h3>
+                <p class="mt-2 text-sm text-slate-500 leading-relaxed"><%= s.text %></p>
+            </li>
+        <% }) %>
+    </ol>
+</section>
+
+<!-- ============ 6. TEST CATEGORIES ============ -->
+<section class="mt-20" aria-label="Test categories and practice modes">
+    <%- head('Practice modes', skill.name + ' Categories & Types', 'Pick the mode that matches your exam or your current level.') %>
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <% skill.categories.forEach(function (c, i) { %>
+            <article class="ss-card p-6 <%= rv %>">
+                <span class="ss-chip w-11 h-11 rounded-xl bg-gradient-to-br <%= grads[i % 6] %> text-white shadow-[0_10px_20px_-10px_rgba(79,70,229,.6)]">
+                    <i class="fa-solid <%= c.icon %>"></i>
+                </span>
+                <h3 class="mt-5 text-base font-semibold text-slate-900"><%= c.title %></h3>
+                <p class="mt-2 text-sm text-slate-500 leading-relaxed"><%= c.text %></p>
+            </article>
+        <% }) %>
+    </div>
+</section>
+
+<!-- ============ 7. BENEFITS ============ -->
+<section class="mt-20" aria-label="Benefits of practice">
+    <div class="ss-panel rounded-[1.75rem] p-5 sm:p-12">
+        <%- head('Why practice', 'Benefits of Regular ' + skill.name + ' Practice', 'Small daily practice adds up to a big difference on exam day.') %>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <% skill.benefits.forEach(function (b, i) { %>
+                <div class="ss-card flex gap-4 p-5 <%= rv %>">
+                    <span class="ss-chip w-11 h-11 rounded-xl <%= tints[i % 6] %>">
+                        <i class="fa-solid <%= b.icon %>"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-900"><%= b.title %></h3>
+                        <p class="mt-1.5 text-sm text-slate-500 leading-relaxed"><%= b.text %></p>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+</section>
+
+<!-- ============ 8. TIPS ============ -->
+<section class="mt-20" aria-label="Tips to improve">
+    <%- head('Level up', 'Tips to Improve Your ' + skill.name + ' Score', 'Practical habits that actually move the needle.') %>
+    <div class="grid gap-5 md:grid-cols-2">
+        <% skill.tips.forEach(function (t, i) { %>
+            <div class="ss-card flex items-start gap-4 p-6 <%= rv %>">
+                <span class="ss-chip w-11 h-11 rounded-xl <%= tints[i % 6] %>">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </span>
+                <div>
+                    <h3 class="text-base font-semibold text-slate-900"><%= t.title %></h3>
+                    <p class="mt-1.5 text-sm text-slate-500 leading-relaxed"><%= t.text %></p>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</section>
+
+<!-- ============ 9. COMPETITIVE EXAMS ============ -->
+<section class="mt-20" aria-label="Practice for competitive exams">
+    <div class="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 p-6 sm:p-12 ring-1 ring-white/10 shadow-[0_40px_80px_-40px_rgba(49,46,129,.7)]">
+        <div class="pointer-events-none absolute -top-24 -right-16 h-72 w-72 rounded-full bg-violet-500/30 blur-[90px] animate-float" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute -bottom-28 -left-16 h-72 w-72 rounded-full bg-indigo-500/30 blur-[90px] animate-float [animation-delay:2s]" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" aria-hidden="true"></div>
+
+        <div class="relative">
+            <div class="text-center max-w-2xl mx-auto mb-9 sm:mb-12 <%= rv %>">
+                <span class="inline-block text-xs font-semibold text-amber-200 bg-white/10 ring-1 ring-white/20 px-3 py-1 rounded-full mb-4">Exam focused</span>
+                <h2 class="text-2xl sm:text-4xl font-bold tracking-tight text-white leading-tight">Practice for Competitive Exams & Jobs</h2>
+                <p class="text-sm sm:text-base text-indigo-100/75 mt-3 leading-relaxed">Where this <%= skill.name.toLowerCase() %> helps you the most.</p>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <% skill.exams.forEach(function (e) { %>
+                    <div class="ss-dark-card rounded-2xl p-5 <%= rv %>">
+                        <h3 class="flex items-center gap-2 text-sm font-semibold text-white">
+                            <i class="fa-solid fa-circle-check text-emerald-300"></i> <%= e.name %>
+                        </h3>
+                        <p class="mt-2 text-xs text-indigo-100/70 leading-relaxed"><%= e.text %></p>
+                    </div>
+                <% }) %>
+            </div>
+
+            <p class="mt-8 text-center text-xs text-indigo-200/60"><i class="fa-solid fa-circle-info mr-1"></i> <%= skill.examNote %></p>
+        </div>
+    </div>
+</section>
+
+<!-- ============ 10. FAQs ============ -->
+<style <%- locals.cspNonce ? 'nonce="' + cspNonce + '"' : '' %>>
+    #skFaqList { display: grid; gap: 1rem; }
+
+    /* Card: features page jaisa */
+    #skFaqList > .fq-item {
+        position: relative; overflow: hidden;
+        background: #fff !important;
+        border: 1px solid rgba(15,23,42,.08) !important;
+        border-radius: 1.25rem !important;
+        margin: 0 !important;
+        transition: border-color .3s ease, box-shadow .35s ease, opacity .8s cubic-bezier(.22,1,.36,1), transform .8s cubic-bezier(.22,1,.36,1);
+        transition-delay: 0s, 0s, var(--fd, 0s), var(--fd, 0s);
+    }
+
+    /* Entrance: features.js jaisa (in-view -> ready) */
+    #skFaqList.fq-armed > .fq-item:not(.in-view) { opacity: 0; transform: translateY(28px) scale(.98); }
+    #skFaqList.fq-armed > .fq-item.in-view { opacity: 1; transform: none; }
+    #skFaqList.fq-armed > .fq-item.ready { transition-delay: 0s; transition-duration: .3s; }
+
+    /* Hover / open: indigo border + glow + left accent line */
+    #skFaqList > .fq-item:hover { border-color: #c7d2fe !important; box-shadow: 0 18px 36px -22px rgba(79,70,229,.4); }
+    #skFaqList > .fq-item.is-open { border-color: #a5b4fc !important; box-shadow: 0 24px 46px -28px rgba(79,70,229,.5); }
+    #skFaqList > .fq-item::before {
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+        background: linear-gradient(180deg, #6366f1, #8b5cf6);
+        transform: scaleY(0); transform-origin: center; transition: transform .35s cubic-bezier(.22,1,.36,1);
+    }
+    #skFaqList > .fq-item:hover::before,
+    #skFaqList > .fq-item.is-open::before { transform: scaleY(1); }
+
+    /* Question row: global h3/button styles se bachne ke liye reset */
+    #skFaqList .fq-q { margin: 0 !important; padding: 0 !important; }
+    #skFaqList .fq-btn {
+        width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        padding: 1.5rem 1.875rem !important; margin: 0 !important;
+        background: transparent !important; border: 0 !important; text-align: left; cursor: pointer;
+        font-size: 1.0625rem; font-weight: 600; line-height: 1.4; color: #0f172a;
+    }
+    #skFaqList .fq-btn:focus-visible { outline: 2px solid #6366f1; outline-offset: -3px; border-radius: 1.25rem; }
+    @media (max-width: 640px) {
+        #skFaqList .fq-btn { padding: 1.125rem 1.25rem !important; font-size: 1rem; }
+    }
+
+    /* Icon: bina circle ka indigo plus (CSS se bana), open par x */
+    #skFaqList .fq-plus { position: relative; flex-shrink: 0; width: 1.125rem; height: 1.125rem; transition: transform .45s cubic-bezier(.22,1,.36,1); }
+    #skFaqList .fq-plus::before,
+    #skFaqList .fq-plus::after {
+        content: ''; position: absolute; left: 0; top: 50%; width: 100%; height: 2px; margin-top: -1px;
+        background: #4f46e5; border-radius: 2px;
+    }
+    #skFaqList .fq-plus::after { transform: rotate(90deg); }
+    #skFaqList .fq-item.is-open .fq-plus { transform: rotate(135deg); }
+
+    /* Smooth height */
+    #skFaqList .fq-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s cubic-bezier(.22,1,.36,1); }
+    #skFaqList .fq-item.is-open .fq-panel { grid-template-rows: 1fr; }
+    #skFaqList .fq-panel > div { overflow: hidden; min-height: 0; }
+    #skFaqList .fq-answer {
+        margin: 0 !important; padding: 0 1.875rem 1.5rem; font-size: .9375rem; line-height: 1.7; color: #475569;
+        opacity: 0; transform: translateY(-6px); transition: opacity .35s ease, transform .45s cubic-bezier(.22,1,.36,1);
+    }
+    #skFaqList .fq-item.is-open .fq-answer { opacity: 1; transform: none; transition-delay: .08s; }
+    @media (max-width: 640px) { #skFaqList .fq-answer { padding: 0 1.25rem 1.25rem; } }
+
+    @media (prefers-reduced-motion: reduce) {
+        #skFaqList.fq-armed > .fq-item:not(.in-view) { opacity: 1; transform: none; }
+        #skFaqList > .fq-item, #skFaqList > .fq-item::before, #skFaqList .fq-plus,
+        #skFaqList .fq-panel, #skFaqList .fq-answer { transition-duration: .01ms !important; transition-delay: 0s !important; }
+    }
+</style>
+
+<section class="mt-20" aria-label="Frequently asked questions">
+    <%- head('FAQs', skill.name + ' – Frequently Asked Questions', 'Quick answers to the most common questions.') %>
+
+    <div id="skFaqList" class="max-w-3xl mx-auto">
+        <% skill.faqs.forEach(function (f, i) { %>
+            <div class="fq-item">
+                <h3 class="fq-q">
+                    <button type="button" class="fq-btn" aria-expanded="false" aria-controls="skFaq<%= i %>" id="skFaqBtn<%= i %>">
+                        <span><%= f.q %></span>
+                        <span class="fq-plus" aria-hidden="true"></span>
+                    </button>
+                </h3>
+                <div class="fq-panel" id="skFaq<%= i %>" role="region" aria-labelledby="skFaqBtn<%= i %>">
+                    <div>
+                        <p class="fq-answer"><%= f.a %></p>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+
+    <script <%- locals.cspNonce ? 'nonce="' + cspNonce + '"' : '' %>>
+        (function () {
+            var box = document.getElementById('skFaqList');
+            if (!box) return;
+            var items = Array.prototype.slice.call(box.children);
+
+            /* Entrance: features.js jaisa (in-view -> ready, 70ms stagger) */
+            if ('IntersectionObserver' in window) {
+                box.classList.add('fq-armed');
+                var fio = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (e) {
+                        if (!e.isIntersecting) return;
+                        var el = e.target;
+                        el.classList.add('in-view');
+                        setTimeout(function () { el.classList.add('ready'); }, 1100);
+                        fio.unobserve(el);
+                    });
+                }, { threshold: 0.1 });
+
+                items.forEach(function (el, i) {
+                    el.style.setProperty('--fd', (i * 0.07) + 's');
+                    fio.observe(el);
+                });
+            }
+
+            /* Accordion: ek time par ek open */
+            box.addEventListener('click', function (e) {
+                var btn = e.target.closest('.fq-btn');
+                if (!btn) return;
+                var item = btn.closest('.fq-item');
+                var willOpen = !item.classList.contains('is-open');
+
+                box.querySelectorAll('.fq-item.is-open').forEach(function (o) {
+                    o.classList.remove('is-open');
+                    o.querySelector('.fq-btn').setAttribute('aria-expanded', 'false');
+                });
+
+                if (willOpen) {
+                    item.classList.add('is-open');
+                    btn.setAttribute('aria-expanded', 'true');
+                }
+            });
+        })();
+    </script>
+</section>
+
+<!-- ============ 11. EXPLORE MORE TOOLS ============ -->
+<section class="mt-20" aria-label="Explore more tools">
+    <%- head('Keep going', 'Explore More Free Tools', 'More practice tools to build your exam skills.') %>
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <% relatedTools.forEach(function (t, i) { %>
+            <a href="<%= t.href %>" class="ss-card group flex items-start gap-4 p-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 <%= rv %>">
+                <span class="ss-chip w-11 h-11 rounded-xl bg-gradient-to-br <%= grads[(i + 1) % 6] %> text-white shadow-[0_10px_20px_-10px_rgba(79,70,229,.6)]">
+                    <i class="fa-solid <%= t.icon %>"></i>
+                </span>
+                <div class="min-w-0">
+                    <h3 class="text-base font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors duration-200"><%= t.name %></h3>
+                    <p class="mt-1.5 text-sm text-slate-500 leading-relaxed"><%= t.desc %></p>
+                    <span class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600">Try now <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform duration-300"></i></span>
+                </div>
+            </a>
+        <% }) %>
+    </div>
+</section>
+
+<!-- Final CTA -->
+<section class="mt-20 relative overflow-hidden rounded-[1.75rem] bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-[length:200%_200%] animate-gradient p-9 sm:p-16 text-center text-white shadow-[0_40px_80px_-40px_rgba(79,70,229,.8)]">
+    <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" aria-hidden="true"></div>
+    <h2 class="relative text-2xl sm:text-4xl font-bold tracking-tight">Ready to beat your last score?</h2>
+    <p class="relative mt-3 text-sm sm:text-base text-indigo-100/90">Take another <%= skill.name.toLowerCase() %> now and see how much you have improved.</p>
+    <a href="#configure" class="ss-cta-btn group relative mt-8 inline-flex items-center gap-2.5 rounded-xl bg-white px-7 py-3.5 text-sm font-semibold text-indigo-700 shadow-[0_16px_32px_-14px_rgba(0,0,0,.5)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white transition-all duration-300">
+        Start practice <i class="fa-solid fa-arrow-up text-xs group-hover:-translate-y-0.5 transition-transform duration-300"></i>
+    </a>
+</section>
+
+<!-- SEO: structured data (WebApplication + Breadcrumb + FAQ) -->
+<% if (locals.jsonLd) { %>
+<script type="application/ld+json"><%- jsonLd %></script>
+<% } %>

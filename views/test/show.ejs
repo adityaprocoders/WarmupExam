@@ -5,7 +5,7 @@
    const ldImage = (listing.image && !listing.image.startsWith('data:')) ? listing.image : 'https://warmupexam.com/images/og-banner.jpg'; %>
 
 
-<div class="relative overflow-hidden w-full bg-gradient-to-br from-indigo-50 via-indigo-50 to-indigo-100 pt-[100px] sm:pt-[125px] lg:pt-[135px] pb-8 px-4 border-b border-indigo-100 lg:h-[400px]">
+<div class="relative overflow-hidden w-full bg-gradient-to-br from-indigo-50 via-indigo-50 to-indigo-100 pt-[100px] sm:pt-[110px] lg:pt-[112px] pb-8 px-4 border-b border-indigo-100 lg:min-h-[300px]">
 
     <!-- Decorative glow -->
     <div class="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl"></div>
@@ -15,7 +15,7 @@
         <div class="lg:w-2/3 lg:pr-8">
 
             <!-- Back button -->
-            <div class="mb-4">
+            <div class="mb-4 sm:-ml-4 lg:-ml-10">
                 <a href="#" id="backBtn"
                    class="inline-flex items-center gap-2 rounded-full bg-white/90 px-3.5 py-1.5 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200 backdrop-blur transition hover:text-indigo-600 hover:ring-indigo-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                     <i class="fa-solid fa-arrow-left text-xs"></i> Back
@@ -32,33 +32,47 @@
             </nav>
 
             <!-- Title -->
-            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight text-slate-900">
+            <h1 class="text-2xl sm:text-3xl lg:text-[2rem] font-extrabold tracking-tight leading-tight text-slate-900">
                 <%= listing.title %>
             </h1>
             <div class="mt-3 h-1 w-14 rounded-full bg-gradient-to-r from-indigo-600 to-violet-400"></div>
 
+                         <% if (listing.shortDescription) { %>
+            <p class="mt-3 max-w-2xl text-sm sm:text-[15px] leading-relaxed text-slate-600 line-clamp-2 [overflow-wrap:anywhere]">
+                <%= listing.shortDescription %>
+            </p>
+            <% } %>
             <!-- Info chips -->
-            <div class="mt-5 flex flex-wrap items-center gap-2 sm:gap-3">
+            <div class="mt-4 flex flex-wrap items-center gap-2">
 
-                <div class="inline-flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-3.5 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
-                    <span class="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] sm:text-xs text-indigo-600">
+                <div class="inline-flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-3 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] sm:text-[11px] text-indigo-600">
                         <i class="fa-solid fa-graduation-cap"></i>
                     </span>
-                    <span class="text-xs sm:text-sm font-semibold text-slate-700">For <%= listing.exam %> Aspirants</span>
+                    <span class="text-xs sm:text-[13px] font-semibold text-slate-700">For <%= listing.exam %> Aspirants</span>
                 </div>
 
-                <div class="inline-flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-3.5 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
-                    <span class="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] sm:text-xs text-indigo-600">
+                                <% if (listing.language) { %>
+                <div class="inline-flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-3 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] sm:text-[11px] text-indigo-600">
+                        <i class="fa-solid fa-language"></i>
+                    </span>
+                    <span class="text-xs sm:text-[13px] font-semibold text-slate-700"><%= listing.language %> Language</span>
+                </div>
+                <% } %>
+
+                <div class="inline-flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-3 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] sm:text-[11px] text-indigo-600">
                         <i class="fa-regular fa-clock"></i>
                     </span>
-                    <span class="text-xs sm:text-sm font-semibold text-slate-700"><%= listing.validityDays %> days access</span>
+                    <span class="text-xs sm:text-[13px] font-semibold text-slate-700"><%= listing.validityDays %> days access</span>
                 </div>
 
-                <div class="inline-flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-3.5 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
-                    <span class="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] sm:text-xs text-indigo-600">
+                <div class="inline-flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-3 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] sm:text-[11px] text-indigo-600">
                         <i class="fa-solid fa-file-lines"></i>
                     </span>
-                    <span class="text-xs sm:text-sm font-semibold text-slate-700"><%= totalTestCount %> Total Tests</span>
+                    <span class="text-xs sm:text-[13px] font-semibold text-slate-700"><%= totalTestCount %> Total Tests</span>
                 </div>
 
             </div>
@@ -94,7 +108,7 @@
                 <i class="fa-solid fa-book-open text-base sm:text-lg"></i>
             </span>
             <div>
-                <h2 class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900">About the Test Series</h2>
+                <h2 class="text-2xl sm:text-3xl lg:text-[2rem] font-extrabold tracking-tight text-slate-900">About the Test Series</h2>
                 <p class="text-xs sm:text-sm text-slate-500">Everything included in this series</p>
             </div>
         </div>
@@ -318,7 +332,7 @@
                 ? 'bg-green-50 text-green-600 border-green-300' 
                 : 'bg-amber-50 text-amber-600 border-amber-300 shadow-[0_0_12px_rgba(251,146,60,0.8)] ' %> 
                 absolute top-3 right-3 text-xs font-bold px-3 py-1.5 rounded-full border whitespace-nowrap">
-                <%= listing.type === 'Free' ? 'FREE' : 'PREMIUM' %>
+                <%= listing.type === 'Free' ? 'FREE' : 'PAID' %>
             </span>
         </div>
 

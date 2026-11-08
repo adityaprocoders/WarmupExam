@@ -56,11 +56,15 @@
 
                 <div class="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent pointer-events-none"></div>
 
-                <span class="<%= test.type === 'Free' 
-                    ? 'bg-green-50/95 text-green-600 border-green-300' 
-                    : 'bg-amber-50/95 text-amber-600 border-amber-300 shadow-[0_0_12px_rgba(251,146,60,0.8)]' %> 
-                    backdrop-blur-sm absolute top-2.5 sm:top-3 right-2.5 sm:right-3 text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border whitespace-nowrap">
-                    <%= test.type === 'Free' ? 'FREE' : 'PREMIUM' %>
+                 <span class="absolute top-2.5 sm:top-3 right-2.5 sm:right-3 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full py-1 pl-1.5 pr-3 text-[10px] sm:text-xs font-bold tracking-wider backdrop-blur-sm <%= test.type === 'Free'
+                    ? 'bg-white/95 text-emerald-700 ring-1 ring-emerald-200 shadow-md shadow-emerald-900/10'
+                    : 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-amber-200 ring-1 ring-amber-400/60 shadow-lg shadow-amber-500/25' %>">
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full <%= test.type === 'Free'
+                        ? 'bg-emerald-100 text-emerald-600'
+                        : 'bg-gradient-to-br from-amber-300 to-amber-500 text-amber-950' %>">
+                        <i class="fa-solid <%= test.type === 'Free' ? 'fa-gift' : 'fa-crown' %> text-[10px]"></i>
+                    </span>
+                    <%= test.type === 'Free' ? 'FREE' : 'PAID' %>
                 </span>
             </div>
 

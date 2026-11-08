@@ -3,6 +3,7 @@ import Listing from "../models/listing.js";
 import Test from "../models/Test.js";
 import { getValidEnrollments } from "../utils/cleanupHelpers.js";
 import ExpressError from "../utils/ExpressError.js";
+import { getCategoriesWithExamCount, AI_SYSTEM_CATEGORY_SLUG } from "../utils/categoryHelpers.js";
 
 // Helper: name se URL-friendly slug banata hai
 const generateSlug = (name) => {
@@ -28,12 +29,13 @@ const goBack = (req, res) => res.redirect(req.get("Referrer") || "/categories");
 export const getAllCategories = async (req, res, next) => {
     try {
         const isOwner = req.user && req.user.role === "owner";
-        const categories = await Category.find({}).sort({ createdAt: -1 }).lean();
+        const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" } }).sort({ createdAt: -1 }).lean();
 
         const categoryIds = categories.map(c => c._id);
         const listingCounts = await Listing.aggregate([
-            { $match: { category: { $in: categoryIds } } },
-            { $group: { _id: "$category", count: { $sum: 1 } } }
+            { $match: { category: { $in: categoryIds }, exam: { $nin: [null, ""] }, ...(isOwner ? {} : { visibility: "public" }) } },
+            { $group: { _id: { category: "$category", exam: { $toLower: { $trim: { input: "$exam" } } } } } },
+            { $group: { _id: "$_id.category", count: { $sum: 1 } } }
         ]);
         const countMap = {};
         listingCounts.forEach(c => { countMap[String(c._id)] = c.count; });
@@ -159,6 +161,10 @@ export const showCategory = async (req, res, next) => {
         }
 
         const isOwner = req.user && req.user.role === "owner";
+
+        if (!isOwner && category.slug === "ai-generated-system") {
+            throw new ExpressError(404, "Category Not Found");
+        }
 
         const baseFilter = { category: category._id };
         if (!isOwner) baseFilter.visibility = "public";

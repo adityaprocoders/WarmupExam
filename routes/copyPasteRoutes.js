@@ -7,7 +7,8 @@ const router = express.Router();
 
 router.get("/api/search-series", isLoggedIn, isOwner, wrapAsync(copyPasteController.searchSeries));
 router.get("/api/series/:slug/tree", isLoggedIn, isOwner, wrapAsync(copyPasteController.getSeriesTree));
-router.get("/api/copy/languages", isLoggedIn, isOwner, wrapAsync(copyPasteController.getAvailableLanguages)); // 👈 naya
+router.get("/api/copy/languages", isLoggedIn, isOwner, wrapAsync(copyPasteController.getAvailableLanguages)); 
+router.post("/api/copy/random-subjects", isLoggedIn, isOwner, wrapAsync(copyPasteController.getRandomSubjects)); 
 router.post("/api/paste-item", isLoggedIn, isOwner, wrapAsync(copyPasteController.pasteItem));
 router.post("/api/bulk-copy-sections", isLoggedIn, isOwner, wrapAsync(copyPasteController.bulkCopySections));
 router.post("/api/bulk-copy-items", isLoggedIn, isOwner, wrapAsync(copyPasteController.bulkCopyItems));

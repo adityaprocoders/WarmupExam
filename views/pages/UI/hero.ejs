@@ -1,208 +1,174 @@
-<div class="relative bg-gradient-to-b from-indigo-50 via-white to-white px-4 pt-28 sm:pt-32 md:pt-36 lg:pt-40 pb-20 overflow-hidden">
- 
-<!-- Dot-grid texture — bottom on mobile, top-right on larger screens -->
-<div class="absolute -bottom-16 -right-10 sm:top-0 sm:bottom-auto sm:-right-16 w-80 h-[34rem] sm:w-[28rem] sm:h-[44rem] lg:w-[34rem] lg:h-[52rem] opacity-40 pointer-events-none bg-[radial-gradient(circle,#6366f1_2px,transparent_2px)] bg-[length:20px_20px] [mask-image:linear-gradient(to_top,black_0%,black_60%,transparent_100%)] sm:[mask-image:linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_0%,black_60%,transparent_100%)] sm:[-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)]"></div>
+<!-- ================= MERGED PREMIUM HERO (CSP-safe) ================= -->
+<div id="wxHero" class="relative bg-gradient-to-b from-indigo-50 via-white to-white px-4 pt-28 sm:pt-32 md:pt-36 lg:pt-40 pb-20 overflow-hidden">
 
-    <!-- Decorative blobs (same style as Contact page) -->
-    <div class="absolute -top-16 -left-16 sm:-top-24 sm:-left-24 w-64 h-64 sm:w-96 sm:h-96 bg-indigo-200/40 rounded-full blur-3xl"></div>
-    <div class="absolute -bottom-16 -right-16 sm:-bottom-24 sm:-right-24 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200/40 rounded-full blur-3xl"></div>
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <!-- Dot-grid texture -->
+    <div class="absolute -bottom-16 -right-10 sm:top-0 sm:bottom-auto sm:-right-16 w-80 h-[34rem] sm:w-[28rem] sm:h-[44rem] lg:w-[34rem] lg:h-[52rem] opacity-40 pointer-events-none bg-[radial-gradient(circle,#6366f1_2px,transparent_2px)] bg-[length:20px_20px] [mask-image:linear-gradient(to_top,black_0%,black_60%,transparent_100%)] sm:[mask-image:linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_0%,black_60%,transparent_100%)] sm:[-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)]"></div>
 
-        <!-- Text Content -->
-        <div class="space-y-6 fade-right">
+    <!-- Fine grid + aurora blobs -->
+    <div class="absolute inset-0 pointer-events-none opacity-40 [background-image:linear-gradient(to_right,rgba(99,102,241,.10)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,.10)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]"></div>
+    <div class="wx-aurora absolute -top-16 -left-16 sm:-top-24 sm:-left-24 w-64 h-64 sm:w-96 sm:h-96 bg-indigo-300/40 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="wx-aurora wx-d-neg9 absolute -bottom-16 -right-16 sm:-bottom-24 sm:-right-24 w-64 h-64 sm:w-96 sm:h-96 bg-purple-300/40 rounded-full blur-3xl pointer-events-none"></div>
 
+    <div class="relative max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-8 items-center">
 
-            <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-950 leading-[1.08] tracking-tight">
-    India's
-    <span class="text-indigo-600">Smartest</span>
-    Mock Test Platform
-</h1>
- 
+        <!-- ============ LEFT: TEXT ============ -->
+        <div>
 
-<p class="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-400 text-white text-[11px] font-bold tracking-wide uppercase px-4 py-2 rounded-full mb-4 shadow-md shadow-indigo-200 ring-1 ring-white/20">
-    <i class="fa-solid fa-sparkles text-[10px]"></i>
-    Prepare Smarter. Perform Better.
-</p>
+            <!-- Topi badge -->
+            <div class="wx-up wx-d-05 wx-shine-btn relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-indigo-600 to-indigo-400 px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-md shadow-indigo-200 ring-1 ring-white/20">
+                <span class="relative flex h-2 w-2">
+                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75"></span>
+                    <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+                </span>
+                Prepare Smarter. Perform Better.
+            </div>
 
+            <!-- Title -->
+            <h1 class="wx-up wx-d-15 mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-[4rem] font-extrabold leading-[1.08] tracking-tight text-slate-950">
+                India's
+                <span class="wx-gradient-text bg-gradient-to-r from-indigo-600 via-violet-500 to-indigo-600 bg-clip-text text-transparent">Smartest</span>
+                <span class="block">Mock Test Platform</span>
+            </h1>
 
-            <p class="text-base sm:text-lg leading-8 text-slate-600 max-w-2xl">
-    Practice with realistic mock tests, live exams, previous year questions,
-    and custom papers — with real exam timing, accurate marking, detailed
-    performance analysis, rank prediction, and personalized insights.
-</p>
+            <!-- Typing line -->
+            <p class="wx-up wx-d-25 mt-6 text-base sm:text-lg font-semibold text-slate-700">
+                Mock tests for <span id="wxWord" class="text-indigo-600"></span><span class="wx-cursor ml-0.5 inline-block h-5 w-[2px] translate-y-1 bg-indigo-600"></span>
+            </p>
 
-            <!-- Exam badges -->
-            <div class="flex flex-wrap items-center gap-2 pt-1">
-
-    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1 ">
-        Prepare for
-    </span>
-
-    <% ['Defence', 'SSC', 'Railway', 'Banking', 'JEE', 'NEET', 'GATE', 'CUET'].forEach(exam => { %>
-
-        <span class="text-xs font-medium text-slate-600
-                     bg-white border border-indigo-300
-                     px-3 py-1.5 rounded-full
-                     hover:border-indigo-200 hover:text-indigo-600
-                     transition-colors">
-
-            <%= exam %>
-
-        </span>
-
-    <% }) %>
-
-    <span class="text-xs font-semibold text-indigo-600">
-        +15 more
-    </span>
-
-</div>
+            <!-- Sub text -->
+            <p class="wx-up wx-d-35 mt-4 text-base sm:text-lg leading-8 text-slate-600 max-w-xl">
+                Practice with realistic mock tests, live exams, previous year questions,
+                and custom papers — with real exam timing, accurate marking, detailed
+                performance analysis, rank prediction, and personalized insights.
+            </p>
 
             <!-- CTAs -->
-           <div class="flex flex-wrap items-center gap-3 pt-2">
+            <div class="wx-up wx-d-50 mt-8 flex flex-wrap items-center gap-3">
 
-    <a href="/alltests"
-       class="inline-flex items-center justify-center gap-2
-              bg-indigo-600 text-white font-semibold
-              px-7 sm:px-8 py-3.5 rounded-xl
-              shadow-lg shadow-indigo-200
-              hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-200
-              active:scale-[0.98]
-              transition-all duration-300">
+                <a href="/alltests"
+                   class="wx-shine-btn group relative overflow-hidden inline-flex items-center justify-center gap-2
+                          bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold
+                          px-7 sm:px-8 py-3.5 rounded-xl
+                          shadow-lg shadow-indigo-300/60
+                          hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-300
+                          active:scale-[0.98]
+                          transition-all duration-300">
+                    Start Practicing Free
+                    <i class="fa-solid fa-arrow-right text-sm transition-transform duration-300 group-hover:translate-x-1.5"></i>
+                </a>
 
-        Start Practicing Free
-        <i class="fa-solid fa-arrow-right text-sm"></i>
+                <a href="/custom-test"
+                   class="group relative inline-flex items-center justify-center gap-2 overflow-hidden
+                          bg-white text-slate-800 font-semibold
+                          px-7 sm:px-8 py-3.5 rounded-xl
+                          border border-slate-200 shadow-sm
+                          hover:text-white hover:border-transparent
+                          hover:-translate-y-0.5 hover:shadow-xl hover:shadow-purple-300/50
+                          active:translate-y-0 active:scale-[0.97]
+                          focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-purple-500
+                          transition-all duration-300">
 
-    </a>
+                    <span class="pointer-events-none absolute left-1/2 top-1/2 -ml-[200px] -mt-[200px] h-[400px] w-[400px]
+                                 opacity-0 group-hover:opacity-100
+                                 animate-spin [animation-duration:3s] motion-reduce:animate-none
+                                 bg-[conic-gradient(from_0deg,#6366f1,#a855f7,#ec4899,#22d3ee,#6366f1)]
+                                 blur-xl transition-opacity duration-500"></span>
+                    <span class="pointer-events-none absolute inset-0 bg-indigo-600/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></span>
 
-    <a href="/custom-test"
-   class="group relative inline-flex items-center justify-center gap-2 overflow-hidden
-          bg-white text-slate-800 font-semibold
-          px-7 sm:px-8 py-3.5 rounded-xl
-          border border-slate-200 shadow-sm
-          hover:text-white hover:border-transparent
-          hover:-translate-y-0.5 hover:shadow-xl hover:shadow-purple-300/50
-          active:translate-y-0 active:scale-[0.97]
-          focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-purple-500
-          transition-all duration-300">
-
-    <!-- AI-style moving multi-color background (sirf hover pe dikhega) -->
-    <span class="pointer-events-none absolute left-1/2 top-1/2 -ml-[200px] -mt-[200px] h-[400px] w-[400px]
-                 opacity-0 group-hover:opacity-100
-                 animate-spin [animation-duration:3s] motion-reduce:animate-none
-                 bg-[conic-gradient(from_0deg,#6366f1,#a855f7,#ec4899,#22d3ee,#6366f1)]
-                 blur-xl transition-opacity duration-500"></span>
-
-    <!-- Depth overlay taaki text clear rahe -->
-    <span class="pointer-events-none absolute inset-0 bg-indigo-600/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></span>
-
-    <i class="relative fa-solid fa-wand-magic-sparkles text-indigo-500 text-sm
-              group-hover:text-white group-hover:rotate-12 group-hover:scale-125
-              transition-all duration-300"></i>
-    <span class="relative">Create Custom Test</span>
-</a>
-
-</div>
-
-            
-
+                    <i class="relative fa-solid fa-wand-magic-sparkles text-indigo-500 text-sm
+                              group-hover:text-white group-hover:rotate-12 group-hover:scale-125
+                              transition-all duration-300"></i>
+                    <span class="relative">Create Custom Test</span>
+                </a>
+            </div>
         </div>
 
-        <!-- Hero Graphic -->
-       <div class="relative flex justify-center fade-left">
+        <!-- ============ RIGHT: CIRCLE GRAPHIC ============ -->
+        <div id="wxStage" class="wx-right relative flex justify-center px-8 sm:px-12 py-10">
 
-    <div class="w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-[420px] lg:h-[420px] bg-indigo-100 rounded-full relative pulse-ring">
+            <div class="relative w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-[420px] lg:h-[420px]">
 
-        <img
-    src="/images/hero.webp"
-    alt="Hero"
-    width="420"
-    height="420"
-    fetchpriority="high"
-    class="absolute inset-x-0 mx-auto w-[90%] max-w-full h-auto object-contain">
+                <!-- Glow -->
+                <div class="wx-glow absolute -inset-8 rounded-full bg-gradient-to-tr from-indigo-300/50 via-purple-200/40 to-cyan-200/40 blur-2xl"></div>
 
-    </div>
-<!-- Floating badge: Daily Warm-Up -->
-<div class="absolute top-2 left-0 sm:top-4 sm:-left-2 md:top-6 md:left-0 bg-white shadow-lg border border-slate-100 rounded-xl px-4 py-2.5 flex items-center gap-2 float-badge-1">
-    <span class="text-base shrink-0">🔥</span>
-    <span class="text-xs font-bold text-slate-700 whitespace-nowrap">Daily Warm-Up</span>
-</div>
-
-<!-- Floating badge: Live Test (with blinking live dot) -->
-<div class="absolute top-1/2 -translate-y-1/2 left-0 sm:-left-3 md:-left-4 bg-white shadow-lg border border-slate-100 rounded-xl px-4 py-2.5 flex items-center gap-2 float-badge-3 z-10">
-    <div class="relative w-6 h-6 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-        <span class="absolute w-2 h-2 rounded-full bg-red-500 top-0.5 right-0.5 animate-ping"></span>
-        <span class="absolute w-2 h-2 rounded-full bg-red-500 top-0.5 right-0.5"></span>
-        <i class="fa-solid fa-tower-broadcast text-red-500 text-xs"></i>
-    </div>
-    <span class="text-xs font-bold text-slate-700 whitespace-nowrap">Live Test</span>
-</div>
-
-<!-- Floating badge: Rank Predictor -->
-<div class="absolute top-2 right-0 sm:top-4 sm:-right-2 md:top-6 md:-right-4 bg-white shadow-lg border border-slate-100 rounded-xl px-4 py-2.5 flex items-center gap-2 float-badge-4">
-    <div class="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
-        <i class="fa-solid fa-ranking-star text-indigo-500 text-xs"></i>
-    </div>
-    <span class="text-xs font-bold text-slate-700 whitespace-nowrap">Rank Predictor</span>
-</div>
-
-<!-- Floating badge: Weak Area Finder -->
-<div class="absolute top-1/2 -translate-y-1/2 right-0 sm:-right-3 md:-right-4 bg-white shadow-lg border border-slate-100 rounded-xl px-4 py-2.5 flex items-center gap-2 float-badge-2">
-    <div class="w-6 h-6 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
-        <i class="fa-solid fa-crosshairs text-orange-500 text-xs"></i>
-    </div>
-    <span class="text-xs font-bold text-slate-700 whitespace-nowrap">Weak Area Finder</span>
-</div>
-
-<!-- Floating badge: Smart Performance Report -->
-<div class="absolute -bottom-4 left-1/2 -translate-x-1/2 sm:-bottom-5 md:-bottom-6 bg-white shadow-lg border border-slate-100 rounded-xl px-4 py-2.5 flex items-center gap-2 float-badge-5 z-20">
-    <div class="w-6 h-6 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
-        <i class="fa-solid fa-file text-purple-500 text-xs"></i>
-    </div>
-    <span class="text-xs font-bold text-slate-700 whitespace-nowrap">Smart Performance Report</span>
-</div>
-
-<!-- Floating badge: AI Custom Test Generator -->
-<div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 sm:-top-1 bg-white shadow-lg border border-slate-100 rounded-xl px-4 py-2.5 flex items-center gap-2 float-badge-6 z-20">
-    <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
-    <i class="fa-solid fa-wand-magic-sparkles text-indigo-600 text-xs"></i>
-</div>
-
-<span class="text-xs font-bold text-slate-800 whitespace-nowrap">
-    AI Custom Test Generator
-</span>
-</div>
-
-</div>
-    </div>
-
-    <!-- Stats Bar -->
-    <div class="max-w-7xl mx-auto mt-8 bg-white p-8 rounded-2xl shadow-lg border border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-8 fade-up">
-
-        <% const stats = [
-            { icon: 'fas fa-brain', color: 'text-purple-500', title: 'Smart Analysis', desc: 'Detailed Reports & Weak Area Analysis' },
-            { icon: 'fas fa-file-alt', color: 'text-blue-500', title: '50,000+', desc: 'Practice Questions' },
-            { icon: 'fas fa-clock', color: 'text-emerald-500', title: '24 × 7', desc: 'Live Tests, Instant Rank & Review' },
-            { icon: 'fas fa-trophy', color: 'text-yellow-500', title: 'AIR', desc: 'Rank-predicted mock tests' }
-        ] %>
-
-        <% stats.forEach((stat, i) => { %>
-            <div class="text-center group stat-item p-4 rounded-2xl hover:bg-gradient-to-b hover:from-indigo-50/50 hover:to-transparent transition-all duration-300" style="transition-delay: <%= i * 120 %>ms">
-
-                <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-white to-slate-100 shadow-inner ring-1 ring-slate-200/70 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-md group-hover:-translate-y-1 transition-all duration-300">
-                    <i class="<%= stat.icon %> <%= stat.color %> text-4xl transition-transform duration-300 group-hover:scale-110"></i>
+                <!-- Orbit rings -->
+                <div class="wx-spin absolute -inset-5 rounded-full border-2 border-dashed border-indigo-300/60">
+                    <span class="absolute -top-1.5 left-1/2 -ml-1.5 h-3 w-3 rounded-full bg-indigo-500 shadow-[0_0_14px_3px_rgba(99,102,241,.65)]"></span>
+                </div>
+                <div class="wx-spin-rev absolute -inset-11 rounded-full border border-indigo-200/70">
+                    <span class="absolute top-1/2 -right-1.5 -mt-1.5 h-3 w-3 rounded-full bg-fuchsia-400 shadow-[0_0_14px_3px_rgba(217,70,239,.5)]"></span>
+                    <span class="absolute -bottom-1 left-[22%] h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_10px_2px_rgba(34,211,238,.55)]"></span>
                 </div>
 
-                <h4 class="font-bold text-lg text-slate-900 tracking-tight">
-                    <%= stat.title %>
-                </h4>
+                <!-- Main circle -->
+                <div class="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-100 via-indigo-50 to-violet-100 ring-1 ring-indigo-200/70 shadow-[0_35px_90px_-25px_rgba(79,70,229,.5)]"></div>
+                <div class="absolute inset-3 rounded-full ring-1 ring-white/80"></div>
 
-                <p class="text-sm text-slate-500 mt-2">
-                    <%= stat.desc %>
-                </p>
+                <!-- Image -->
+                <div id="wxImgWrap" class="absolute inset-0 transition-transform duration-300 ease-out">
+                    <img src="/images/hero.webp" alt="Hero" width="420" height="420" fetchpriority="high"
+                         class="wx-bob absolute inset-x-0 mx-auto w-[90%] max-w-full h-auto object-contain drop-shadow-xl">
+                </div>
+
+                <!-- Feature badges -->
+                <% const badges = [
+                    { pos: 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20', icon: 'fa-wand-magic-sparkles', tone: 'bg-indigo-50 text-indigo-600', label: 'AI Custom Test Generator' },
+                    { pos: 'top-[12%] -left-6 sm:-left-10 lg:-left-14 z-10', icon: 'fa-fire', tone: 'bg-orange-50 text-orange-500', label: 'Daily Warm-Up' },
+                    { pos: 'top-[12%] -right-6 sm:-right-10 lg:-right-14 z-10', icon: 'fa-ranking-star', tone: 'bg-indigo-50 text-indigo-500', label: 'Rank Predictor' },
+                    { pos: 'top-1/2 -translate-y-1/2 -left-8 sm:-left-14 lg:-left-20 z-10', icon: 'fa-tower-broadcast', tone: 'bg-red-50 text-red-500', label: 'Live Test', live: true },
+                    { pos: 'top-1/2 -translate-y-1/2 -right-8 sm:-right-14 lg:-right-20 z-10', icon: 'fa-crosshairs', tone: 'bg-orange-50 text-orange-500', label: 'Weak Area Finder' },
+                    { pos: 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20', icon: 'fa-file-lines', tone: 'bg-purple-50 text-purple-500', label: 'Smart Performance Report' }
+                ] %>
+
+                <% badges.forEach((b, i) => { %>
+                    <div class="absolute <%= b.pos %>">
+                        <div class="wx-pop wx-pop-<%= i %> hover:scale-110 transition-transform duration-300">
+                            <div class="wx-float wx-fl-<%= i %> flex items-center gap-2 rounded-xl border border-white/90 bg-white/90 backdrop-blur-md px-3 py-2 sm:px-4 sm:py-2.5
+                                        ring-1 ring-indigo-100 shadow-[0_14px_30px_-12px_rgba(79,70,229,.4)] hover:ring-indigo-300 transition-shadow duration-300">
+                                <span class="relative w-6 h-6 rounded-lg <%= b.tone %> flex items-center justify-center shrink-0">
+                                    <% if (b.live) { %>
+                                        <span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                                        <span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-red-500"></span>
+                                    <% } %>
+                                    <i class="fa-solid <%= b.icon %> text-[11px]"></i>
+                                </span>
+                                <span class="text-[11px] sm:text-xs font-bold text-slate-700 whitespace-nowrap"><%= b.label %></span>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
 
             </div>
-        <% }) %>
+        </div>
+    </div>
 
+    <!-- ============ STATS BAR ============ -->
+    <div class="wx-reveal relative max-w-5xl mx-auto mt-10 sm:mt-14 bg-white/90 backdrop-blur rounded-3xl shadow-[0_25px_60px_-25px_rgba(79,70,229,.35)] border border-slate-100 overflow-hidden">
+        <div class="absolute top-0 inset-x-12 h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent"></div>
+
+        <% const stats = [
+            { title: 'Smart Analysis', desc: 'Detailed Reports & Weak Area Analysis' },
+            { title: '50,000+', count: 50000, suffix: '+', desc: 'Practice Questions' },
+            { title: '24 × 7', desc: 'Live Tests, Instant Rank & Review' },
+            { title: 'AIR', desc: 'Rank-predicted mock tests' }
+        ] %>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-slate-100">
+            <% stats.forEach((stat, i) => { %>
+                <div class="wx-reveal wx-td-<%= i %> group text-center px-4 py-6 sm:py-7 hover:bg-gradient-to-b hover:from-indigo-50/60 hover:to-transparent transition-colors duration-300">
+
+                    <h4 class="bg-gradient-to-r from-indigo-600 to-purple-500 bg-clip-text text-transparent font-extrabold text-xl sm:text-2xl tracking-tight transition-transform duration-300 group-hover:scale-110">
+                        <% if (stat.count) { %>
+                            <span data-count="<%= stat.count %>" data-suffix="<%= stat.suffix || '' %>">0<%= stat.suffix || '' %></span>
+                        <% } else { %>
+                            <%= stat.title %>
+                        <% } %>
+                    </h4>
+
+                    <p class="text-xs sm:text-[13px] text-slate-500 mt-2 leading-snug"><%= stat.desc %></p>
+                </div>
+            <% }) %>
+        </div>
     </div>
 </div>
+ 

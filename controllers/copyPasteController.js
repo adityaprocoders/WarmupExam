@@ -5,10 +5,17 @@ import File from "../models/File.js";
 import Test from "../models/Test.js";
 import ExpressError from "../utils/ExpressError.js";
 import { copyNode } from "../utils/copyHelpers.js";
+import mongoose from "mongoose";
+import { isMultiTier, getTierList, getTierConfig } from "../utils/tierHelper.js";
+
+import TestQuestion from "../models/TestQuestion.js";
 import { startNdjson, createProgress, countCopyUnits } from "../utils/bulkProgress.js";
+import { randomCopyNode, countRandomUnits, normalizeRandomConfig } from "../utils/randomCopy.js";
 
 export const searchSeries = async (req, res) => {
-    const keyword = req.query.keyword?.trim();
+    const rawKeyword = req.query.keyword?.trim();
+    // regex special chars escape (warna "(" jaisa keyword 500 deta tha)
+    const keyword = rawKeyword ? rawKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : rawKeyword;
 
     const series = keyword
     ? await Listing.find({
@@ -155,6 +162,23 @@ export const pasteItem = async (req, res) => {
             selectedLanguage   // 👈 naya field — "All" ya specific language, ya undefined
         } = req.body;
 
+        const okId = (v) => mongoose.isValidObjectId(v);
+        if (!["section", "folder", "file", "test"].includes(sourceType) || !okId(sourceId) || !okId(destListingId)) {
+            return res.status(400).json({ success: false, message: "Invalid copy request." });
+        }
+        if (sourceType !== "section") {
+            if (!okId(destSectionId)) {
+                return res.status(400).json({ success: false, message: "Please select a destination section." });
+            }
+            const destSec = await Section.findOne({ _id: destSectionId, listing: destListingId }).select("_id").lean();
+            if (!destSec) {
+                return res.status(400).json({ success: false, message: "Selected section is not part of the destination series." });
+            }
+        }
+        if (destParentType === "file" && sourceType !== "test") {
+            return res.status(400).json({ success: false, message: "File ke andar sirf test paste ho sakta hai." });
+        }
+
         // "All" ya khaali/undefined ka matlab: original test ka showLanguage hi rahega
         const overrideLanguage = (selectedLanguage && selectedLanguage !== "All") ? selectedLanguage : null;
 
@@ -168,15 +192,14 @@ export const pasteItem = async (req, res) => {
             "", fallbackLog
         );
 
-         const destListing = await Listing.findById(destListingId).select("slug");
-
+          
         res.json({ success: true, data: newItem, fallbacks: fallbackLog });
     } catch (err) {
         console.error("Paste item error:", err);
         if (err.code === 11000) {
             return res.status(400).json({ success: false, message: "An item with this name already exists. Please use a different name." });
         }
-        res.status(500).json({ success: false, message: err.message || "Unable to copy the item. Please try again." });
+        res.status(500).json({ success: false, message: "Unable to copy the item. Please try again." });
     }
 };
 
@@ -216,13 +239,13 @@ export const bulkCopyItems = async (req, res) => {
     const {
         items, destListingIds, selectedLanguage,
         destSectionId, destParentType, destParentId,
-        includeTests
+        includeTests, randomConfig
     } = req.body;
 
     const wantsStream = req.body.stream === true;
     const withTests = includeTests !== false && includeTests !== "false";
 
-    // ---- validation: stream shuru hone se PEHLE (normal JSON error) ----
+    // ---- validation (stream shuru hone se PEHLE) ----
     if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ success: false, message: "No item selected." });
     }
@@ -243,9 +266,21 @@ export const bulkCopyItems = async (req, res) => {
         return res.status(400).json({ success: false, message: "Please select a destination section." });
     }
 
+        if (destParentType === "file" && itemsToCopy.some(it => it.type !== "test")) {
+        return res.status(400).json({ success: false, message: "File ke andar sirf test paste ho sakta hai." });
+    }
+
+    // Random mode (sirf with-tests me)
+    let randomCfg = null;
+    if (withTests && randomConfig) {
+        const r = normalizeRandomConfig(randomConfig);
+        if (r.error) return res.status(400).json({ success: false, message: r.error });
+        randomCfg = r.config;
+    }
+
     const overrideLanguage = (selectedLanguage && selectedLanguage !== "All") ? selectedLanguage : null;
 
-    // ---- live progress setup ----
+    // ---- live progress ----
     let send = null;
     let progress = null;
     const cumulative = [];
@@ -254,7 +289,10 @@ export const bulkCopyItems = async (req, res) => {
         let total = 0;
         for (const item of itemsToCopy) {
             try {
-                total += (await countCopyUnits(item.type, item.id, withTests)) * destListingIds.length;
+                const units = randomCfg
+                    ? await countRandomUnits(item.type, item.id, randomCfg)
+                    : await countCopyUnits(item.type, item.id, withTests);
+                total += units * destListingIds.length;
             } catch (e) { /* count fail => % thoda kam accurate */ }
             cumulative.push(total);
         }
@@ -266,21 +304,34 @@ export const bulkCopyItems = async (req, res) => {
     let copied = 0;
     let failed = 0;
     const fallbackLog = [];
+    const notes = [];
 
     for (let i = 0; i < itemsToCopy.length; i++) {
         const item = itemsToCopy[i];
         for (const listingId of destListingIds) {
             try {
-                await copyNode(
-                    item.type, item.id, listingId,
-                    item.type === "section" ? null : destSectionId,
-                    destParentType || "section",
-                    destParentId || null,
-                    overrideLanguage, "", fallbackLog,
-                    withTests,
-                    onProgress                      // 11th param
-                );
-                copied++;
+                let result;
+                if (randomCfg) {
+                    result = await randomCopyNode(
+                        item.type, item.id, listingId,
+                        item.type === "section" ? null : destSectionId,
+                        destParentType || "section",
+                        destParentId || null,
+                        randomCfg,
+                        { notes, onProgress }
+                    );
+                } else {
+                    result = await copyNode(
+                        item.type, item.id, listingId,
+                        item.type === "section" ? null : destSectionId,
+                        destParentType || "section",
+                        destParentId || null,
+                        overrideLanguage, "", fallbackLog,
+                        withTests,
+                        onProgress
+                    );
+                }
+                if (result === null) failed++; else copied++;
             } catch (err) {
                 console.error("Bulk copy item error:", err);
                 failed++;
@@ -292,9 +343,138 @@ export const bulkCopyItems = async (req, res) => {
     if (wantsStream) {
         progress.setAtLeast(progress.total);
         progress.flush();
-        send({ type: "done", success: true, copied, failed, fallbacks: fallbackLog });
+        send({ type: "done", success: true, copied, failed, fallbacks: fallbackLog, notes });
         return res.end();
     }
 
-    res.json({ success: true, copied, failed, fallbacks: fallbackLog });
+    res.json({ success: true, copied, failed, fallbacks: fallbackLog, notes });
+};
+
+
+export const getRandomSubjects = async (req, res) => {
+    try {
+        const { items, destListingIds } = req.body || {};
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, message: "No item selected." });
+        }
+        const norm = (s) => String(s ?? "").trim().toLowerCase();
+
+        let testIds = [];
+        for (const it of items) {
+            if (!it || !it.type || !it.id) continue;
+            testIds = testIds.concat(await collectTestIdsUnderNode(it.type, it.id));
+        }
+
+        // source ka subject koi matter nahi karta: sirf ye dekhna hai ki file ke tests me questions hain ya nahi
+        const langSet = new Set();
+        let totalQuestions = 0;
+        if (testIds.length > 0) {
+            const fileTests = await Test.find({ _id: { $in: testIds }, parentType: "file" }).select("_id languages");
+            fileTests.forEach(t => (t.languages || []).forEach(l => langSet.add(l)));
+            const ids = fileTests.map(t => t._id);
+            if (ids.length > 0) {
+                const uniq = await TestQuestion.distinct("question", { test: { $in: ids } });
+                totalQuestions = uniq.length;
+            }
+        }
+        const languages = [...langSet];
+
+        if (totalQuestions === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Selected folder/file ke andar questions wale tests nahi mile. Random ke liye file ke andar tests chahiye."
+            });
+        }
+
+        const destIds = Array.isArray(destListingIds) ? destListingIds.filter(Boolean) : [];
+
+        // destination abhi chuna nahi gaya (sirf shuruaati check)
+        if (destIds.length === 0) {
+            return res.json({ success: true, subjects: [{ name: "All", available: totalQuestions }], languages });
+        }
+
+                // subjects sirf DESTINATION series ke marks se (multi-tier ho to tier-wise)
+        const listings = await Listing.find({ _id: { $in: destIds } })
+            .select("title marks tiers examStructure").lean();
+        if (listings.length === 0) {
+            return res.status(400).json({ success: false, message: "Destination series nahi mili." });
+        }
+
+        const namesOf = (marks) => {
+            const m = new Map();
+            (marks || []).forEach((x) => {
+                const n = String((x && x.subject) ?? "").trim();
+                if (n) m.set(norm(n), n);
+            });
+            return m;
+        };
+        const commonSubjects = (maps) => {
+            let common = maps[0];
+            for (const m of maps.slice(1)) common = new Map([...common].filter(([k]) => m.has(k)));
+            return [...common.values()]
+                .map((name) => ({ name, available: totalQuestions }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+        };
+
+        const multiCount = listings.filter(isMultiTier).length;
+        if (multiCount !== 0 && multiCount !== listings.length) {
+            return res.status(400).json({
+                success: false,
+                message: "Single-tier aur multi-tier series ek saath mat chuno. Alag-alag copy karo."
+            });
+        }
+
+        let tiers = [];
+        let subjects = [];
+
+        if (multiCount === 0) {
+            const maps = listings.map((l) => namesOf(getTierConfig(l, null).marks));
+            if (maps.some((m) => m.size === 0)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Destination series me subject-wise marks set nahi hain. Pehle series me subjects/marks set karo."
+                });
+            }
+            subjects = commonSubjects(maps);
+            if (subjects.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Chuni hui series me koi common subject nahi hai. Ek-ek series me alag se copy karo."
+                });
+            }
+        } else {
+            let keys = getTierList(listings[0]).map((t) => t.key);
+            for (const l of listings.slice(1)) {
+                const k = new Set(getTierList(l).map((t) => t.key));
+                keys = keys.filter((x) => k.has(x));
+            }
+            if (keys.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Chuni hui series me common tier/part nahi hai. Ek-ek series me alag se copy karo."
+                });
+            }
+            for (const key of keys) {
+                const maps = listings.map((l) => namesOf(getTierConfig(l, key).marks));
+                const subs = maps.some((m) => m.size === 0) ? [] : commonSubjects(maps);
+                const name = getTierList(listings[0]).find((t) => t.key === key)?.name || key;
+                tiers.push({ key, name, subjects: subs });
+            }
+            const firstWithSubjects = tiers.find((t) => t.subjects.length > 0);
+            if (!firstWithSubjects) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Kisi bhi tier me subject-wise marks set nahi hain."
+                });
+            }
+            subjects = firstWithSubjects.subjects;
+        }
+
+        res.json({ success: true, subjects, tiers, languages });
+ 
+
+    } catch (err) {
+        console.error("Get random subjects error:", err);
+        res.status(500).json({ success: false, message: "Unable to load subjects." });
+    }
 };

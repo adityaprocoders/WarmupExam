@@ -1,69 +1,99 @@
-<div class="max-w-7xl mx-auto pt-[104px] sm:pt-[120px] lg:pt-[136px] px-4 mb-2">
+<%
+    const totalExams = categories.reduce((sum, c) => sum + (Number(c.examCount) || 0), 0);
+%>
+<section class="relative">
 
-    <div class="flex flex-col items-center gap-4 mb-8 sm:mb-12">
-        <div class="text-center px-2 sm:px-8 py-3 sm:py-5">
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 bg-clip-text text-transparent">Explore Exams</h2>
-            <div aria-hidden="true" class="mx-auto mt-4 h-1 w-16 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"></div>
-            <p class="mx-auto mt-4 max-w-4xl px-2 sm:px-4 text-center text-sm font-medium leading-7 text-slate-500 sm:text-base md:text-lg lg:text-xl">
-                Find your target exam and start practicing with expertly crafted mock tests.
-            </p>
-        </div>
+    <div class="relative max-w-7xl mx-auto pt-[104px] sm:pt-[120px] lg:pt-[136px] px-4 pb-14 sm:pb-16">
 
-        <% if (isOwner) { %>
-        <button id="openCategoryModalBtn"
-        class="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-sm px-5 py-2.5 rounded-2xl transition-all duration-300 shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/40 active:scale-95">
-            <i class="fa-solid fa-plus"></i> Add Category
-        </button>
-        <% } %>
-    </div>
+        <div class="flex flex-col items-center gap-4 mb-10 sm:mb-14">
+            <div class="text-center px-2 sm:px-8 py-3 sm:py-5">
 
-    <!-- Category Cards -->
-    <div>
+                <span class="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-indigo-600 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
+                    <span class="relative flex h-2 w-2">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-indigo-600"></span>
+                    </span>
+                    Browse by Category
+                </span>
 
-        <% if (categories.length === 0) { %>
-            <div class="text-center py-10">
-                <i class="fa-solid fa-shapes text-4xl text-gray-300 mb-3"></i>
-                <p class="text-gray-500 text-sm">No categories added yet.</p>
-                <% if (isOwner) { %>
-                    <p class="text-gray-400 text-xs mt-1">Click "Add Category" above to create your first one.</p>
+                <h2 class="mt-5 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 bg-clip-text text-transparent">Explore Exams</h2>
+                <div aria-hidden="true" class="mx-auto mt-4 h-1 w-16 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"></div>
+                <p class="mx-auto mt-4 max-w-4xl px-2 sm:px-4 text-center text-sm font-medium leading-7 text-slate-500 sm:text-base md:text-lg lg:text-xl">
+                    Find your target exam and start practicing with expertly crafted mock tests.
+                </p>
+
+                <% if (categories.length > 0) { %>
+                <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+                    <span class="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-xs sm:text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 backdrop-blur">
+                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-50 text-[10px] text-indigo-600"><i class="fa-solid fa-shapes"></i></span>
+                        <%= categories.length %> Categories
+                    </span>
+                    <span class="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-xs sm:text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 backdrop-blur">
+                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-violet-50 text-[10px] text-violet-600"><i class="fa-solid fa-graduation-cap"></i></span>
+                        <%= totalExams %> Exams
+                    </span>
+                </div>
                 <% } %>
             </div>
-        <% } else { %>
 
-            <!-- First 8 categories -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <% categories.slice(0, 8).forEach((category, i) => { %>
-                    <%- include("categoryCard.ejs", { category, isOwner, index: i }) %>
-                <% }) %>
-            </div>
+            <% if (isOwner) { %>
+            <button id="openCategoryModalBtn"
+            class="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-sm px-5 py-2.5 rounded-2xl transition-all duration-300 shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/40 active:scale-95">
+                <i class="fa-solid fa-plus"></i> Add Category
+            </button>
+            <% } %>
+        </div>
 
-            <!-- Remaining categories -->
-            <% if (categories.length > 8) { %>
-                <div id="extraCategories" class="hidden">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-5">
-                        <% categories.slice(8).forEach((category, i) => { %>
-                            <%- include("categoryCard.ejs", { category, isOwner, index: i + 8 }) %>
-                        <% }) %>
+        <!-- Category Cards -->
+        <div>
+
+            <% if (categories.length === 0) { %>
+                <div class="rounded-2xl border border-dashed border-indigo-200 bg-white/80 py-12 px-4 text-center shadow-sm">
+                    <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-3xl text-indigo-400">
+                        <i class="fa-solid fa-shapes"></i>
                     </div>
+                    <p class="text-sm font-medium text-slate-600">No categories added yet.</p>
+                    <% if (isOwner) { %>
+                        <p class="mt-1 text-xs text-slate-400">Click "Add Category" above to create your first one.</p>
+                    <% } %>
+                </div>
+            <% } else { %>
+
+                <!-- First 8 categories -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    <% categories.slice(0, 8).forEach((category, i) => { %>
+                        <%- include("categoryCard.ejs", { category, isOwner, index: i }) %>
+                    <% }) %>
                 </div>
 
-                <div class="flex justify-center mt-12">
-    <button
-        id="viewAllBtn" 
-        class="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition duration-300 shadow-md">
+                <!-- Remaining categories -->
+                <% if (categories.length > 8) { %>
+                    <div id="extraCategories" class="hidden">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-4 sm:mt-6">
+                            <% categories.slice(8).forEach((category, i) => { %>
+                                <%- include("categoryCard.ejs", { category, isOwner, index: i + 8 }) %>
+                            <% }) %>
+                        </div>
+                    </div>
 
-        <span id="viewAllText">View All Exams</span>
+                    <div class="flex justify-center mt-10 sm:mt-12">
+                        <button
+                            id="viewAllBtn"
+                            class="group inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 px-9 py-3.5 text-base font-bold text-white shadow-[0_14px_34px_-10px_rgba(79,70,229,0.7)] ring-1 ring-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_44px_-10px_rgba(79,70,229,0.85)] active:scale-[0.98]">
 
-        <i id="viewAllIcon" class="fa-solid fa-arrow-right transition-transform duration-300"></i>
+                            <span id="viewAllText">View All Exams</span>
 
-    </button>
-</div>
+                            <i id="viewAllIcon" class="fa-solid fa-arrow-right transition-transform duration-300"></i>
+
+                        </button>
+                    </div>
+                <% } %>
+
             <% } %>
 
-        <% } %>
-
+        </div>
     </div>
-</div>
+</section>
 
 <!-- Add Category Modal (owner only) -->
 <% if (isOwner) { %>

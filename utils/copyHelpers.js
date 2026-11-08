@@ -6,25 +6,36 @@ import TestQuestion from "../models/TestQuestion.js";
 import crypto from "crypto";
 import Listing from "../models/listing.js";
 import Question from "../models/Question.js";
+import { isMultiTier, getTierList, getTierConfig } from "./tierHelper.js";
 
 // Optional progress callback: onProgress() = "ek item copy ho gaya". Callback na ho to kuch nahi hota.
 const tick = (cb) => { if (typeof cb === "function") cb(1); };
 
+const normS = (x) => String(x ?? "").trim().toLowerCase();
+
+// subject ka naam case/space ignore karke match; qualifyingOnly bhi destination ke marks se aata hai
 function getMarksForSubject(subjectsConfig, subjectName) {
-    const found = subjectsConfig.find(s => s.subject === subjectName);
+    const found = (subjectsConfig || []).find(s => normS(s.subject) === normS(subjectName));
     return found
-        ? { positiveMarks: found.positiveMarks, negativeMarks: found.negativeMarks }
-        : { positiveMarks: 0, negativeMarks: 0 };
+        ? { positiveMarks: Number(found.positiveMarks) || 0, negativeMarks: Number(found.negativeMarks) || 0, qualifyingOnly: !!found.qualifyingOnly }
+        : { positiveMarks: 0, negativeMarks: 0, qualifyingOnly: false };
 }
 
-async function copyQuestionMapping(oldTestId, newTestId, destListingId) {
+// destination multi-tier ho to source ka tier (agar wahan hai) warna pehla tier; single ho to null
+function resolveDestTier(destListing, srcTier) {
+    if (!destListing || !isMultiTier(destListing)) return null;
+    const keys = getTierList(destListing).map(t => t.key);
+    return keys.includes(srcTier) ? srcTier : (keys[0] || null);
+}
+
+async function copyQuestionMapping(oldTestId, newTestId, destListingId, destTier = null) {
     const oldMappings = await TestQuestion.find({ test: oldTestId }).populate("question");
     if (oldMappings.length === 0) return;
 
-    const destListing = await Listing.findById(destListingId).select("marks");
-    const subjectsConfig = destListing?.marks || [];
+    const destListing = await Listing.findById(destListingId).select("marks tiers examStructure").lean();
+    const subjectsConfig = destListing ? (getTierConfig(destListing, destTier).marks || []) : [];
 
-       const newMappings = oldMappings
+    const newMappings = oldMappings
         .filter(m => m.question)
         .map(m => {
             const subjectName = m.subject || m.question.subject;
@@ -39,7 +50,8 @@ async function copyQuestionMapping(oldTestId, newTestId, destListingId) {
                 subTopic: m.subTopic || m.question.subTopic,
                 section: m.section || m.question.section,
                 positiveMarks: marks.positiveMarks,
-                negativeMarks: marks.negativeMarks
+                negativeMarks: marks.negativeMarks,
+                qualifyingOnly: marks.qualifyingOnly
             };
         });
 
@@ -92,6 +104,9 @@ export async function copyNode(sourceType, sourceId, destListingId, destSectionI
             });
         }
 
+        const destListingDoc = await Listing.findById(destListingId).select("marks tiers examStructure").lean();
+        const destTier = resolveDestTier(destListingDoc, oldTest.tier);
+
         const newTest = await Test.create({
             title: oldTest.title,
             listing: destListingId,
@@ -108,10 +123,11 @@ export async function copyNode(sourceType, sourceId, destListingId, destSectionI
             // 👇 CHANGED — ab safe/validated value use hogi, crash nahi hoga
             showLanguage: safeShowLanguage,
             // 👇 public test copy/share hone ke baad bhi public hi rahega
-            visibility: oldTest.visibility === "public" ? "public" : "private"
+            visibility: oldTest.visibility === "public" ? "public" : "private",
+            tier: destTier
         });
 
-        await copyQuestionMapping(oldTest._id, newTest._id, destListingId);
+        await copyQuestionMapping(oldTest._id, newTest._id, destListingId, destTier);
 
         const newMappings = await TestQuestion.find({ test: newTest._id });
 if (newMappings.length > 0) {
@@ -191,12 +207,15 @@ if (newMappings.length > 0) {
         const oldSection = await Section.findById(sourceId);
         if (!oldSection) { console.warn(`⚠️ Section ${sourceId} not found`); return null; }
 
-       const newSection = await Section.create({
-    title: oldSection.title,
-    icon: oldSection.icon,
-    unit: oldSection.unit,
-    listing: destListingId
-});
+        const lastSec = await Section.findOne({ listing: destListingId }).sort({ order: -1 }).select("order").lean();
+        const newSection = await Section.create({
+            title: oldSection.title,
+            icon: oldSection.icon,
+            unit: oldSection.unit,
+            showInStatsFilter: oldSection.showInStatsFilter,
+            order: lastSec && Number.isFinite(lastSec.order) ? lastSec.order + 1 : 0,
+            listing: destListingId
+        });
 
         tick(onProgress);
 

@@ -119,7 +119,7 @@ async function buildRenderOptions(req, { title, description, keywords, canonical
 export const customTestDashboard = async (req, res, next) => {
     try {
         const isOwner = req.user && req.user.role === "owner";
-        const categories = await Category.find({}).sort({ createdAt: -1 }).lean();
+        const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" } }).sort({ createdAt: -1 }).lean();
 
         const listingFilter = { category: { $in: categories.map((c) => c._id) } };
         if (!isOwner) listingFilter.visibility = "public";
@@ -193,7 +193,7 @@ export const customTestDashboard = async (req, res, next) => {
 export const customTestLanding = async (req, res, next) => {
     try {
         const isOwner = req.user && req.user.role === "owner";
-        const categories = await Category.find({}).sort({ createdAt: -1 }).lean();
+        const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" } }).sort({ createdAt: -1 }).lean();
 
         const listingFilter = { category: { $in: categories.map((c) => c._id) } };
         if (!isOwner) listingFilter.visibility = "public";

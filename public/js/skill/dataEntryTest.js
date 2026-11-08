@@ -368,7 +368,7 @@ function generateFakeAddress() {
             el.singleMode.classList.remove('hidden');
             el.referenceValue.textContent = entry.fields[0].value;
             el.singleInput.value = '';
-            el.singleInput.className = 'w-full text-center text-2xl font-mono tracking-widest px-4 py-3 rounded-xl border-2 border-slate-200 focus:outline-none focus:border-indigo-400 transition';
+            el.singleInput.className = 'w-full text-center text-xl sm:text-2xl font-mono tracking-widest px-4 py-3.5 rounded-xl border-2 border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all';
             el.singleInput.focus();
         }
     }

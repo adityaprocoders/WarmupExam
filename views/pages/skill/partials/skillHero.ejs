@@ -1,0 +1,76 @@
+<style <%- locals.cspNonce ? 'nonce="' + cspNonce + '"' : '' %>>
+    .hh-grid {
+        background-image:
+            linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+        background-size: 44px 44px;
+        -webkit-mask-image: radial-gradient(ellipse at 30% 0%, #000 0%, transparent 72%);
+                mask-image: radial-gradient(ellipse at 30% 0%, #000 0%, transparent 72%);
+    }
+    .hh-cta { position: relative; overflow: hidden; isolation: isolate; }
+    .hh-cta::after {
+        content: ''; position: absolute; inset: 0 auto 0 -40%; width: 35%; z-index: -1;
+        background: linear-gradient(90deg, transparent, rgba(99,102,241,.22), transparent);
+        transform: skewX(-20deg); transition: transform .9s cubic-bezier(.22,1,.36,1);
+    }
+    .hh-cta:hover::after { transform: translateX(520%) skewX(-20deg); }
+    .hh-num { font-variant-numeric: tabular-nums; }
+    @media (prefers-reduced-motion: reduce) {
+        .hh-cta::after { display: none; }
+        *, *::before, *::after { transition-duration: .01ms !important; }
+    }
+</style>
+
+<header class="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 px-5 py-9 sm:px-12 sm:py-14 mb-8 ring-1 ring-white/10 shadow-[0_40px_80px_-40px_rgba(49,46,129,.7)] animate-fade-up">
+    <!-- Ambient layers -->
+    <div class="pointer-events-none absolute -top-28 -right-20 h-80 w-80 rounded-full bg-violet-500/35 blur-[90px] animate-float" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-indigo-500/35 blur-[90px] animate-float [animation-delay:2s]" aria-hidden="true"></div>
+    <div class="hh-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" aria-hidden="true"></div>
+
+    <div class="relative">
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="mb-6">
+            <ol class="flex flex-wrap items-center gap-2 text-xs text-indigo-200/70">
+                <li><a href="/" class="hover:text-white transition-colors duration-200">Home</a></li>
+                <li aria-hidden="true" class="text-indigo-300/40">/</li>
+                <li aria-current="page" class="font-medium text-white"><%= skill.name %></li>
+            </ol>
+        </nav>
+
+        <!-- Badges -->
+        <div class="flex flex-wrap gap-2 mb-5">
+            <% skill.badges.forEach(function (b) { %>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/[.07] px-3 py-1 text-[11px] font-medium text-indigo-100 ring-1 ring-white/15 backdrop-blur">
+                    <i class="fa-solid fa-circle-check text-emerald-300"></i> <%= b %>
+                </span>
+            <% }) %>
+        </div>
+
+        <!-- 1. H1 + description -->
+        <h1 class="text-[2rem] leading-[1.08] sm:text-6xl font-extrabold tracking-tight text-white max-w-3xl">
+            <%= skill.h1Lead %>
+            <span class="bg-gradient-to-r from-amber-200 via-pink-300 to-indigo-300 bg-[length:200%_200%] animate-gradient bg-clip-text text-transparent"><%= skill.h1Accent %></span>
+        </h1>
+        <p class="mt-5 max-w-2xl text-sm sm:text-base text-indigo-100/75 leading-relaxed"><%= skill.intro %></p>
+
+        <a href="#configure"
+           class="hh-cta group mt-8 inline-flex items-center gap-2.5 rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-indigo-700
+                  shadow-[0_16px_32px_-14px_rgba(0,0,0,.6)] hover:-translate-y-0.5 hover:shadow-[0_20px_40px_-14px_rgba(0,0,0,.65)]
+                  active:translate-y-0 active:scale-[.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white
+                  transition-all duration-300">
+            Start the test
+            <i class="fa-solid fa-arrow-down text-xs group-hover:translate-y-0.5 transition-transform duration-300"></i>
+        </a>
+
+        <!-- Stats strip: ek glass bar, dividers ke saath -->
+        <div class="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden rounded-2xl bg-white/10 ring-1 ring-white/15">
+            <% skill.stats.forEach(function (s) { %>
+                <div class="bg-slate-950/50 backdrop-blur px-4 py-4 sm:px-6 sm:py-5 text-center sm:text-left hover:bg-white/[.06] transition-colors duration-300">
+                    <p class="hh-num text-xl sm:text-2xl font-bold text-white tracking-tight"><%= s.v %></p>
+                    <p class="text-[11px] sm:text-xs text-indigo-200/70 mt-1"><%= s.l %></p>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+</header>

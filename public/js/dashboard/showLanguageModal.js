@@ -1,22 +1,32 @@
 let selectedShowLanguage = null;
 let pendingBulkCopyMode = null;
-let pendingMixedBulkItems = null; // 👈 NAYA // language confirm hone ke baad kis mode se bulkCopyModal khulega
+let pendingMixedBulkItems = null;
 
 async function fetchLanguagesForSections(sectionIds) {
     const langSet = new Set();
-
     for (const id of sectionIds) {
         try {
             const res = await fetch(`/api/copy/languages?sourceType=section&sourceId=${id}`);
             const data = await res.json();
-            if (data.success) {
-                (data.languages || []).forEach(l => langSet.add(l));
-            }
+            if (data.success) (data.languages || []).forEach(l => langSet.add(l));
         } catch (err) {
             console.error('Language fetch error:', err);
         }
     }
+    return Array.from(langSet);
+}
 
+async function fetchLanguagesForItems(items) {
+    const langSet = new Set();
+    for (const item of items) {
+        try {
+            const res = await fetch(`/api/copy/languages?sourceType=${item.type}&sourceId=${item.id}`);
+            const data = await res.json();
+            if (data.success) (data.languages || []).forEach(l => langSet.add(l));
+        } catch (err) {
+            console.error('Language fetch error:', err);
+        }
+    }
     return Array.from(langSet);
 }
 
@@ -53,8 +63,12 @@ function confirmLanguageNext() {
     closeShowLanguageModal();
 
     if (pendingMixedBulkItems) {
-        // 👇 CHANGED — series+section navigate karne wala copyModal use karo, bulkCopyModal nahi
-        openCopyModal('mixed', null);
+        // ek hi item ho to uska apna type use karo (section ke liye series-level paste chahiye)
+        if (pendingMixedBulkItems.length === 1) {
+            openCopyModal(pendingMixedBulkItems[0].type, pendingMixedBulkItems[0].id);
+        } else {
+            openCopyModal('mixed', null);
+        }
     } else if (pendingSingleCopySource) {
         openCopyModal(pendingSingleCopySource.type, pendingSingleCopySource.id);
         pendingSingleCopySource = null;
@@ -63,33 +77,78 @@ function confirmLanguageNext() {
     }
 }
 
-// Bulk-copy button click hote hi ye function call karo (existing "Copy" button ka handler
-// jo pehle seedha openBulkCopyModal(mode) call karta tha, ab isko call kare)
+// Sidebar: selected sections ka bulk copy
 async function startBulkCopyWithLanguageCheck(mode) {
     const sectionIds = getSelectedSectionIds();
-        if (sectionIds.length === 0) return;
-        // 👇 NAYA: With tests / Without tests choice (cancel = kuch nahi hoga)
+    if (sectionIds.length === 0) return;
+
     const withTests = await askCopyWithTests();
     if (withTests === null) return;
     copyIncludeTests = withTests;
+    copyRandomConfig = null;
+    copyRandomMode = false;
+        selectedShowLanguage = null;
     pendingMixedBulkItems = null;   // sidebar se hamesha sirf sections copy hote hain
 
     if (!withTests) {
-        // without tests me language puchhne ki zaroorat nahi, seedha destination modal
+        selectedShowLanguage = null;
+        openBulkCopyModal(mode);
+        return;
+    }
+
+    const cm = await askCopyMode(sectionIds.map(id => ({ id, type: 'section' })));
+    if (cm === null) return;
+    if (cm.mode === 'random') {
+        copyRandomMode = true;
+        copyRandomConfig = null;
         selectedShowLanguage = null;
         openBulkCopyModal(mode);
         return;
     }
 
     const languages = await fetchLanguagesForSections(sectionIds);
-
     if (languages.length === 0) {
-        // koi language hi nahi mili (single-language ya koi test nahi) — seedha bulk copy modal
         openBulkCopyModal(mode);
         return;
     }
-
     openShowLanguageModal(languages, mode);
+}
+
+// Main area: selected folder / file / test ka bulk copy
+async function startItemBulkCopyWithLanguageCheck() {
+    const items = getSelectedMixedItems();
+    if (items.length === 0) return;
+
+    const withTests = await askCopyWithTests();
+    if (withTests === null) return;
+    copyIncludeTests = withTests;
+    copyRandomConfig = null;
+    copyRandomMode = false;
+    selectedShowLanguage = null;
+    pendingMixedBulkItems = items;
+
+    if (!withTests) {
+        selectedShowLanguage = null;
+        openCopyModal('mixed', null);
+        return;
+    }
+
+    const cm = await askCopyMode(items);
+    if (cm === null) { pendingMixedBulkItems = null; return; }
+    if (cm.mode === 'random') {
+        copyRandomMode = true;
+        copyRandomConfig = null;
+        selectedShowLanguage = null;
+        openCopyModal('mixed', null);
+        return;
+    }
+
+    const languages = await fetchLanguagesForItems(items);
+    if (languages.length === 0) {
+        openCopyModal('mixed', null);
+        return;
+    }
+    openShowLanguageModal(languages, 'mixed');
 }
 
 document.addEventListener('click', function (e) {
@@ -99,6 +158,11 @@ document.addEventListener('click', function (e) {
     switch (el.dataset.action) {
         case 'close-language-modal':
             closeShowLanguageModal();
+            // cancel par purana pending state saaf
+            pendingMixedBulkItems = null;
+            pendingSingleCopySource = null;
+            copyRandomConfig = null;
+            copyRandomMode = false;
             break;
         case 'confirm-language-next':
             confirmLanguageNext();
@@ -113,50 +177,3 @@ document.addEventListener('change', function (e) {
     selectedShowLanguage = el.value;
     document.getElementById('languageNextBtn').disabled = false;
 });
-
-
-
-
-
-
-async function fetchLanguagesForItems(items) {
-    const langSet = new Set();
-    for (const item of items) {
-        try {
-            const res = await fetch(`/api/copy/languages?sourceType=${item.type}&sourceId=${item.id}`);
-            const data = await res.json();
-            if (data.success) (data.languages || []).forEach(l => langSet.add(l));
-        } catch (err) {
-            console.error('Language fetch error:', err);
-        }
-    }
-    return Array.from(langSet);
-}
-
-async function startItemBulkCopyWithLanguageCheck() {
-    const items = getSelectedMixedItems();
-    if (items.length === 0) return;
-
-    // 👇 NAYA: With tests / Without tests choice (cancel = kuch nahi hoga)
-    const withTests = await askCopyWithTests();
-    if (withTests === null) return;
-    copyIncludeTests = withTests;
-
-    pendingMixedBulkItems = items;
-
-    if (!withTests) {
-        // without tests me language puchhne ki zaroorat nahi, seedha destination modal
-        selectedShowLanguage = null;
-        openCopyModal('mixed', null);
-        return;
-    }
-
-    const languages = await fetchLanguagesForItems(items);
-
-    if (languages.length === 0) {
-        // 👇 CHANGED — series+section navigate karne wala copyModal
-        openCopyModal('mixed', null);
-        return;
-    }
-    openShowLanguageModal(languages, 'mixed');
-}

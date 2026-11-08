@@ -12,12 +12,13 @@ export const home = async (req, res) => {
         .limit(6)
         .lean();
 
-    const categories = await Category.find({}).sort({ createdAt: -1 }).lean();
+    const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" } }).sort({ createdAt: -1 }).lean();
 
 const categoryIds = categories.map(c => c._id);
 const listingCounts = await Listing.aggregate([
-    { $match: { category: { $in: categoryIds } } },
-    { $group: { _id: "$category", count: { $sum: 1 } } }
+    { $match: { category: { $in: categoryIds }, exam: { $nin: [null, ""] }, ...(isOwner ? {} : { visibility: "public" }) } },
+    { $group: { _id: { category: "$category", exam: { $toLower: { $trim: { input: "$exam" } } } } } },
+    { $group: { _id: "$_id.category", count: { $sum: 1 } } }
 ]);
 
 const countMap = {};
