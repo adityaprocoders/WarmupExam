@@ -157,13 +157,13 @@
             <% stats.forEach((stat, i) => { %>
                 <div class="wx-reveal wx-td-<%= i %> group text-center px-4 py-6 sm:py-7 hover:bg-gradient-to-b hover:from-indigo-50/60 hover:to-transparent transition-colors duration-300">
 
-                    <h4 class="bg-gradient-to-r from-indigo-600 to-purple-500 bg-clip-text text-transparent font-extrabold text-xl sm:text-2xl tracking-tight transition-transform duration-300 group-hover:scale-110">
+                    <div class="bg-gradient-to-r from-indigo-600 to-purple-500 bg-clip-text text-transparent font-extrabold text-xl sm:text-2xl tracking-tight transition-transform duration-300 group-hover:scale-110">
                         <% if (stat.count) { %>
                             <span data-count="<%= stat.count %>" data-suffix="<%= stat.suffix || '' %>">0<%= stat.suffix || '' %></span>
                         <% } else { %>
                             <%= stat.title %>
                         <% } %>
-                    </h4>
+                        </div>
 
                     <p class="text-xs sm:text-[13px] text-slate-500 mt-2 leading-snug"><%= stat.desc %></p>
                 </div>
