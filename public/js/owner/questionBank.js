@@ -521,8 +521,6 @@ function resetQbForm() {
     document.getElementById('qbMultiSolutionTexts').innerHTML = '';
     document.getElementById('qbMultiQuestionImage').value = '';
     document.getElementById('qbMultiQuestionImagePreview').classList.add('hidden');
-    document.getElementById('qbMultiSolutionImage').value = '';
-    document.getElementById('qbMultiSolutionImagePreview').classList.add('hidden');
     document.getElementById('qbMultiNumericAnswer').value = '';
     addOptionRow(); addOptionRow();
 }
@@ -583,11 +581,7 @@ async function populateQbForm(q) {
             const img = document.getElementById('qbMultiQuestionImagePreview');
             img.src = q.questionImage; img.classList.remove('hidden');
         }
-        if (q.solution?.image) {
-            document.getElementById('qbMultiSolutionImage').value = q.solution.image;
-            const img = document.getElementById('qbMultiSolutionImagePreview');
-            img.src = q.solution.image; img.classList.remove('hidden');
-        }
+ 
         (q.options || []).forEach((opt, oi) => {
             if (!opt.image) return;
             const hiddenEl = document.querySelector(`.qbMultiOptImage[data-optidx="${oi}"]`);
@@ -596,11 +590,19 @@ async function populateQbForm(q) {
             if (imgEl) { imgEl.src = opt.image; imgEl.classList.remove('hidden'); }
         });
 
-        (q.translations || []).forEach((t, li) => {
+                (q.translations || []).forEach((t, li) => {
             const qEl = document.getElementById(`qbTransQuestion_${li}`);
             if (qEl) qEl.value = t.question || '';
+
             const solEl = document.getElementById(`qbTransSolutionText_${li}`);
             if (solEl) solEl.value = t.solution?.text || '';
+
+            const solImgUrl = t.solution?.image || q.solution?.image || '';
+            const solImgHidden = document.getElementById(`qbTransSolutionImage_${li}`);
+            const solImgPrev = document.getElementById(`qbTransSolutionImagePreview_${li}`);
+            if (solImgHidden) solImgHidden.value = solImgUrl;
+            if (solImgPrev && solImgUrl) { solImgPrev.src = solImgUrl; solImgPrev.classList.remove('hidden'); }
+
             (t.options || []).forEach((opt, oi) => {
                 const optEl = document.getElementById(`qbTransOptText_${li}_${oi}`);
                 if (optEl) optEl.value = (typeof opt === 'string') ? opt : (opt?.text || '');
@@ -669,6 +671,7 @@ function qbRemoveLanguage(lang) {
     const snap = qbSnapshotMultiContent();
     snap.questionTexts.splice(idx, 1);
     snap.solutionTexts.splice(idx, 1);
+    snap.solutionImages.splice(idx, 1);
     snap.optionTexts.splice(idx, 1);
     qbFormLanguages.splice(idx, 1);
     renderQbLangTags();
@@ -760,18 +763,25 @@ function renderQbMultiContent() {
     }
 
     document.getElementById('qbMultiSolutionTexts').innerHTML = qbFormLanguages.map((lang, li) => `
-        <div>
+        <div class="border border-indigo-100 rounded-xl p-4 bg-indigo-50/30">
             <p class="text-xs font-bold text-indigo-700 uppercase mb-1">Solution Text (${lang})</p>
-            <textarea id="qbTransSolutionText_${li}" rows="2" class="w-full p-3 border rounded-xl text-sm" placeholder="Solution in ${lang}..."></textarea>
+            <textarea id="qbTransSolutionText_${li}" rows="2" class="w-full p-3 border rounded-xl text-sm mb-3" placeholder="Solution in ${lang}..."></textarea>
+            <p class="text-xs font-bold text-indigo-700 uppercase mb-1">Solution Photo (${lang})</p>
+            <div class="border-2 border-dashed rounded-xl p-3 text-center bg-gray-50">
+                <input type="file" id="qbTransSolutionImageFile_${li}" data-li="${li}" accept="image/*" class="qbTransSolImageFile text-sm">
+                <img id="qbTransSolutionImagePreview_${li}" class="hidden mt-2 h-20 mx-auto rounded">
+                <input type="hidden" id="qbTransSolutionImage_${li}">
+            </div>
         </div>
     `).join('');
 }
 
 function qbSnapshotMultiContent() {
-    const snap = { questionTexts: [], optionImages: [], optionTexts: [], solutionTexts: [], correct: [] };
+    const snap = { questionTexts: [], optionImages: [], optionTexts: [], solutionTexts: [], solutionImages: [], correct: [] };
     qbFormLanguages.forEach((lang, li) => {
         snap.questionTexts.push(document.getElementById(`qbTransQuestion_${li}`)?.value || '');
         snap.solutionTexts.push(document.getElementById(`qbTransSolutionText_${li}`)?.value || '');
+                snap.solutionImages.push(document.getElementById(`qbTransSolutionImage_${li}`)?.value || '');
         const opts = [];
         for (let oi = 0; oi < qbMultiOptionCount; oi++) {
             opts.push(document.getElementById(`qbTransOptText_${li}_${oi}`)?.value || '');
@@ -792,6 +802,13 @@ function qbRestoreMultiContent(snap) {
         if (qEl && snap.questionTexts[li] !== undefined) qEl.value = snap.questionTexts[li];
         const solEl = document.getElementById(`qbTransSolutionText_${li}`);
         if (solEl && snap.solutionTexts[li] !== undefined) solEl.value = snap.solutionTexts[li];
+                const sUrl = snap.solutionImages && snap.solutionImages[li];
+        if (sUrl) {
+            const sHidden = document.getElementById(`qbTransSolutionImage_${li}`);
+            const sPrev = document.getElementById(`qbTransSolutionImagePreview_${li}`);
+            if (sHidden) sHidden.value = sUrl;
+            if (sPrev) { sPrev.src = sUrl; sPrev.classList.remove('hidden'); }
+        }
         (snap.optionTexts[li] || []).forEach((val, oi) => {
             const optEl = document.getElementById(`qbTransOptText_${li}_${oi}`);
             if (optEl) optEl.value = val;
@@ -835,8 +852,12 @@ document.getElementById('qbMultiAddOptionBtn').addEventListener('click', qbAddMu
 document.getElementById('qbMultiQuestionImageFile').addEventListener('change', () => {
     qbUploadImage('qbMultiQuestionImageFile', 'qbMultiQuestionImage', 'qbMultiQuestionImagePreview');
 });
-document.getElementById('qbMultiSolutionImageFile').addEventListener('change', () => {
-    qbUploadImage('qbMultiSolutionImageFile', 'qbMultiSolutionImage', 'qbMultiSolutionImagePreview');
+ 
+document.addEventListener('change', (e) => {
+    const el = e.target.closest('.qbTransSolImageFile');
+    if (!el) return;
+    const li = el.dataset.li;
+    qbUploadImage(el.id, `qbTransSolutionImage_${li}`, `qbTransSolutionImagePreview_${li}`);
 });
 
 // ---- Build payload matching Question schema ----
@@ -866,7 +887,7 @@ function buildQbPayload() {
                 options: [],
                 solution: {
                     text: document.getElementById(`qbTransSolutionText_${li}`)?.value || '',
-                    image: document.getElementById('qbMultiSolutionImage').value || null
+                     image: document.getElementById(`qbTransSolutionImage_${li}`)?.value || null
                 }
             };
             if (type !== 'integer') {
@@ -889,7 +910,7 @@ function buildQbPayload() {
                 payload.options.push({ text: '', image: optImgEl ? (optImgEl.value || null) : null });
             }
         }
-        payload.solution = { text: '', image: document.getElementById('qbMultiSolutionImage').value || null };
+        payload.solution = { text: '', image: null };
 
         if (type === 'integer') {
             { const rawNum = document.getElementById('qbMultiNumericAnswer').value.trim(); payload.numericAnswer = rawNum === '' ? null : Number(rawNum); }

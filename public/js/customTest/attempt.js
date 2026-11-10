@@ -294,10 +294,15 @@ if (langEl) langEl.textContent = cfg.language || paper.language || "English";
             if (q.languageMode === "multiple" && Array.isArray(q.translations) && q.translations.length) {
                 const t = q.translations.find((tt) => tt.lang === lang) || q.translations[0];
                 if (t && (t.question || t.questionImage)) {
+                    const tSol = t.solution || {};
                     return {
                         question: t.question || "",
                         questionImage: t.questionImage || null,
                         options: (t.options && t.options.length) ? t.options : (q.options || []),
+                        solution: {
+                            text: tSol.text || (q.solution && (q.solution.text || q.solution.explanation)) || "",
+                            image: tSol.image || (q.solution && q.solution.image) || null
+                        },
                     };
                 }
             }
@@ -806,8 +811,8 @@ if (langEl) langEl.textContent = cfg.language || paper.language || "English";
     questionText: disp.question,
     questionImage: disp.questionImage || null,
     options: disp.options || [],
-    solutionText: (q.solution && (q.solution.text || q.solution.explanation)) || "",
-    solutionImage: (q.solution && q.solution.image) || null,
+    solutionText: (disp.solution && disp.solution.text) || (q.solution && (q.solution.text || q.solution.explanation)) || "",
+    solutionImage: (disp.solution && disp.solution.image) || (q.solution && q.solution.image) || null,
 });
             });
 

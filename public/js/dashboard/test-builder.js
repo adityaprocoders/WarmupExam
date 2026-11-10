@@ -50,7 +50,7 @@ function escapeAttr(str) {
 
 function ensureImageStore(qId) {
   if (!imageDataStore[qId]) {
-    imageDataStore[qId] = { question: null, options: [null, null, null, null], solution: null };
+    imageDataStore[qId] = { question: null, options: [null, null, null, null], solution: null, solutionByLang: {} };
   }
   return imageDataStore[qId];
 }
@@ -61,6 +61,10 @@ function restoreImagePreviews(qId) {
 
   if (store.question) showPreview(`qImagePreview_${qId}`, store.question);
   if (store.solution) showPreview(`qSolImagePreview_${qId}`, store.solution);
+  testLanguages.forEach((lang, li) => {
+    const u = store.solutionByLang && store.solutionByLang[lang];
+    if (u) showPreview(`qSolImagePreview_${qId}_${li}`, u);
+  });
 
   const optCount = getOptionCount(qId);
   for (let oi = 0; oi < optCount; oi++) {
@@ -95,6 +99,11 @@ async function uploadAndStore(inputEl, kind, qId, optionIdx) {
     } else if (kind === 'solution') {
       store.solution = result.url;
       showPreview(`qSolImagePreview_${qId}`, result.url);
+    } else if (kind === 'solution-lang') {
+      const lang = inputEl.dataset.lang;
+      if (!store.solutionByLang) store.solutionByLang = {};
+      store.solutionByLang[lang] = result.url;
+      showPreview(`qSolImagePreview_${qId}_${testLanguages.indexOf(lang)}`, result.url);
     }
   } catch (err) {
     console.error("Image upload error:", err);
@@ -962,19 +971,19 @@ function renderMultiLanguageBody(qId, type) {
       </div>`;
   }
 
-  // SHARED Solution Image + har language ka Solution TEXT
-  html += `
-    <div class="mb-2">
-      <p class="text-xs font-bold text-indigo-700 mb-2">SOLUTION PHOTO (SHARED)</p>
-      <div class="border-2 border-dashed rounded-xl p-3 text-center bg-gray-50 mb-4">
-        <input type="file" id="qSolImageFile_${qId}" accept="image/*" data-onchange="upload-image" data-kind="solution" data-qid="${qId}" class="text-sm">
-        <img id="qSolImagePreview_${qId}" class="hidden mt-2 h-20 mx-auto rounded" />
-      </div>
-  `;
+  // Har language ka apna Solution TEXT + apni Solution PHOTO
+  html += `<div class="mb-2">`;
   testLanguages.forEach((lang, li) => {
     html += `
-      <p class="text-xs font-bold text-indigo-700 uppercase mb-1">Solution Text (${lang})</p>
-      <textarea id="qTransSolutionText_${qId}_${li}" class="w-full p-3 border rounded-xl h-20 mb-3 outline-none" placeholder="Solution in ${lang}..."></textarea>
+      <div class="border border-indigo-100 rounded-xl p-4 mb-4 bg-indigo-50/30">
+        <p class="text-xs font-bold text-indigo-700 uppercase mb-1">Solution Text (${lang})</p>
+        <textarea id="qTransSolutionText_${qId}_${li}" class="w-full p-3 border rounded-xl h-20 mb-3 outline-none" placeholder="Solution in ${lang}..."></textarea>
+        <p class="text-xs font-bold text-indigo-700 uppercase mb-1">Solution Photo (${lang})</p>
+        <div class="border-2 border-dashed rounded-xl p-3 text-center bg-gray-50">
+          <input type="file" id="qSolImageFile_${qId}_${li}" accept="image/*" data-onchange="upload-image" data-kind="solution-lang" data-lang="${escapeAttr(lang)}" data-qid="${qId}" class="text-sm">
+          <img id="qSolImagePreview_${qId}_${li}" class="hidden mt-2 h-20 mx-auto rounded" />
+        </div>
+      </div>
     `;
   });
   html += `</div>`;
@@ -1152,7 +1161,7 @@ function normalizeImportedQuestion(q, idx) {
       })),
       solution: {
         text: t.solutionText || t.solution?.text || '',
-        image: t.solution?.image || null
+        image: t.solutionImage || t.solution?.image || null
       }
     }));
 
@@ -1187,7 +1196,7 @@ function collectManualQuestions() {
     const type = typeEl.value;
     const subjectName = document.getElementById(`qSubject_${qId}`).value;
     const marks = getMarksForSubject(subjectName);
-    const imgStore = imageDataStore[qId] || { question: null, options: [null, null, null, null], solution: null };
+    const imgStore = imageDataStore[qId] || { question: null, options: [null, null, null, null], solution: null, solutionByLang: {} };
 
     const forceSingle = subjectName.trim().toLowerCase() === 'english';
     const qLanguageMode = forceSingle ? 'single' : testLanguageMode;
@@ -1214,7 +1223,7 @@ function collectManualQuestions() {
       q.question = "";
       q.questionImage = imgStore.question;
       q.options = [];
-      q.solution = { text: "", image: imgStore.solution };
+      q.solution = { text: "", image: null };
 
       if (type !== 'integer') {
         const optCount = getOptionCount(qId);
@@ -1232,7 +1241,7 @@ function collectManualQuestions() {
           options: [],
           solution: {
             text: document.getElementById(`qTransSolutionText_${qId}_${li}`)?.value || '',
-            image: imgStore.solution || null
+            image: (imgStore.solutionByLang && imgStore.solutionByLang[lang]) || null
           }
         };
 
@@ -1316,7 +1325,7 @@ function renderManualQuestions(questionsArray) {
     store.question = q.questionImage || null;
     store.solution = q.solution?.image || null;
     if (store.question) showPreview(`qImagePreview_${qId}`, store.question);
-    if (store.solution) showPreview(`qSolImagePreview_${qId}`, store.solution);
+    if (store.solution && qMode !== 'multiple') showPreview(`qSolImagePreview_${qId}`, store.solution);
 
     if (q.type !== 'integer') {
       (q.options || []).forEach((opt, idx) => {
@@ -1332,6 +1341,11 @@ function renderManualQuestions(questionsArray) {
 
         const solEl = document.getElementById(`qTransSolutionText_${qId}_${li}`);
         if (solEl) solEl.value = t.solution?.text || t.solutionText || '';
+
+        const solImg = t.solution?.image || q.solution?.image || null;
+        if (!store.solutionByLang) store.solutionByLang = {};
+        store.solutionByLang[t.lang] = solImg;
+        if (solImg) showPreview(`qSolImagePreview_${qId}_${li}`, solImg);
 
         if (q.type !== 'integer') {
           (t.options || []).forEach((opt, oi) => {
@@ -1400,7 +1414,8 @@ function getDemoQuestionsJson() {
           lang: lang,
           question: `Enter question text in ${lang} here...`,
           options: [`Option A (${lang})`, `Option B (${lang})`, `Option C (${lang})`, `Option D (${lang})`],
-          solutionText: `Solution text in ${lang}...`
+          solutionText: `Solution text in ${lang}...`,
+          solutionImage: null,
         })),
         correctAnswers: [0],
         numericAnswer: null
