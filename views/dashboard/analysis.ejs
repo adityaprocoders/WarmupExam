@@ -189,8 +189,12 @@
                 </div>
 
                 <!-- sirf yahi part scroll hoga -->
-                <div class="overflow-y-auto pr-1" style="max-height: calc(100vh - 230px);">
-                    <div id="solutions-list" class="space-y-4"></div>
+                <div class="overflow-y-auto pr-1" style="max-height: calc(100dvh - 230px);">
+                    <div id="solutions-list"
+                         class="space-y-4 break-words
+                                [&_img]:block [&_img]:!w-auto [&_img]:!h-auto [&_img]:!max-w-full [&_img]:!max-h-[110px] sm:[&_img]:!max-h-[130px] lg:[&_img]:!max-h-[150px]
+                                [&_img]:object-contain [&_img]:bg-white [&_img]:rounded-lg [&_img]:border [&_img]:border-slate-200 [&_img]:p-1 [&_img]:my-1.5
+                                [&_.katex-display]:overflow-x-auto [&_.katex-display]:overflow-y-hidden"></div>
                 </div>
             </div>
 

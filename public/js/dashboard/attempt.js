@@ -170,11 +170,8 @@ function renderSubjectTabs() {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.dataset.sectionTab = idx;
-        btn.className = 'subject-tab whitespace-nowrap px-4 py-2.5 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-indigo-500 active:scale-95 transition';
-                const ico = document.createElement('i');
-        ico.className = 'fa-solid fa-layer-group mr-2 text-xs opacity-70';
-        btn.appendChild(ico);
-        btn.appendChild(document.createTextNode(sec.label));
+        btn.className = 'subject-tab snap-start shrink-0 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm font-semibold tracking-tight border-b-[3px] border-transparent text-slate-400 hover:text-indigo-500 hover:bg-slate-50 rounded-t-lg active:scale-95 transition-all duration-200';
+        btn.textContent = sec.label;
         btn.addEventListener('click', () => switchSection(idx));
         bar.appendChild(btn);
     });
@@ -361,9 +358,14 @@ updateNavButtons();
 
     if (HAS_SUBJECT_TABS) {
         document.querySelectorAll('.subject-tab').forEach((el, i) => {
-            el.classList.toggle('text-indigo-600', i === q.sectionIndex);
-            el.classList.toggle('border-indigo-600', i === q.sectionIndex);
-            el.classList.toggle('text-gray-400', i !== q.sectionIndex);
+            const active = i === q.sectionIndex;
+            el.classList.toggle('text-indigo-600', active);
+            el.classList.toggle('font-bold', active);
+            el.classList.toggle('bg-indigo-50', active);
+            el.classList.toggle('border-indigo-600', active);
+            el.classList.toggle('text-slate-400', !active);
+            el.classList.toggle('border-transparent', !active);
+            if (active) el.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
         });
         updateSubjectTabsState();
     }

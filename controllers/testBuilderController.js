@@ -49,11 +49,17 @@ function pickSingleSource(q) {
     return withContent || q.translations[0] || q;
 }
 
-export async function getOrCreateQuestionId(questionPayload, hash, currentQuestionId = null, session = null) {
+export async function getOrCreateQuestionId(questionPayload, hash, currentQuestionId = null, session = null, opts = {}) {
     questionPayload.contentHash = hash;
 
     // EDIT: pehle se bana question hai
     if (currentQuestionId) {
+        // SAFEGUARD: multiple-language question ko single-mode (flat) data se overwrite nahi karna
+        const existingQ = await Question.findById(currentQuestionId).select("languageMode").session(session).lean();
+                if (opts.protectMultiple && existingQ && existingQ.languageMode === "multiple" && questionPayload.languageMode !== "multiple") {
+            return currentQuestionId;
+        }
+
         const clash = await Question.findOne({ contentHash: hash, _id: { $ne: currentQuestionId } }).session(session);
         if (clash) return clash._id; // edit ke baad content kisi doosre existing question jaisa ho gaya -> uska reference
 
@@ -327,6 +333,23 @@ export const getTestBuilder = async (req, res) => {
             solution: q.solution
         };
 
+        // Single-language test me multiple-mode question: test ki language ka translation flat dikhao (editor blank na ho)
+        if (q.languageMode === "multiple" && test.languageMode !== "multiple") {
+            const wantLang = (test.languages && test.languages[0]) || "English";
+            const trs = Array.isArray(q.translations) ? q.translations : [];
+            const t = trs.find(x => x.lang === wantLang) || trs[0];
+            if (t) {
+                return {
+                    ...base,
+                    languageMode: "single",
+                    question: t.question || "",
+                    questionImage: (t.questionImage ?? q.questionImage) ?? null,
+                    options: (t.options && t.options.length) ? t.options : q.options,
+                    solution: t.solution || q.solution
+                };
+            }
+        }
+
         if (q.languageMode === "multiple") {
             return {
                 ...base,
@@ -448,6 +471,7 @@ export const updateTestBuilder = async (req, res) => {
         }
 
         existingTest.title = body.title;
+                const wasMultipleTest = existingTest.languageMode === "multiple";
         existingTest.languageMode = testLanguageMode;
         existingTest.languages = testLanguages;
         existingTest.showLanguage = testShowLanguage;
@@ -519,8 +543,7 @@ export const updateTestBuilder = async (req, res) => {
 
                         const linkedQuestionId = (q._id && oldQuestionIds.includes(String(q._id))) ? q._id : null;
                         const hash = computeContentHash(questionPayload);
-                        const questionId = await getOrCreateQuestionId(questionPayload, hash, linkedQuestionId, session);
-
+                        const questionId = await getOrCreateQuestionId(questionPayload, hash, linkedQuestionId, session, { protectMultiple: !wasMultipleTest });
                         const idStr = String(questionId);
                         if (usedQuestionIds.has(idStr)) {
                             throw new ExpressError(400, `Question ${i + 1} ka content kisi pehle wale question se hubahu (identical) match kar raha hai. Dono me thoda sa farak (text me change) karo taaki wo alag pehchane jaayein.`);

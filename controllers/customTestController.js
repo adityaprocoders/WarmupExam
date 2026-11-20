@@ -65,6 +65,32 @@ async function getTestIdsForExams({ exams = [], isOwner }) {
     return tests;
 }
 
+
+// Exam ki listings ki language se Language buttons banata hai
+async function getLanguagesForExams({ exams = [], isOwner }) {
+    if (!exams.length) return ["English"];
+    const listingFilter = { exam: { $in: exams.map((e) => new RegExp(`^${escapeRegex(e)}$`, "i")) } };
+    if (!isOwner) listingFilter.visibility = "public";
+
+    const raw = await Listing.distinct("language", listingFilter);
+
+    // "English, Hindi" / "English/Hindi" jaisi values ko todo, trim + case-insensitive dedupe
+    const seen = new Map();
+    raw.forEach((l) => {
+        String(l || "")
+            .split(/[,/&+]/)
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .forEach((v) => {
+                if (!seen.has(v.toLowerCase())) seen.set(v.toLowerCase(), v);
+            });
+    });
+
+    const list = Array.from(seen.values());
+    return list.length ? list : ["English"];
+}
+
+
 async function getAllTestIds({ isOwner }) {
     const listingFilter = {};
     if (!isOwner) listingFilter.visibility = "public";
@@ -290,8 +316,8 @@ export const getSubjects = async (req, res) => {
         ]);
 
         const subjects = rows.filter((r) => r._id).map((r) => ({ name: String(r._id), count: r.count }));
-        const languages = Array.from(new Set(tests.flatMap((t) => t.languages || []))).filter(Boolean);
-        res.json({ subjects, languages: languages.length ? languages : ["English"] });
+        const languages = await getLanguagesForExams({ exams, isOwner });
+        res.json({ subjects, languages });
     } catch (err) {
         console.error("getSubjects error:", err);
         res.status(500).json({ subjects: [], languages: [] });

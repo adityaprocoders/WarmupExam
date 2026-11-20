@@ -15,6 +15,8 @@ let selectedSubjects = new Set();
 let editingSubjectTimeIndex = null;
 let testDurationState = 0;
 let testShowLanguage = 'all';
+let testLanguageMode = 'single';
+let testLanguages = [];
 
 let criteriaRowState = {};
 
@@ -93,7 +95,7 @@ async function refreshQuestionSource() {
     testShowLanguage = 'all';
 
     await Promise.all([loadSubjects(), loadLanguages(), loadGlobalSections()]);
-    renderShowLanguageUI();
+    handleLanguageUI();
 
     // Subject-wise time / question-count me purane subject names invalid ho sakte hain
     if (document.getElementById('timeStrategy').value === 'subject') {
@@ -403,9 +405,11 @@ function explorerBack() {
 async function loadSubjects() {
     try {
         // Other mode: subjects current listing ke marks se (taaki marks mismatch na ho)
+        const tierEl = document.getElementById('tierSelect');
+        const tierQuery = tierEl && tierEl.value ? `?tier=${encodeURIComponent(tierEl.value)}` : '';
         const url = sourceMode === 'other'
-            ? `/api/listing/${contextData.listingId}/marks-subjects`
-            : `/api/listing/${contextData.listingId}/subjects`;
+            ? `/api/listing/${contextData.listingId}/marks-subjects${tierQuery}`
+            : `/api/listing/${contextData.listingId}/subjects${tierQuery}`;
 
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Subjects request failed: ${res.status}`);
@@ -548,6 +552,123 @@ function handleTimeUI() {
 }
 
 function renderShowLanguageUI() {
+  const container = document.getElementById('showLanguageFieldContainer');
+  if (!container) return;
+
+  const wrap = container.parentElement;
+
+  if (testLanguageMode !== 'multiple' || testLanguages.length === 0) {
+    container.innerHTML = '';
+    if (wrap) wrap.style.display = 'none';
+    testShowLanguage = 'all';
+    return;
+  }
+  if (wrap) wrap.style.display = '';
+
+  if (testShowLanguage !== 'all' && !testLanguages.includes(testShowLanguage)) {
+    testShowLanguage = 'all';
+  }
+
+  const optionsHtml = [
+    `<option value="all" ${testShowLanguage === 'all' ? 'selected' : ''}>All</option>`,
+    ...testLanguages.map(lang =>
+      `<option value="${escapeHtml(lang)}" ${testShowLanguage === lang ? 'selected' : ''}>${escapeHtml(lang)}</option>`
+    )
+  ].join('');
+
+  container.innerHTML = `
+    <select id="showLanguageSelect" data-action="show-language-change"
+      class="w-full p-3 border border-gray-200 rounded-xl bg-white font-bold text-sm">
+      ${optionsHtml}
+    </select>`;
+}
+
+function handleLanguageUI() {
+  const container = document.getElementById('languageFieldContainer');
+  if (!container) return;
+
+  const modeEl = document.getElementById('languageMode');
+  testLanguageMode = modeEl && modeEl.value === 'multiple' ? 'multiple' : 'single';
+
+  const datalistHtml = `<datalist id="langSuggestions">${
+    availableLanguagesList.map(l => `<option value="${escapeHtml(l)}"></option>`).join('')
+  }</datalist>`;
+
+  if (testLanguageMode === 'single') {
+    const prev = document.getElementById('singleLanguageInput');
+    const currentLang = prev ? prev.value : (testLanguages[0] || 'English');
+    container.innerHTML = `
+      <div>
+        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Language</label>
+        <input type="text" id="singleLanguageInput" list="langSuggestions"
+          placeholder="e.g. English, Hindi, Punjabi..."
+          value="${escapeHtml(currentLang)}"
+          class="w-full md:w-1/3 p-3 border border-gray-200 rounded-xl text-sm">
+        ${datalistHtml}
+      </div>`;
+  } else {
+    container.innerHTML = `
+      <div>
+        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Languages (kam se kam 2)</label>
+        <div id="langTagContainer" class="min-h-[50px] p-2 border border-gray-200 bg-white rounded-xl flex flex-wrap gap-2 mb-2"></div>
+        <div class="flex gap-2">
+          <input type="text" id="langInput" list="langSuggestions"
+            placeholder="e.g. Hindi, English, Bhojpuri..."
+            class="flex-1 p-3 border border-gray-200 rounded-xl text-sm">
+          <button type="button" data-action="add-language-tag"
+            class="bg-indigo-600 text-white px-4 rounded-xl font-bold">Add</button>
+        </div>
+        ${datalistHtml}
+      </div>`;
+    renderLanguageTags();
+  }
+
+  renderShowLanguageUI();
+}
+
+function addLanguageTag() {
+  const input = document.getElementById('langInput');
+  if (!input) return;
+  const val = input.value.trim();
+  if (val && !testLanguages.some(l => l.toLowerCase() === val.toLowerCase())) {
+    testLanguages.push(val);
+    renderLanguageTags();
+    renderShowLanguageUI();
+  }
+  input.value = '';
+}
+
+function removeLanguageTag(lang) {
+  testLanguages = testLanguages.filter(l => l !== lang);
+  renderLanguageTags();
+  renderShowLanguageUI();
+}
+
+function renderLanguageTags() {
+  const c = document.getElementById('langTagContainer');
+  if (!c) return;
+  c.innerHTML = testLanguages.map(lang =>
+    `<span class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2">${escapeHtml(lang)} <button type="button" data-action="remove-language-tag" data-lang="${escapeHtml(lang)}" class="hover:text-red-200 font-bold">✕</button></span>`
+  ).join('');
+}
+
+async function onTierChange() {
+  await loadSubjects();
+
+  if (document.getElementById('timeStrategy').value === 'subject') {
+    subjectTimeList = [];
+    selectedSubjects.clear();
+    handleTimeUI();
+  }
+  if (document.getElementById('questionCountStrategy').value === 'subject') {
+    subjectQuestionCountList = [];
+    handleQuestionCountUI();
+  }
+  resetCriteriaRows();
+}
+
+
+function renderShowLanguageUI_OLD() {
   const container = document.getElementById('showLanguageFieldContainer');
   if (!container) return;
 
@@ -1026,9 +1147,10 @@ async function generateTest() {
 
     const payload = {
         title: document.getElementById('testTitleInput').value,
-        languageMode: availableLanguagesList.length > 1 ? 'multiple' : 'single',
-        languages: availableLanguagesList,
-        showLanguage: testShowLanguage,
+        languageMode: testLanguageMode,
+        languages: testLanguageMode === 'multiple' ? testLanguages.slice() : [(document.getElementById('singleLanguageInput')?.value || '').trim()],
+        showLanguage: testLanguageMode === 'multiple' ? testShowLanguage : 'all',
+        tier: (document.getElementById('tierSelect') || {}).value || null,
         timeStrategy,
         duration: timeStrategy === 'total'
             ? Number(document.getElementById('totalTimeInput')?.value) || 0
@@ -1051,6 +1173,23 @@ async function generateTest() {
         parentType: contextData.parentType,
         parentId: contextData.parentId
     };
+
+        const languageMode = testLanguageMode;
+    let languages;
+    if (languageMode === 'multiple') {
+        languages = testLanguages.slice();
+        if (languages.length < 2) {
+            showToast("Multiple language mode me kam se kam 2 languages add karo.", "error");
+            return;
+        }
+    } else {
+        const singleLang = (document.getElementById('singleLanguageInput')?.value || '').trim();
+        if (!singleLang) {
+            showToast("Please enter the test language.", "error");
+            return;
+        }
+        languages = [singleLang];
+    }
 
      
      
@@ -1130,6 +1269,12 @@ document.addEventListener('click', function (e) {
         case 'explorer-back':
             explorerBack();
             break;
+                case 'add-language-tag':
+            addLanguageTag();
+            break;
+        case 'remove-language-tag':
+            removeLanguageTag(target.dataset.lang);
+            break;    
         case 'explorer-retry':
             loadExplorerNode();
             break;
@@ -1182,10 +1327,22 @@ document.addEventListener('change', function (e) {
         case 'source-exam-change':
             handleSourceExamChange();
             break;
+                case 'language-mode-change':
+            handleLanguageUI();
+            break;
+        case 'tier-change':
+            onTierChange();
+            break;
         case 'source-listing-change':
             handleSourceListingChange();
             break;
     }
+});
+
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !e.target) return;
+    if (e.target.id === 'langInput') { e.preventDefault(); addLanguageTag(); }
+    else if (e.target.id === 'singleLanguageInput') { e.preventDefault(); }
 });
 
 
@@ -1197,7 +1354,7 @@ async function init() {
     await loadLanguages();
     await loadGlobalSections();
     handleTimeUI();
-    renderShowLanguageUI();
+    handleLanguageUI();
     handleQuestionCountUI();
     addCriteriaRow();
     if (window.lucide) lucide.createIcons();

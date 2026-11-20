@@ -514,28 +514,27 @@ if (langEl) langEl.textContent = cfg.language || paper.language || "English";
         }
 
         // ---------------- SECTIONAL: tabs, lock, switch ----------------
-        function renderSubjectTabs() {
-            const bar = document.getElementById("subjectTabs");
-            if (!bar) return;
-            if (!HAS_SUBJECT_TABS || !sections.length) {
-                bar.classList.add("hidden");
-                bar.classList.remove("flex");
-                bar.innerHTML = "";
-                return;
-            }
-            bar.classList.remove("hidden");
-            bar.classList.add("flex");
-            bar.innerHTML = "";
-            sections.forEach((sec, idx) => {
-                const btn = document.createElement("button");
-                btn.type = "button";
-                btn.className = "subject-tab whitespace-nowrap px-4 py-2.5 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-indigo-500 active:scale-95 transition";
-                btn.textContent = sec.label;
-                btn.addEventListener("click", () => switchSection(idx));
-                bar.appendChild(btn);
-            });
-            updateSubjectTabsState();
-        }
+       function renderSubjectTabs() {
+    const bar = document.getElementById('subjectTabs');
+    if (!HAS_SUBJECT_TABS || sections.length === 0) {
+        bar.classList.add('hidden');
+        bar.classList.remove('flex');
+        bar.innerHTML = '';
+        return;
+    }
+    bar.classList.remove('hidden');
+    bar.classList.add('flex');
+    bar.innerHTML = '';
+    sections.forEach((sec, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.sectionTab = idx;
+        btn.className = 'subject-tab snap-start shrink-0 whitespace-nowrap px-4 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm font-semibold tracking-tight border-b-[3px] border-transparent text-slate-400 hover:text-indigo-500 hover:bg-slate-50 rounded-t-lg active:scale-95 transition-all duration-200';
+        btn.textContent = sec.label;
+        btn.addEventListener('click', () => switchSection(idx));
+        bar.appendChild(btn);
+    });
+}
 
         function updateSubjectTabsState() {
             if (!HAS_SUBJECT_TABS) return;

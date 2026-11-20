@@ -229,7 +229,11 @@ function clearSettingsUI() {
         if (btn.disabled) return;
         document.querySelectorAll(".category-btn").forEach((b) => {
           b.classList.remove(b.dataset.onBorder, b.dataset.onBg, "ring-2", b.dataset.onRing);
-          b.querySelector(".cat-check")?.classList.add("hidden");
+          const chk = b.querySelector(".cat-check");
+          if (chk) {
+            chk.classList.add("hidden");
+            chk.style.display = "";   // purana inline "flex" hatao
+          }
           b.querySelector(".cat-name")?.classList.remove(b.dataset.onText);
         });
         btn.classList.add(btn.dataset.onBorder, btn.dataset.onBg, "ring-2", btn.dataset.onRing);
@@ -1184,20 +1188,40 @@ if (diffTotal !== 100) return { ok: false, msg: "Difficulty percentages must add
     return { ok: true, msg: "" };
   }
 
-  function renderLanguages() {
-    $("language-row").innerHTML = state.languages
+   function renderLanguages() {
+    const row = $("language-row");
+    if (!row) return;
+
+    const before = state.language;
+
+    // purani/saved language agar ab list me nahi hai to hata do
+    if (state.language && !state.languages.includes(state.language)) state.language = null;
+    // sirf ek language hai to auto-select
+    if (!state.language && state.languages.length === 1) state.language = state.languages[0];
+
+    const ON = ["border-indigo-400", "bg-indigo-50", "text-indigo-700"];
+
+    row.innerHTML = state.languages
       .map((l) => `<button type="button" data-lang="${l}" class="lang-btn px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:border-indigo-300">${l}</button>`)
       .join("");
-    $("language-row").querySelectorAll(".lang-btn").forEach((btn) => {
+
+    row.querySelectorAll(".lang-btn").forEach((btn) => {
+      if (btn.dataset.lang === state.language) btn.classList.add(...ON);
       btn.addEventListener("click", () => {
-        $("language-row").querySelectorAll(".lang-btn").forEach((b) => b.classList.remove("border-indigo-400", "bg-indigo-50", "text-indigo-700"));
-        btn.classList.add("border-indigo-400", "bg-indigo-50", "text-indigo-700");
+        row.querySelectorAll(".lang-btn").forEach((b) => b.classList.remove(...ON));
+        btn.classList.add(...ON);
         state.language = btn.dataset.lang;
         updateSummary();
         validateReady();
         persist();
       });
     });
+
+    if (before !== state.language) {
+      updateSummary();
+      validateReady();
+      persist();
+    }
   }
 
   /* ---------------- SUMMARY (right sidebar + mobile sheet) ---------------- */
@@ -1493,11 +1517,7 @@ if (state.exams.length) {
           document.querySelectorAll(".subject-check").forEach((cb) => {
             if (savedSubjects.includes(cb.value)) cb.checked = true;
           });
-          if (savedLanguage) {
-            document.querySelector(`.lang-btn[data-lang="${savedLanguage}"]`)
-              ?.classList.add("border-indigo-400", "bg-indigo-50", "text-indigo-700");
-            state.language = savedLanguage;
-          }
+ 
 
           if (savedSubjects.length) {
             maxUnlockedIndex = Math.max(maxUnlockedIndex, STEPS.indexOf("difficulty"));

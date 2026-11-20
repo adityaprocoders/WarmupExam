@@ -58,7 +58,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import couponRoutes from "./routes/couponRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
-import questionBankRoutes from "./routes/questionBankRoutes.js";
+import questionBankRoutes from "./routes/questionBankRoutes.js"; 
 
 import minifyHTML from "express-minify-html-terser";
 
@@ -442,7 +442,7 @@ app.set("layout", "layouts/main");
 
 
 
-app.use(pageRoutes);
+app.use(pageRoutes); 
 app.use("/", categoryRoutes);
 app.use(authRoutes);
 app.use("/", ownerRoutes);

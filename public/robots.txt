@@ -28,15 +28,18 @@ Allow: /api/footer-data
 Disallow: /test-error
 Disallow: /csp-violation-report
 
-# Custom test (private pages)
+# Custom test  
 Disallow: /custom-test/upgrade
 Disallow: /custom-test/manage
 Disallow: /custom-test/attempt/
 Disallow: /custom-test/analysis/
 
+# Practice 
+Disallow: /practice-fragment/
 
 # Tracking params
 Disallow: /*?utm_
 Disallow: /*&utm_
 
 Sitemap: https://warmupexam.com/sitemap.xml
+Sitemap: https://warmupexam.com/sitemap-practice.xml

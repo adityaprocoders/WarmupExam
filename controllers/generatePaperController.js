@@ -8,7 +8,58 @@ import ExpressError from "../utils/ExpressError.js";
 import Category from "../models/Category.js";
 import Folder from "../models/Folder.js";
 import File from "../models/File.js";
+import { getTierList, getTierConfig, resolveTestTier } from "../utils/tierHelper.js";
+import { canonicalLang } from "../utils/instructionI18n.js";
 
+
+const normLang = (s) => String(s || "").trim().toLowerCase();
+
+function hasTranslationContent(t) {
+    return !!((t.question && String(t.question).trim()) || (t.questionImage && String(t.questionImage).trim()));
+}
+
+function isQuestionAllowedForLanguage_OLD(q, subjectName, testLanguageMode, testLanguages) {
+    const qMode = q.languageMode === "multiple" ? "multiple" : "single";
+    const translations = Array.isArray(q.translations) ? q.translations : [];
+    const hasLang = (lang) => translations.some(t => normLang(t.lang) === normLang(lang) && hasTranslationContent(t));
+
+    if (testLanguageMode === "multiple") {
+        if (qMode === "multiple") return testLanguages.every(hasLang);
+        return normLang(subjectName) === "english";
+    }
+    if (qMode === "single") return true;
+    return hasLang(testLanguages[0]);
+}
+
+
+// Test ki language(s) ko DB me jo exact spelling hai usme badlo (attempt side exact match karta hai)
+function canonicalizeLanguages(requested, dbLangs) {
+    return requested.map(r => {
+        const raw = String(r || "").trim();
+        const exact = dbLangs.find(d => d === raw);
+        if (exact) return exact;
+        const ci = dbLangs.find(d => normLang(d) === normLang(raw));
+        if (ci) return ci;
+        const alias = canonicalLang(raw);
+        const aliasMatch = dbLangs.find(d => normLang(d) === normLang(alias));
+        return aliasMatch || alias;
+    });
+}
+
+// Single test  : single-mode question OK; multiple-mode question tabhi jab uski translation me test ki language ho
+// Multiple test: multiple-mode question tabhi jab saari selected languages hon; single-mode sirf English subject ka
+function isQuestionAllowedForLanguage(q, subjectName, testLanguageMode, testLanguages) {
+    const qMode = q.languageMode === "multiple" ? "multiple" : "single";
+    const translations = Array.isArray(q.translations) ? q.translations : [];
+    const hasLang = (lang) => translations.some(t => t.lang === lang && hasTranslationContent(t));
+
+    if (testLanguageMode === "multiple") {
+        if (qMode === "multiple") return testLanguages.every(hasLang);
+        return normLang(subjectName) === "english";
+    }
+    if (qMode === "single") return true;
+    return hasLang(testLanguages[0]);
+}
 
 function getMarksForSubject(subjectsConfig, subjectName) {
     let found = subjectsConfig.find(s => s.subject === subjectName);
@@ -163,6 +214,7 @@ export const renderGeneratePaper = async (req, res) => {
         returnUrl: returnUrl || "/",
         selectedStatsSection: "all",     
         statsFilterSections: sections,
+        tierList: getTierList(listing),
         robots: "noindex, nofollow"
     });
 };
@@ -287,10 +339,25 @@ export const generatePaper = async (req, res) => {
         return res.status(400).json({ success: false, message: "At least one criteria row is required." });
     }
 
-    const listingDoc = await Listing.findById(body.listingId).select("marks");
+        const listingDoc = await Listing.findById(body.listingId).select("marks examStructure tiers");
     if (!listingDoc) return res.status(404).json({ success: false, message: "Listing not found" });
 
-    const subjectsConfig = listingDoc.marks || [];
+        const resolvedTier = resolveTestTier(listingDoc, body.tier);
+    const subjectsConfig = getTierConfig(listingDoc, resolvedTier).marks || [];
+
+    const languageMode = body.languageMode === "multiple" ? "multiple" : "single";
+    let languages = Array.isArray(body.languages) && body.languages.length > 0
+        ? body.languages.map(l => String(l).trim()).filter(Boolean) : ["English"];
+    if (languages.length === 0) languages = ["English"];
+    if (languageMode === "single" && languages.length > 1) languages = [languages[0]];
+    if (languageMode === "multiple" && languages.length < 2) {
+        return res.status(400).json({ success: false, message: "Multiple language mode me kam se kam 2 languages choose karo." });
+    }
+
+    let showLanguage = body.showLanguage && String(body.showLanguage).trim()
+        ? String(body.showLanguage).trim() : "all";
+    if (languageMode !== "multiple") showLanguage = "all";
+    else if (showLanguage !== "all" && !languages.includes(showLanguage)) showLanguage = "all";
     const noOfPapers = Math.max(1, Number(body.noOfPapers) || 1);
     const maxRepeat = Math.max(1, Number(body.maxRepeat) || 2);
     const visibility = body.visibility === "public" ? "public" : "private";
@@ -327,6 +394,26 @@ export const generatePaper = async (req, res) => {
             message: "No tests or questions are available in this listing or selected section."
         });
     }
+
+
+    // ===== Language spelling ko DB ke hisaab se canonical karo =====
+    {
+        const srcQIds = await TestQuestion.distinct("question", { test: { $in: testIds } });
+        const dbLangs = (await Question.distinct("translations.lang", { _id: { $in: srcQIds }, languageMode: "multiple" }))
+            .filter(l => l && String(l).trim() !== "");
+
+        languages = [...new Set(canonicalizeLanguages(languages, dbLangs))];
+        if (languageMode === "multiple" && languages.length < 2) {
+            return res.status(400).json({ success: false, message: "Multiple language mode me kam se kam 2 alag languages choose karo." });
+        }
+        if (languageMode === "single") languages = [languages[0]];
+
+        if (showLanguage !== "all") {
+            const sl = canonicalizeLanguages([showLanguage], dbLangs)[0];
+            showLanguage = languages.includes(sl) ? sl : "all";
+        }
+    }
+    
 
         // 👇 NAYA: "Total No of Questions" (All ya Subject-wise) se effective minCount/maxCount decide karo
     const totalQuestionsStrategy = body.totalQuestionsStrategy === 'subject' ? 'subject' : 'all';
@@ -441,9 +528,22 @@ export const generatePaper = async (req, res) => {
 
          questionMatch.status = { $ne: "Disabled" };
 
-        const pool = await Question.find(questionMatch).lean();
+                let pool = await Question.find(questionMatch).lean();
   
          pool.forEach(q => { q._meta = tqMetaByQ.get(q._id.toString()) || null; });
+
+
+                 const poolBeforeLang = pool.length;
+        pool = pool.filter(q => {
+            const subj = (q._meta && q._meta.subject) || q.subject;
+            return isQuestionAllowedForLanguage(q, subj, languageMode, languages);
+        });
+        if (poolBeforeLang > 0 && pool.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: `"${label}" ke questions selected language setting (${languageMode === "multiple" ? "Multiple: " + languages.join(", ") : "Single: " + languages[0]}) se match nahi karte. Language mode/languages badlo ya dusre questions chuno.`
+            });
+        }
 
         if (pool.length === 0) {
             return res.status(400).json({
@@ -510,17 +610,10 @@ export const generatePaper = async (req, res) => {
         const baseTitle = (body.title && body.title.trim()) ? body.title.trim() : "Generated Paper";
         const paperTitle = noOfPapers > 1 ? `${baseTitle} ${p + 1}` : baseTitle;
 
-        const languageMode = body.languageMode === "multiple" ? "multiple" : "single";
-        let languages = Array.isArray(body.languages) && body.languages.length > 0
-            ? body.languages.map(l => String(l).trim()).filter(Boolean) : ["English"];
-        if (languageMode === "single" && languages.length > 1) languages = [languages[0]];
 
-        let showLanguage = body.showLanguage && String(body.showLanguage).trim()
-            ? String(body.showLanguage).trim() : "all";
-        if (languageMode !== "multiple") showLanguage = "all";
-        else if (showLanguage !== "all" && !languages.includes(showLanguage)) showLanguage = "all";
 
         const testDoc = new Test({
+            tier: resolvedTier,
             title: paperTitle,
             listing: body.listingId,
             section: body.sectionId || null,
@@ -699,12 +792,14 @@ export const getMarksSubjects = async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid listing id" });
     }
 
-    const listing = await Listing.findById(id).select("marks").lean();
+        const listing = await Listing.findById(id).select("marks examStructure tiers").lean();
     if (!listing) return res.status(404).json({ success: false, message: "Listing not found" });
 
     const seen = new Set();
     const data = [];
-    for (const m of (listing.marks || [])) {
+    const tierKey = resolveTestTier(listing, req.query.tier);
+    const marksArr = getTierConfig(listing, tierKey).marks || [];
+    for (const m of marksArr) {
         if (m.subject && !seen.has(m.subject)) {
             seen.add(m.subject);
             data.push({ subject: m.subject });
