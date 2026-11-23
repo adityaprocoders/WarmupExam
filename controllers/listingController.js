@@ -20,6 +20,7 @@ import { buildAboutTestSeries } from "../utils/aboutTestSeries.js";
 import { cascadeDeleteListing } from "../utils/deleteHelpers.js";
 import ExamPatternSummary from "../models/ExamPatternSummary.js";
 import { isSafeRedirectPath } from "../utils/safeRedirect.js";
+import { getPrivateCategoryIds } from "../utils/categoryHelpers.js";
 
 const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -30,7 +31,10 @@ export const allTests = async (req, res) => {
     const hasSearched = !!(exam || search);
 
     let baseFilter = {};
-    if (!isOwner) baseFilter.visibility = "public";
+    if (!isOwner) {
+        baseFilter.visibility = "public";
+        baseFilter.category = { $nin: await getPrivateCategoryIds() };
+    }
 
     if (language) {
         baseFilter.language = {
@@ -75,9 +79,9 @@ export const allTests = async (req, res) => {
 
     const { enrolledIds, enrolledExpiryMap, suspendedIds } = getValidEnrollments(req.user);
 
-    const languages = (await Listing.distinct("language")).filter(Boolean).sort();
+    const languages = (await Listing.distinct("language", isOwner ? {} : { visibility: "public", category: { $nin: await getPrivateCategoryIds() } })).filter(Boolean).sort();
 
-    const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" } }).sort({ createdAt: -1 }).lean();
+    const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" }, visibility: { $ne: "private" } }).sort({ createdAt: -1 }).lean();
     const listingCounts = await Listing.aggregate([
         { $match: { exam: { $nin: [null, ""] }, ...(isOwner ? {} : { visibility: "public" }) } },
         { $group: { _id: { category: "$category", exam: { $toLower: { $trim: { input: "$exam" } } } } } },
@@ -166,7 +170,10 @@ export const searchTests = async (req, res) => {
             { title: { $regex: escapeRegex(keyword), $options: "i" } }
         ]
     };
-    if (!isOwner) filter.visibility = "public";
+    if (!isOwner) {
+        filter.visibility = "public";
+        filter.category = { $nin: await getPrivateCategoryIds() };
+    }
 
     // 👇 CHANGED — type bhi add kiya taaki Free/Paid badge dikha sakein
     const tests = await Listing.find(filter).select("title exam slug language type").limit(8);
@@ -179,14 +186,29 @@ export const showTest = async (req, res) => {
     const { slug } = req.params;
     const isOwner = req.user && req.user.role === "owner";
 
+    const { enrolledIds } = getValidEnrollments(req.user);
+    const privateIds = await getPrivateCategoryIds();
+
     let query = { slug };
-    if (!isOwner) query.visibility = "public";
+    if (!isOwner) {
+        query.visibility = "public";
+        query.$or = [
+            { category: { $nin: privateIds } },
+            { _id: { $in: enrolledIds } }
+        ];
+    }
     let data = await Listing.findOne(query);
 
     // Backward compatibility — agar purana ID-wala URL hit hua (Google index mein already hai)
     if (!data && mongoose.Types.ObjectId.isValid(slug)) {
         let idQuery = { _id: slug };
-        if (!isOwner) idQuery.visibility = "public";
+        if (!isOwner) {
+            idQuery.visibility = "public";
+            idQuery.$or = [
+                { category: { $nin: privateIds } },
+                { _id: { $in: enrolledIds } }
+            ];
+        }
         data = await Listing.findOne(idQuery);
         if (data) {
             return res.redirect(301, `/test/${data.slug}`);
@@ -202,13 +224,12 @@ export const showTest = async (req, res) => {
         title: data.title,
         exam: data.exam,
         language: { $ne: data.language },
-        visibility: "public"
+        visibility: "public",
+        category: { $nin: privateIds }
     }).select("slug language").lean();
 
 
  
-
-    const { enrolledIds } = getValidEnrollments(req.user);
 
 const totalTestCount = await Test.countDocuments({ listing: data._id, isLiveTest: { $ne: true } }); 
 const aboutTestSeries = await buildAboutTestSeries(data._id, Section, Test, data.type); 
@@ -407,7 +428,9 @@ export const deleteTest = async (req, res) => {
 };
 
 export const getExams = async (req, res) => {
-    const exams = await Listing.distinct("exam");
+    const isOwner = req.user && req.user.role === "owner";
+    const filter = isOwner ? {} : { visibility: "public", category: { $nin: await getPrivateCategoryIds() } };
+    const exams = await Listing.distinct("exam", filter);
     res.json(exams.filter(Boolean).sort());
 };
 
@@ -415,7 +438,10 @@ export const getSeriesByExam = async (req, res) => {
     const { exam } = req.params;
     const isOwner = req.user && req.user.role === "owner";
     const filter = { exam };
-    if (!isOwner) filter.visibility = "public";
+    if (!isOwner) {
+        filter.visibility = "public";
+        filter.category = { $nin: await getPrivateCategoryIds() };
+    }
 
     // 👇 CHANGED — type bhi add kiya taaki Free/Paid badge dikha sakein
     const series = await Listing.find(filter).select("title exam slug language type").sort({ createdAt: -1 });
@@ -429,10 +455,10 @@ export const getSeriesByExam = async (req, res) => {
 export const getFooterData = async (req, res) => {
     try {
         // Sirf public listings se unique exams nikalna
-        const exams = await Listing.distinct("exam", { visibility: "public" });
+                const privateIds = await getPrivateCategoryIds();
+        const exams = await Listing.distinct("exam", { visibility: "public", category: { $nin: privateIds } });
         
-        // Latest test series/listings fetch karna footer ke liye (e.g. limit 20)
-        const testSeries = await Listing.find({ visibility: "public" })
+        const testSeries = await Listing.find({ visibility: "public", category: { $nin: privateIds } })
             .select("title slug")
             .sort({ createdAt: -1 })
             .limit(20);

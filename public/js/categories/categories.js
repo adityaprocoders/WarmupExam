@@ -17,6 +17,15 @@ function openEditModal(id, name, icon, description) {
     document.getElementById('editName').value = name;
     document.getElementById('editIcon').value = icon;
     document.getElementById('editDescription').value = description;
+
+    const visSelect = document.getElementById('editVisibility');
+    if (visSelect) {
+        let visMap = {};
+        try {
+            visMap = JSON.parse(document.getElementById('categoryVisibilityMap')?.dataset.map || '{}');
+        } catch (e) { visMap = {}; }
+        visSelect.value = visMap[id] === 'private' ? 'private' : 'public';
+    }
     document.getElementById('editCategoryModalOverlay')?.classList.remove('hidden');
 }
 function closeEditModal() {

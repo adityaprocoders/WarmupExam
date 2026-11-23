@@ -29,7 +29,7 @@ export const list = async (req, res) => {
     if (sort === "priceHigh") sortOption = { price: -1 };
 
     const ebooks = await Ebook.find(filter).populate("category", "name").sort(sortOption).lean();
-    const categories = await Category.find({}).sort({ name: 1 }).lean();
+    const categories = await Category.find(isOwner ? {} : { visibility: { $ne: "private" }, slug: { $ne: "ai-generated-system" } }).sort({ name: 1 }).lean();
 
     // Owner ko saare exams dikhein, student ko sirf public wale
     const examMatchStage = isOwner ? {} : { visibility: "public" };

@@ -239,7 +239,7 @@ if (availableLanguages.length === 1) {
     const makeRow = (names, minutes) => {
         const list = names.map(n => ({ subject: n, count: subjStats[n].count }));
         return {
-            name: names.join(" + "),
+            name: names.join(" & "),
             subjects: list,
             questions: list.reduce((s, x) => s + x.count, 0),
             marks: round2(names.reduce((s, n) => s + subjStats[n].marks, 0)),

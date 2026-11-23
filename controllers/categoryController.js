@@ -29,7 +29,7 @@ const goBack = (req, res) => res.redirect(req.get("Referrer") || "/categories");
 export const getAllCategories = async (req, res, next) => {
     try {
         const isOwner = req.user && req.user.role === "owner";
-        const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" } }).sort({ createdAt: -1 }).lean();
+        const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" }, visibility: { $ne: "private" } }).sort({ createdAt: -1 }).lean();
 
         const categoryIds = categories.map(c => c._id);
         const listingCounts = await Listing.aggregate([
@@ -78,6 +78,7 @@ export const createCategory = async (req, res) => {
             icon,
             description,
             slug,
+            visibility: req.body.visibility === "private" ? "private" : "public",
         });
 
         req.flash && req.flash("success", "Category added successfully");
@@ -120,6 +121,7 @@ export const updateCategory = async (req, res) => {
             icon,
             description,
             slug: generateSlug(name),
+            ...(req.body.visibility ? { visibility: req.body.visibility === "private" ? "private" : "public" } : {}),
         });
 
         req.flash && req.flash("success", "Category updated successfully");
@@ -162,7 +164,7 @@ export const showCategory = async (req, res, next) => {
 
         const isOwner = req.user && req.user.role === "owner";
 
-        if (!isOwner && category.slug === "ai-generated-system") {
+        if (!isOwner && (category.slug === "ai-generated-system" || category.visibility === "private")) {
             throw new ExpressError(404, "Category Not Found");
         }
 
@@ -293,6 +295,9 @@ export const getCategoryTestsApi = async (req, res) => {
         if (!category) return res.json({ success: false, listings: [], hasMore: false, total: 0 });
 
         const isOwner = req.user && req.user.role === "owner";
+        if (!isOwner && category.visibility === "private") {
+            return res.json({ success: false, listings: [], hasMore: false, total: 0, exams: [], series: [] });
+        }
         const baseFilter = { category: category._id };
         if (!isOwner) baseFilter.visibility = "public";
 
@@ -364,6 +369,9 @@ export const getCategorySearchSuggestions = async (req, res) => {
         if (!category) return res.json({ exams: [], series: [] });
 
         const isOwner = req.user && req.user.role === "owner";
+        if (!isOwner && category.visibility === "private") {
+            return res.json({ success: false, listings: [], hasMore: false, total: 0, exams: [], series: [] });
+        }
         const baseFilter = { category: category._id };
         if (!isOwner) baseFilter.visibility = "public";
 

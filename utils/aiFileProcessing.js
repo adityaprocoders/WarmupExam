@@ -32,7 +32,7 @@ export async function processPDFFile(buffer) {
     const text = (parsed.text || "").trim();
 
     if (text.length > 60) {
-        return { mode: "text", text: text.slice(0, 20000) }; // safety cap
+        return { mode: "text", text: text.slice(0, 50000), pages: parsed.numpages || 0 }; // 50000 = sabse bade plan ki limit, plan wise slice controller me hota hai
     }
 
     // Text nahi mila — likely scanned/image-based PDF

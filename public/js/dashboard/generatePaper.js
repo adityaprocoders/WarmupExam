@@ -8,7 +8,8 @@ const contextData = {
 };
 
 let subjectsList = [];
-let availableLanguagesList = [];
+let languageInfo = { listingLanguage: 'English', singleCount: 0, translationLanguages: [] };
+let languageLoadSeq = 0;
 let criteriaRowCount = 0;
 let subjectTimeList = [];
 let selectedSubjects = new Set();
@@ -376,14 +377,14 @@ async function refreshAllRowFilters() {
 
 async function onGlobalSectionsChanged() {
     await syncExplorerWithSections();
-    await refreshAllRowFilters();
+       await Promise.all([refreshAllRowFilters(), refreshLanguages()]);
 }
 
 async function goToExplorerPath(newPath) {
     explorerPath = newPath;
     const last = explorerPath[explorerPath.length - 1];
     scopeNode = last && last.type !== 'section' ? { type: last.type, id: last.id } : null;
-    await Promise.all([loadExplorerNode(), refreshAllRowFilters()]);
+    await Promise.all([loadExplorerNode(), refreshAllRowFilters(), refreshLanguages()]);
 }
 
 function openExplorerChild(type, id, title) {
@@ -422,20 +423,49 @@ async function loadSubjects() {
 }
 
 async function loadLanguages() {
+    const seq = ++languageLoadSeq;
     const listingId = getQuestionListingId();
-    if (!listingId) {
-        availableLanguagesList = [];
-        return;
-    }
+    languageInfo = { listingLanguage: 'English', singleCount: 0, translationLanguages: [] };
+    if (!listingId) return;
     try {
-        const res = await fetch(`/api/listing/${listingId}/languages`);
+        const sectionQuery = Array.from(selectedGlobalSections).join(',');
+        const url = `/api/listing/${listingId}/languages?section=${encodeURIComponent(sectionQuery)}${getScopeQuery()}`;
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`Languages request failed: ${res.status}`);
         const result = await res.json();
-        availableLanguagesList = result.success ? result.data : [];
+        if (seq !== languageLoadSeq) return;   // purani request ignore
+        if (result.success && result.data) languageInfo = result.data;
     } catch (err) {
         console.error("Languages fetch error:", err);
-        availableLanguagesList = [];
     }
+}
+
+function getSingleModeLanguages() {
+    const list = (languageInfo.translationLanguages || []).map(t => t.lang);
+    const ll = String(languageInfo.listingLanguage || '');
+    if (languageInfo.singleCount > 0 && ll) {
+        const idx = list.findIndex(x => x.toLowerCase() === ll.toLowerCase());
+        if (idx === -1) list.unshift(ll);
+        else if (idx > 0) list.unshift(list.splice(idx, 1)[0]);   // listing ki language default pehli
+    }
+    return list;
+}
+
+function getLanguageCount(lang, mode) {
+    const t = (languageInfo.translationLanguages || []).find(x => x.lang === lang);
+    const transCount = t ? t.count : 0;
+    if (mode === 'multiple') return transCount;
+    const isListingLang = String(lang).toLowerCase() === String(languageInfo.listingLanguage || '').toLowerCase();
+    return transCount + (isListingLang ? languageInfo.singleCount : 0);
+}
+
+function getMultiModeLanguages() {
+    return (languageInfo.translationLanguages || []).map(t => t.lang);
+}
+
+async function refreshLanguages() {
+    await loadLanguages();
+    handleLanguageUI();
 }
 
 async function loadGlobalSections() {
@@ -578,7 +608,7 @@ function renderShowLanguageUI() {
 
   container.innerHTML = `
     <select id="showLanguageSelect" data-action="show-language-change"
-      class="w-full p-3 border border-gray-200 rounded-xl bg-white font-bold text-sm">
+      class="w-full p-2 rounded-lg text-gray-800 font-bold outline-none bg-white text-sm">
       ${optionsHtml}
     </select>`;
 }
@@ -590,67 +620,56 @@ function handleLanguageUI() {
   const modeEl = document.getElementById('languageMode');
   testLanguageMode = modeEl && modeEl.value === 'multiple' ? 'multiple' : 'single';
 
-  const datalistHtml = `<datalist id="langSuggestions">${
-    availableLanguagesList.map(l => `<option value="${escapeHtml(l)}"></option>`).join('')
-  }</datalist>`;
+  const labelCls = 'block text-xs font-semibold mb-1 opacity-80';
+  const warnCls = 'text-xs text-amber-700 bg-amber-50 rounded-lg p-2';
 
   if (testLanguageMode === 'single') {
+    container.style.display = '';
+    const langs = getSingleModeLanguages();
     const prev = document.getElementById('singleLanguageInput');
-    const currentLang = prev ? prev.value : (testLanguages[0] || 'English');
-    container.innerHTML = `
-      <div>
-        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Language</label>
-        <input type="text" id="singleLanguageInput" list="langSuggestions"
-          placeholder="e.g. English, Hindi, Punjabi..."
-          value="${escapeHtml(currentLang)}"
-          class="w-full md:w-1/3 p-3 border border-gray-200 rounded-xl text-sm">
-        ${datalistHtml}
-      </div>`;
+    const prevVal = prev ? prev.value : (testLanguages[0] || '');
+    const selected = langs.includes(prevVal) ? prevVal : (langs[0] || '');
+    testLanguages = selected ? [selected] : [];
+
+    if (langs.length === 0) {
+      container.innerHTML = `
+        <label class="${labelCls}">Language</label>
+        <p class="${warnCls}">
+          ${(sourceMode === 'other' && !sourceListingId) ? 'Pehle source listing choose karo.' : 'Is source me koi question nahi mila.'}
+        </p>
+        <input type="hidden" id="singleLanguageInput" value="">`;
+    } else {
+      container.innerHTML = `
+        <label class="${labelCls}">Language</label>
+        <select id="singleLanguageInput" data-action="single-language-change"
+          class="w-full p-2 rounded-lg text-gray-800 font-bold outline-none bg-white text-sm">
+          ${langs.map(l => `<option value="${escapeHtml(l)}" ${l === selected ? 'selected' : ''}>${escapeHtml(l)} (${getLanguageCount(l, 'single')} Q)</option>`).join('')}
+        </select>`;
+    }
   } else {
-    container.innerHTML = `
-      <div>
-        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Languages (kam se kam 2)</label>
-        <div id="langTagContainer" class="min-h-[50px] p-2 border border-gray-200 bg-white rounded-xl flex flex-wrap gap-2 mb-2"></div>
-        <div class="flex gap-2">
-          <input type="text" id="langInput" list="langSuggestions"
-            placeholder="e.g. Hindi, English, Bhojpuri..."
-            class="flex-1 p-3 border border-gray-200 rounded-xl text-sm">
-          <button type="button" data-action="add-language-tag"
-            class="bg-indigo-600 text-white px-4 rounded-xl font-bold">Add</button>
-        </div>
-        ${datalistHtml}
-      </div>`;
-    renderLanguageTags();
+    // MULTIPLE: languages auto = questions me jitni hain (user ko kuch choose nahi karna)
+    const langs = getMultiModeLanguages();
+
+    if (langs.length < 2) {
+      testLanguages = [];
+      container.style.display = '';
+      container.innerHTML = `
+        <p class="${warnCls}">
+          Multiple ke liye kam se kam 2 languages wale questions chahiye. Is source me ${langs.length === 0 ? 'koi multi-language question nahi hai' : 'sirf ' + escapeHtml(langs[0]) + ' hai'}.
+        </p>`;
+    } else {
+      testLanguages = langs.slice();
+      container.style.display = '';
+      container.innerHTML = `
+        <label class="${labelCls}">Test Languages</label>
+        <p class="text-xs bg-white/10 rounded-lg p-2">${langs.map(l => `${escapeHtml(l)} (${getLanguageCount(l, 'multiple')} Q)`).join(' • ')}</p>`;
+    }
   }
 
   renderShowLanguageUI();
 }
 
-function addLanguageTag() {
-  const input = document.getElementById('langInput');
-  if (!input) return;
-  const val = input.value.trim();
-  if (val && !testLanguages.some(l => l.toLowerCase() === val.toLowerCase())) {
-    testLanguages.push(val);
-    renderLanguageTags();
-    renderShowLanguageUI();
-  }
-  input.value = '';
-}
-
-function removeLanguageTag(lang) {
-  testLanguages = testLanguages.filter(l => l !== lang);
-  renderLanguageTags();
-  renderShowLanguageUI();
-}
-
-function renderLanguageTags() {
-  const c = document.getElementById('langTagContainer');
-  if (!c) return;
-  c.innerHTML = testLanguages.map(lang =>
-    `<span class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2">${escapeHtml(lang)} <button type="button" data-action="remove-language-tag" data-lang="${escapeHtml(lang)}" class="hover:text-red-200 font-bold">✕</button></span>`
-  ).join('');
-}
+ 
 
 async function onTierChange() {
   await loadSubjects();
@@ -667,24 +686,6 @@ async function onTierChange() {
   resetCriteriaRows();
 }
 
-
-function renderShowLanguageUI_OLD() {
-  const container = document.getElementById('showLanguageFieldContainer');
-  if (!container) return;
-
-  const optionsHtml = [
-    `<option value="all" ${testShowLanguage === 'all' ? 'selected' : ''}>All</option>`,
-    ...availableLanguagesList.map(lang =>
-      `<option value="${lang}" ${testShowLanguage === lang ? 'selected' : ''}>${lang}</option>`
-    )
-  ].join('');
-
-  container.innerHTML = `
-    <select id="showLanguageSelect" data-action="show-language-change"
-      class="w-full p-3 border border-gray-200 rounded-xl bg-white font-bold text-sm">
-      ${optionsHtml}
-    </select>`;
-}
 
 function handleQuestionCountUI() {
     const container = document.getElementById('questionCountDynamicContainer');
@@ -1179,13 +1180,13 @@ async function generateTest() {
     if (languageMode === 'multiple') {
         languages = testLanguages.slice();
         if (languages.length < 2) {
-            showToast("Multiple language mode me kam se kam 2 languages add karo.", "error");
+             showToast("Multiple language ke liye is source me kam se kam 2 languages wale questions chahiye.", "error");
             return;
         }
     } else {
         const singleLang = (document.getElementById('singleLanguageInput')?.value || '').trim();
         if (!singleLang) {
-            showToast("Please enter the test language.", "error");
+            showToast("Please choose the test language.", "error");
             return;
         }
         languages = [singleLang];
@@ -1206,9 +1207,11 @@ async function generateTest() {
             showToast("Issue: " + (result.message || "Unknown error"), "error");
         } else {
             if (result.warnings && result.warnings.length > 0) {
-                showToast("Papers generated, but with some warnings:\n\n" + result.warnings.join('\n'), "error");
+                showToast("Papers generated, but with some warnings:<br><br>" + result.warnings.map(escapeHtml).join('<br>'), "error");
+                setTimeout(() => { window.location.href = contextData.returnUrl; }, 4000);
+            } else {
+                window.location.href = contextData.returnUrl;
             }
-            window.location.href = contextData.returnUrl;
         }
     } catch (err) { 
         showToast("An error occurred while generating the paper.", "error");
@@ -1268,12 +1271,6 @@ document.addEventListener('click', function (e) {
             break;
         case 'explorer-back':
             explorerBack();
-            break;
-                case 'add-language-tag':
-            addLanguageTag();
-            break;
-        case 'remove-language-tag':
-            removeLanguageTag(target.dataset.lang);
             break;    
         case 'explorer-retry':
             loadExplorerNode();
@@ -1315,6 +1312,9 @@ document.addEventListener('change', function (e) {
         case 'show-language-change':
             testShowLanguage = target.value;
             break;
+        case 'single-language-change':
+            testLanguages = target.value ? [target.value] : [];
+            break;
         case 'global-section-change':
             addGlobalSectionTag();
             break;
@@ -1327,7 +1327,8 @@ document.addEventListener('change', function (e) {
         case 'source-exam-change':
             handleSourceExamChange();
             break;
-                case 'language-mode-change':
+        case 'language-mode-change':
+            testLanguages = [];
             handleLanguageUI();
             break;
         case 'tier-change':
@@ -1341,8 +1342,7 @@ document.addEventListener('change', function (e) {
 
 document.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' || !e.target) return;
-    if (e.target.id === 'langInput') { e.preventDefault(); addLanguageTag(); }
-    else if (e.target.id === 'singleLanguageInput') { e.preventDefault(); }
+    if (e.target.id === 'singleLanguageInput') { e.preventDefault(); }
 });
 
 

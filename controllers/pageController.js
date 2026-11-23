@@ -1,19 +1,21 @@
 import Listing from "../models/listing.js";
 import Test from "../models/Test.js";
 import Category from "../models/Category.js";
+import { getPrivateCategoryIds } from "../utils/categoryHelpers.js";
 import { getValidEnrollments } from "../utils/cleanupHelpers.js";
 
 export const home = async (req, res) => {
     const isOwner = req.user && req.user.role === "owner";
 
-    const filter = isOwner ? {} : { visibility: "public" };
+    const filter = isOwner ? {} : { visibility: "public", category: { $nin: await getPrivateCategoryIds() } };
      const tests = await Listing.find(filter)
         .populate("category", "name icon")
         .limit(6)
         .lean();
 
-    const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" } }).sort({ createdAt: -1 }).lean();
+    const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" }, visibility: { $ne: "private" } }).sort({ createdAt: -1 }).lean();
 
+   
 const categoryIds = categories.map(c => c._id);
 const listingCounts = await Listing.aggregate([
     { $match: { category: { $in: categoryIds }, exam: { $nin: [null, ""] }, ...(isOwner ? {} : { visibility: "public" }) } },

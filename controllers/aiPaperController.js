@@ -160,7 +160,7 @@ const parts = [{
             }
 
             // Page-count estimate (rough: form-feed characters se, ya length-based fallback)
-            const estimatedPages = Math.max(1, (pdfResult.text.match(/\f/g) || []).length || Math.ceil(pdfResult.text.length / 3000));
+            const estimatedPages = pdfResult.pages || Math.max(1, Math.ceil(pdfResult.text.length / 3000));
             if (estimatedPages > limits.pdfMaxPages) {
                 return res.status(400).json({ success: false, message: `Your plan supports processing up to ${limits.pdfMaxPages} pages per PDF.` });
             }
@@ -245,6 +245,7 @@ if (!extracted.length) {
                 });
             } catch (dbErr) {
     console.error("CustomAIPaper save failed:", dbErr);
+    await releaseAIUsage(req.user._id, { ...reservation, questions: finalSet.length });
     return res.status(500).json({ success: false, message: "Could not save your paper. Please try again." });
 }
         }

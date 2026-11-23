@@ -4,7 +4,7 @@ import Listing from "../models/listing.js";
 export const AI_SYSTEM_CATEGORY_SLUG = "ai-generated-system";
 
 export async function getCategoriesWithExamCount({ isOwner = false } = {}) {
-    const catFilter = isOwner ? {} : { slug: { $ne: AI_SYSTEM_CATEGORY_SLUG } };
+    const catFilter = isOwner ? {} : { slug: { $ne: AI_SYSTEM_CATEGORY_SLUG }, visibility: { $ne: "private" } };
     const categories = await Category.find(catFilter).sort({ createdAt: -1 }).lean();
 
     const match = {
@@ -32,4 +32,11 @@ export async function getCategoriesWithExamCount({ isOwner = false } = {}) {
     categories.forEach((c) => { c.examCount = countMap[String(c._id)] || 0; });
 
     return categories;
+}
+
+
+
+export async function getPrivateCategoryIds() {
+    const cats = await Category.find({ visibility: "private" }).select("_id").lean();
+    return cats.map((c) => c._id);
 }

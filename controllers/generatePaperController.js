@@ -18,19 +18,7 @@ function hasTranslationContent(t) {
     return !!((t.question && String(t.question).trim()) || (t.questionImage && String(t.questionImage).trim()));
 }
 
-function isQuestionAllowedForLanguage_OLD(q, subjectName, testLanguageMode, testLanguages) {
-    const qMode = q.languageMode === "multiple" ? "multiple" : "single";
-    const translations = Array.isArray(q.translations) ? q.translations : [];
-    const hasLang = (lang) => translations.some(t => normLang(t.lang) === normLang(lang) && hasTranslationContent(t));
-
-    if (testLanguageMode === "multiple") {
-        if (qMode === "multiple") return testLanguages.every(hasLang);
-        return normLang(subjectName) === "english";
-    }
-    if (qMode === "single") return true;
-    return hasLang(testLanguages[0]);
-}
-
+  
 
 // Test ki language(s) ko DB me jo exact spelling hai usme badlo (attempt side exact match karta hai)
 function canonicalizeLanguages(requested, dbLangs) {
@@ -46,20 +34,66 @@ function canonicalizeLanguages(requested, dbLangs) {
     });
 }
 
-// Single test  : single-mode question OK; multiple-mode question tabhi jab uski translation me test ki language ho
-// Multiple test: multiple-mode question tabhi jab saari selected languages hon; single-mode sirf English subject ka
-function isQuestionAllowedForLanguage(q, subjectName, testLanguageMode, testLanguages) {
+
+/* LANGUAGE RULES
+   - single question  : content top-level, language tag nahi. Language = listing ki language.
+                        English subject ka question hamesha English.
+   - multiple question: content translations[] me, har entry ka lang.
+   Single test  : single Q  -> test lang == listing lang YA subject English
+                  multiple Q -> translations me wo lang ho
+   Multiple test: multiple Q -> saari selected languages translations me hon
+                  single Q   -> sirf English subject ka */
+function isQuestionAllowedForLanguage(q, subjectName, testLanguageMode, testLanguages, sourceListingLanguage) {
     const qMode = q.languageMode === "multiple" ? "multiple" : "single";
     const translations = Array.isArray(q.translations) ? q.translations : [];
     const hasLang = (lang) => translations.some(t => t.lang === lang && hasTranslationContent(t));
+    const isEnglishSubject = normLang(subjectName) === "english";
 
     if (testLanguageMode === "multiple") {
         if (qMode === "multiple") return testLanguages.every(hasLang);
-        return normLang(subjectName) === "english";
+        return isEnglishSubject;
     }
-    if (qMode === "single") return true;
+    if (qMode === "single") {
+        return isEnglishSubject || normLang(testLanguages[0]) === normLang(sourceListingLanguage);
+    }
     return hasLang(testLanguages[0]);
 }
+
+// Source ke questions me kaun si languages ACTUALLY hain
+async function getLanguageInfo(listingId, testIds) {
+    const listing = await Listing.findById(String(listingId)).select("language").lean();
+    const listingLanguage = (listing && listing.language && String(listing.language).trim()) || "English";
+
+    if (!testIds || testIds.length === 0) {
+        return { listingLanguage, singleCount: 0, translationLanguages: [] };
+    }
+    const qIds = await TestQuestion.distinct("question", { test: { $in: testIds } });
+    if (qIds.length === 0) return { listingLanguage, singleCount: 0, translationLanguages: [] };
+
+    const [singleCount, langAgg] = await Promise.all([
+        Question.countDocuments({ _id: { $in: qIds }, languageMode: "single", status: { $ne: "Disabled" } }),
+        Question.aggregate([
+            { $match: { _id: { $in: qIds }, languageMode: "multiple", status: { $ne: "Disabled" } } },
+            { $unwind: "$translations" },
+            { $match: {
+                "translations.lang": { $nin: [null, ""] },
+                $or: [
+                    { "translations.question": { $nin: [null, ""] } },
+                    { "translations.questionImage": { $nin: [null, ""] } }
+                ]
+            } },
+            { $group: { _id: "$translations.lang", count: { $sum: 1 } } },
+            { $sort: { _id: 1 } }
+        ])
+    ]);
+
+    return {
+        listingLanguage,
+        singleCount,
+        translationLanguages: langAgg.map(r => ({ lang: r._id, count: r.count }))
+    };
+}
+
 
 function getMarksForSubject(subjectsConfig, subjectName) {
     let found = subjectsConfig.find(s => s.subject === subjectName);
@@ -79,7 +113,11 @@ function getMarksForSubject(subjectsConfig, subjectName) {
 async function getTestIdsForListing(listingId, sectionIds) {
     if (!mongoose.Types.ObjectId.isValid(String(listingId))) return [];
 
-    const match = { listing: new mongoose.Types.ObjectId(String(listingId)) };
+    const match = {
+        listing: new mongoose.Types.ObjectId(String(listingId)),
+        isLiveTest: { $ne: true },
+        isDailyWarmup: { $ne: true }
+    };
 
     if (Array.isArray(sectionIds) && sectionIds.length > 0) {
         const validSectionIds = sectionIds
@@ -103,7 +141,7 @@ async function loadListingTree(listingId) {
     const [folders, files, tests] = await Promise.all([
         Folder.find({ listing: lid }).select("title section parentType parentId createdAt").lean(),
         File.find({ listing: lid }).select("title section parentType parentId createdAt").lean(),
-        Test.find({ listing: lid }).select("section parentType parentId").lean()
+        Test.find({ listing: lid, isLiveTest: { $ne: true }, isDailyWarmup: { $ne: true } }).select("section parentType parentId").lean()
     ]);
 
     const childrenOf = new Map();
@@ -396,22 +434,29 @@ export const generatePaper = async (req, res) => {
     }
 
 
-    // ===== Language spelling ko DB ke hisaab se canonical karo =====
-    {
-        const srcQIds = await TestQuestion.distinct("question", { test: { $in: testIds } });
-        const dbLangs = (await Question.distinct("translations.lang", { _id: { $in: srcQIds }, languageMode: "multiple" }))
-            .filter(l => l && String(l).trim() !== "");
+        // ===== Language: sirf wahi allowed jo source ke questions me ACTUALLY hain =====
+    const langInfo = await getLanguageInfo(sourceListingId, testIds);
+    const sourceListingLanguage = langInfo.listingLanguage;
+    const translationLangs = langInfo.translationLanguages.map(t => t.lang);
+    const selectableLangs = languageMode === "multiple"
+        ? translationLangs
+        : [...new Set([...(langInfo.singleCount > 0 ? [sourceListingLanguage] : []), ...translationLangs])];
 
-        languages = [...new Set(canonicalizeLanguages(languages, dbLangs))];
-        if (languageMode === "multiple" && languages.length < 2) {
-            return res.status(400).json({ success: false, message: "Multiple language mode me kam se kam 2 alag languages choose karo." });
-        }
-        if (languageMode === "single") languages = [languages[0]];
+    languages = [...new Set(canonicalizeLanguages(languages, selectableLangs))];
+    if (languageMode === "single") languages = [languages[0]];
 
-        if (showLanguage !== "all") {
-            const sl = canonicalizeLanguages([showLanguage], dbLangs)[0];
-            showLanguage = languages.includes(sl) ? sl : "all";
-        }
+    const invalidLangs = languages.filter(l => !selectableLangs.includes(l));
+    if (invalidLangs.length > 0) {
+        return res.status(400).json({
+            success: false,
+            message: `Selected language (${invalidLangs.join(", ")}) is not available in the chosen questions. Available: ${selectableLangs.join(", ") || "none"}.`
+        });
+    }
+    if (languageMode === "multiple" && languages.length < 2) {
+        return res.status(400).json({ success: false, message: "Multiple language mode me kam se kam 2 alag languages choose karo." });
+    }
+    if (showLanguage !== "all") {
+        showLanguage = languages.includes(showLanguage) ? showLanguage : "all";
     }
     
 
@@ -536,7 +581,7 @@ export const generatePaper = async (req, res) => {
                  const poolBeforeLang = pool.length;
         pool = pool.filter(q => {
             const subj = (q._meta && q._meta.subject) || q.subject;
-            return isQuestionAllowedForLanguage(q, subj, languageMode, languages);
+            return isQuestionAllowedForLanguage(q, subj, languageMode, languages, sourceListingLanguage);
         });
         if (poolBeforeLang > 0 && pool.length === 0) {
             return res.status(400).json({
@@ -551,6 +596,28 @@ export const generatePaper = async (req, res) => {
                 message: `"${label}" (Difficulty: ${(Array.isArray(c.difficulty) && c.difficulty.length > 0) ? c.difficulty.join('/') : 'Any'}) ke liye koi question nahi mila.`
             });
         }
+
+                if (minCount > pool.length) {
+            return res.status(400).json({
+                success: false,
+                message: `"${label}": ek paper ke liye kam se kam ${minCount} questions chahiye, lekin selected language/filter me sirf ${pool.length} questions available hain.`
+            });
+        }
+
+
+                // Marks guard: jis subject ke marks listing me set nahi, uska test na banao (warna galat marks lagte)
+        const poolSubjects = [...new Set(pool.map(q => ((q._meta && q._meta.subject) || q.subject || "").trim()))];
+        const missingMarks = poolSubjects.filter(sub => !subjectsConfig.some(cfg => cfg.subject === sub));
+        if (missingMarks.length > 0) {
+            const names = missingMarks.map(sub => sub || "(no subject)").join(", ");
+            return res.status(400).json({
+                success: false,
+                message: subjectsConfig.length === 0
+                    ? `Is listing me marks set nahi hain. Pehle listing ke marks me subjects add karo.`
+                    : `"${label}" ke questions ka subject (${names}) listing ke marks me set nahi hai. Pehle listing ke marks me ye subject add karo.`
+            });
+        }
+        
 
         const avgDemand = ((minCount + maxCount) / 2) * noOfPapers;
         const maxPossible = pool.length * maxRepeat;
@@ -599,6 +666,11 @@ export const generatePaper = async (req, res) => {
                 usedInThisPaper.add(idStr);
                 usageCount.set(idStr, (usageCount.get(idStr) || 0) + 1);
             }
+        }
+
+                if (pickedQuestions.length === 0) {
+            shortfallWarnings.push(`Paper ${p + 1}: no questions were available, so this paper was skipped.`);
+            continue;
         }
 
         const subjectOf = (q) => (q._meta && q._meta.subject) || q.subject;
@@ -652,6 +724,13 @@ export const generatePaper = async (req, res) => {
         createdTestIds.push(savedTest._id);
     }
 
+        if (createdTestIds.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: shortfallWarnings[0] || "No paper could be generated."
+        });
+    }
+    
     res.status(200).json({
         success: true,
         message: `${createdTestIds.length} paper(s) generated successfully.`,
@@ -710,34 +789,30 @@ export const getQuestionCount = async (req, res) => {
 };
 
 
-/* ============================================================
-   GET /api/listing/:id/languages
-============================================================ */
+/* GET /api/listing/:id/languages?section=&scopeType=&scopeId= */
 export const getListingLanguages = async (req, res) => {
     const { id } = req.params;
+    const { section, scopeType, scopeId } = req.query;
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ success: false, message: "Invalid listing id" });
     }
 
-    const testIds = await getTestIdsForListing(id, null);
-    if (testIds.length === 0) return res.status(200).json({ success: true, data: [] });
+    const sectionIds = section ? String(section).split(",").map(s => s.trim()).filter(Boolean) : [];
+    const scope = normalizeScope({ type: scopeType, id: scopeId });
+    const testIds = scope
+        ? await getTestIdsForScope(id, scope)
+        : await getTestIdsForListing(id, sectionIds.length > 0 ? sectionIds : null);
 
-    const uniqueQIds = [...new Set((await TestQuestion.distinct("question", { test: { $in: testIds } })).map(x => x.toString()))];
+    const info = await getLanguageInfo(id, testIds);
 
-    const languageSet = new Set();
-
-    const singleModeCount = await Question.countDocuments({
-        _id: { $in: uniqueQIds }, languageMode: "single"
+    res.status(200).json({
+        success: true,
+        data: {
+            listingLanguage: info.listingLanguage,
+            singleCount: info.singleCount,
+            translationLanguages: info.translationLanguages
+        }
     });
-    if (singleModeCount > 0) languageSet.add("English");
-
-    const multiLangResult = await Question.distinct("translations.lang", {
-        _id: { $in: uniqueQIds }, languageMode: "multiple"
-    });
-    multiLangResult.filter(l => l && l.trim() !== "").forEach(l => languageSet.add(l));
-
-    const languages = Array.from(languageSet).sort();
-    res.status(200).json({ success: true, data: languages });
 };
 
 

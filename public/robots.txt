@@ -5,10 +5,7 @@ Disallow: /login
 Disallow: /register
 Disallow: /logout
 Disallow: /auth/google
-Disallow: /api/auth/
-Disallow: /mock-test/*/instructions
 Disallow: /attempt/
-Disallow: /api/attempt/
 Disallow: /series/
 Disallow: /section/
 Disallow: /folder/
@@ -28,13 +25,13 @@ Allow: /api/footer-data
 Disallow: /test-error
 Disallow: /csp-violation-report
 
-# Custom test  
+# Custom test
 Disallow: /custom-test/upgrade
 Disallow: /custom-test/manage
 Disallow: /custom-test/attempt/
 Disallow: /custom-test/analysis/
 
-# Practice 
+# Practice
 Disallow: /practice-fragment/
 
 # Tracking params
@@ -42,4 +39,3 @@ Disallow: /*?utm_
 Disallow: /*&utm_
 
 Sitemap: https://warmupexam.com/sitemap.xml
-Sitemap: https://warmupexam.com/sitemap-practice.xml

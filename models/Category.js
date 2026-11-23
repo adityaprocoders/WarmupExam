@@ -33,6 +33,12 @@ const categorySchema = new mongoose.Schema(
             maxlength: 120    
         },
 
+        visibility: {
+            type: String,
+            enum: ["private", "public"],
+            default: "public"
+        },
+
         examCount: {
             type: Number,
             default: 0,

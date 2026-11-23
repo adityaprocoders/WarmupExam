@@ -5,11 +5,18 @@ import { getLimitsForTier, todayDateString, nextResetAt } from "./aiLimits.js";
 // Aaj ka (ya naya) usage doc laata hai
 async function getOrCreateUsageDoc(userId) {
     const date = todayDateString();
-    let doc = await AIUsage.findOne({ user: userId, date });
-    if (!doc) {
-        doc = await AIUsage.create({ user: userId, date, questionsUsed: 0, apiCallsUsed: 0, textCharsUsed: 0, imagesUsed: 0, pdfMBUsed: 0, recentRequestTimestamps: [] });
+    try {
+        return await AIUsage.findOneAndUpdate(
+            { user: userId, date },
+            { $setOnInsert: { user: userId, date } },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+    } catch (err) {
+        if (err?.code === 11000) {
+            return await AIUsage.findOne({ user: userId, date });
+        }
+        throw err;
     }
-    return doc;
 }
 
 export async function checkAILimits(userId, tier, { requestedQuestionCount, textCharCount = 0, imageCount = 0, pdfSizeMB = 0, pdfPages = 0 }) {
@@ -27,7 +34,7 @@ export async function checkAILimits(userId, tier, { requestedQuestionCount, text
        return { ok: false, daily: true, message: `You've used all ${limits.apiCallsPerDay} AI requests for today.` };
     }
     if (requestedQuestionCount > limits.questionsPerRequest) {
-        return { ok: false,  daily: true, message: `Your plan allows up to ${limits.questionsPerRequest} questions per request.` };
+        return { ok: false, message: `Your plan allows up to ${limits.questionsPerRequest} questions per request.` };
     }
     if (usage.questionsUsed + requestedQuestionCount > limits.questionsPerDay) {
         const remaining = Math.max(0, limits.questionsPerDay - usage.questionsUsed);
@@ -122,29 +129,39 @@ export async function getUsageSummary(userId, tier) {
 export async function reserveAIUsage(userId, tier, { questions, textCharCount = 0, imageCount = 0, pdfSizeMB = 0 }) {
     const limits = getLimitsForTier(tier);
     const date = todayDateString();
+
+    const attempt = () => AIUsage.findOneAndUpdate(
+        {
+            user: userId,
+            date,
+            apiCallsUsed: { $lt: limits.apiCallsPerDay },
+            questionsUsed: { $lte: limits.questionsPerDay - questions },
+            textCharsUsed: { $lte: limits.textCharsPerDay - textCharCount },
+            imagesUsed: { $lte: limits.imagesPerDay - imageCount },
+            pdfMBUsed: { $lte: limits.pdfMBPerDay - pdfSizeMB },
+        },
+        {
+            $inc: { questionsUsed: questions, apiCallsUsed: 1, textCharsUsed: textCharCount, imagesUsed: imageCount, pdfMBUsed: pdfSizeMB },
+            $push: { recentRequestTimestamps: { $each: [new Date()], $slice: -50 } },
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
     try {
-        await AIUsage.findOneAndUpdate(
-            {
-                user: userId,
-                date,
-                apiCallsUsed: { $lt: limits.apiCallsPerDay },
-                questionsUsed: { $lte: limits.questionsPerDay - questions },
-                textCharsUsed: { $lte: limits.textCharsPerDay - textCharCount },
-                imagesUsed: { $lte: limits.imagesPerDay - imageCount },
-                pdfMBUsed: { $lte: limits.pdfMBPerDay - pdfSizeMB },
-            },
-            {
-                $inc: { questionsUsed: questions, apiCallsUsed: 1, textCharsUsed: textCharCount, imagesUsed: imageCount, pdfMBUsed: pdfSizeMB },
-                $push: { recentRequestTimestamps: { $each: [new Date()], $slice: -50 } },
-            },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
+        await attempt();
         return { ok: true, date };
     } catch (err) {
-        if (err?.code === 11000) {
-            return { ok: false, message: "Your daily AI limit has been reached. Please try again tomorrow." };
+        if (err?.code !== 11000) throw err;
+        // Ya to limit poori hai, ya pehli request ke saath race hua. Ek baar dobara try karo.
+        try {
+            await attempt();
+            return { ok: true, date };
+        } catch (err2) {
+            if (err2?.code === 11000) {
+                return { ok: false, message: "Your daily AI limit has been reached. Please try again tomorrow." };
+            }
+            throw err2;
         }
-        throw err;
     }
 }
 

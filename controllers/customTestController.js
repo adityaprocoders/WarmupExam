@@ -14,7 +14,7 @@ import Section from "../models/Section.js";
 import { getUsageSummary } from "../utils/aiUsageTracker.js";
 import { AI_LIMITS } from "../utils/aiLimits.js";
 import { isSafeRedirectPath } from "../utils/safeRedirect.js";
-
+import { getPrivateCategoryIds } from "../utils/categoryHelpers.js";
 
 const escapeRegex = (str) => String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const splitList = (v) =>
@@ -58,7 +58,10 @@ const toSchemaDiff = (level) => (level === "easy" ? "Easy" : level === "hard" ? 
 async function getTestIdsForExams({ exams = [], isOwner }) {
     if (!exams.length) return [];
     const listingFilter = { exam: { $in: exams.map((e) => new RegExp(`^${escapeRegex(e)}$`, "i")) } };
-    if (!isOwner) listingFilter.visibility = "public";
+        if (!isOwner) {
+        listingFilter.visibility = "public";
+        listingFilter.category = { $nin: await getPrivateCategoryIds() };
+    }
     const listings = await Listing.find(listingFilter).select("_id").lean();
     if (!listings.length) return [];
     const tests = await Test.find({ listing: { $in: listings.map((l) => l._id) } }).select("_id languages").lean();
@@ -70,7 +73,10 @@ async function getTestIdsForExams({ exams = [], isOwner }) {
 async function getLanguagesForExams({ exams = [], isOwner }) {
     if (!exams.length) return ["English"];
     const listingFilter = { exam: { $in: exams.map((e) => new RegExp(`^${escapeRegex(e)}$`, "i")) } };
-    if (!isOwner) listingFilter.visibility = "public";
+        if (!isOwner) {
+        listingFilter.visibility = "public";
+        listingFilter.category = { $nin: await getPrivateCategoryIds() };
+    }
 
     const raw = await Listing.distinct("language", listingFilter);
 
@@ -93,7 +99,10 @@ async function getLanguagesForExams({ exams = [], isOwner }) {
 
 async function getAllTestIds({ isOwner }) {
     const listingFilter = {};
-    if (!isOwner) listingFilter.visibility = "public";
+        if (!isOwner) {
+        listingFilter.visibility = "public";
+        listingFilter.category = { $nin: await getPrivateCategoryIds() };
+    }
     const listings = await Listing.find(listingFilter).select("_id").lean();
     if (!listings.length) return [];
     const tests = await Test.find({ listing: { $in: listings.map((l) => l._id) } }).select("_id").lean();
@@ -145,7 +154,7 @@ async function buildRenderOptions(req, { title, description, keywords, canonical
 export const customTestDashboard = async (req, res, next) => {
     try {
         const isOwner = req.user && req.user.role === "owner";
-        const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" } }).sort({ createdAt: -1 }).lean();
+        const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" }, visibility: { $ne: "private" } }).sort({ createdAt: -1 }).lean();
 
         const listingFilter = { category: { $in: categories.map((c) => c._id) } };
         if (!isOwner) listingFilter.visibility = "public";
@@ -219,7 +228,7 @@ export const customTestDashboard = async (req, res, next) => {
 export const customTestLanding = async (req, res, next) => {
     try {
         const isOwner = req.user && req.user.role === "owner";
-        const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" } }).sort({ createdAt: -1 }).lean();
+        const categories = await Category.find(isOwner ? {} : { slug: { $ne: "ai-generated-system" }, visibility: { $ne: "private" } }).sort({ createdAt: -1 }).lean();
 
         const listingFilter = { category: { $in: categories.map((c) => c._id) } };
         if (!isOwner) listingFilter.visibility = "public";
@@ -284,7 +293,11 @@ export const searchExams = async (req, res) => {
         if (!categoryId) return res.json({ exams: [] });
         const isOwner = req.user && req.user.role === "owner";
         const filter = { category: categoryId };
-        if (!isOwner) filter.visibility = "public";
+        if (!isOwner) {
+            filter.visibility = "public";
+            const privateIds = (await getPrivateCategoryIds()).map(String);
+            if (privateIds.includes(String(categoryId))) return res.json({ exams: [] });
+        }
         if (q.trim()) filter.exam = new RegExp(escapeRegex(q.trim()), "i");
         const exams = await Listing.distinct("exam", filter);
         res.json({ exams: exams.filter(Boolean).sort().slice(0, 20) });

@@ -9,7 +9,7 @@ const errorHandler = (err, req, res, next) => {
     err.message = "Not found";
   } else if (err.name === "MulterError") {
     err.statusCode = 400;
-    err.message = err.code === "LIMIT_FILE_SIZE" ? "File is too large (max 5MB)." : "Invalid file upload.";
+    err.message = err.code === "LIMIT_FILE_SIZE" ? "File is too large for your plan." : "Invalid file upload.";
   } else if (err.message && /^(Invalid file type|Cover image must|E-Book file must|Unexpected field)/.test(err.message)) {
     err.statusCode = 400;
   }

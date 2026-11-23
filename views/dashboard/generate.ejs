@@ -43,10 +43,7 @@
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Show Language</label>
-                        <div id="showLanguageFieldContainer"></div>
-                    </div>
+
                 </div>
 
 
@@ -59,16 +56,10 @@
                         </select>
                     </div>
                     <% } %>
-                    <div>
-                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Language Mode</label>
-                        <select id="languageMode" data-action="language-mode-change" class="w-full p-3 border border-gray-200 rounded-xl bg-white font-bold text-sm">
-                            <option value="single" selected>Single Language</option>
-                            <option value="multiple">Multiple Languages</option>
-                        </select>
-                    </div>
+ 
                 </div>
 
-                <div id="languageFieldContainer" class="mb-6"></div>
+ 
 
                 <!-- DYNAMIC TIME CONTAINER -->
                 <div id="timeDynamicContainer" class="p-4 sm:p-6 border border-gray-100 rounded-xl bg-gray-50 mb-6"></div>
@@ -149,6 +140,23 @@
                         <span class="text-sm font-bold">Exam Settings</span>
                     </div>
 
+                                        <!-- LANGUAGE (Mode + Language + Show Language) -->
+                    <div class="mb-5">
+                        <label class="block text-xs font-semibold mb-1 opacity-80">Language Mode</label>
+                        <select id="languageMode" data-action="language-mode-change"
+                            class="w-full p-2 rounded-lg text-gray-800 font-bold outline-none bg-white text-sm">
+                            <option value="single" selected>Single Language</option>
+                            <option value="multiple">Multiple Languages</option>
+                        </select>
+                    </div>
+
+                    <div id="languageFieldContainer" class="mb-5"></div>
+
+                    <div class="mb-5">
+                        <label class="block text-xs font-semibold mb-1 opacity-80">Show Language</label>
+                        <div id="showLanguageFieldContainer"></div>
+                    </div>
+
                     <div class="mb-5">
                         <label class="block text-xs font-semibold mb-1 opacity-80">No of Test paper</label>
                         <input type="number" id="noOfPapersInput" min="1" value="1"
@@ -170,6 +178,8 @@
                         </select>
                         <div id="questionCountDynamicContainer"></div>
                     </div>
+
+ 
 
                     <div class="mb-5">
     <label class="block text-xs font-semibold mb-1 opacity-80">Visibility</label>

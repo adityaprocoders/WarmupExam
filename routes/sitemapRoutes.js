@@ -156,7 +156,12 @@ async function buildEntries() {
     staticPaths.forEach((p) => entries.push(urlEntry(`${BASE_URL}${p}`)));
 
     // ---- Excluded categories (listings bhi bahar) ----
-    const excluded = await Category.find({ slug: { $in: EXCLUDED_CATEGORY_SLUGS } })
+    const excluded = await Category.find({
+        $or: [
+            { slug: { $in: EXCLUDED_CATEGORY_SLUGS } },
+            { visibility: "private" }
+        ]
+    })
         .select("_id")
         .lean();
     const excludedIds = excluded.map((c) => c._id);

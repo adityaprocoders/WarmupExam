@@ -484,6 +484,7 @@
     }
 
     async function applyQuotaState() {
+        if (!$("ai-generate-trigger")) return;
         try {
             const res = await fetch("/api/custom-test/ai/usage", { credentials: "same-origin" });
             const data = await res.json();
@@ -529,7 +530,7 @@
         <div id="ai-error-modal" class="hidden fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
             <div class="bg-white rounded-2xl p-6 sm:p-7 max-w-sm w-full shadow-2xl text-center">
                 <span class="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 text-rose-600">
-                    <i data-lucide="triangle-alert" class="h-6 w-6"></i>
+                    <i data-lucide="alert-triangle" class="h-6 w-6"></i>
                 </span>
                 <p class="text-base font-bold text-slate-900 mb-2">Something went wrong</p>
                 <p id="ai-error-modal-msg" class="text-sm text-slate-500 leading-relaxed mb-6"></p>

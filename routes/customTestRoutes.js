@@ -7,7 +7,7 @@ import { paymentLimiter, customTestAvailabilityLimiter, customTestGenerateLimite
 
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024, files: 6 }, // 10MB/file, max 6 files
+    limits: { fileSize: 50 * 1024 * 1024, files: 6 }, // 50MB = sabse bade plan ki limit, plan wise check controller me hota hai
 });
 
 
