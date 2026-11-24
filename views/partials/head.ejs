@@ -26,16 +26,11 @@
 
 <link rel="canonical" href="<%= typeof canonicalUrl !== 'undefined' ? canonicalUrl : ('https://warmupexam.com' + (typeof originalUrlPath !== 'undefined' ? originalUrlPath : '')) %>">
 
-<% if (typeof alternateListing !== 'undefined' && alternateListing && typeof listing !== 'undefined' && listing && listing.slug) {
-     const langCode = (l) => l === 'Hindi' ? 'hi' : (l === 'English' ? 'en' : null);
-     const selfCode = langCode(listing.language);
-     const altCode = langCode(alternateListing.language);
-     if (selfCode && altCode) {
-       const enSlug = selfCode === 'en' ? listing.slug : alternateListing.slug; %>
-<link rel="alternate" hreflang="<%= selfCode %>" href="https://warmupexam.com/test/<%= encodeURIComponent(listing.slug) %>">
-<link rel="alternate" hreflang="<%= altCode %>" href="https://warmupexam.com/test/<%= encodeURIComponent(alternateListing.slug) %>">
-<link rel="alternate" hreflang="x-default" href="https://warmupexam.com/test/<%= encodeURIComponent(enSlug) %>">
-<% } } %>
+<% if (typeof alternates !== 'undefined' && Array.isArray(alternates) && alternates.length) { %>
+<% alternates.forEach(function (a) { %>
+<link rel="alternate" hreflang="<%= a.hreflang %>" href="<%= a.href %>">
+<% }) %>
+<% } %>
 
 <!-- Favicons -->
 <link rel="icon" href="/favicon.ico" sizes="any">

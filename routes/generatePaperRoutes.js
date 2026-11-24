@@ -19,6 +19,8 @@ router.get("/api/generate-paper/source/listings", isLoggedIn, isOwner, wrapAsync
 router.get("/api/listing/:id/marks-subjects", isLoggedIn, isOwner, wrapAsync(generatePaperController.getMarksSubjects));
 router.get("/api/listing/:id/explorer", isLoggedIn, isOwner, wrapAsync(generatePaperController.getExplorerNode));
 
+router.get("/api/listing/:id/scope-subjects", isLoggedIn, isOwner, wrapAsync(generatePaperController.getScopeSubjects));
+
 router.post("/api/generate-paper", isLoggedIn, isOwner, wrapAsync(generatePaperController.generatePaper));
 
 export default router;

@@ -21,6 +21,7 @@ import { cascadeDeleteListing } from "../utils/deleteHelpers.js";
 import ExamPatternSummary from "../models/ExamPatternSummary.js";
 import { isSafeRedirectPath } from "../utils/safeRedirect.js";
 import { getPrivateCategoryIds } from "../utils/categoryHelpers.js";
+import { buildAlternatesMap } from "../utils/hreflang.js";
 
 const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -219,14 +220,16 @@ export const showTest = async (req, res) => {
      
 
         // 🔍 Automatic alternate-language detection — same title + same exam + different language
-    const alternateListing = await Listing.findOne({
-        _id: { $ne: data._id },
-        title: data.title,
+    let alternates = [];
+if (data.visibility === "public" && data.exam && data.title) {
+    const siblings = await Listing.find({
         exam: data.exam,
-        language: { $ne: data.language },
+        title: data.title,
         visibility: "public",
         category: { $nin: privateIds }
-    }).select("slug language").lean();
+    }).select("slug language exam title").lean();
+    alternates = buildAlternatesMap(siblings).get(data.slug) || [];
+}
 
 
  
@@ -279,7 +282,7 @@ const category = data.category ? await Category.findById(data.category).lean() :
          syllabusParts,
           examPattern,  
         category,   
-        alternateListing,  
+        alternates,   
         title: `${data.title}${data.language ? ` (${data.language})` : ''} | WarmupExam`,
         description: metaDesc,
            keywords: `${data.title} live test, ${data.title} mock test, ${data.title} PYQ, ${data.title} AIR test, ${data.title} daily warmup, ${data.exam} live test series, ${data.exam} syllabus, ${data.title} syllabus`,
@@ -367,7 +370,7 @@ export const createTest = async (req, res) => {
     } catch (err) {
         if (err.code === 11000) {
             req.flash("error", "A test with this title already exists. Please use a different title.");
-            return res.redirect("/test/new"); // or wherever your create form lives
+            return res.redirect("/tests/new");
         }
         throw err; // let your global error handler / catchAsync deal with anything else
     }

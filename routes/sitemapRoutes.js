@@ -2,6 +2,7 @@ import express from "express";
 import Listing from "../models/listing.js";
 import Category from "../models/Category.js";
 import Ebook from "../models/Ebook.js";
+import { buildAlternatesMap, testUrl } from "../utils/hreflang.js";
 
 const router = express.Router();
 
@@ -17,25 +18,6 @@ const CACHE_TTL_MS = 60 * 60 * 1000;          // 1 ghanta
 const STALE_RETRY_MS = 5 * 60 * 1000;         // DB fail ho to purana cache 5 min aur chalao
 const MAX_URLS_PER_SITEMAP = 45000;           // Google limit 50,000 hai, safe margin
 
-// Listing.language free-text hai. Yahan language -> hreflang code map hai.
-// Nayi language add karni ho to bas yahan ek line jod do.
-const LANGUAGE_CODES = {
-    english: "en",
-    hindi: "hi",
-    bengali: "bn",
-    bangla: "bn",
-    tamil: "ta",
-    telugu: "te",
-    marathi: "mr",
-    gujarati: "gu",
-    kannada: "kn",
-    malayalam: "ml",
-    punjabi: "pa",
-    urdu: "ur",
-    odia: "or",
-    oriya: "or",
-    assamese: "as",
-};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -75,60 +57,7 @@ function maxDate(a, b) {
     if (!b) return a;
     return new Date(a) >= new Date(b) ? a : b;
 }
-
-function languageCode(language) {
-    return LANGUAGE_CODES[String(language || "").trim().toLowerCase()] || null;
-}
-
-const testUrl = (slug) => `${BASE_URL}/test/${encodeURIComponent(slug)}`;
-
-// Same exam + same title + alag language wali listings ka hreflang set banata hai.
-// Rule showTest (listingController) jaisa hi hai: exact exam + exact title match.
-// Returns: Map(listingSlug -> alternates[])
-function buildAlternatesMap(listings) {
-    const groups = new Map();
-
-    for (const l of listings) {
-        if (!l.exam || !l.title || !l.slug) continue;
-        const key = `${l.exam}||${l.title}`;
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(l);
-    }
-
-    const result = new Map();
-
-    for (const group of groups.values()) {
-        // Deterministic order (slug se), taaki har baar same output aaye
-        group.sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
-
-        // Har language ka sirf ek representative listing
-        const byCode = new Map();
-        for (const l of group) {
-            const code = languageCode(l.language);
-            if (!code) continue;                 // unknown language -> hreflang nahi
-            if (!byCode.has(code)) byCode.set(code, l);
-        }
-
-        if (byCode.size < 2) continue;           // koi alternate language nahi
-
-        const alternates = [];
-        for (const [code, l] of byCode) {
-            alternates.push({ hreflang: code, href: testUrl(l.slug) });
-        }
-
-        const defaultListing = byCode.get("en") || byCode.values().next().value;
-        alternates.push({ hreflang: "x-default", href: testUrl(defaultListing.slug) });
-
-        // Sirf representative listings ko alternates milte hain
-        // (har page ko apna self-reference + baaki sab languages)
-        for (const l of byCode.values()) {
-            result.set(l.slug, alternates);
-        }
-    }
-
-    return result;
-}
-
+ 
 // ---------------------------------------------------------------------------
 // Sitemap data build
 // ---------------------------------------------------------------------------

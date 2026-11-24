@@ -110,6 +110,7 @@ async function refreshQuestionSource() {
     }
 
     resetCriteriaRows();
+    if (window.exOnContextChanged) window.exOnContextChanged();
 }
 
 async function handleSourceModeChange() {
@@ -683,7 +684,8 @@ async function onTierChange() {
     subjectQuestionCountList = [];
     handleQuestionCountUI();
   }
-  resetCriteriaRows();
+    resetCriteriaRows();
+  if (window.exOnContextChanged) window.exOnContextChanged();
 }
 
 
@@ -1128,8 +1130,9 @@ function collectCriteriaRows() {
 
 
 async function generateTest() {
+    if (window.exIsExamMode && window.exIsExamMode()) { return window.exGenerate(); }
     const criteria = collectCriteriaRows();
-
+    
     if (criteria.length === 0) {
         showToast("Please add at least one criteria row (Subject/Topic/Min-Max Question).", "error");
         return;

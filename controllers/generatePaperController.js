@@ -370,6 +370,7 @@ export const getQuestionFilters = async (req, res) => {
       honge (content ke liye), listing field kabhi check nahi hoga.
 ============================================================ */
 export const generatePaper = async (req, res) => {
+    if (req.body && req.body.mode === "exam") return generateExamPaper(req, res);
     const body = req.body;
 
     if (!body.listingId) return res.status(400).json({ success: false, message: "listingId is required." });
@@ -877,7 +878,7 @@ export const getMarksSubjects = async (req, res) => {
     for (const m of marksArr) {
         if (m.subject && !seen.has(m.subject)) {
             seen.add(m.subject);
-            data.push({ subject: m.subject });
+            data.push({ subject: m.subject, positiveMarks: m.positiveMarks, negativeMarks: m.negativeMarks });
         }
     }
 
@@ -946,5 +947,344 @@ export const getExplorerNode = async (req, res) => {
             testCount: scopeTestIds.length,
             questionCount
         }
+    });
+};
+
+
+
+
+
+/* ============================================================
+   EXAM MODE  (paper mode = "exam")
+   -> GET  /api/listing/:id/scope-subjects  : section/folder ke questions ke asli subjects
+   -> POST /api/generate-paper (mode: "exam"): subject-wise paper generate
+============================================================ */
+export const getScopeSubjects = async (req, res) => {
+    const { id } = req.params;
+    const { section, scopeType, scopeId } = req.query;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: "Invalid listing id" });
+    }
+
+    const sectionIds = section ? String(section).split(",").map(s => s.trim()).filter(Boolean) : [];
+    const scope = normalizeScope({ type: scopeType, id: scopeId });
+    const testIds = scope
+        ? await getTestIdsForScope(id, scope)
+        : await getTestIdsForListing(id, sectionIds.length > 0 ? sectionIds : null);
+
+    if (testIds.length === 0) return res.status(200).json({ success: true, data: [] });
+
+    const subjects = (await TestQuestion.distinct("subject", { test: { $in: testIds } }))
+        .filter(s => s && String(s).trim() !== "")
+        .sort();
+
+    res.status(200).json({ success: true, data: subjects });
+};
+
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+function shuffleInPlace(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+// Ek paper me ek subject ke questions chuno: pehle priority rows (min..max), baaki random
+function pickExamSubject({ plan, subjectIndex, usageCount, usedInPaper, maxRepeat, paperNo, warnings }) {
+    const picked = [];
+    const keyOf = (q) => `${subjectIndex}:${q._id.toString()}`;
+
+    const take = (pool, n) => {
+        if (n <= 0) return 0;
+        const candidates = pool
+            .filter(q => !usedInPaper.has(q._id.toString()) && (usageCount.get(keyOf(q)) || 0) < maxRepeat)
+            .sort((a, b) => (usageCount.get(keyOf(a)) || 0) - (usageCount.get(keyOf(b)) || 0));
+        const selected = candidates.slice(0, n);
+        for (const q of selected) {
+            picked.push(q);
+            usedInPaper.add(q._id.toString());
+            usageCount.set(keyOf(q), (usageCount.get(keyOf(q)) || 0) + 1);
+        }
+        return selected.length;
+    };
+
+    // Har row min se shuru, phir random extra (max tak) — subject ke total count se zyada kabhi nahi
+    const needs = plan.rows.map(r => r.minCount);
+    let spare = plan.count - needs.reduce((s, n) => s + n, 0);
+    const order = shuffleInPlace(plan.rows.map((_, i) => i));
+    for (const i of order) {
+        if (spare <= 0) break;
+        const room = Math.min(plan.rows[i].maxCount - plan.rows[i].minCount, spare);
+        if (room > 0) {
+            const extra = randInt(0, room);
+            needs[i] += extra;
+            spare -= extra;
+        }
+    }
+
+    plan.rows.forEach((r, i) => {
+        const got = take(r.pool, needs[i]);
+        if (got < needs[i]) {
+            warnings.push(`Paper ${paperNo}: "${plan.name}" priority ${i + 1} needs ${needs[i]} questions, but only ${got} were available.`);
+        }
+    });
+
+    // Baaki jagah poore section/folder pool se random
+    const left = plan.count - picked.length;
+    if (left > 0) {
+        const got = take(plan.basePool, left);
+        if (got < left) {
+            warnings.push(`Paper ${paperNo}: "${plan.name}" needs ${plan.count} questions, but only ${picked.length} were available.`);
+        }
+    }
+    return picked;
+}
+
+const generateExamPaper = async (req, res) => {
+    const body = req.body;
+    const fail = (message, status = 400) => res.status(status).json({ success: false, message });
+
+    if (!body.listingId) return fail("listingId is required.");
+    if (!Array.isArray(body.subjects) || body.subjects.length === 0) {
+        return fail("At least one subject is required.");
+    }
+
+    const listingDoc = await Listing.findById(body.listingId).select("marks examStructure tiers");
+    if (!listingDoc) return fail("Listing not found", 404);
+
+    const resolvedTier = resolveTestTier(listingDoc, body.tier);
+    const subjectsConfig = getTierConfig(listingDoc, resolvedTier).marks || [];
+
+    // ===== Common settings (single mode jaisa) =====
+    const languageMode = body.languageMode === "multiple" ? "multiple" : "single";
+    let languages = Array.isArray(body.languages) && body.languages.length > 0
+        ? body.languages.map(l => String(l).trim()).filter(Boolean) : ["English"];
+    if (languages.length === 0) languages = ["English"];
+    if (languageMode === "single" && languages.length > 1) languages = [languages[0]];
+    if (languageMode === "multiple" && languages.length < 2) {
+        return fail("Multiple language mode me kam se kam 2 languages choose karo.");
+    }
+
+    let showLanguage = body.showLanguage && String(body.showLanguage).trim()
+        ? String(body.showLanguage).trim() : "all";
+    if (languageMode !== "multiple") showLanguage = "all";
+
+    const noOfPapers = Math.max(1, Number(body.noOfPapers) || 1);
+    const maxRepeat = Math.max(1, Number(body.maxRepeat) || 2);
+    const visibility = body.visibility === "public" ? "public" : "private";
+
+    const sourceResolved = await resolveSourceListingId(body.listingId, body.sourceListingId);
+    if (sourceResolved.error) return fail(sourceResolved.error, sourceResolved.status);
+    const sourceListingId = sourceResolved.id;
+
+    // ===== Subject plans =====
+    const arr = (v) => (Array.isArray(v) ? v.map(x => String(x)).filter(Boolean) : []);
+    const plans = [];
+    const seen = new Set();
+
+    for (const s of body.subjects) {
+        const name = String((s && s.subject) || "").trim();
+        if (!name || !subjectsConfig.some(c => c.subject === name)) {
+            return fail(`Subject "${name || "?"}" is not part of this listing's marks.`);
+        }
+        if (seen.has(name)) return fail(`Subject "${name}" is added twice.`);
+        seen.add(name);
+
+        const count = Math.floor(Number(s.count) || 0);
+        if (count < 1) return fail(`"${name}": number of questions is required.`);
+ 
+
+        const sectionIds = arr(s.sections);
+        const scope = normalizeScope(s.scope);
+        if (!scope && sectionIds.length === 0) return fail(`"${name}": please choose at least one section.`);
+
+        const testIds = scope
+            ? await getTestIdsForScope(sourceListingId, scope)
+            : await getTestIdsForListing(sourceListingId, sectionIds);
+        if (testIds.length === 0) {
+            return fail(`"${name}": no tests or questions are available in the selected section.`);
+        }
+
+        const rows = (Array.isArray(s.rows) ? s.rows : []).map(r => {
+            const minCount = Math.max(1, Math.floor(Number(r.minCount) || 1));
+            const maxCount = Math.max(minCount, Math.floor(Number(r.maxCount) || minCount));
+            return {
+                subject: String(r.subject || "").trim(),
+                section: arr(r.section),
+                topic: arr(r.topic),
+                subTopic: arr(r.subTopic),
+                difficulty: arr(r.difficulty),
+                minCount,
+                maxCount
+            };
+        });
+
+        const sumMin = rows.reduce((t, r) => t + r.minCount, 0);
+        if (sumMin > count) {
+            return fail(`"${name}": priority rows ka Min total (${sumMin}) subject ke ${count} questions se zyada hai.`);
+        }
+
+        plans.push({ name, count, testIds, rows, marks: getMarksForSubject(subjectsConfig, name) });
+    }
+
+    // ===== Language: har subject ke pool me available honi chahiye =====
+    let sourceListingLanguage = "English";
+    for (const plan of plans) {
+        const info = await getLanguageInfo(sourceListingId, plan.testIds);
+        sourceListingLanguage = info.listingLanguage;
+        const translationLangs = info.translationLanguages.map(t => t.lang);
+        plan.selectable = languageMode === "multiple"
+            ? translationLangs
+            : [...new Set([...(info.singleCount > 0 ? [info.listingLanguage] : []), ...translationLangs])];
+    }
+
+    const allSelectable = [...new Set(plans.flatMap(p => p.selectable))];
+    languages = [...new Set(canonicalizeLanguages(languages, allSelectable))];
+    if (languageMode === "single") languages = [languages[0]];
+
+    for (const plan of plans) {
+        const invalid = languages.filter(l => !plan.selectable.includes(l));
+        if (invalid.length > 0) {
+            return fail(`"${plan.name}": selected language (${invalid.join(", ")}) is not available in its chosen questions. Available: ${plan.selectable.join(", ") || "none"}.`);
+        }
+    }
+    if (languageMode === "multiple" && languages.length < 2) {
+        return fail("Multiple language mode me kam se kam 2 alag languages choose karo.");
+    }
+    if (showLanguage !== "all" && !languages.includes(showLanguage)) showLanguage = "all";
+
+    // ===== Pool builder =====
+    const buildPool = async (plan, f) => {
+        const tqMatch = { test: { $in: plan.testIds } };
+        if (f.subject) tqMatch.subject = f.subject;                       // question ka asli subject (source)
+        if (f.section.length) tqMatch.section = { $in: f.section };
+        if (f.topic.length) tqMatch.topic = { $in: f.topic };
+        if (f.subTopic.length) tqMatch.subTopic = { $in: f.subTopic };
+
+        const tqs = await TestQuestion.find(tqMatch).select("question topic subTopic section").lean();
+        const metaByQ = new Map();
+        for (const tq of tqs) {
+            const k = tq.question.toString();
+            if (!metaByQ.has(k)) {
+                metaByQ.set(k, { topic: tq.topic || "", subTopic: tq.subTopic || "", section: tq.section || "" });
+            }
+        }
+        const ids = [...metaByQ.keys()];
+        if (ids.length === 0) return [];
+
+        const qMatch = {
+            _id: { $in: ids.map(x => new mongoose.Types.ObjectId(x)) },
+            status: { $ne: "Disabled" }
+        };
+        if (f.difficulty.length) qMatch.difficulty = { $in: f.difficulty };
+
+        let pool = await Question.find(qMatch).lean();
+        pool.forEach(q => { q._meta = metaByQ.get(q._id.toString()) || null; });
+
+        // Language rule tab ke subject ke hisaab se (English subject ka exemption bhi tab ke subject se)
+        pool = pool.filter(q => isQuestionAllowedForLanguage(q, plan.name, languageMode, languages, sourceListingLanguage));
+        return pool;
+    };
+
+    const NO_FILTER = { subject: "", section: [], topic: [], subTopic: [], difficulty: [] };
+
+    for (const plan of plans) {
+        plan.basePool = await buildPool(plan, NO_FILTER);
+
+        if (plan.basePool.length === 0) {
+            return fail(`"${plan.name}": selected section/language me koi question nahi mila.`);
+        }
+        if (plan.basePool.length < plan.count) {
+            return fail(`"${plan.name}": ek paper ke liye ${plan.count} questions chahiye, lekin selected section/language me sirf ${plan.basePool.length} available hain.`);
+        }
+        if (plan.count * noOfPapers > plan.basePool.length * maxRepeat) {
+            return fail(`"${plan.name}": sirf ${plan.basePool.length} questions available hain. ${noOfPapers} papers x ${plan.count} questions ke liye Max Repeat (${maxRepeat}) kam padega.`);
+        }
+        shuffleInPlace(plan.basePool);
+
+        for (let i = 0; i < plan.rows.length; i++) {
+            const r = plan.rows[i];
+            r.pool = await buildPool(plan, r);
+            if (r.pool.length === 0) {
+                return fail(`"${plan.name}" priority ${i + 1}: in filters ke liye koi question nahi mila.`);
+            }
+            if (r.pool.length < r.minCount) {
+                return fail(`"${plan.name}" priority ${i + 1}: kam se kam ${r.minCount} questions chahiye, lekin sirf ${r.pool.length} available hain.`);
+            }
+            shuffleInPlace(r.pool);
+        }
+    }
+
+    // ===== Papers =====
+    const usageCount = new Map();
+    const createdTestIds = [];
+    const warnings = [];
+ 
+
+    for (let p = 0; p < noOfPapers; p++) {
+        const usedInPaper = new Set();   // ek test me same question 2 baar nahi (DB unique index)
+        const picked = [];               // { q, plan }
+
+        plans.forEach((plan, subjectIndex) => {
+            const qs = pickExamSubject({ plan, subjectIndex, usageCount, usedInPaper, maxRepeat, paperNo: p + 1, warnings });
+            qs.forEach(q => picked.push({ q, plan }));
+        });
+
+        if (picked.length === 0) {
+            warnings.push(`Paper ${p + 1}: no questions were available, so this paper was skipped.`);
+            continue;
+        }
+
+        const totalMarks = picked.reduce((sum, x) => sum + x.plan.marks.positiveMarks, 0);
+        const baseTitle = (body.title && body.title.trim()) ? body.title.trim() : "Generated Paper";
+        const paperTitle = noOfPapers > 1 ? `${baseTitle} ${p + 1}` : baseTitle;
+
+        const savedTest = await new Test({
+            tier: resolvedTier,
+            title: paperTitle,
+            listing: body.listingId,
+            section: body.sectionId || null,
+            parentType: body.parentType || "section",
+            parentId: body.parentId || null,
+            languageMode, languages, showLanguage,
+             timeStrategy: body.timeStrategy === "subject" ? "subject" : "total",
+            duration: body.duration || body.timeLimit || 60,
+            subjectTime: body.timeStrategy === "subject" && Array.isArray(body.subjectTime) ? body.subjectTime : [],
+            totalQuestions: picked.length,
+            totalMarks,
+            visibility,
+            publishAt: null
+        }).save();
+
+        const mappingDocs = picked.map((x, i) => {
+            const m = x.q._meta || {};
+            return {
+                test: savedTest._id,
+                question: x.q._id,
+                order: i + 1,
+                subject: x.plan.name,                       // tab ka subject
+                topic: m.topic || x.q.topic || "",
+                subTopic: m.subTopic || x.q.subTopic || "",
+                section: m.section || x.q.section || "",
+                positiveMarks: x.plan.marks.positiveMarks,
+                negativeMarks: x.plan.marks.negativeMarks
+            };
+        });
+
+        await TestQuestion.insertMany(mappingDocs);
+        createdTestIds.push(savedTest._id);
+    }
+
+    if (createdTestIds.length === 0) {
+        return fail(warnings[0] || "No paper could be generated.");
+    }
+
+    res.status(200).json({
+        success: true,
+        message: `${createdTestIds.length} paper(s) generated successfully.`,
+        testIds: createdTestIds,
+        warnings: warnings.length > 0 ? warnings : undefined
     });
 };

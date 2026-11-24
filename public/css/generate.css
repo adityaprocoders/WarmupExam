@@ -85,3 +85,125 @@ button.gpx-crumb:hover{background:#eef2ff;color:#4338ca}
   .gpx-skel{animation:none}
   .gpx-tile,.gpx-tile-arrow{transition:none}
 }
+
+
+
+
+/* =====================================================================
+   EXAM MODE  (exm-*)
+===================================================================== */
+[hidden]{display:none!important}
+
+/* ---- Paper mode card ---- */
+.exm-modecard{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:16px 18px;margin-bottom:24px;border:1px solid #e0e7ff;border-radius:18px;background:linear-gradient(135deg,#eef2ff 0%,#ffffff 70%)}
+.exm-modecard-title{font-size:14px;font-weight:800;color:#1e1b4b}
+.exm-modecard-sub{margin-top:2px;font-size:12px;color:#64748b}
+.exm-seg{display:inline-flex;gap:4px;padding:4px;border-radius:12px;background:#e2e8f0}
+.exm-seg-btn{padding:8px 18px;border:0;border-radius:9px;background:transparent;color:#475569;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}
+.exm-seg-btn:hover{color:#1e1b4b}
+.exm-seg-btn.is-active{background:#fff;color:#4338ca;box-shadow:0 1px 3px rgba(15,23,42,.18)}
+.exm-seg-btn:focus-visible{outline:2px solid #4f46e5;outline-offset:2px}
+
+/* ---- Heading ---- */
+.exm-head{display:flex;align-items:center;gap:10px}
+.exm-step{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:10px;color:#fff;background:linear-gradient(135deg,#6366f1,#4f46e5);box-shadow:0 8px 16px -8px rgba(79,70,229,.7)}
+.exm-step svg{width:16px;height:16px}
+.exm-title{margin:0;font-size:18px;font-weight:800;color:#0f172a}
+.exm-sub{margin:4px 0 16px;font-size:12px;color:#64748b}
+
+/* ---- Tabs ---- */
+.exm-tabbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.exm-tabs{display:flex;flex:1;min-width:0;gap:8px;padding:2px;overflow-x:auto;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.exm-tab{position:relative;display:inline-flex;align-items:center;gap:8px;flex-shrink:0;padding:10px 14px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#334155;font-size:13px;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s}
+.exm-tab svg{width:15px;height:15px;flex-shrink:0}
+.exm-tab:hover{border-color:#c7d2fe;box-shadow:0 8px 18px -12px rgba(79,70,229,.6)}
+.exm-tab.is-active{border-color:transparent;color:#fff;background:linear-gradient(135deg,#6366f1,#4f46e5);box-shadow:0 10px 20px -10px rgba(79,70,229,.8)}
+.exm-tab-name{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exm-dot{width:7px;height:7px;border-radius:50%;background:#f59e0b}
+.exm-tab-x{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:6px;opacity:.6;cursor:pointer}
+.exm-tab-x:hover{opacity:1;background:rgba(15,23,42,.12)}
+.exm-tab-x svg{width:12px;height:12px}
+.exm-tab:focus-visible,.exm-add:focus-visible,.exm-addrow:focus-visible{outline:2px solid #4f46e5;outline-offset:2px}
+
+.exm-addwrap{position:relative;flex-shrink:0}
+.exm-add{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border:1.5px dashed #a5b4fc;border-radius:12px;background:#eef2ff;color:#4338ca;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer;transition:background .15s}
+.exm-add:hover{background:#e0e7ff}
+.exm-add svg{width:15px;height:15px}
+.exm-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:40;width:260px;max-height:300px;overflow-y:auto;padding:6px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;box-shadow:0 24px 44px -14px rgba(15,23,42,.3)}
+.exm-pop-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-radius:10px;background:transparent;color:#0f172a;font-size:13px;font-weight:700;text-align:left;cursor:pointer}
+.exm-pop-item:hover{background:#f5f7ff}
+.exm-tick{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-left:auto;border-radius:50%;background:#dcfce7;color:#16a34a}
+.exm-tick svg{width:12px;height:12px}
+.exm-pop-empty{padding:14px;font-size:12px;color:#64748b;text-align:center}
+
+/* ---- Subject panel ---- */
+.exm-panel{margin-bottom:8px;border:1px solid #e0e7ff;border-radius:20px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04),0 16px 32px -20px rgba(79,70,229,.35)}
+.exm-panel-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #e0e7ff;background:linear-gradient(90deg,#eef2ff,#f8faff)}
+.exm-panel-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:40px;height:40px;border-radius:12px;color:#4f46e5;background:#e0e7ff}
+.exm-panel-icon svg{width:20px;height:20px}
+.exm-panel-text{flex:1;min-width:0}
+.exm-panel-title{font-size:15px;font-weight:800;color:#1e1b4b}
+.exm-panel-sub{margin-top:2px;font-size:12px;color:#64748b}
+.exm-badge-active{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;padding:5px 10px;border-radius:999px;background:#dcfce7;color:#15803d;font-size:11px;font-weight:800}
+.exm-badge-active svg{width:13px;height:13px}
+.exm-panel-body{padding:16px}
+
+.exm-block{margin-bottom:16px;padding:14px;border:1px solid #eef2f6;border-radius:14px;background:#f8fafc}
+.exm-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.exm-label{display:block;margin-bottom:8px;font-size:12px;font-weight:800;color:#0f172a}
+.exm-f{min-width:0}
+.exm-input,.exm-select{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a;font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s}
+.exm-input:focus,.exm-select:focus{border-color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.18)}
+.exm-select:disabled,.exm-input:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}
+
+.exm-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.exm-chips:empty{display:none}
+.exm-chips-lg{margin:0 0 8px}
+.exm-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9px;background:#4f46e5;color:#fff;font-size:12px;font-weight:600}
+.exm-chip button{padding:0;border:0;background:transparent;color:#c7d2fe;font-size:11px;font-weight:800;line-height:1;cursor:pointer}
+.exm-chip button:hover{color:#fff}
+
+/* ---- Priority rows ---- */
+.exm-rows-head{margin:4px 0 10px}
+.exm-rows-title{font-size:14px;font-weight:800;color:#0f172a}
+.exm-opt{margin-left:6px;padding:2px 8px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle}
+.exm-rows-sub{margin-top:3px;font-size:12px;line-height:1.5;color:#64748b}
+.exm-row{margin-bottom:10px;padding:14px;border:1px solid #e5e7eb;border-radius:14px;background:#fff}
+.exm-row-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.exm-row-no{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#4338ca}
+.exm-row-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.exm-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;border-radius:9px;background:#fef2f2;color:#dc2626;cursor:pointer}
+.exm-icon-btn:hover{background:#fee2e2}
+.exm-icon-btn svg{width:15px;height:15px}
+.exm-addrow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border:1.5px dashed #c7d2fe;border-radius:12px;background:#fafbff;color:#4338ca;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s}
+.exm-addrow:hover:not(:disabled){background:#eef2ff}
+.exm-addrow:disabled{opacity:.55;cursor:not-allowed}
+.exm-addrow svg{width:15px;height:15px}
+.exm-explorer{margin-bottom:16px}
+
+/* ---- Right panel summary ---- */
+.exm-sum-title{margin-bottom:8px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+.exm-sum-row{margin-bottom:8px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.14)}
+.exm-sum-name{font-size:13px;font-weight:800}
+.exm-sum-meta{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:3px;font-size:11px;opacity:.92}
+.exm-sum-warn{margin-top:4px;font-size:11px;font-weight:700;color:#fde68a}
+.exm-sum-empty{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.1);font-size:12px;opacity:.85}
+.exm-sum-total{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:10px;padding:10px 6px;border-radius:12px;background:#fff;color:#312e81;text-align:center}
+.exm-sum-total b{display:block;font-size:16px;font-weight:800}
+.exm-sum-total span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6366f1}
+
+/* ---- Responsive ---- */
+@media (max-width:640px){
+  .exm-modecard{padding:14px}
+  .exm-seg{width:100%}
+  .exm-seg-btn{flex:1;padding:9px 10px}
+  .exm-grid2{grid-template-columns:1fr}
+  .exm-panel-head{flex-wrap:wrap}
+  .exm-badge-active{margin-left:52px}
+  .exm-panel-body{padding:12px}
+  .exm-pop{width:min(260px,calc(100vw - 48px))}
+  .exm-tab-name{max-width:90px}
+}
+@media (prefers-reduced-motion:reduce){
+  .exm-tab,.exm-seg-btn,.exm-input,.exm-select{transition:none}
+}

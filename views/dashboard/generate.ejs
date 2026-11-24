@@ -35,7 +35,7 @@
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Full Marks</label>
                         <input type="number" id="testFullMarksInput" readonly class="w-full p-3 border border-gray-100 rounded-xl bg-gray-50 font-bold text-indigo-600 text-sm">
                     </div>
-                    <div>
+                    <div id="timeStrategyWrap">
                         <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Time Strategy</label>
                         <select id="timeStrategy" data-action="time-strategy-change" class="w-full p-3 border border-gray-200 rounded-xl bg-white font-bold text-sm">
                             <option value="total">Total Time</option>
@@ -63,6 +63,20 @@
 
                 <!-- DYNAMIC TIME CONTAINER -->
                 <div id="timeDynamicContainer" class="p-4 sm:p-6 border border-gray-100 rounded-xl bg-gray-50 mb-6"></div>
+
+
+                                <!-- PAPER MODE (Single / Exam) -->
+                <div class="exm-modecard">
+                    <div>
+                        <div class="exm-modecard-title">Paper Mode</div>
+                        <div class="exm-modecard-sub" id="exmModeHint">Single Mode: ek criteria table se poora paper banta hai.</div>
+                    </div>
+                    <div class="exm-seg" role="group" aria-label="Paper mode">
+                        <button type="button" class="exm-seg-btn is-active" data-xa="set-mode" data-mode="single" aria-pressed="true">Single Mode</button>
+                        <button type="button" class="exm-seg-btn" data-xa="set-mode" data-mode="exam" aria-pressed="false">Exam Mode</button>
+                    </div>
+                </div>
+
 
                                 <!-- QUESTION SOURCE (This Listing / Other) -->
                 <div class="p-4 sm:p-6 border border-gray-100 rounded-xl bg-gray-50 mb-6">
@@ -99,7 +113,8 @@
                         </div>
                     </div>
                 </div>
-
+                    
+                <div id="singleModeWrap">
                 
                 <!-- GLOBAL SECTION SELECTOR (Question.section field) -->
                 <div class="p-4 sm:p-6 border border-gray-100 rounded-xl bg-gray-50 mb-6">
@@ -129,6 +144,10 @@
                         </button>
                     </div>
                 </div>
+            </div>
+
+            <!-- EXAM MODE (JS yahan UI banata hai) -->
+            <div id="examModeWrap" hidden></div>
 
             </div>
 
@@ -139,6 +158,8 @@
                         <i data-lucide="info" class="w-4 h-4"></i>
                         <span class="text-sm font-bold">Exam Settings</span>
                     </div>
+
+                                        <div id="examSummary" class="exm-sum mb-5" hidden></div>
 
                                         <!-- LANGUAGE (Mode + Language + Show Language) -->
                     <div class="mb-5">
@@ -169,7 +190,7 @@
                             class="w-full p-2 rounded-lg text-gray-800 font-bold outline-none bg-white text-sm">
                     </div>
 
-                    <div class="mb-5">
+                    <div class="mb-5" id="singleQCountWrap">
                         <label class="block text-xs font-semibold mb-1 opacity-80">Total No of Questions</label>
                         <select id="questionCountStrategy" data-action="question-count-strategy-change"
                             class="w-full p-2 rounded-lg text-gray-800 font-bold outline-none bg-white text-sm mb-2">
@@ -206,3 +227,4 @@
 
 
 <script src="/js/dashboard/generatePaper.js" defer></script>
+<script src="/js/dashboard/generateExam.js" defer></script>
